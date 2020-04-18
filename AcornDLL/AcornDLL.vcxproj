@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{31D245BE-388B-4818-8959-E7C0BD197BDF}</ProjectGuid>
+    <RootNamespace>AcornDLL</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;ACORNDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <Manifest>
+      <AdditionalOptions>/validate_manifest %(AdditionalOptions)</AdditionalOptions>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;ACORNDLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\NUTS\DataSource.cpp" />
+    <ClCompile Include="..\NUTS\IDE8Source.cpp" />
+    <ClCompile Include="..\NUTS\ImageDataSource.cpp" />
+    <ClCompile Include="..\NUTS\libfuncs.cpp" />
+    <ClCompile Include="..\NUTS\NestedImageSource.cpp" />
+    <ClCompile Include="..\NUTS\NUTSError.cpp" />
+    <ClCompile Include="..\NUTS\TempFile.cpp" />
+    <ClCompile Include="AcornDFSDirectory.cpp" />
+    <ClCompile Include="AcornDFSDSD.cpp" />
+    <ClCompile Include="AcornDFSFileSystem.cpp" />
+    <ClCompile Include="AcornDLL.cpp" />
+    <ClCompile Include="AcornSCREENTranslator.cpp" />
+    <ClCompile Include="ADFSDirectory.cpp" />
+    <ClCompile Include="ADFSEDirectory.cpp" />
+    <ClCompile Include="ADFSEFileSystem.cpp" />
+    <ClCompile Include="ADFSFileSystem.cpp" />
+    <ClCompile Include="BBCBASICTranslator.cpp" />
+    <ClCompile Include="BBCFunctions.cpp" />
+    <ClCompile Include="dllmain.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </PrecompiledHeader>
+      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PrecompiledHeader>
+      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</CompileAsManaged>
+    </ClCompile>
+    <ClCompile Include="NewFSMap.cpp" />
+    <ClCompile Include="OldFSMap.cpp" />
+    <ClCompile Include="RISCOSIcons.cpp" />
+    <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="SpriteFile.cpp" />
+    <ClCompile Include="SpriteFileDirectory.cpp" />
+    <ClCompile Include="SpriteTranslator.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AcornDFSDirectory.h" />
+    <ClInclude Include="AcornDFSDSD.h" />
+    <ClInclude Include="AcornDFSFileSystem.h" />
+    <ClInclude Include="AcornDLL.h" />
+    <ClInclude Include="AcornSCREENTranslator.h" />
+    <ClInclude Include="ADFSDirectory.h" />
+    <ClInclude Include="ADFSEDirectory.h" />
+    <ClInclude Include="ADFSEFileSystem.h" />
+    <ClInclude Include="ADFSFileSystem.h" />
+    <ClInclude Include="BBCBASICTranslator.h" />
+    <ClInclude Include="BBCFunctions.h" />
+    <ClInclude Include="Defs.h" />
+    <ClInclude Include="NewFSMap.h" />
+    <ClInclude Include="OldFSMap.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="RISCOSIcons.h" />
+    <ClInclude Include="Sprite.h" />
+    <ClInclude Include="SpriteFile.h" />
+    <ClInclude Include="SpriteFileDirectory.h" />
+    <ClInclude Include="SpriteTranslator.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AcornDLL.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\app.bmp" />
+    <None Include="..\app2.bmp" />
+    <None Include="..\basic.bmp" />
+    <None Include="..\bitmap1.bmp" />
+    <None Include="..\blank.bmp" />
+    <None Include="..\data.bmp" />
+    <None Include="..\drawfile.bmp" />
+    <None Include="..\exec.bmp" />
+    <None Include="..\font.bmp" />
+    <None Include="..\jpeg.bmp" />
+    <None Include="..\module.bmp" />
+    <None Include="..\obey.bmp" />
+    <None Include="..\sprite.bmp" />
+    <None Include="..\text.bmp" />
+    <None Include="..\util.bmp" />
+    <None Include="AcornFont.bin" />
+    <None Include="app.bmp" />
+    <None Include="compact.bmp" />
+    <None Include="data.bmp" />
+    <None Include="folder.bmp" />
+    <None Include="rcdata2.bin" />
+    <None Include="repair.bmp" />
+    <None Include="repair.png" />
+    <None Include="teletext.bin" />
+    <None Include="text.bmp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

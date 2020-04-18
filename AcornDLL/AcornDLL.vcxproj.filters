@@ -1,0 +1,253 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Imported Source">
+      <UniqueIdentifier>{e6e76c6d-5e8d-4d7b-a353-faa0f94a694f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AcornDFSDirectory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AcornDFSFileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AcornDLL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ADFSDirectory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ADFSFileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BBCFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AcornSCREENTranslator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OldFSMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NewFSMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ADFSEFileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ADFSEDirectory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RISCOSIcons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AcornDFSDSD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteFileDirectory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteTranslator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\DataSource.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\IDE8Source.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\ImageDataSource.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\libfuncs.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\NestedImageSource.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\TempFile.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\NUTSError.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="BBCBASICTranslator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AcornDFSDirectory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AcornDFSFileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AcornDLL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ADFSDirectory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ADFSFileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BBCFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AcornSCREENTranslator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OldFSMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NewFSMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ADFSEFileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ADFSEDirectory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RISCOSIcons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AcornDFSDSD.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteFileDirectory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteTranslator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BBCBASICTranslator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AcornDLL.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AcornFont.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="rcdata2.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="teletext.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\obey.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\util.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\text.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sprite.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\jpeg.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\font.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\exec.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\data.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\basic.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\app2.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\app.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\drawfile.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\module.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\blank.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="data.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="text.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="folder.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="app.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="repair.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="repair.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="compact.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

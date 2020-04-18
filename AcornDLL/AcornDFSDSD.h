@@ -1,0 +1,151 @@
+#pragma once
+#include "../nuts/filesystem.h"
+#include "../NUTS/Directory.h"
+#include "../NUTS/Defs.h"
+#include "Defs.h"
+
+class AcornDSDDirectory : public Directory
+{
+public:
+	AcornDSDDirectory( DataSource *pDataSource ) : Directory( pDataSource )
+	{
+		Files.clear();
+	}
+
+	int	ReadDirectory(void)
+	{
+		Files.clear();
+
+		NativeFile Drive;
+
+		Drive.EncodingID      = ENCODING_ACORN;
+		Drive.fileID          = 0;
+		Drive.Flags           = FF_Pseudo;
+		Drive.FSFileType      = FT_ACORN;
+		Drive.Icon            = FT_DiskImage;
+		Drive.Type            = FT_MiscImage;
+		Drive.Length          = 0;
+		Drive.XlatorID        = 0;
+		Drive.HasResolvedIcon = false;
+
+		rstrncpy( Drive.Filename, (BYTE *) "Drive 0", 7 );
+
+		Files.push_back( Drive );
+
+		rstrncpy( Drive.Filename, (BYTE *) "Drive 2", 7 );
+
+		Drive.fileID = 1;
+
+		Files.push_back( Drive );
+
+		return 0;
+	}
+
+	int	WriteDirectory(void)
+	{
+		return 0;
+	}
+};
+
+class AcornDFSDSD :
+	public FileSystem
+{
+public:
+	AcornDFSDSD(DataSource *pDataSource) : FileSystem(pDataSource) {
+		pDirectory	= new AcornDSDDirectory(pDataSource);
+
+		FSID  = FSID_DFS_DSD;
+		Flags = FSF_Size;
+	}
+
+	~AcornDFSDSD(void) {
+		delete pDirectory;
+	}
+
+	int	ReadFile(DWORD FileID, CTempFile &store)
+	{
+		return -1;
+	}
+
+	int	WriteFile(NativeFile *pFile, CTempFile &store)
+	{
+		return -1;
+	}
+
+	DataSource *FileDataSource( DWORD FileID );
+
+	bool  IsRoot() { return true; }
+
+	BYTE  *DescribeFile( DWORD FileIndex )
+	{
+		static BYTE Desc[64];
+
+		if ( FileIndex == 0 )
+		{
+			rsprintf( Desc, "Drive 0 (Underside Surface)" );
+		}
+
+		if ( FileIndex == 1 )
+		{
+			rsprintf( Desc, "Drive 2 (Topside Surface)" );
+		}
+
+		return Desc;
+	}
+
+	BYTE *GetStatusString(int FileIndex)
+	{
+		static BYTE Desc[64];
+
+		if ( FileIndex == 0 )
+		{
+			rsprintf( Desc, "Drive 0 (Underside Surface)" );
+		}
+
+		if ( FileIndex == 1 )
+		{
+			rsprintf( Desc, "Drive 2 (Topside Surface)" );
+		}
+
+		return Desc;
+	}
+
+	BYTE *GetTitleString( NativeFile *pFile = nullptr )
+	{
+		static BYTE title[64];
+
+		strncpy_s( (char *) title, 64, (char *) "DFS", 6 );
+
+		if ( pFile != nullptr )
+		{
+			rsprintf( title, "DFS::%c", pFile->Filename[ 6 ] );
+		}
+
+		return title;
+	}
+
+	DWORD GetEncoding(void )
+	{
+		return ENCODING_ACORN;
+	}
+
+	FSHint Offer( BYTE *Extension )
+	{
+		FSHint hint;
+
+		hint.FSID       = FS_Null;
+		hint.Confidence = 0;
+
+		if ( Extension != nullptr )
+		{
+			if ( rstrncmp( Extension, (BYTE *) "DSD", 3 ) )
+			{
+				hint.Confidence = 30;
+				hint.FSID       = FSID_DFS_DSD;
+			}
+		}
+
+		return hint;
+	}
+};
+
