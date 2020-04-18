@@ -1,0 +1,866 @@
+// NUTS.cpp : Defines the entry point for the application.
+//
+
+//#pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
+#include "stdafx.h"
+#include "NUTS.h"
+#include "FormatWizard.h"
+#include "Plugins.h"
+#include "AppAction.h"
+#include "resource.h"
+#include "ExtensionRegistry.h"
+#include "EncodingClipboard.h"
+#include "EncodingStatusBar.h"
+
+#include <winioctl.h>
+#include <process.h>
+#include <time.h>
+
+#include <vector>
+#include <deque>
+
+#define MAX_LOADSTRING 100
+
+// Global Variables:
+HINSTANCE hInst;                     // current instance
+
+TCHAR szTitle[MAX_LOADSTRING];       // The title bar text
+TCHAR szWindowClass[MAX_LOADSTRING]; // the main window class name
+
+HWND hMainWnd;	  // Main window handle
+HWND hNextClip;   // Next Clipboard Window
+
+EncodingStatusBar *pStatusBar;
+
+#define PANELID_LEFT_STATUS  1
+#define PANELID_LEFT_FONT    2
+#define PANELID_RIGHT_STATUS 3
+#define PANELID_RIGHT_FONT   4
+
+bool Tracking = false;
+bool UseResolvedIcons = false; // TODO: Get this from prefs
+
+//	File viewer window classes:
+CFileViewer	leftPane,rightPane;
+
+// FileSystem Breadcrumbs:
+std::vector<FileSystem *> leftFS;
+std::vector<FileSystem *> rightFS;
+
+std::vector<TitleComponent> leftTitles;
+std::vector<TitleComponent> rightTitles;
+
+// Forward declarations of functions included in this code module:
+ATOM				MyRegisterClass(HINSTANCE hInstance);
+BOOL				InitInstance(HINSTANCE, int);
+LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+
+unsigned int __stdcall ActionThread(void *param);
+
+int APIENTRY _tWinMain(HINSTANCE hInstance,
+                     HINSTANCE hPrevInstance,
+                     LPTSTR    lpCmdLine,
+                     int       nCmdShow)
+{
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
+
+	MSG msg;
+	HACCEL hAccelTable;
+
+	leftPane.PaneIndex  = 0;
+	rightPane.PaneIndex = 1;
+
+	// Initialize global strings
+	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	LoadString(hInstance, IDC_NUTS, szWindowClass, MAX_LOADSTRING);
+
+	MyRegisterClass(hInstance);
+
+	// Perform application initialization:
+	if (!InitInstance (hInstance, nCmdShow)) {
+		return FALSE;
+	}
+
+	InitAppActions();
+
+	hAccelTable		= LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_NUTS));
+
+	// Main message loop:
+	while (GetMessage(&msg, NULL, 0, 0)) {
+		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
+
+	StopAppActions();
+
+	return (int) msg.wParam;
+}
+
+//
+//  FUNCTION: MyRegisterClass()
+//
+//  PURPOSE: Registers the window class.
+//
+//  COMMENTS:
+//
+//    This function and its usage are only necessary if you want this code
+//    to be compatible with Win32 systems prior to the 'RegisterClassEx'
+//    function that was added to Windows 95. It is important to call this function
+//    so that the application will get 'well formed' small icons associated
+//    with it.
+//
+ATOM MyRegisterClass(HINSTANCE hInstance)
+{
+	WNDCLASSEX wcex;
+
+	wcex.cbSize = sizeof(WNDCLASSEX);
+
+	wcex.style			= CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc	= WndProc;
+	wcex.cbClsExtra		= 0;
+	wcex.cbWndExtra		= 0;
+	wcex.hInstance		= hInstance;
+	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.hCursor		= NULL;
+	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
+	wcex.lpszMenuName	= MAKEINTRESOURCE( IDC_NUTS );
+	wcex.lpszClassName	= szWindowClass;
+	wcex.hIconSm		= NULL; // LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+
+	return RegisterClassEx(&wcex);
+}
+
+LRESULT CALLBACK DummyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	return DefWindowProc(hWnd, message, wParam, lParam);
+}
+
+void ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleComponent> *pTitleStack, CFileViewer *pPane )
+{
+	std::vector< FileSystem *>::iterator iStack;
+	
+	pTitleStack->clear();
+
+	iStack = pFS->begin();
+
+	/* Skip over the root if we have more than 1 FS deep */
+	if ( pFS->size() > 1U )
+	{
+		iStack++;
+	}
+
+	while ( iStack != pFS->end() )
+	{
+		TitleComponent t;
+
+		if ( (*iStack)->EnterIndex == 0xFFFFFFFF )
+		{
+			strncpy_s( (char *) t.String, 512, (char *) (*iStack)->GetTitleString( nullptr ), 511 );
+		}
+		else
+		{
+			strncpy_s( (char *) t.String, 512, (char *) (*iStack)->GetTitleString( &(*iStack)->pDirectory->Files[ (*iStack)->EnterIndex ] ), 511 );
+		}
+
+		t.Encoding = (*iStack)->GetEncoding();
+
+		pTitleStack->push_back( t );
+
+		iStack++;
+	}
+
+	pPane->SetTitleStack( *pTitleStack );
+}
+
+void SetUpBaseMappings( void )
+{
+	ExtReg.RegisterExtension( L"BIN", FT_Binary,  FT_Binary  );
+	ExtReg.RegisterExtension( L"BAT", FT_Script,  FT_Script  );
+	ExtReg.RegisterExtension( L"EXE", FT_App,     FT_App     );
+	ExtReg.RegisterExtension( L"DAT", FT_Data,    FT_Data    );
+	ExtReg.RegisterExtension( L"BMP", FT_Graphic, FT_Graphic );
+	ExtReg.RegisterExtension( L"JPG", FT_Graphic, FT_Graphic );
+	ExtReg.RegisterExtension( L"PNG", FT_Graphic, FT_Graphic );
+	ExtReg.RegisterExtension( L"GIF", FT_Graphic, FT_Graphic );
+	ExtReg.RegisterExtension( L"WAV", FT_Sound,   FT_Sound   );
+	ExtReg.RegisterExtension( L"MP3", FT_Sound,   FT_Sound   );
+	ExtReg.RegisterExtension( L"VOC", FT_Sound,   FT_Sound   );
+	ExtReg.RegisterExtension( L"INI", FT_Pref,    FT_Pref    );
+	ExtReg.RegisterExtension( L"TXT", FT_Text,    FT_Text    );
+}
+
+//
+//   FUNCTION: InitInstance(HINSTANCE, int)
+//
+//   PURPOSE: Saves instance handle and creates main window
+//
+//   COMMENTS:
+//
+//        In this function, we save the instance handle in a global variable and
+//        create and display the main program window.
+//
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) { 
+	HWND hWnd;
+
+	hInst = hInstance; // Store instance handle in our global variable
+
+//	INITCOMMONCONTROLSEX	i;
+
+//	i.dwSize	= sizeof(INITCOMMONCONTROLSEX);
+//	i.dwICC		= ICC_BAR_CLASSES;
+
+//	InitCommonControlsEx(&i);
+
+	INITCOMMONCONTROLSEX icc;
+	icc.dwSize = sizeof(icc);
+	icc.dwICC = ICC_WIN95_CLASSES;
+	InitCommonControlsEx(&icc);
+
+	LoadLibrary(L"riched20.dll");
+
+	BitmapCache.LoadBitmaps();
+
+	SetUpBaseMappings();
+
+	hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS,
+						CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+
+	if (!hWnd)
+		return FALSE;
+
+	hMainWnd	= hWnd;
+
+	leftPane.FS  = new RootFileSystem(); 
+	rightPane.FS = new RootFileSystem(); 
+
+	leftFS.push_back( leftPane.FS );
+	rightFS.push_back( rightPane.FS );
+
+	ReCalculateTitleStack( &leftFS, &leftTitles, &leftPane );
+	ReCalculateTitleStack( &rightFS, &rightTitles, &rightPane );
+
+	ShowWindow(hWnd, nCmdShow);
+
+	FSPlugins.LoadPlugins();
+
+	UpdateWindow(hWnd);
+
+	return TRUE;
+}
+
+int DoParent(CFileViewer *pane) {
+	FileSystem *FS = pane->FS;
+
+	std::vector<TitleComponent> *pTitleStack = &leftTitles;
+	std::vector<FileSystem *> *pFS = &leftFS;
+
+	if ( pane == &rightPane )
+	{
+		pFS = &rightFS;
+		pTitleStack = &rightTitles;
+	}
+
+	if (FS->IsRoot()) {
+		delete FS;
+
+		pFS->pop_back();
+
+		FS = pFS->back();
+
+		pane->FS          = FS;
+		pane->CurrentFSID = FS->FSID;
+	} else {
+		FS->Parent();
+	}
+
+	pane->SelectionStack.pop_back();
+	pane->Updated = true;
+	pane->Update();
+
+	pane->FS->EnterIndex = 0xFFFFFFFF;
+
+	ReCalculateTitleStack( pFS, pTitleStack, pane );
+
+	return 0;
+}
+
+int DoEnter(CFileViewer *pane, std::vector<FileSystem *> *pStack, std::vector<TitleComponent> *pTitleStack, int EnterIndex) {
+	FileSystem *pCurrentFS = pStack->back();
+
+	if ( pCurrentFS->pDirectory->Files[EnterIndex].Flags & FF_Directory )
+	{
+		pCurrentFS->ChangeDirectory( EnterIndex );
+
+		pane->SelectionStack.push_back( -1 );
+		pane->Updated	= true;
+		pane->Update();
+
+		pCurrentFS->EnterIndex = 0xFFFFFFFF;
+
+		ReCalculateTitleStack( pStack, pTitleStack, pane );
+
+		return 0;
+	}
+
+	if ( pCurrentFS->pDirectory->Files[EnterIndex].Type != FT_MiscImage )
+	{
+		return 0;
+	}
+
+	FileSystem *pNewFS = pCurrentFS->FileFilesystem( EnterIndex );
+
+	if ( pNewFS )
+	{
+		pNewFS->EnterIndex       = 0xFFFFFFFF;
+		pNewFS->pParentFS        = pCurrentFS;
+		pNewFS->UseResolvedIcons = UseResolvedIcons;
+
+		pNewFS->Init();
+
+		pNewFS->hMainWindow = hMainWnd;
+		pNewFS->hPaneWindow = pane->hWnd;
+
+		if ( pNewFS ) {
+			pStack->push_back( pNewFS );
+
+			pane->FS	      = pNewFS;
+			pane->CurrentFSID = pNewFS->FSID;
+			pane->Updated     = true;
+
+			pane->SelectionStack.push_back( -1 );
+
+			pane->Update();
+		}
+	}
+	else
+	{
+		DataSource *pSource = pCurrentFS->FileDataSource( EnterIndex );
+
+		FileSystem *newFS = FSPlugins.FindAndLoadFS( pSource, &pCurrentFS->pDirectory->Files[ EnterIndex ] );
+
+		if ( newFS != nullptr )
+		{
+			newFS->EnterIndex = 0xFFFFFFFF;
+			newFS->pParentFS  = pCurrentFS;
+			newFS->UseResolvedIcons = UseResolvedIcons;
+
+			newFS->Init();
+
+			newFS->IsRaw = false;
+
+			pStack->push_back( newFS );
+
+			pane->FS	       = newFS;
+			pane->CurrentFSID  = newFS->FSID;
+			pane->Updated      = true;
+			newFS->hMainWindow = hMainWnd;
+			newFS->hPaneWindow = pane->hWnd;
+
+			pane->SelectionStack.push_back( -1 );
+
+			pane->Update();
+		}
+		else
+		{
+			MessageBox(hMainWnd,
+				L"The drive or image contains an unrecognised file system.\n\nDo you need to run NUTS as Administrator?",
+				L"NUTS FileSystem Probe", MB_OK|MB_ICONSTOP
+			);
+
+			return NUTSError( 0x00000022, L"Unrecognised file system" );
+		}
+	}
+
+	pCurrentFS->EnterIndex = EnterIndex;
+
+	ReCalculateTitleStack( pStack, pTitleStack, pane );
+
+	return 0;
+}
+
+void DoResizeWindow(HWND hWnd) {
+	WINDOWPLACEMENT	placement;
+	RECT			rect;
+
+	GetWindowPlacement(hWnd, &placement);
+
+	if (placement.showCmd == SW_MINIMIZE)
+		return;
+
+	GetClientRect(hWnd, &rect);
+
+	int	paneWidth	= (rect.right - rect.left) / 2;
+	int	paneHeight	= (rect.bottom - rect.top) - 24;
+
+	paneWidth -= 8;
+	paneHeight -= 2;
+
+	SetWindowPos(leftPane.hWnd, NULL, 4, 0, paneWidth, paneHeight, NULL);
+	SetWindowPos(rightPane.hWnd, NULL, paneWidth + 12, 0, paneWidth, paneHeight, NULL);
+
+	leftPane.Resize( paneWidth, paneHeight );
+	rightPane.Resize( paneWidth, paneHeight );
+
+	pStatusBar->NotifyWindowSizeChanged();
+
+	pStatusBar->SetPanelWidth( PANELID_LEFT_STATUS,  paneWidth - 75 );
+	pStatusBar->SetPanelWidth( PANELID_LEFT_FONT,    80  );
+	pStatusBar->SetPanelWidth( PANELID_RIGHT_STATUS, paneWidth - 80 );
+	pStatusBar->SetPanelWidth( PANELID_RIGHT_FONT,   75 );
+}
+
+void CreateStatusBar(HWND hWnd) {
+	pStatusBar = new EncodingStatusBar( hWnd );
+
+	pStatusBar->AddPanel( PANELID_LEFT_STATUS,  50, (BYTE *) "",       FONTID_PC437, PF_LEFT   );
+	pStatusBar->AddPanel( PANELID_LEFT_FONT,    50, (BYTE *) "PC437",  FONTID_PC437, PF_CENTER );
+	pStatusBar->AddPanel( PANELID_RIGHT_STATUS, 50, (BYTE *) "",       FONTID_PC437, PF_LEFT   );
+	pStatusBar->AddPanel( PANELID_RIGHT_FONT,   50, (BYTE *) "PC437",  FONTID_PC437, PF_CENTER | PF_SIZER | PF_SPARE );
+}
+
+void CopyObject(FileSystem *sourceFS, FileSystem *destFS, int FileIndex) {
+	NativeFile srcFile = sourceFS->pDirectory->Files[FileIndex];
+
+	CTempFile FileObj;
+
+	sourceFS->ReadFile( srcFile.fileID, FileObj );
+	destFS->WriteFile( &srcFile, FileObj );
+
+	if ( sourceFS == leftPane.FS )
+	{
+		leftPane.Updated = true;
+		leftPane.Redraw();
+	}
+	else
+	{
+		rightPane.Updated = true;
+		rightPane.Redraw();
+	}
+}
+
+void TrackMouse( void )
+{
+	if ( !Tracking )
+	{
+		TRACKMOUSEEVENT tme;
+
+		tme.cbSize      = sizeof( TRACKMOUSEEVENT );
+		tme.dwFlags     = TME_NONCLIENT;
+		tme.dwHoverTime = HOVER_DEFAULT;
+		tme.hwndTrack   = hMainWnd;
+
+		TrackMouseEvent( &tme );
+
+		Tracking = true;
+	}
+}
+
+void DoEnterAs( std::vector<FileSystem *> *pStack, CFileViewer *pPane, FileSystem *pCurrentFS, std::vector<TitleComponent> *pTitleStack, DWORD FSID )
+{
+	DWORD Index = pPane->GetSelectedIndex();
+
+	DataSource *pSource    = pCurrentFS->FileDataSource( Index );
+	NativeFile file        = pCurrentFS->pDirectory->Files[ Index ];
+
+	pCurrentFS->EnterIndex = Index;
+
+	bool IsRaw = IsRawFS( UString( (char *) pCurrentFS->pDirectory->Files[ Index ].Filename ) );
+
+	if (!IsRaw) {
+		if ( MessageBox( hMainWnd,
+			L"The drive you have selected is recognised by Windows as containing a valid volume.\n"
+			L"Entering this filesystem with an explicit handler will almost certainly cause untold misery, and should "
+			L"only be attempted if you are absolutely certain you know what you are doing.\n\n"
+			L"Are you sure you want to proceed?",
+			L"NUTS File System Probe", MB_YESNO | MB_ICONEXCLAMATION ) != IDYES )
+		{
+			return;
+		}
+	}
+
+	if ( FSID != FS_Null )
+	{
+		FileSystem	*newFS = FSPlugins.LoadFS( FSID, pSource, false );
+
+		if (newFS) {
+			newFS->EnterIndex       = 0xFFFFFFFF;
+			newFS->pParentFS        = pCurrentFS;
+			newFS->UseResolvedIcons = UseResolvedIcons;
+			newFS->hMainWindow      = hMainWnd;
+			newFS->hPaneWindow      = pPane->hWnd;
+
+			newFS->Init();
+
+			pPane->FS    = newFS;
+
+			pStack->push_back( newFS );
+
+			pPane->CurrentFSID = newFS->FSID;
+
+			pPane->SelectionStack.push_back( -1 );
+			pPane->Updated     = true;
+
+			pPane->Update();
+		}
+	}
+
+	ReCalculateTitleStack( pStack, pTitleStack, pPane );
+}
+
+
+void DoTitleStrings( std::vector<FileSystem *> *pStack, CFileViewer *pPane, int PanelIndex, DWORD TitleSize );
+
+//
+//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
+//
+//  PURPOSE:  Processes messages for the main window.
+//
+//  WM_COMMAND	- process the application menu
+//  WM_PAINT	- Paint the main window
+//  WM_DESTROY	- post a quit message and return
+//
+//
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	int wmId, wmEvent;
+	PAINTSTRUCT ps;
+	HDC hdc;
+
+	switch (message)
+	{
+	case WM_UPDATESTATUS:
+		if (wParam == (WPARAM) &leftPane)
+		{
+			pStatusBar->SetPanelText( PANELID_LEFT_STATUS, FSPlugins.FindFont( leftPane.FS->GetEncoding(), 0 ), (BYTE *) lParam );
+		}
+		else
+		{
+			pStatusBar->SetPanelText( PANELID_RIGHT_STATUS, FSPlugins.FindFont( rightPane.FS->GetEncoding(), 1 ), (BYTE *) lParam );
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_CREATE:
+		{
+			leftPane.Create(hWnd, hInst, 0, 480, 640);
+			rightPane.Create(hWnd, hInst, 480, 520, 640);
+
+			CreateStatusBar(hWnd);
+
+			TrackMouse();
+
+			hNextClip = SetClipboardViewer( hWnd );
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_IDENTIFYFONT:
+		{
+			DWORD Panel  = PANELID_LEFT_FONT;
+			DWORD SPanel = PANELID_LEFT_STATUS;
+			BYTE  PIndex = 0;
+
+			CFileViewer *pane = (CFileViewer *) wParam;
+
+			if ( pane == &rightPane )
+			{
+				Panel  = PANELID_RIGHT_FONT;
+				SPanel = PANELID_RIGHT_STATUS;
+				PIndex = 1;
+			}
+
+			WCHAR *FontName = FSPlugins.FontName( (DWORD) lParam );
+
+			if ( FontName != nullptr )
+			{
+				pStatusBar->SetPanelText( Panel, FONTID_PC437, (BYTE *) AString( (WCHAR *) FontName ) );
+				pStatusBar->SetPanelFont( SPanel, FSPlugins.FindFont( pane->FS->GetEncoding(), PIndex ) );
+			}
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_ROOTFS:
+		{
+			std::vector<FileSystem *> *pStack = &leftFS;
+			CFileViewer *pPane = (CFileViewer *) wParam;
+			std::vector<TitleComponent> *pTitleStack = &leftTitles;
+
+			if ( pPane == &rightPane )
+			{
+				pStack      = &rightFS;
+				pTitleStack = &rightTitles;
+			}
+
+			/* Remove items from the stack until we get back to the root FS */
+			while ( 1 )
+			{
+				FileSystem *pFS = pStack->back();
+
+				if ( pFS->FSID != FS_Root )
+				{
+					pStack->pop_back();
+
+					delete pFS;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			pPane->FS = pStack->front();
+			pPane->CurrentFSID = pPane->FS->FSID;
+			pPane->SelectionStack.clear();
+			pPane->SelectionStack.push_back( -1 );
+			pPane->Updated = true;
+
+			ReCalculateTitleStack( pStack, pTitleStack, pPane );
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_COMMAND:
+		wmId    = LOWORD(wParam);
+		wmEvent = HIWORD(wParam);
+		// Parse the menu selections:
+		switch (wmId)
+		{
+		case IDM_ABOUT:
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			break;
+		case IDM_EXIT:
+			DestroyWindow(hWnd);
+			break;
+		case ID_OPTIONS_RESOLVEDICONS:
+			{
+				UseResolvedIcons = !UseResolvedIcons;
+
+				std::vector< FileSystem *>::iterator iStack;
+
+				for ( iStack = leftFS.begin(); iStack != leftFS.end(); iStack++ )
+				{
+					(*iStack)->UseResolvedIcons = UseResolvedIcons;
+
+					(*iStack)->Refresh();
+				}
+
+				leftPane.Updated = true;
+				leftPane.Redraw();
+
+				for ( iStack = rightFS.begin(); iStack != rightFS.end(); iStack++ )
+				{
+					(*iStack)->UseResolvedIcons = UseResolvedIcons;
+
+					(*iStack)->Refresh();
+				}
+
+				rightPane.Updated = true;
+				rightPane.Redraw();
+
+				HMENU hMainMenu = GetMenu( hWnd );
+
+				CheckMenuItem( hMainMenu, ID_OPTIONS_RESOLVEDICONS, (UseResolvedIcons)?MF_CHECKED:MF_UNCHECKED );
+			}
+			break;
+
+		default:
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+		break;
+
+	case WM_PAINT:
+		hdc = BeginPaint(hWnd, &ps);
+
+		EndPaint(hWnd, &ps);
+
+		break;
+
+	case WM_DESTROY:
+		ChangeClipboardChain( hWnd, hNextClip );
+
+		PostQuitMessage(0);
+		break;
+
+	case WM_CHANGECBCHAIN:
+		{
+			if ( wParam != (WPARAM) hNextClip )
+			{
+				::SendMessage( hNextClip, message, wParam, lParam );
+			}
+			else
+			{
+				if ( hNextClip != NULL )
+				{
+					hNextClip = (HWND) lParam;
+				}
+			}
+		}
+		break;
+
+	case WM_DRAWCLIPBOARD:
+		{
+			OutputDebugStringA( "Clipboard change\n" );
+
+			ClipStamp = time(NULL) - 3; // Fudge so that our internal clipboard has priority
+
+			::SendMessage( hNextClip, message, wParam, lParam );
+		}
+		break;
+
+	case WM_DOENTERAS:
+		{
+			CFileViewer *Pane = &leftPane;
+			std::vector<FileSystem *> *pStack = &leftFS;
+			std::vector<TitleComponent> *pTitleStack = &leftTitles;
+
+			if ( wParam == (WPARAM) rightPane.hWnd )
+			{
+				Pane = &rightPane;
+				pStack = &rightFS;
+				pTitleStack = &rightTitles;
+			}
+
+			DoEnterAs( pStack, Pane, Pane->FS, pTitleStack, lParam );
+		}
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_ENTERICON:
+		{
+			CFileViewer *Pane = &leftPane;
+			std::vector<FileSystem *> *pStack = &leftFS;
+			std::vector<TitleComponent> *pTitleStack = &leftTitles;
+
+			OutputDebugString(L"Double click\n");
+
+			if (wParam == (WPARAM) rightPane.hWnd)
+			{
+				Pane = &rightPane;
+				pStack = &rightFS;
+				pTitleStack = &rightTitles;
+			}
+
+			DoEnter(Pane, pStack, pTitleStack, lParam);
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_COPYOBJECT:
+		{
+			CFileViewer *pane   = &leftPane;
+			CFileViewer *target = &rightPane;
+
+			if ( wParam == (WPARAM) rightPane.hWnd )
+			{
+				pane   = &rightPane;
+				target = &leftPane;
+			}
+
+			AppAction Action;
+
+			Action.Action = AA_COPY;
+			Action.FS     = pane->FS;
+			Action.hWnd   = pane->hWnd;
+			Action.Pane   = pane;
+			Action.pData  = (void *) target;
+
+			Action.Selection = pane->GetSelection();
+
+			QueueAction( Action );
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_GOTOPARENT:
+		if (wParam == (WPARAM) leftPane.hWnd)
+			DoParent( &leftPane );
+		else if (wParam == (WPARAM) rightPane.hWnd)
+			DoParent( &rightPane );
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_SIZE:
+		DoResizeWindow(hWnd);
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_FVSTARTDRAG:
+		leftPane.StartDragging();
+		rightPane.StartDragging();
+
+		SetCursor(LoadCursor(hInst, MAKEINTRESOURCE(IDI_SINGLEFILE)));
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_MOUSEMOVE:
+		TrackMouse();
+		break;
+
+	case WM_NCMOUSELEAVE:
+	case WM_MOUSELEAVE:
+		Tracking = false;
+		OutputDebugStringA( "Left!\n" );
+	case WM_FVENDDRAG:
+		leftPane.EndDragging();
+		rightPane.EndDragging();
+
+		SetCursor(LoadCursor(NULL, IDC_ARROW));
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_SETDRAGTYPE:
+		leftPane.SetDragType(wParam);
+		rightPane.SetDragType(wParam);
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	return 0;
+}
+
+// Message handler for about box.
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		{
+		std::vector<PluginDescriptor> Plugins = FSPlugins.GetPluginList();
+
+		std::vector<PluginDescriptor>::iterator i;
+
+		for (i=Plugins.begin(); i!= Plugins.end(); i++ )
+		{
+			SendMessage( GetDlgItem( hDlg, IDC_PLUGINLIST ), LB_ADDSTRING, NULL, (LPARAM) i->Provider.c_str() );
+
+			for (int f=0; f<i->NumFS; f++ )
+			{
+				FSDescriptor *pFS = (FSDescriptor *) &(i->FSDescriptors[f]);
+
+				std::wstring tFS = L"     " + pFS->FriendlyName;
+
+				SendMessage( GetDlgItem( hDlg, IDC_PLUGINLIST ), LB_ADDSTRING, NULL, (LPARAM) tFS.c_str() );
+			}
+		}
+
+		return (INT_PTR)TRUE;
+		}
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+	}
+	return (INT_PTR)FALSE;
+}

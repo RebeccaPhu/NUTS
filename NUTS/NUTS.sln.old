@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NUTS", "NUTS.vcproj", "{D0670178-BE3B-4B70-A3B8-3861B10B04C6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AcornDLL", "..\AcornDLL\AcornDLL.vcproj", "{31D245BE-388B-4818-8959-E7C0BD197BDF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D0670178-BE3B-4B70-A3B8-3861B10B04C6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D0670178-BE3B-4B70-A3B8-3861B10B04C6}.Debug|Win32.Build.0 = Debug|Win32
+		{D0670178-BE3B-4B70-A3B8-3861B10B04C6}.Release|Win32.ActiveCfg = Release|Win32
+		{D0670178-BE3B-4B70-A3B8-3861B10B04C6}.Release|Win32.Build.0 = Release|Win32
+		{31D245BE-388B-4818-8959-E7C0BD197BDF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{31D245BE-388B-4818-8959-E7C0BD197BDF}.Debug|Win32.Build.0 = Debug|Win32
+		{31D245BE-388B-4818-8959-E7C0BD197BDF}.Release|Win32.ActiveCfg = Release|Win32
+		{31D245BE-388B-4818-8959-E7C0BD197BDF}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

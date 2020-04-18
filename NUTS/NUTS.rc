@@ -1,0 +1,684 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Neutral resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+MAINICON                ICON                    "../icon1.ico"
+IDI_SMALL               ICON                    "..\\icon1.ico"
+IDI_BASIC               ICON                    "..\\BASIC.ico"
+IDI_SPRITE              ICON                    "..\\SPRITE.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_MANIFEST
+//
+
+1                       RT_MANIFEST             "nuts.exe.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_ACORN               BITMAP                  "..\\acorn.bmp"
+IDB_BLANK               BITMAP                  "..\\blank.bmp"
+IDB_CDROM               BITMAP                  "..\\cdrom.bmp"
+IDB_DISKIMAGE           BITMAP                  "..\\diskimag.bmp"
+IDB_FLOPPYDISC          BITMAP                  "..\\floppydi.bmp"
+IDB_FOLDER              BITMAP                  "..\\director.bmp"
+IDB_HARDDISC            BITMAP                  "..\\harddisk.bmp"
+IDB_SCRIPT              BITMAP                  "..\\exec1.bmp"
+IDB_BINARY              BITMAP                  "..\\binary.bmp"
+IDB_GRAPHIC             BITMAP                  "..\\graphic.bmp"
+IDB_TEXT                BITMAP                  "..\\text.bmp"
+IDB_APP                 BITMAP                  "..\\app.bmp"
+IDB_DATA                BITMAP                  "..\\data.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_POPUP MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "&Enter",                      IDM_ENTER
+        MENUITEM "&Copy",                       IDM_COPY
+        MENUITEM "Re&name",                     IDM_RENAME
+        MENUITEM "&Install",                    IDM_TRANSLATE
+        MENUITEM "&Delete",                     IDM_DELETE
+        MENUITEM "&Properties",                 IDM_PROPERTIES
+        MENUITEM "&Format",                     IDM_FORMAT
+        MENUITEM SEPARATOR
+        MENUITEM "New &Folder",                 IDM_NEWFOLDER
+        MENUITEM "&New Image Here ...",         IDM_NEWIMAGE
+        MENUITEM SEPARATOR
+        POPUP "Display As"
+        BEGIN
+            MENUITEM "Large Icons",                 IDM_LARGEICONS, CHECKED
+            MENUITEM "Details",                     IDM_ACCESS
+            MENUITEM "List",                        IDM_FILELIST
+        END
+        MENUITEM "&Refresh",                    IDM_REFRESH
+    END
+END
+
+IDR_ROOT_POPUP MENU
+BEGIN
+    POPUP ""
+    BEGIN
+        MENUITEM "&Enter",                      IDM_ENTER
+        MENUITEM "&Format",                     IDM_FORMAT
+        MENUITEM "&Properties",                 IDM_PROPERTIES
+        MENUITEM SEPARATOR
+        POPUP "Display As"
+        BEGIN
+            MENUITEM "Large Icons",                 IDM_LARGEICONS, CHECKED
+            MENUITEM "Details",                     IDM_ACCESS
+            MENUITEM "List",                        IDM_FILELIST
+        END
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_FORMAT DIALOGEX 0, 0, 328, 179
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "Format disk or image"
+FONT 8, "Ms Shell Dlg", 0, 0, 0x0
+BEGIN
+    PUSHBUTTON      "&Start Format...",IDC_FORMAT_START,101,163,60,14,WS_DISABLED
+    DEFPUSHBUTTON   "Cancel",IDC_FORMAT_CANCEL,166,163,50,14
+    LTEXT           "All Your Base Are Belong To Us",IDC_FORMAT_TITLE,0,0,328,29
+    GROUPBOX        "Format Options",IDC_STATIC,3,60,158,70
+    GROUPBOX        "Disk Format",IDC_STATIC,166,60,158,70
+    LISTBOX         IDC_FORMAT_LIST,170,69,150,58,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "&Quick Format (Structure Only)",IDC_QUICK_FORMAT,"Button",BS_AUTORADIOBUTTON,9,72,113,8
+    CONTROL         "&Full Format (Clear Sectors)",IDC_FULL_FORMAT,"Button",BS_AUTORADIOBUTTON,9,86,102,8
+    GROUPBOX        "Format Progress",IDC_PROGRESS_TEXT,4,134,321,26
+    CONTROL         "",IDC_FORMAT_PROGRESS,"msctls_progress32",WS_BORDER,7,144,315,12
+    LTEXT           "The disk or image selected will be formatted with the following parameters. Please note that not all formats may be suitable for the selected disk or image, and using them in such a way may render them unreadable by native hardware.",IDC_STATIC,4,32,318,27
+END
+
+IDD_FILEOPS DIALOGEX 0, 0, 219, 141
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "File Operation"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "&Yes",IDC_FILE_YES,15,63,37,15,WS_DISABLED
+    PUSHBUTTON      "&No",IDC_FILE_NO,65,63,37,15,WS_DISABLED
+    PUSHBUTTON      "No to All",IDC_NO_ALL,165,63,37,15,WS_DISABLED
+    PUSHBUTTON      "Yes to &All",IDC_YES_ALL,115,63,37,15,WS_DISABLED
+    CONTROL         "",IDC_FILE_PROGRESS,"msctls_progress32",WS_BORDER,16,47,186,12
+    LTEXT           "We Stan a File Op",IDC_FILEOP_TITLE,0,0,219,21
+    PUSHBUTTON      "Pause",IDC_FILE_PAUSE,15,81,37,15
+    DEFPUSHBUTTON   "Cancel",IDC_FILE_CANCEL,165,81,37,15
+    ICON            109,IDC_OHNOES,15,106,20,20
+    LTEXT           "That ain't workin', but that's the way you do it.",IDC_SUSPEND_MSG,42,102,160,31,WS_BORDER
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Cursor
+//
+
+IDI_SINGLEFILE          CURSOR                  ".\\SingleFile.cur"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_FORMAT, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 170
+    END
+
+    IDD_FILEOPS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 212
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 134
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_NUTS MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "&Options"
+    BEGIN
+        MENUITEM "Resolved &Icons",             ID_OPTIONS_RESOLVEDICONS
+        MENUITEM "Remember left pane",          ID_OPTIONS_REMEMBERLEFTPANE
+        MENUITEM "Remember right pane",         ID_OPTIONS_REMEMBERRIGHTPANE
+        MENUITEM "Confirm file operations",     ID_OPTIONS_CONFIRMFILEOPERATIONS
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About ...",                  IDM_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 197
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About NUTS"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDI_SMALL,IDC_STATIC,14,14,20,20
+    LTEXT           "NUTS, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2011 - 2020",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "OK",IDOK,117,181,50,14,WS_GROUP
+    LISTBOX         IDC_PLUGINLIST,5,52,161,125,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Loaded Plugins:",IDC_STATIC,7,40,155,9
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 62
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_NUTS ACCELERATORS
+BEGIN
+    "?",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDC_NUTS                "NUTS"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_APP_TITLE           "N.U.T.S. - The Native Universal Transfer System"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United Kingdom) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_WARNING2            ICON                    "..\\ico00003.ico"
+IDI_FONTSWITCH          ICON                    "..\\ico00001.ico"
+IDI_ROOTFS              ICON                    "..\\ico00002.ico"
+IDI_JOSE                ICON                    "..\\icon2.ico"
+IDI_OPEN                ICON                    "..\\fileopen.ico"
+IDI_SAVE                ICON                    "..\\filesave.ico"
+IDI_RESET               ICON                    "..\\reset.ico"
+IDI_COPY                ICON                    "..\\copy.ico"
+IDI_PALETTE             ICON                    "..\\palette.ico"
+IDI_PRINT               ICON                    "..\\printer.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_WIZ_MARK            BITMAP                  "..\\bmp00001.bmp"
+IDB_WIZBANNER           BITMAP                  "..\\WizBanner.bmp"
+IDB_TAPEIMAGE           BITMAP                  "..\\TapeImage.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_EDIT_MENU MENU
+BEGIN
+    POPUP "Edit Menu"
+    BEGIN
+        MENUITEM "Undo",                        IDM_EE_UNDO
+        MENUITEM SEPARATOR
+        MENUITEM "Cut",                         IDM_EE_CUT
+        MENUITEM "Copy",                        IDM_EE_COPY
+        MENUITEM "Paste",                       IDM_EE_PASTE
+        MENUITEM "Delete",                      IDM_EE_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "Select All",                  IDM_EE_SELECT
+    END
+END
+
+IDR_EFFECTS MENU
+BEGIN
+    POPUP "Effects"
+    BEGIN
+        MENUITEM "&Antialias",                  ID_EFFECTS_ANTIALIAS
+        MENUITEM "&CRT Glow",                   ID_EFFECTS_CRTGLOW
+        MENUITEM "&Scanlines",                  ID_EFFECTS_SCANLINES
+        MENUITEM "Sno&w",                       ID_EFFECTS_SNOW
+        MENUITEM "&Ghosting",                   ID_EFFECTS_GHOSTING
+        MENUITEM "&Rainbowing",                 ID_EFFECTS_RAINBOWING
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_SPACE_DIALOG DIALOGEX 0, 0, 199, 230
+STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | WS_BORDER | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Used space:",IDC_USED,26,102,41,11
+    LTEXT           "Capacity:",IDC_CAPACITY,26,146,38,11
+    LTEXT           "Free space:",IDC_FREE,26,116,38,13
+    LTEXT           "Type:",IDC_STATIC,7,53,23,10
+    LTEXT           "File system:",IDC_FSPROMPT,7,67,44,12
+    LTEXT           "102,400 bytes",IDC_USED_BYTES,67,102,97,10
+    LTEXT           "552,960 bytes",IDC_FREE_BYTES,67,116,96,11
+    LTEXT           "655,360 bytes",IDC_CAPACITY_BYTES,75,146,83,12
+    RTEXT           "100 KB",IDC_USED_HUMAN,167,102,23,10
+    RTEXT           "540 KB",IDC_FREE_HUMAN,165,116,25,10
+    RTEXT           "640 KB",IDC_CAPACITY_HUMAN,165,146,25,11
+    LTEXT           "Disk Image",IDC_FILETYPE,49,53,128,8
+    LTEXT           "Unknown File System",IDC_FSTYPE,49,67,134,12
+    LTEXT           "File Size:",IDC_FILESIZE,26,159,38,11
+    LTEXT           "655,360 bytes",IDC_SIZE_BYTES,75,159,83,12
+    RTEXT           "640 KB",IDC_SIZE_HUMAN,165,159,25,11
+END
+
+IDD_BLOCKS_DIALOG DIALOGEX 0, 0, 202, 243
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Free",IDC_STATIC,28,226,27,10
+    LTEXT           "Used",IDC_STATIC,96,226,21,9
+    LTEXT           "Unmovable",IDC_STATIC,159,226,36,11
+END
+
+IDD_ATTRS DIALOGEX 0, 0, 209, 242
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Attributes"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Reset Attributes",IDC_RESET,6,220,61,15
+END
+
+IDD_WIZ_DIALOG1 DIALOGEX 0, 0, 317, 193
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Welcome to the New Image Wizard",IDC_WIZ_WELCOME,115,15,202,20
+    LTEXT           "This wiard will guide you through the process of creating a new disk or tape image, or container image. The following pages will allow you to select the file system, the image size (where permitted) and the file name for the image.",IDC_STATIC,115,45,202,100
+    LTEXT           "Press Next to begin.",IDC_STATIC,115,100,120,20
+END
+
+IDD_WIZ_DIALOG2 DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Format Provider",IDC_STATIC,6,39,142,95
+    GROUPBOX        "Format",IDC_STATIC,163,39,142,95
+    LTEXT           "Select the image format provider and container format from the list below. Note that not all formats may be available for creating new images.",IDC_STATIC,10,9,293,26
+    LISTBOX         IDC_WIZ_PROVIDER,11,49,132,80,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_WIZ_FORMAT,168,49,132,80,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_WIZ_DIALOG3 DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_IMAGE_SIZE,94,106,59,13,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Specify a file name for the new container image, and select the size of the image to be created inside the current filing system.",IDC_STATIC,11,9,293,19
+    GROUPBOX        "Container File Name",IDC_FILENAME_FRAME,47,58,211,29
+    GROUPBOX        "Container File Size",IDC_SIZE_FRAME,47,95,211,29
+    COMBOBOX        IDC_SIZE_ORDINAL,163,106,61,12,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "The selected format has a fixed size or is dynamically sized. The size can not be specified.",IDC_DYNAMIC,11,107,293,10,NOT WS_VISIBLE
+    LTEXT           "Note that the format selected may not support exact image sizes, or may be dynamically sized, in which case selecting the image size is not possible.",IDC_STATIC,11,31,293,19
+END
+
+IDD_WIZ_DIALOG4 DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Please wait while the image is created. If the image is large, this process may take a while.",IDC_STATIC,8,11,293,23
+    LTEXT           "Operation:",IDC_STATIC,11,96,40,9
+    CONTROL         "",IDC_CREATE_PROGRESS,"msctls_progress32",WS_BORDER,10,112,297,19
+    LTEXT           "Creating image....",IDC_CREATE_OP,52,96,227,10
+    RTEXT           "0%",IDC_CREATE_PERCENT,285,96,22,11
+END
+
+IDD_WIZ_DIALOG5 DIALOGEX 0, 0, 317, 193
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Image created successfully",IDC_WIZ_SUCCESS,115,15,202,20
+    LTEXT           "The wizard has successfully created the request container image, and created a default file system within it. If the container is dynamically sized then the resulting file may be empty (0 bytes long).",IDC_STATIC,115,45,202,38
+    LTEXT           "Press Finish to exit the wizard.",IDC_STATIC,115,100,120,20
+END
+
+IDD_LOG_SELECT DIALOGEX 0, 0, 317, 182
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP
+EXSTYLE WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+END
+
+IDD_RENAME DIALOGEX 0, 0, 318, 64
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,66,43,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,200,43,50,14
+    LTEXT           "Enter the new name for the file system object:",IDC_STATIC,7,7,304,11
+END
+
+IDD_FSATTRS DIALOGEX 0, 0, 209, 242
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Attributes"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Reset Attributes",IDC_FSRESET,6,220,61,15
+END
+
+IDD_TOOLS DIALOGEX 0, 0, 200, 251
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+END
+
+IDD_TOOL_WINDOW DIALOGEX 0, 0, 311, 105
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "File System Tool"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Cancel",IDCANCEL,254,84,50,14
+    LTEXT           "The tool is being run.",IDC_TOOL_DESC,7,7,257,31
+    GROUPBOX        "Current Operation:",IDC_TOOL_OPERATION,7,40,296,34
+    CONTROL         "",IDC_TOOL_PROGRESS,"msctls_progress32",WS_BORDER,12,52,286,15
+    CONTROL         IDI_OPEN,IDC_TOOL_ICON,"Static",SS_BITMAP | WS_BORDER,275,7,24,22,WS_EX_DLGMODALFRAME
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_SPACE_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 192
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 223
+    END
+
+    IDD_BLOCKS_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 195
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 236
+    END
+
+    IDD_ATTRS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 202
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 235
+    END
+
+    IDD_WIZ_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_WIZ_DIALOG2, DIALOG
+    BEGIN
+    END
+
+    IDD_WIZ_DIALOG3, DIALOG
+    BEGIN
+    END
+
+    IDD_WIZ_DIALOG4, DIALOG
+    BEGIN
+    END
+
+    IDD_WIZ_DIALOG5, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_LOG_SELECT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 310
+        TOPMARGIN, 8
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_RENAME, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 311
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 57
+    END
+
+    IDD_FSATTRS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 202
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 235
+    END
+
+    IDD_TOOLS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 193
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 244
+    END
+
+    IDD_TOOL_WINDOW, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 304
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 98
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RCDATA
+//
+
+IDF_PC437               RCDATA                  "..\\data1.bin"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080904b0"
+        BEGIN
+            VALUE "CompanyName", "Open Source Software"
+            VALUE "FileDescription", "Native Universal Transfer System"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "NUTS"
+            VALUE "LegalCopyright", "Copyright (C) 2011-2020 Rebecca Gellman - OSS License TBD"
+            VALUE "OriginalFilename", "NUTS.exe"
+            VALUE "ProductName", "NUTS"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x809, 1200
+    END
+END
+
+#endif    // English (United Kingdom) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

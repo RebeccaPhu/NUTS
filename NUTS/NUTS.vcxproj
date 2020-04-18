@@ -1,0 +1,240 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D0670178-BE3B-4B70-A3B8-3861B10B04C6}</ProjectGuid>
+    <RootNamespace>NUTS</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <Manifest>
+      <AdditionalOptions>/validate_manifest %(AdditionalOptions)</AdditionalOptions>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="AppAction.cpp" />
+    <ClCompile Include="BlockMap.cpp" />
+    <ClCompile Include="EncodingClipboard.cpp" />
+    <ClCompile Include="EncodingComboBox.cpp" />
+    <ClCompile Include="EncodingEdit.cpp" />
+    <ClCompile Include="EncodingStatusBar.cpp" />
+    <ClCompile Include="EncodingTextArea.cpp" />
+    <ClCompile Include="ExtensionRegistry.cpp" />
+    <ClCompile Include="FileOps.cpp" />
+    <ClCompile Include="FontBitmap.cpp" />
+    <ClCompile Include="ImageWizard.cpp" />
+    <ClCompile Include="NestedImageSource.cpp" />
+    <ClCompile Include="NUTSError.cpp" />
+    <ClCompile Include="PaletteWindow.cpp" />
+    <ClCompile Include="PiePercent.cpp" />
+    <ClCompile Include="PropsPage.cpp" />
+    <ClCompile Include="SCREENTranslator.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Directory.cpp" />
+    <ClCompile Include="FileSystem.cpp" />
+    <ClCompile Include="Plugins.cpp" />
+    <ClCompile Include="RootDirectory.cpp" />
+    <ClCompile Include="RootFileSystem.cpp" />
+    <ClCompile Include="TempFile.cpp" />
+    <ClCompile Include="TextFileTranslator.cpp" />
+    <ClCompile Include="TEXTTranslator.cpp" />
+    <ClCompile Include="WindowsDirectory.cpp" />
+    <ClCompile Include="WindowsFileSystem.cpp" />
+    <ClCompile Include="DataSource.cpp" />
+    <ClCompile Include="IDE8Source.cpp" />
+    <ClCompile Include="ImageDataSource.cpp" />
+    <ClCompile Include="Sector.cpp" />
+    <ClCompile Include="BitmapCache.cpp" />
+    <ClCompile Include="libfuncs.cpp" />
+    <ClCompile Include="TEXTContentViewer.cpp" />
+    <ClCompile Include="FileViewer.cpp" />
+    <ClCompile Include="FormatWizard.cpp" />
+    <ClCompile Include="NUTS.cpp" />
+    <ClCompile Include="SCREENContentViewer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AppAction.h" />
+    <ClInclude Include="BlockMap.h" />
+    <ClInclude Include="EncodingClipboard.h" />
+    <ClInclude Include="EncodingComboBox.h" />
+    <ClInclude Include="EncodingEdit.h" />
+    <ClInclude Include="EncodingStatusBar.h" />
+    <ClInclude Include="EncodingTextArea.h" />
+    <ClInclude Include="ExtensionRegistry.h" />
+    <ClInclude Include="FileOps.h" />
+    <ClInclude Include="FontBitmap.h" />
+    <ClInclude Include="ImageWizard.h" />
+    <ClInclude Include="NestedImageSource.h" />
+    <ClInclude Include="NUTSError.h" />
+    <ClInclude Include="PaletteWindow.h" />
+    <ClInclude Include="PiePercent.h" />
+    <ClInclude Include="PropsPage.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="SCREENTranslator.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="Directory.h" />
+    <ClInclude Include="FileSystem.h" />
+    <ClInclude Include="Plugins.h" />
+    <ClInclude Include="RootDirectory.h" />
+    <ClInclude Include="RootFileSystem.h" />
+    <ClInclude Include="TempFile.h" />
+    <ClInclude Include="TextFileTranslator.h" />
+    <ClInclude Include="TEXTTranslator.h" />
+    <ClInclude Include="WindowsDirectory.h" />
+    <ClInclude Include="WindowsFileSystem.h" />
+    <ClInclude Include="BitmapCache.h" />
+    <ClInclude Include="Defs.h" />
+    <ClInclude Include="libfuncs.h" />
+    <ClInclude Include="TEXTContentViewer.h" />
+    <ClInclude Include="FileViewer.h" />
+    <ClInclude Include="FormatWizard.h" />
+    <ClInclude Include="NUTS.h" />
+    <ClInclude Include="SCREENContentViewer.h" />
+    <ClInclude Include="DataSource.h" />
+    <ClInclude Include="IDE8Source.h" />
+    <ClInclude Include="ImageDataSource.h" />
+    <ClInclude Include="Sector.h" />
+    <ClInclude Include="PluginDescriptor.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\acorn.bmp" />
+    <None Include="..\app.bmp" />
+    <None Include="..\app2.bmp" />
+    <None Include="..\basic.bmp" />
+    <None Include="..\BASIC.ico" />
+    <None Include="..\binary.bmp" />
+    <None Include="..\bitmap1.bmp" />
+    <None Include="..\bitmap2.bmp" />
+    <None Include="..\blank.bmp" />
+    <None Include="..\blank1.bmp" />
+    <None Include="..\blank2.bmp" />
+    <None Include="..\bmp00001.bmp" />
+    <None Include="..\cdrom.bmp" />
+    <None Include="..\copy.ico" />
+    <None Include="..\data.bmp" />
+    <None Include="..\data1.bin" />
+    <None Include="..\director.bmp" />
+    <None Include="..\diskimag.bmp" />
+    <None Include="..\drawfile.bmp" />
+    <None Include="..\exec.bmp" />
+    <None Include="..\exec1.bmp" />
+    <None Include="..\fileopen.ico" />
+    <None Include="..\filesave.ico" />
+    <None Include="..\floppydi.bmp" />
+    <None Include="..\font.bmp" />
+    <None Include="..\graphic.bmp" />
+    <None Include="..\harddisc.bmp" />
+    <None Include="..\harddisk.bmp" />
+    <None Include="..\ico00001.ico" />
+    <None Include="..\ico00002.ico" />
+    <None Include="..\ico00003.ico" />
+    <None Include="..\ico00004.ico" />
+    <None Include="..\icon1.ico" />
+    <None Include="..\icon2.ico" />
+    <None Include="..\jpeg.bmp" />
+    <None Include="..\module.bmp" />
+    <None Include="..\obey.bmp" />
+    <None Include="..\palette.ico" />
+    <None Include="..\pallette.ico" />
+    <None Include="..\printer.ico" />
+    <None Include="..\reset.ico" />
+    <None Include="..\sprite.bmp" />
+    <None Include="..\SPRITE.ico" />
+    <None Include="..\TapeImage.bmp" />
+    <None Include="..\text.bmp" />
+    <None Include="..\util.bmp" />
+    <None Include="..\WizBanner.bmp" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="NUTS.ico" />
+    <None Include="SingleFile.cur" />
+    <None Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NUTS.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="nuts.exe.manifest" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

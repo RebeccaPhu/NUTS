@@ -1,0 +1,22 @@
+#pragma once
+
+#include "Defs.h"
+
+class DataSource {
+public:
+	DataSource(void);
+	~DataSource(void);
+
+	virtual	int	ReadSector(long Sector, void *pSectorBuf, long SectorSize) = 0;
+	virtual	int	WriteSector(long Sector, void *pSectorBuf, long SectorSize) = 0;
+
+	virtual int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer ) = 0;
+
+	virtual char *GetLocation()
+	{
+		return "";
+	}
+
+	__int64	PhysicalDiskSize;
+	__int64	LogicalDiskSize;
+};

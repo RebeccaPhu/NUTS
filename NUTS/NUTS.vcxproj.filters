@@ -1,0 +1,467 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\File Systems">
+      <UniqueIdentifier>{76a6cbf7-a6de-4f59-b5c9-2e745c2fe7f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Data Sources">
+      <UniqueIdentifier>{e1514b51-f97a-4c1e-9a81-9c91f5ce6852}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Functions">
+      <UniqueIdentifier>{e8fc9d3b-076a-46f1-916c-18b1d8852034}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UI">
+      <UniqueIdentifier>{c462b89c-d34b-4fa8-9c84-67b2361e7e84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\File Systems">
+      <UniqueIdentifier>{fa2d114d-ccc5-424e-ac91-c612f52eee71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Functions">
+      <UniqueIdentifier>{3759f92c-9352-485e-8d0d-25fede8574d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UI">
+      <UniqueIdentifier>{70e4a487-83ac-44a6-a295-70f66975c770}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Data Sources">
+      <UniqueIdentifier>{0508e17e-c331-4331-b21a-3378db250804}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Plugin Headers">
+      <UniqueIdentifier>{2d9903ec-679e-4186-a555-71fcb545fe19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UI\Elements">
+      <UniqueIdentifier>{6b8e243a-e364-4c4e-b72d-df19e0f66dff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UI\Elements">
+      <UniqueIdentifier>{31e5f765-c326-4b86-bba4-30050171152c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Translators">
+      <UniqueIdentifier>{c8ed0ae6-0545-45f0-b63c-a0e505d5c0c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Translators">
+      <UniqueIdentifier>{4bc50b01-bd2f-4bdb-b3ec-5f272873ed1f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Directory.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="FileSystem.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Plugins.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="RootDirectory.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="RootFileSystem.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowsDirectory.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowsFileSystem.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="DataSource.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="IDE8Source.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageDataSource.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Sector.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="BitmapCache.cpp">
+      <Filter>Source Files\Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="libfuncs.cpp">
+      <Filter>Source Files\Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="FileViewer.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="FormatWizard.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="NUTS.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="SCREENContentViewer.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="TempFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AppAction.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="FileOps.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="PropsPage.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="PaletteWindow.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ExtensionRegistry.cpp">
+      <Filter>Source Files\Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageWizard.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="BlockMap.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="FontBitmap.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="PiePercent.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="EncodingEdit.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="EncodingClipboard.cpp">
+      <Filter>Source Files\Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="SCREENTranslator.cpp">
+      <Filter>Source Files\Translators</Filter>
+    </ClCompile>
+    <ClCompile Include="NestedImageSource.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="NUTSError.cpp">
+      <Filter>Source Files\Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="EncodingStatusBar.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="TEXTContentViewer.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="TEXTTranslator.cpp">
+      <Filter>Source Files\Translators</Filter>
+    </ClCompile>
+    <ClCompile Include="EncodingTextArea.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="TextFileTranslator.cpp">
+      <Filter>Source Files\Translators</Filter>
+    </ClCompile>
+    <ClCompile Include="EncodingComboBox.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Directory.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="FileSystem.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Plugins.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="RootDirectory.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="RootFileSystem.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsDirectory.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowsFileSystem.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="BitmapCache.h">
+      <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="Defs.h">
+      <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="libfuncs.h">
+      <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="FileViewer.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="FormatWizard.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTS.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="SCREENContentViewer.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="DataSource.h">
+      <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="IDE8Source.h">
+      <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageDataSource.h">
+      <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="Sector.h">
+      <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginDescriptor.h">
+      <Filter>Header Files\Plugin Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="TempFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AppAction.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="FileOps.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="PropsPage.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="PaletteWindow.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ExtensionRegistry.h">
+      <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageWizard.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="BlockMap.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="PiePercent.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="FontBitmap.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodingEdit.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodingClipboard.h">
+      <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="SCREENTranslator.h">
+      <Filter>Header Files\Translators</Filter>
+    </ClInclude>
+    <ClInclude Include="NestedImageSource.h">
+      <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSError.h">
+      <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodingStatusBar.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="TEXTContentViewer.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="TEXTTranslator.h">
+      <Filter>Header Files\Translators</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodingTextArea.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="TextFileTranslator.h">
+      <Filter>Header Files\Translators</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodingComboBox.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="NUTS.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="small.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\acorn.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\app.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\app2.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\basic.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\blank.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\cdrom.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\data.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\diskimag.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\drawfile.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\exec.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\floppydi.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\director.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\font.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\harddisc.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\jpeg.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\module.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\obey.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sprite.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\text.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\util.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="SingleFile.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\BASIC.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\pallette.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\SPRITE.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ClassDiagram1.cd" />
+    <None Include="..\data1.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\icon1.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\exec1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\ico00001.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\ico00002.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\ico00003.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\icon2.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\blank1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\blank2.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\binary.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\graphic.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\bmp00001.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\bitmap2.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\WizBanner.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\ico00004.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\fileopen.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\filesave.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\reset.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\copy.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\palette.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\printer.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\TapeImage.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\harddisk.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NUTS.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="nuts.exe.manifest" />
+  </ItemGroup>
+</Project>
