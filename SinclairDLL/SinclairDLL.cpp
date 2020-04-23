@@ -15,6 +15,8 @@
 BYTE *pSinclairFont;
 BYTE *pTeletextFont;
 
+HMODULE hInstance;
+
 FSDescriptor SinclairFS[6] = {
 	{
 		/* .FriendlyName = */ L"ZX Spectrum TAP Image",
@@ -78,11 +80,9 @@ SINCLAIRDLL_API PluginDescriptor *GetPluginDescriptor(void)
 {
 	if ( pSinclairFont == nullptr )
 	{
-		HMODULE hModule  = GetModuleHandle( L"SinclairDLL" );
-
-		HRSRC hResource  = FindResource(hModule, MAKEINTRESOURCE( IDF_SINCLAIRFONT ), RT_RCDATA);
-		HGLOBAL hMemory  = LoadResource(hModule, hResource);
-		DWORD dwSize     = SizeofResource(hModule, hResource);
+		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_SINCLAIRFONT ), RT_RCDATA);
+		HGLOBAL hMemory  = LoadResource(hInstance, hResource);
+		DWORD dwSize     = SizeofResource(hInstance, hResource);
 		LPVOID lpAddress = LockResource(hMemory);
 
 		// Font data starts from character 32

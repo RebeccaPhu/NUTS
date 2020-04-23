@@ -34,6 +34,7 @@ public:
 		pBlockMap = (BYTE *) malloc( TotalBlocks );
 
 		UseResolvedIcons = false;
+		HideSidecars     = false;
 		pParentFS        = nullptr;
 	}
 
@@ -318,6 +319,19 @@ public:
 		SetEvent( hToolEvent );
 	}
 
+	virtual int SwapFile( DWORD FileID1, DWORD FileID2 )
+	{
+		NativeFile x = pDirectory->Files[ FileID1 ];
+
+		pDirectory->Files[ FileID1 ] = pDirectory->Files[ FileID2 ];
+		pDirectory->Files[ FileID2 ] = x;
+
+		pDirectory->WriteDirectory();
+		pDirectory->ReadDirectory();
+
+		return 0;
+	}
+
 	DWORD FSID;
 	DWORD EnterIndex;
 	bool  IsRaw;
@@ -326,6 +340,7 @@ public:
 	FileSystem *pParentFS;
 
 	bool UseResolvedIcons;
+	bool HideSidecars;
 
 	HWND hMainWindow;
 	HWND hPaneWindow;

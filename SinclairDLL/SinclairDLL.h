@@ -16,3 +16,5 @@
 extern "C" SINCLAIRDLL_API PluginDescriptor *GetPluginDescriptor(void);
 extern "C" SINCLAIRDLL_API void *CreateFS( DWORD PUID, DataSource *pSource );
 extern "C" SINCLAIRDLL_API void *CreateTranslator( DWORD TUID );
+
+extern HMODULE hInstance;

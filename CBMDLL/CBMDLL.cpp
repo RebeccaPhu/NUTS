@@ -17,6 +17,8 @@
 
 BYTE *pPETSCII = nullptr;
 
+HMODULE hInstance;
+
 FSDescriptor CBMFS[2] = {
 	{
 		/* .FriendlyName = */ L"D64 Commore Disk Image",
@@ -83,11 +85,9 @@ CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 {
 	if ( pPETSCII == nullptr )
 	{
-		HMODULE hModule  = GetModuleHandle( L"CBMDLL" );
-
-		HRSRC hResource  = FindResource(hModule, MAKEINTRESOURCE( IDF_C64 ), RT_RCDATA);
-		HGLOBAL hMemory  = LoadResource(hModule, hResource);
-		DWORD dwSize     = SizeofResource(hModule, hResource);
+		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_C64 ), RT_RCDATA);
+		HGLOBAL hMemory  = LoadResource(hInstance, hResource);
+		DWORD dwSize     = SizeofResource(hInstance, hResource);
 		LPVOID lpAddress = LockResource(hMemory);
 
 		pPETSCII = (BYTE *) malloc( (size_t) dwSize );

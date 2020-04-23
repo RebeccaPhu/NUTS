@@ -16,3 +16,5 @@
 extern "C" ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void);
 extern "C" ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource );
 extern "C" ACORNDLL_API void *CreateTranslator( DWORD TUID );
+
+extern HMODULE hInstance;

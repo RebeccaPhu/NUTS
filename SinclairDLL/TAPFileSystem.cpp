@@ -9,7 +9,7 @@ TAPFileSystem::TAPFileSystem(DataSource *pDataSource) : FileSystem(pDataSource)
 
 	FSID = FSID_SPECTRUM_TAP;
 
-	Flags = FSF_Size | FSF_Supports_Spaces;
+	Flags = FSF_Size | FSF_Supports_Spaces | FSF_Reorderable;
 }
 
 

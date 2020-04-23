@@ -65,6 +65,11 @@ public:
 
 	int  ResolveIcons( void );
 
+	DWORD GetEncoding( void )
+	{
+		return ENCODING_ACORN;
+	}
+
 private:
 	SpriteFileDirectory *pSpriteDirectory;
 };

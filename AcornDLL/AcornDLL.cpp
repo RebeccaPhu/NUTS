@@ -23,6 +23,8 @@
 BYTE *pAcornFont;
 BYTE *pTeletextFont;
 
+HMODULE hInstance;
+
 FSDescriptor AcornFS[13] = {
 	{
 		/* .FriendlyName = */ L"Acorn DFS (40T)",
@@ -200,11 +202,9 @@ ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
 {
 	if ( pAcornFont == nullptr )
 	{
-		HMODULE hModule  = GetModuleHandle( L"AcornDLL" );
-
-		HRSRC hResource  = FindResource(hModule, MAKEINTRESOURCE( IDF_ACORN ), RT_RCDATA);
-		HGLOBAL hMemory  = LoadResource(hModule, hResource);
-		DWORD dwSize     = SizeofResource(hModule, hResource);
+		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_ACORN ), RT_RCDATA);
+		HGLOBAL hMemory  = LoadResource(hInstance, hResource);
+		DWORD dwSize     = SizeofResource(hInstance, hResource);
 		LPVOID lpAddress = LockResource(hMemory);
 
 		// Font data starts from character 32
@@ -214,9 +214,9 @@ ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 		AcornFonts[0].pFontData = pAcornFont;
 
-		hResource  = FindResource(hModule, MAKEINTRESOURCE( IDF_TELETEXT ), RT_RCDATA);
-		hMemory    = LoadResource(hModule, hResource);
-		dwSize     = SizeofResource(hModule, hResource);
+		hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_TELETEXT ), RT_RCDATA);
+		hMemory    = LoadResource(hInstance, hResource);
+		dwSize     = SizeofResource(hInstance, hResource);
 		lpAddress  = LockResource(hMemory);
 
 		// Font data starts from character 32
@@ -234,7 +234,7 @@ ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 		for ( BYTE i=0; i<13; i++ )
 		{
-			HBITMAP bmp = LoadBitmap( hModule, MAKEINTRESOURCE( IconBitmapIDs[ i ] ) );
+			HBITMAP bmp = LoadBitmap( hInstance, MAKEINTRESOURCE( IconBitmapIDs[ i ] ) );
 
 			AcornDescriptor.FSDescriptors[ 8 ].Icons[ i ] = (void *) bmp;
 		}
