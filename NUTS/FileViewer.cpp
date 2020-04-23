@@ -706,7 +706,7 @@ void CFileViewer::DrawBasicLayout() {
 	std::vector<TitleComponent>::iterator iStack;
 
 	DWORD FullWidth = 0;
-	DWORD MaxWidth  = ( rect.right - rect.left ) / 8;
+	DWORD MaxWidth  = ( ( rect.right - rect.left ) / 8 ) - 1;
 
 	for ( iStack = TitleStack.begin(); iStack != TitleStack.end(); iStack++ )
 	{
