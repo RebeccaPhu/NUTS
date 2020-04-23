@@ -44,6 +44,10 @@
 #define IDD_TOOLS                       128
 #define IDD_DIALOG2                     129
 #define IDD_TOOL_WINDOW                 129
+#define IDI_UPFILE                      130
+#define IDI_DOWNFILE                    131
+#define IDI_NEWDIR                      132
+#define IDV_SEARCH                      133
 #define IDB_FOLDER                      135
 #define IDB_DISKIMAGE                   136
 #define IDB_FLOPPYDISC                  139
@@ -268,6 +272,9 @@
 #define IDM_REFRESH                     40042
 #define ID__RENAME                      40043
 #define IDM_RENAME                      40044
+#define ID_OPTIONS_HIDESIDECARFILES     40045
+#define IDM_HIDESIDECARS                40046
+#define IDM_CONFIRM                     40047
 #define IDM_VIEW_BBCSCREEN              41001
 #define IDM_VIEW_ZXSSCREEN              41002
 #define IDM_VIEW_BBCBASIC               42001
@@ -670,8 +677,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        130
-#define _APS_NEXT_COMMAND_VALUE         40045
+#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_COMMAND_VALUE         40048
 #define _APS_NEXT_CONTROL_VALUE         1046
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

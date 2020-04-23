@@ -110,6 +110,7 @@ typedef enum _FSFlags {
 	FSF_SupportBlocks    = 0x00000800,
 	FSF_Size             = 0x00001000,
 	FSF_Capacity         = 0x00002000,
+	FSF_Reorderable      = 0x00004000,
 } FSFlags;
 
 typedef struct _ProviderDesc {
@@ -314,5 +315,7 @@ typedef FSToolList::iterator FSToolIterator;
 #define WM_FSTOOL_SETDESC   (WM_APP + 19)
 #define WM_FSTOOL_PROGLIMIT (WM_APP + 20)
 #define WM_FSTOOL_PROGRESS  (WM_APP + 21)
+#define WM_FSTOOL_CURRENTOP (WM_APP + 22)
+#define WM_FV_FOCUS         (WM_APP + 23)
 
 #define TUID_TEXT           0x73477347

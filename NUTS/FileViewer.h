@@ -50,11 +50,12 @@ public:
 	DWORD      CurrentFSID;
 	BYTE       PaneIndex;
 
+	std::vector<HWND> ControlButtons;
+
 private:
 	HWND    ParentWnd;
 	HWND    hScrollBar;
-
-	std::vector<HWND> ControlButtons;
+	HWND    hSearchAVI;
 
 	HFONT   titleBarFont;
 	HFONT   filenameFont;
@@ -69,6 +70,7 @@ private:
 	std::vector<bool> FileSelections;
 
 	bool    ParentSelected;
+	bool    HasFocus;
 
 	long    ScrollStartY;
 	long    ScrollMax;
@@ -113,6 +115,9 @@ private:
 	void  DoTEXTContentViewer( DWORD PrefTUID = NULL );
 	void  DoContentViewer( void );
 	void  RenameFile( void );
+	void  DoSwapFiles( BYTE UpDown );
+	void  DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam );
+	void  DoContextMenu( void );
 
 	std::map<UINT, DWORD> MenuFSMap;
 	std::map<UINT, DWORD> MenuXlatorMap;
@@ -121,10 +126,13 @@ private:
 
 	HPEN Pens[3];
 	BYTE CurrentPen;
+	HBRUSH hViewerBrush;
 
 	std::vector<TitleComponent> TitleStack;
 
 	long CalculatedY;
+
+	bool IsSearching;
 
 public:
 	void Resize(int w, int h);
@@ -134,6 +142,8 @@ public:
 	std::vector<int> SelectionStack;
 
 	DWORD GetSelectedIndex( void );
+
+	void  SetSearching( bool s );
 };
 
 #define FILESYS_MENU_BASE 43000

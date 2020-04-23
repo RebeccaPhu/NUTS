@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CBMDLL", "..\CBMDLL\CBMDLL.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SinclairDLL", "..\SinclairDLL\SinclairDLL.vcxproj", "{9B5B2DC2-2D96-4FD0-8295-EAC43216754C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AmigaDLL", "..\AmigaDLL\AmigaDLL.vcxproj", "{E3FA5BC5-B08E-457B-AED9-8CC639519496}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -31,6 +33,10 @@ Global
 		{9B5B2DC2-2D96-4FD0-8295-EAC43216754C}.Debug|Win32.Build.0 = Debug|Win32
 		{9B5B2DC2-2D96-4FD0-8295-EAC43216754C}.Release|Win32.ActiveCfg = Release|Win32
 		{9B5B2DC2-2D96-4FD0-8295-EAC43216754C}.Release|Win32.Build.0 = Release|Win32
+		{E3FA5BC5-B08E-457B-AED9-8CC639519496}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E3FA5BC5-B08E-457B-AED9-8CC639519496}.Debug|Win32.Build.0 = Debug|Win32
+		{E3FA5BC5-B08E-457B-AED9-8CC639519496}.Release|Win32.ActiveCfg = Release|Win32
+		{E3FA5BC5-B08E-457B-AED9-8CC639519496}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

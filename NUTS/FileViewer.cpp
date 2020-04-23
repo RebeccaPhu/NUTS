@@ -4,6 +4,9 @@
 #include "FontBitmap.h"
 #include "Plugins.h"
 #include "libfuncs.h"
+#include "IconRatio.h"
+
+#include <CommCtrl.h>
 
 #include <WindowsX.h>
 
@@ -61,6 +64,8 @@ CFileViewer::CFileViewer(void) {
 	Dragging       = false;
 	Bounding       = false;
 	MouseDown      = false;
+	IsSearching    = false;
+	HasFocus       = false;
 	DragType       = 0;
 	dragX          = -1;
 	dragY          = -1;
@@ -100,10 +105,17 @@ CFileViewer::CFileViewer(void) {
 	Pens[1] = ExtCreatePen( PS_COSMETIC | PS_USERSTYLE, 1, &brsh, 4, Pen2 );
 	Pens[2] = ExtCreatePen( PS_COSMETIC | PS_USERSTYLE, 1, &brsh, 4, Pen3 );
 
+	hViewerBrush = NULL;
+
 	CurrentPen = 0;
 }
 
 CFileViewer::~CFileViewer(void) {
+	if ( hViewerBrush != NULL )
+	{
+		DeleteObject( (HGDIOBJ) hViewerBrush );
+	}
+
 	if (viewBuffer) {
 		SelectObject(viewDC, viewObj);
 
@@ -140,6 +152,27 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	HICON hRootIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ROOTFS));
 
 	SendMessage( ControlButtons[1], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hRootIcon );
+
+	HICON hUpIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_UPFILE));
+
+	SendMessage( ControlButtons[2], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hUpIcon );
+
+	HICON hDownIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_DOWNFILE));
+
+	SendMessage( ControlButtons[3], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hDownIcon );
+
+	HICON hNewIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_NEWDIR));
+
+	SendMessage( ControlButtons[4], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hNewIcon );
+
+	EnableWindow( ControlButtons[2], FALSE );
+	EnableWindow( ControlButtons[3], FALSE );
+
+	hSearchAVI = Animate_Create( hWnd, 42995, WS_CHILD | ACS_TRANSPARENT, hInst );
+	
+	Animate_Open( hSearchAVI, MAKEINTRESOURCE( IDV_SEARCH ) );
+
+	Animate_Play( hSearchAVI, 0, -1, -1 );
 
 	return 0;
 }
@@ -288,6 +321,16 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 			if ( (HWND) lParam == ControlButtons[ 1 ] )
 			{
 				SendMessage( ParentWnd, WM_ROOTFS, (WPARAM) this, (LPARAM) NULL );
+			}
+
+			if ( (HWND) lParam == ControlButtons[ 3 ] )
+			{
+				DoSwapFiles( 0xFF );
+			}
+
+			if ( (HWND) lParam == ControlButtons[ 4 ] )
+			{
+				DoSwapFiles( 0x00 );
 			}
 
 			if ( ( LOWORD(wParam) >= FILESYS_MENU_BASE ) && ( LOWORD(wParam) <= FILESYS_MENU_END ) )
@@ -462,100 +505,66 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 			return 0;
 
-		case WM_KEYUP:
-/*			if (SelectedIndex < 0) {
-				SelectedIndex = 0;
+		case WM_MOUSEACTIVATE:
+				char a[256];
+				sprintf(a, "Window %08X WM_ACTIVATE %08x %08X", hWnd, wParam, lParam );
+				OutputDebugStringA( a );
 
-				Update();
-			} else {
-				GetClientRect(hWnd, &rect);
+			::SetFocus( hWnd );
 
-				max	= (rect.right - rect.left) / 100;
+			Redraw();
 
-				switch (wParam) {
-					case VK_LEFT:
-						if (SelectedIndex > 0) {
-							SelectedIndex--;
+			return MA_ACTIVATE;
 
-							Update();
-						}
+		case WM_SETFOCUS:
+			HasFocus = true;
 
-						break;
+				sprintf(a, "Window %08X has focus\n", hWnd );
+				OutputDebugStringA( a );
 
-					case VK_RIGHT:
-						if ((unsigned) SelectedIndex < (FS->pDirectory->Files.size() - 1)) {
-							SelectedIndex++;
+			::PostMessage( ParentWnd, WM_FV_FOCUS, (WPARAM) hWnd, 0 );
 
-							Update();
-						}
-
-						break;
-
-					case VK_UP:
-						if ((SelectedIndex - max) > 0) {
-							SelectedIndex -= max;
-
-							Update();
-						} else {
-							SelectedIndex = 0;
-
-							Update();
-						}
-
-						break;
-
-					case VK_DOWN:
-						if (((unsigned) SelectedIndex + max) < (FS->pDirectory->Files.size() - 1)) {
-							SelectedIndex += max;
-
-							Update();
-						} else {
-							SelectedIndex = FS->pDirectory->Files.size() - 1;
-
-							Update();
-						}
-
-						break;
-
-					case VK_RETURN:
-						ProcessClick(SelectedIndex % max, SelectedIndex / max, true);
-
-						break;
-
-					case VK_PRIOR:
-						if (ScrollTo > 0) {
-							ScrollTo -= 3;
-
-							if (ScrollTo < 0)
-								ScrollTo	 = 0;
-
-							SetScrollPos(hScrollBar, SB_CTL, ScrollTo, TRUE);
-						}
-
-						Update();
-
-						break;
-
-					case VK_NEXT:
-						if (ScrollTo < max) {
-							GetScrollRange(hScrollBar, SB_CTL, &min, &max);
-
-							ScrollTo += 3;
-
-							if (ScrollTo > max)
-								ScrollTo	 = max;
-
-							SetScrollPos(hScrollBar, SB_CTL, ScrollTo, TRUE);
-						}
-
-						Update();
-
-						break;
-				}
-			}
+			Redraw();
 
 			return 0;
-*/
+
+		case WM_KILLFOCUS:
+			HasFocus = false;
+
+				sprintf(a, "Window %08X lost focus\n", hWnd );
+				OutputDebugStringA( a );
+
+			Redraw();
+
+			return 0;
+
+		case WM_GETDLGCODE:
+			switch ( wParam )
+				{
+					case VK_TAB:
+					case VK_RETURN:
+						return DLGC_STATIC;
+			
+					case VK_LEFT:
+					case VK_RIGHT:
+					case VK_HOME:
+					case VK_END:
+						return DLGC_WANTARROWS;
+
+					case VK_SHIFT:
+					case VK_CONTROL:
+						return DLGC_WANTALLKEYS;
+
+					default:
+						return DLGC_WANTCHARS;
+				}
+		
+			return DLGC_STATIC;
+
+		case WM_KEYUP:
+			DoKeyControls( message, wParam, lParam );
+			break;
+
 		case WM_PAINT:
 			Redraw();
 
@@ -596,60 +605,19 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 		case WM_RBUTTONUP:
 		{
-			RECT rect;
-			DWORD Selected = GetSelectionCount();
-
-			if ( CurrentFSID == FS_Root )
-			{
-				hPopup	= LoadMenu(hInst, MAKEINTRESOURCE(IDR_ROOT_POPUP));
-			}
-			else
-			{
-				hPopup	= LoadMenu(hInst, MAKEINTRESOURCE(IDR_POPUP));
-			}
-
-			GetWindowRect(hWnd, &rect);
-
-			if ( Selected == 1 )
-			{
-				PopulateFSMenus(hPopup);
-			}
-
-			hSubMenu	= GetSubMenu(hPopup, 0);
-
-			if ( Selected == 0 )
-			{
-				DeleteMenu(hSubMenu, IDM_FORMAT, MF_BYCOMMAND);
-				DeleteMenu(hSubMenu, IDM_ENTER, MF_BYCOMMAND);
-			}
-
-			if ( Displaying == DisplayLargeIcons ) { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_CHECKED ); } else { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_UNCHECKED ); }
-			if ( Displaying == DisplayDetails )    { CheckMenuItem( hSubMenu, IDM_DETAILS, MF_BYCOMMAND | MF_CHECKED );    } else { CheckMenuItem( hSubMenu, IDM_DETAILS, MF_BYCOMMAND | MF_UNCHECKED ); }
-			if ( Displaying == DisplayList )       { CheckMenuItem( hSubMenu, IDM_FILELIST, MF_BYCOMMAND | MF_CHECKED );   } else { CheckMenuItem( hSubMenu, IDM_FILELIST, MF_BYCOMMAND | MF_UNCHECKED ); }
-
-			if ( CurrentFSID != FS_Root)
-			{
-				if ( Selected == 1 )
-				{
-					PopulateXlatorMenus(hPopup);
-				}
-				else if ( Selected == 0 )
-				{
-					EnableMenuItem( hPopup, IDM_ENTER,     MF_BYCOMMAND | MF_DISABLED );
-					EnableMenuItem( hPopup, IDM_COPY,      MF_BYCOMMAND | MF_DISABLED );
-					EnableMenuItem( hPopup, IDM_TRANSLATE, MF_BYCOMMAND | MF_DISABLED );
-				}
-			}
-
-			TrackPopupMenu(hSubMenu, 0, rect.left + mouseX, rect.top + mouseY, 0, hWnd, NULL);
-
-			DestroyMenu(hPopup);
+			DoContextMenu();
 
 			return DefWindowProc(hSourceWnd, message, wParam, lParam);
 		}
 
 		case WM_ERASEBKGND:
 			return FALSE;
+
+		case WM_CTLCOLORSTATIC:
+			{
+				return (LRESULT) GetStockObject( WHITE_BRUSH );
+			}
+			break;
 
 		case WM_MOUSEWHEEL:
 			ScrollStartY		-=	(GET_WHEEL_DELTA_WPARAM(wParam) / 2);
@@ -701,6 +669,8 @@ void CFileViewer::Resize(int w, int h)
 	ThisRect.top   += 24;
 
 	RecalculateDimensions( ThisRect );
+
+	SetWindowPos( hSearchAVI, NULL, ((ThisRect.right - ThisRect.left) / 2) - 24, ((ThisRect.bottom - ThisRect.top) / 2), 48, 50, SWP_NOZORDER | SWP_NOREPOSITION );
 }
 
 void CFileViewer::DrawBasicLayout() {
@@ -721,15 +691,16 @@ void CFileViewer::DrawBasicLayout() {
 
 	DWORD BColour = GetSysColor(COLOR_BTNFACE);
 
-	HBRUSH  brush = CreateSolidBrush( BColour );
+	if ( hViewerBrush == NULL )
+	{
+		hViewerBrush = CreateSolidBrush( BColour );
+	}
 
 	rect.bottom	= rect.top + 24;
 
-	FillRect(viewDC, &rect, brush);
+	FillRect(viewDC, &rect, hViewerBrush);
 
 	DrawEdge(viewDC, &rect, EDGE_RAISED, BF_RECT);
-
-	DeleteObject(brush);
 
 	/* Collect the title string stack */
 	std::vector<TitleComponent>::iterator iStack;
@@ -757,6 +728,8 @@ void CFileViewer::DrawBasicLayout() {
 
 		TitleString.SetButtonColor( GetRValue( BColour ), GetGValue( BColour ), GetBValue( BColour ) );
 
+		TitleString.SetGrayed( !HasFocus );
+
 		TitleString.DrawText( viewDC, 6 + coffset, 4, DT_TOP | DT_LEFT );
 
 		coffset += ( strlen( (char *) iStack->String ) * 8 );
@@ -783,16 +756,10 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 			iw = icon.bmi.biWidth;
 			ih = icon.bmi.biHeight;
 
-			double ratio = (double) icon.Aspect.second / (double) icon.Aspect.first;
-			double ratio_icon = (double) ih / (double) iw;
+			AspectRatio CAR = ScreenCompensatedIconRatio( AspectRatio( (WORD) iw, (WORD) ih), icon.Aspect, 64, 34 );
 
-			rw = (DWORD) ( 34 * ( ratio / ratio_icon ) );
-
-			if ( rw > 100 )
-			{
-				rw = 34;
-				rh = (DWORD) ( 34 * ( ratio_icon / ratio ) );
-			}
+			rw = CAR.first;
+			rh = CAR.second;
 
 			hCreatedIcon = CreateBitmap( iw, ih, icon.bmi.biPlanes, icon.bmi.biBitCount, icon.pImage );
 
@@ -957,7 +924,7 @@ void CFileViewer::Redraw() {
 
 	FillRect(viewDC, &wndRect, (HBRUSH) GetStockObject(WHITE_BRUSH));
 
-	if (FS) {
+	if ( (FS) && ( !IsSearching ) ) {
 		std::vector<NativeFile>::iterator	iFile;
 
 		DWORD exi = FS->pDirectory->Files.size(); // Extra increment
@@ -1083,7 +1050,7 @@ void CFileViewer::Redraw() {
 
 	DrawBasicLayout();
 
-	if ( Bounding )
+	if ( ( Bounding ) && ( !IsSearching ) )
 	{
 		HGDIOBJ hOld = SelectObject( viewDC, Pens[ CurrentPen ] );
 
@@ -1934,4 +1901,381 @@ INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM w
 	}
 
 	return FALSE;
+}
+
+void CFileViewer::DoSwapFiles( BYTE UpDown )
+{
+	if ( GetSelectionCount() != 1 )
+	{
+		return;
+	}
+
+	DWORD SwapFile = GetSelectedIndex();
+	DWORD MaxFile  = FS->pDirectory->Files.size();
+
+	// The condition above should nix this, but still..
+	if ( MaxFile == 0 )
+	{
+		return;
+	}
+
+	MaxFile--;
+
+	if ( UpDown == 0xFF )
+	{
+		if ( SwapFile > 0 )
+		{
+			FS->SwapFile( SwapFile - 1, SwapFile );
+		}
+	}
+	else
+	{
+		if ( SwapFile < MaxFile )
+		{
+			FS->SwapFile( SwapFile + 1, SwapFile );
+		}
+	}
+}
+
+void CFileViewer::SetSearching( bool s )
+{
+	IsSearching = s;
+
+	if ( s )
+	{
+		ShowWindow( hSearchAVI, SW_SHOW );
+	}
+	else
+	{
+		ShowWindow( hSearchAVI, SW_HIDE );
+	}
+}
+
+
+void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
+{
+	if ( ( IsSearching ) || ( !HasFocus ) )
+	{
+		return;
+	}
+
+	if ( FileSelections.size() == 0 )
+	{
+		ParentSelected = true;
+
+		return;
+	}
+
+	int keyCode = (int) wParam;
+
+	DWORD sc = GetSelectionCount();
+
+	switch ( keyCode )
+	{
+	case VK_LEFT:
+		{
+			if ( sc == 0 )
+			{
+				ParentSelected = true;
+			}
+			else
+			{
+				if ( ( sc == 1 ) && ( GetSelectedIndex() == 0 ) && ( FS->FSID != FS_Root ) )
+				{
+					std::vector<bool>::iterator iS;
+
+					for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+					{
+						*iS = false;
+					}
+
+					ParentSelected = true;
+				}
+				else
+				{
+					DWORD si = 0xFFFFFFFF;
+
+					std::vector<bool>::iterator iS;
+					DWORD fi = 0;
+
+					for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+					{
+						if ( ( *iS ) && ( fi < si ) )
+						{
+							si = fi;
+						}
+						fi++;
+					}
+
+					if ( !ShiftPressed() )
+					{
+						for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+						{
+							*iS = false;
+						}
+					}
+
+					if ( si > 0 )
+					{
+						si--;
+					}
+
+					FileSelections[ si ] = true;
+				}
+			}
+		}
+
+		break;
+
+	case VK_RIGHT:
+		{
+			DWORD si = 0x0000;
+
+			std::vector<bool>::iterator iS;
+			DWORD fi = 0;
+
+			for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+			{
+				if ( ( *iS ) && ( fi > si ) )
+				{
+					si = fi;
+				}
+				fi++;
+			}
+
+			if ( !ShiftPressed() )
+			{
+				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+				{
+					*iS = false;
+				}
+			}
+
+			if ( si < FileSelections.size() - 1 )
+			{
+				si++;
+			}
+
+			if ( sc == 0 )
+			{
+				si = 0;
+			}
+
+			FileSelections[ si ] = true;
+
+			ParentSelected = false;
+		}
+
+		break;
+
+	case VK_UP:
+		{
+			if ( sc == 0 )
+			{
+				ParentSelected = true;
+			}
+			else
+			{
+				int   si = 0x7FFFFFFF;
+				DWORD ei = 0x00000000;
+
+				std::vector<bool>::iterator iS;
+				DWORD fi = 0;
+
+				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+				{
+					if ( ( *iS ) && ( fi < si ) )
+					{
+						si = fi;
+					}
+					if ( ( *iS ) && ( fi > ei ) )
+					{
+						ei = fi;
+					}
+					fi++;
+				}
+
+				if ( !ShiftPressed() )
+				{
+					for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+					{
+						*iS = false;
+					}
+				}
+
+				if ( (si - (int) IconsPerLine) > 0 )
+				{
+					si -= IconsPerLine;
+
+					if ( !ShiftPressed() )
+					{
+						ei -= IconsPerLine;
+					}
+				}
+				else
+				{
+					si = 0;
+
+					if ( !ShiftPressed() )
+					{
+						ei = 0;
+					}
+				}
+
+				fi = 0;
+				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+				{
+					if ( ( fi >= si ) && ( fi <= ei ) )
+					{
+						*iS = true;
+					}
+					fi++;
+				}
+			}
+		}
+
+		break;
+
+	case VK_DOWN:
+		{
+			if ( sc == 0 )
+			{
+				ParentSelected = true;
+			}
+			else
+			{
+				int   si = 0x7FFFFFFF;
+				DWORD ei = 0x00000000;
+
+				std::vector<bool>::iterator iS;
+				DWORD fi = 0;
+
+				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+				{
+					if ( ( *iS ) && ( fi < si ) )
+					{
+						si = fi;
+					}
+					if ( ( *iS ) && ( fi > ei ) )
+					{
+						ei = fi;
+					}
+					fi++;
+				}
+
+				if ( !ShiftPressed() )
+				{
+					for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+					{
+						*iS = false;
+					}
+				}
+
+				if ( (si + (int) IconsPerLine) < FileSelections.size() - 1 )
+				{
+					ei += IconsPerLine;
+
+					if ( !ShiftPressed() )
+					{
+						si += IconsPerLine;
+					}
+				}
+				else
+				{
+					ei = FileSelections.size() - 1;
+
+					if ( !ShiftPressed() )
+					{
+						si = FileSelections.size() - 1;
+					}
+				}
+
+				fi = 0;
+				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+				{
+					if ( ( fi >= si ) && ( fi <= ei ) )
+					{
+						*iS = true;
+					}
+					fi++;
+				}
+			}
+		}
+
+		break;
+
+	case VK_RETURN:
+		{
+			DWORD si = GetSelectedIndex();
+
+			ActivateItem( ( ( si % IconsPerLine ) * ItemWidth ) + ( ItemWidth / 2 ), ( (si / IconsPerLine ) * ItemHeight ) + (ItemHeight / 2 ) );
+		}
+		break;
+
+	case VK_APPS:
+		DoContextMenu();
+		break;
+	}
+
+	if ( !ParentSelected )
+	{
+		::SendMessage( ParentWnd, WM_UPDATESTATUS, (WPARAM) this, (LPARAM) FS->GetStatusString( GetSelectedIndex() ) );
+	}
+
+	Update();
+}
+
+void CFileViewer::DoContextMenu( void )
+{
+	RECT rect;
+	DWORD Selected = GetSelectionCount();
+
+	HMENU hPopup;
+	HMENU hSubMenu;
+
+	if ( CurrentFSID == FS_Root )
+	{
+		hPopup	= LoadMenu(hInst, MAKEINTRESOURCE(IDR_ROOT_POPUP));
+	}
+	else
+	{
+		hPopup	= LoadMenu(hInst, MAKEINTRESOURCE(IDR_POPUP));
+	}
+
+	GetWindowRect(hWnd, &rect);
+
+	if ( Selected == 1 )
+	{
+		PopulateFSMenus(hPopup);
+	}
+
+	hSubMenu	= GetSubMenu(hPopup, 0);
+
+	if ( Selected == 0 )
+	{
+		DeleteMenu(hSubMenu, IDM_FORMAT, MF_BYCOMMAND);
+		DeleteMenu(hSubMenu, IDM_ENTER, MF_BYCOMMAND);
+	}
+
+	if ( Displaying == DisplayLargeIcons ) { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_CHECKED ); } else { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_UNCHECKED ); }
+	if ( Displaying == DisplayDetails )    { CheckMenuItem( hSubMenu, IDM_DETAILS, MF_BYCOMMAND | MF_CHECKED );    } else { CheckMenuItem( hSubMenu, IDM_DETAILS, MF_BYCOMMAND | MF_UNCHECKED ); }
+	if ( Displaying == DisplayList )       { CheckMenuItem( hSubMenu, IDM_FILELIST, MF_BYCOMMAND | MF_CHECKED );   } else { CheckMenuItem( hSubMenu, IDM_FILELIST, MF_BYCOMMAND | MF_UNCHECKED ); }
+
+	if ( CurrentFSID != FS_Root)
+	{
+		if ( Selected == 1 )
+		{
+			PopulateXlatorMenus(hPopup);
+		}
+		else if ( Selected == 0 )
+		{
+			EnableMenuItem( hPopup, IDM_ENTER,     MF_BYCOMMAND | MF_DISABLED );
+			EnableMenuItem( hPopup, IDM_COPY,      MF_BYCOMMAND | MF_DISABLED );
+			EnableMenuItem( hPopup, IDM_TRANSLATE, MF_BYCOMMAND | MF_DISABLED );
+		}
+	}
+
+	TrackPopupMenu(hSubMenu, 0, rect.left + mouseX, rect.top + mouseY, 0, hWnd, NULL);
+
+	DestroyMenu(hPopup);
 }

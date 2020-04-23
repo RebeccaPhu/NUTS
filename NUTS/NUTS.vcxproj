@@ -97,11 +97,13 @@
     <ClCompile Include="ExtensionRegistry.cpp" />
     <ClCompile Include="FileOps.cpp" />
     <ClCompile Include="FontBitmap.cpp" />
+    <ClCompile Include="IconRatio.cpp" />
     <ClCompile Include="ImageWizard.cpp" />
     <ClCompile Include="NestedImageSource.cpp" />
     <ClCompile Include="NUTSError.cpp" />
     <ClCompile Include="PaletteWindow.cpp" />
     <ClCompile Include="PiePercent.cpp" />
+    <ClCompile Include="Preference.cpp" />
     <ClCompile Include="PropsPage.cpp" />
     <ClCompile Include="SCREENTranslator.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -121,7 +123,6 @@
     <ClCompile Include="DataSource.cpp" />
     <ClCompile Include="IDE8Source.cpp" />
     <ClCompile Include="ImageDataSource.cpp" />
-    <ClCompile Include="Sector.cpp" />
     <ClCompile Include="BitmapCache.cpp" />
     <ClCompile Include="libfuncs.cpp" />
     <ClCompile Include="TEXTContentViewer.cpp" />
@@ -141,11 +142,13 @@
     <ClInclude Include="ExtensionRegistry.h" />
     <ClInclude Include="FileOps.h" />
     <ClInclude Include="FontBitmap.h" />
+    <ClInclude Include="IconRatio.h" />
     <ClInclude Include="ImageWizard.h" />
     <ClInclude Include="NestedImageSource.h" />
     <ClInclude Include="NUTSError.h" />
     <ClInclude Include="PaletteWindow.h" />
     <ClInclude Include="PiePercent.h" />
+    <ClInclude Include="Preference.h" />
     <ClInclude Include="PropsPage.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SCREENTranslator.h" />
@@ -172,13 +175,13 @@
     <ClInclude Include="DataSource.h" />
     <ClInclude Include="IDE8Source.h" />
     <ClInclude Include="ImageDataSource.h" />
-    <ClInclude Include="Sector.h" />
     <ClInclude Include="PluginDescriptor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\acorn.bmp" />
     <None Include="..\app.bmp" />
     <None Include="..\app2.bmp" />
+    <None Include="..\avi1.bin" />
     <None Include="..\basic.bmp" />
     <None Include="..\BASIC.ico" />
     <None Include="..\binary.bmp" />
@@ -194,6 +197,7 @@
     <None Include="..\data1.bin" />
     <None Include="..\director.bmp" />
     <None Include="..\diskimag.bmp" />
+    <None Include="..\downfile.ico" />
     <None Include="..\drawfile.bmp" />
     <None Include="..\exec.bmp" />
     <None Include="..\exec1.bmp" />
@@ -212,15 +216,18 @@
     <None Include="..\icon2.ico" />
     <None Include="..\jpeg.bmp" />
     <None Include="..\module.bmp" />
+    <None Include="..\newdir.ico" />
     <None Include="..\obey.bmp" />
     <None Include="..\palette.ico" />
     <None Include="..\pallette.ico" />
     <None Include="..\printer.ico" />
     <None Include="..\reset.ico" />
+    <None Include="..\search.avi" />
     <None Include="..\sprite.bmp" />
     <None Include="..\SPRITE.ico" />
     <None Include="..\TapeImage.bmp" />
     <None Include="..\text.bmp" />
+    <None Include="..\upfile.ico" />
     <None Include="..\util.bmp" />
     <None Include="..\WizBanner.bmp" />
     <None Include="ClassDiagram1.cd" />

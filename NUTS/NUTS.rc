@@ -201,9 +201,8 @@ BEGIN
     POPUP "&Options"
     BEGIN
         MENUITEM "Resolved &Icons",             ID_OPTIONS_RESOLVEDICONS
-        MENUITEM "Remember left pane",          ID_OPTIONS_REMEMBERLEFTPANE
-        MENUITEM "Remember right pane",         ID_OPTIONS_REMEMBERRIGHTPANE
-        MENUITEM "Confirm file operations",     ID_OPTIONS_CONFIRMFILEOPERATIONS
+        MENUITEM "Hide Sidecar Files",          IDM_HIDESIDECARS
+        MENUITEM "Confirm file operations",     IDM_CONFIRM
     END
     POPUP "&Help"
     BEGIN
@@ -302,6 +301,9 @@ IDI_RESET               ICON                    "..\\reset.ico"
 IDI_COPY                ICON                    "..\\copy.ico"
 IDI_PALETTE             ICON                    "..\\palette.ico"
 IDI_PRINT               ICON                    "..\\printer.ico"
+IDI_UPFILE              ICON                    "..\\upfile.ico"
+IDI_DOWNFILE            ICON                    "..\\downfile.ico"
+IDI_NEWDIR              ICON                    "..\\newdir.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -667,6 +669,13 @@ BEGIN
     END
 END
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AVI
+//
+
+IDV_SEARCH              AVI                     "..\\search.avi"
 #endif    // English (United Kingdom) resources
 /////////////////////////////////////////////////////////////////////////////
 

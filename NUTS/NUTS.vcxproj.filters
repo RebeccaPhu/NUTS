@@ -87,9 +87,6 @@
     <ClCompile Include="ImageDataSource.cpp">
       <Filter>Source Files\Data Sources</Filter>
     </ClCompile>
-    <ClCompile Include="Sector.cpp">
-      <Filter>Source Files\Data Sources</Filter>
-    </ClCompile>
     <ClCompile Include="BitmapCache.cpp">
       <Filter>Source Files\Functions</Filter>
     </ClCompile>
@@ -171,6 +168,12 @@
     <ClCompile Include="EncodingComboBox.cpp">
       <Filter>Source Files\UI\Elements</Filter>
     </ClCompile>
+    <ClCompile Include="IconRatio.cpp">
+      <Filter>Source Files\Functions</Filter>
+    </ClCompile>
+    <ClCompile Include="Preference.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -231,9 +234,6 @@
       <Filter>Header Files\Data Sources</Filter>
     </ClInclude>
     <ClInclude Include="ImageDataSource.h">
-      <Filter>Header Files\Data Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="Sector.h">
       <Filter>Header Files\Data Sources</Filter>
     </ClInclude>
     <ClInclude Include="PluginDescriptor.h">
@@ -301,6 +301,12 @@
     </ClInclude>
     <ClInclude Include="EncodingComboBox.h">
       <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="IconRatio.h">
+      <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="Preference.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -455,6 +461,19 @@
     <None Include="..\harddisk.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\upfile.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\downfile.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\newdir.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\avi1.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\search.avi" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NUTS.rc">
