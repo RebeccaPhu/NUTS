@@ -12,6 +12,7 @@
 #include "FileSystem.h"
 #include "EncodingEdit.h"
 #include "EncodingComboBox.h"
+#include "IconRatio.h"
 #include "Plugins.h"
 
 #include "Defs.h"
@@ -136,16 +137,10 @@ void DrawLayout()
 				iw = ResolvedIcon.bmi.biWidth;
 				ih = ResolvedIcon.bmi.biHeight;
 
-				double ratio = (double) ResolvedIcon.Aspect.second / (double) ResolvedIcon.Aspect.first;
-				double ratio_icon = (double) ih / (double) iw;
+				AspectRatio CAR = ScreenCompensatedIconRatio( AspectRatio( iw, ih ), ResolvedIcon.Aspect, 40, 34 );
 
-				rw = (DWORD) ( 34 * ( ratio / ratio_icon ) );
-
-				if ( rw > 100 )
-				{
-					rw = 34;
-					rh = (DWORD) ( 34 * ( ratio_icon / ratio ) );
-				}
+				rw = CAR.first;
+				rh = CAR.second;
 
 				hIcon = CreateBitmap( iw, ih, ResolvedIcon.bmi.biPlanes, ResolvedIcon.bmi.biBitCount, ResolvedIcon.pImage );
 
@@ -156,7 +151,7 @@ void DrawLayout()
 
 	hOld = SelectObject( hIconDC, hIcon );
 
-	StretchBlt( hDC, 16, 28, rw, rh, hIconDC, 0, 0, iw, ih, SRCCOPY );
+	StretchBlt( hDC, (16 + 17) - (rw/2), (28 + 17) - (rh/2), rw, rh, hIconDC, 0, 0, iw, ih, SRCCOPY );
 
 	/* Select out and delete the icon */
 	SelectObject( hIconDC, hOld );
@@ -1662,7 +1657,15 @@ INT_PTR CALLBACK ToolDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		break;
 
 	case WM_FSTOOL_PROGRESS:
-		::SendMessage( GetDlgItem(hwndDlg, IDC_TOOL_PROGRESS), PBM_SETPOS, wParam, 0 );
+		::SendMessage( GetDlgItem( hDlg, IDC_TOOL_PROGRESS), PBM_SETPOS, wParam, 0 );
+		break;
+
+	case WM_FSTOOL_CURRENTOP:
+		{
+			std::wstring Op = L"Current Operation: " + std::wstring( (WCHAR *) lParam );
+
+			::SendMessage( GetDlgItem( hDlg, IDC_TOOL_OPERATION ), WM_SETTEXT, 0, lParam );
+		}
 		break;
 
 	}

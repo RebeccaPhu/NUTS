@@ -3,6 +3,7 @@
 #include "resource.h"
 #include "PaletteWindow.h"
 #include "Plugins.h"
+#include "IconRatio.h"
 #include "commctrl.h"
 #include "commdlg.h"
 
@@ -532,19 +533,20 @@ int CSCREENContentViewer::Translate( void ) {
 
 	DWORD ow = AspectWidth;
 	DWORD oh = AspectHeight;
-	DWORD wh = AspectHeight + (2 * frmy) + tity + 36;
-	DWORD ww = AspectWidth + (2 * frmx);
+	
+	wh = AspectHeight;
+	ww = AspectWidth;
 
 	if ( pref == DisplayNatural )
 	{
 		if ( ( ow >= bmi->bmiHeader.biWidth ) && ( oh >= bmi->bmiHeader.biHeight ) )
 		{
-			wh = bmi->bmiHeader.biHeight + (2 * frmy) + tity + 36;
+			wh = bmi->bmiHeader.biHeight;
 			ww = 640;
 		}
 	}
 
-	::SetWindowPos( hWnd, NULL, 0, 0, ww, wh, SWP_NOMOVE | SWP_NOZORDER | SWP_NOREPOSITION );
+	::SetWindowPos( hWnd, NULL, 0, 0, ww + (2 * frmx), wh + (2 * frmy) + tity + 36, SWP_NOMOVE | SWP_NOZORDER | SWP_NOREPOSITION );
 
 	return 0;
 }
@@ -578,10 +580,12 @@ int CSCREENContentViewer::DisplayImage( void )
 	{
 		if ( ( ow > bmi->bmiHeader.biWidth ) && ( oh > bmi->bmiHeader.biHeight ) )
 		{
-			ox = ( AspectWidth / 2 ) - (bmi->bmiHeader.biWidth / 2);
-//			oy = ( AspectHeight / 2 ) - (bmi->bmiHeader.biHeight / 2);
-			ow = bmi->bmiHeader.biWidth;
-			oh = bmi->bmiHeader.biHeight;
+			AspectRatio CAR = ScreenCompensatedIconRatio( AspectRatio( bmi->bmiHeader.biWidth, bmi->bmiHeader.biHeight ), pXlator->GetAspect(), ww, wh );
+
+			ox = ( ww / 2 ) - (CAR.first / 2);
+			oy = 36 + ( wh / 2 ) - (CAR.second / 2);
+			ow = CAR.first;
+			oh = CAR.second;
 		}
 	}
 

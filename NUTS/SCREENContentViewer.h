@@ -75,6 +75,8 @@ private:
 
 	DWORD AspectWidth;
 	DWORD AspectHeight;
+	DWORD ww;
+	DWORD wh;
 
 private:
 	int Translate( void );
