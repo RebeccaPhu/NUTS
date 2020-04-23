@@ -85,6 +85,16 @@ void FontBitmap::SetButtonColor( BYTE r, BYTE g, BYTE b )
 	bmi->bmiColors[ 0 ].rgbRed   = r;
 }
 
+void FontBitmap::SetGrayed( bool grayed = true )
+{
+	if ( grayed )
+	{
+		bmi->bmiColors[ 1 ].rgbBlue  = 0xAA;
+		bmi->bmiColors[ 1 ].rgbGreen = 0xAA;
+		bmi->bmiColors[ 1 ].rgbRed   = 0xAA;
+	}
+}
+
 FontBitmap::~FontBitmap(void)
 {
 	if ( pData != nullptr )

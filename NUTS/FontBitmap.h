@@ -19,5 +19,8 @@ private:
 	BITMAPINFO *bmi;
 
 	void *pData;
+
+public:
+	void SetGrayed( bool grayed );
 };
 
