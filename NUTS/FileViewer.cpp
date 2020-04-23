@@ -108,6 +108,8 @@ CFileViewer::CFileViewer(void) {
 	hViewerBrush = NULL;
 
 	CurrentPen = 0;
+
+	LastItemIndex = 0x7FFFFFFF;
 }
 
 CFileViewer::~CFileViewer(void) {
@@ -189,7 +191,7 @@ bool CFileViewer::CheckClick() {
 	OutputDebugStringA(err);
 
 	if ((thisTime - LastClick) < GetDoubleClickTime()) {
-		LastClick	= thisTime;
+		LastClick = 0; // Prevents dclick + click being interpreted as triple-click
 
 		return false;
 	}
@@ -702,6 +704,17 @@ void CFileViewer::DrawBasicLayout() {
 
 	DrawEdge(viewDC, &rect, EDGE_RAISED, BF_RECT);
 
+	if ( IsSearching )
+	{
+		FontBitmap TitleString( FONTID_PC437, (BYTE *) "Loading...", (BYTE) ( ( rect.right - rect.left ) / 8 ), false, false );
+
+		TitleString.SetGrayed( !HasFocus );
+
+		TitleString.DrawText( viewDC, 6, 4, DT_TOP | DT_LEFT );
+
+		return;
+	}
+
 	/* Collect the title string stack */
 	std::vector<TitleComponent>::iterator iStack;
 
@@ -1027,6 +1040,8 @@ void CFileViewer::Redraw() {
 
 		if ( ( Updated ) && ( SelectionStack.back() != -1 ) )
 		{
+			LastItemIndex = 0x7FFFFFFF;
+
 			long ExHeight = 56;
 
 			if ( Displaying == DisplayDetails ) { ExHeight = 64; }
@@ -1146,6 +1161,13 @@ DWORD CFileViewer::GetItem(DWORD x, DWORD y) {
 void CFileViewer::ActivateItem(int x, int y) {
 	int	ix	= GetItem(x,y);
 
+	if ( ix != LastItemIndex )
+	{
+		LastClick = 0;
+	}
+
+	LastItemIndex = ix;
+
 	DWORD Items = GetSelectionCount();
 
 	if ( FS->FSID != FS_Root )
@@ -1193,7 +1215,7 @@ void CFileViewer::ActivateItem(int x, int y) {
 	DIndex = 0xFFFF;
 }
 
-void CFileViewer::ClearItems() {
+void CFileViewer::ClearItems( bool DoUpdate = true) {
 	FileSelections.clear();
 
 	if ( FS )
@@ -1203,7 +1225,10 @@ void CFileViewer::ClearItems() {
 
 	ParentSelected	= false;
 
-	Update();
+	if ( DoUpdate )
+	{
+		Update();
+	}
 }
 
 void CFileViewer::ToggleItem(int x, int y) {
@@ -1474,11 +1499,24 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 			int	ix	= GetItem(mouseX, mouseY);
 
 			if (!ShiftPressed())
+			{
 				ClearItems();
+			}
 
-			if (CheckClick()) {
+			char e[256];
+			sprintf(e, "ix = %d, pix = %d\n", ix, LastItemIndex );
+			OutputDebugStringA( e );
+
+			if ( ( CheckClick() ) || ( ix != LastItemIndex ) )
+			{
+				OutputDebugStringA( "Toggling it\n" );
 				ToggleItem(mouseX, mouseY);
-			} else {
+
+				LastItemIndex = ix;
+			}
+			else
+			{
+				OutputDebugStringA( "Activating it\n" );
 				ActivateItem(mouseX, mouseY);
 			}
 		}
@@ -1549,8 +1587,6 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 
 			break;
 		}
-
-		LastClick = GetTickCount();
 
 		dragX	= -1;
 		dragY	= -1;
@@ -1982,14 +2018,7 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 			{
 				if ( ( sc == 1 ) && ( GetSelectedIndex() == 0 ) && ( FS->FSID != FS_Root ) )
 				{
-					std::vector<bool>::iterator iS;
-
-					for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
-					{
-						*iS = false;
-					}
-
-					ParentSelected = true;
+					ClearItems( false );
 				}
 				else
 				{
@@ -2045,10 +2074,7 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 
 			if ( !ShiftPressed() )
 			{
-				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
-				{
-					*iS = false;
-				}
+				ClearItems( false );
 			}
 
 			if ( si < FileSelections.size() - 1 )
@@ -2097,10 +2123,7 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 
 				if ( !ShiftPressed() )
 				{
-					for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
-					{
-						*iS = false;
-					}
+					ClearItems( false );
 				}
 
 				if ( (si - (int) IconsPerLine) > 0 )
@@ -2165,10 +2188,7 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 
 				if ( !ShiftPressed() )
 				{
-					for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
-					{
-						*iS = false;
-					}
+					ClearItems( false );
 				}
 
 				if ( (si + (int) IconsPerLine) < FileSelections.size() - 1 )

@@ -100,7 +100,7 @@ private:
 	void  DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected);
 	void  ToggleItem(int x, int y);
 	void  ActivateItem(int x, int y);
-	void  ClearItems();
+	void  ClearItems( bool DoUpdate );
 	DWORD GetItem(DWORD x, DWORD y);
 	bool  CheckClick();
 	void  CheckDragType(long dragX, long dragY);
@@ -133,6 +133,7 @@ private:
 	long CalculatedY;
 
 	bool IsSearching;
+	int  LastItemIndex;
 
 public:
 	void Resize(int w, int h);
