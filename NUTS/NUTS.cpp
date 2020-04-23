@@ -12,6 +12,7 @@
 #include "ExtensionRegistry.h"
 #include "EncodingClipboard.h"
 #include "EncodingStatusBar.h"
+#include "Preference.h"
 
 #include <winioctl.h>
 #include <process.h>
@@ -39,7 +40,8 @@ EncodingStatusBar *pStatusBar;
 #define PANELID_RIGHT_FONT   4
 
 bool Tracking = false;
-bool UseResolvedIcons = false; // TODO: Get this from prefs
+bool UseResolvedIcons = Preference( L"UseResolvedIcons" );
+bool HideSidecars     = Preference( L"HideSidecars" );
 
 //	File viewer window classes:
 CFileViewer	leftPane,rightPane;
@@ -58,6 +60,21 @@ LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
 unsigned int __stdcall ActionThread(void *param);
+
+HANDLE leftThread  = NULL;
+HANDLE rightThread = NULL;
+
+HWND   FocusPane   = NULL;
+
+typedef struct _EnterVars
+{
+	CFileViewer *pane;
+	std::vector<FileSystem *> *pStack;
+	std::vector<TitleComponent> *pTitleStack;
+	int EnterIndex;
+	FileSystem *FS;
+	DWORD FSID;
+} EnterVars;
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -209,13 +226,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 	hInst = hInstance; // Store instance handle in our global variable
 
-//	INITCOMMONCONTROLSEX	i;
-
-//	i.dwSize	= sizeof(INITCOMMONCONTROLSEX);
-//	i.dwICC		= ICC_BAR_CLASSES;
-
-//	InitCommonControlsEx(&i);
-
 	INITCOMMONCONTROLSEX icc;
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
@@ -250,16 +260,46 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 	UpdateWindow(hWnd);
 
+	SetFocus( leftPane.hWnd );
+
+	FocusPane = leftPane.hWnd;
+
 	return TRUE;
 }
 
+unsigned int __stdcall DoParentThread(void *param);
+
 int DoParent(CFileViewer *pane) {
-	FileSystem *FS = pane->FS;
+	DWORD dwthreadid;
+
+	EnterVars *pVars = new EnterVars;
+
+	pVars->pane = pane;
+
+	if ( pane == &leftPane )
+	{
+		leftThread = (HANDLE) _beginthreadex(NULL, NULL, DoParentThread, pVars, NULL, (unsigned int *) &dwthreadid);
+	}
+	else
+	{
+		rightThread = (HANDLE) _beginthreadex(NULL, NULL, DoParentThread, pVars, NULL, (unsigned int *) &dwthreadid);
+	}
+
+	return 0;
+}
+
+unsigned int __stdcall DoParentThread( void *param )
+{
+	EnterVars *pVars = (EnterVars *) param;
+
+	pVars->pane->SetSearching( true );
+
+	FileSystem *FS = pVars->pane->FS;
 
 	std::vector<TitleComponent> *pTitleStack = &leftTitles;
 	std::vector<FileSystem *> *pFS = &leftFS;
 
-	if ( pane == &rightPane )
+	if ( pVars->pane == &rightPane )
 	{
 		pFS = &rightFS;
 		pTitleStack = &rightTitles;
@@ -272,98 +312,146 @@ int DoParent(CFileViewer *pane) {
 
 		FS = pFS->back();
 
-		pane->FS          = FS;
-		pane->CurrentFSID = FS->FSID;
+		pVars->pane->FS          = FS;
+		pVars->pane->CurrentFSID = FS->FSID;
 	} else {
 		FS->Parent();
 	}
 
-	pane->SelectionStack.pop_back();
-	pane->Updated = true;
-	pane->Update();
+	pVars->pane->SelectionStack.pop_back();
+	pVars->pane->Updated = true;
+	pVars->pane->Update();
 
-	pane->FS->EnterIndex = 0xFFFFFFFF;
+	pVars->pane->FS->EnterIndex = 0xFFFFFFFF;
 
-	ReCalculateTitleStack( pFS, pTitleStack, pane );
+	ReCalculateTitleStack( pFS, pTitleStack, pVars->pane );
+
+	if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+	if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+	pVars->pane->SetSearching( false );
+
+	delete pVars;
 
 	return 0;
 }
 
+unsigned int __stdcall DoEnterThread(void *param);
+
 int DoEnter(CFileViewer *pane, std::vector<FileSystem *> *pStack, std::vector<TitleComponent> *pTitleStack, int EnterIndex) {
-	FileSystem *pCurrentFS = pStack->back();
+	DWORD dwthreadid;
 
-	if ( pCurrentFS->pDirectory->Files[EnterIndex].Flags & FF_Directory )
+	EnterVars *pVars = new EnterVars;
+
+	pVars->EnterIndex  = EnterIndex;
+	pVars->pane        = pane;
+	pVars->pStack      = pStack;
+	pVars->pTitleStack = pTitleStack;
+
+	if ( pane == &leftPane )
 	{
-		pCurrentFS->ChangeDirectory( EnterIndex );
+		leftThread = (HANDLE) _beginthreadex(NULL, NULL, DoEnterThread, pVars, NULL, (unsigned int *) &dwthreadid);
+	}
+	else
+	{
+		rightThread = (HANDLE) _beginthreadex(NULL, NULL, DoEnterThread, pVars, NULL, (unsigned int *) &dwthreadid);
+	}
 
-		pane->SelectionStack.push_back( -1 );
-		pane->Updated	= true;
-		pane->Update();
+	return 0;
+}
+
+unsigned int __stdcall DoEnterThread(void *param)
+{
+	EnterVars *pVars = (EnterVars *) param;
+
+	pVars->pane->SetSearching( true );
+
+	FileSystem *pCurrentFS = pVars->pStack->back();
+
+	if ( pCurrentFS->pDirectory->Files[pVars->EnterIndex].Flags & FF_Directory )
+	{
+		pCurrentFS->ChangeDirectory( pVars->EnterIndex );
+
+		pVars->pane->SelectionStack.push_back( -1 );
+		pVars->pane->Updated	= true;
+		pVars->pane->Update();
 
 		pCurrentFS->EnterIndex = 0xFFFFFFFF;
 
-		ReCalculateTitleStack( pStack, pTitleStack, pane );
+		ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+
+		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+		pVars->pane->SetSearching( false );
+
+		delete pVars;
 
 		return 0;
 	}
 
-	if ( pCurrentFS->pDirectory->Files[EnterIndex].Type != FT_MiscImage )
+	if ( pCurrentFS->pDirectory->Files[pVars->EnterIndex].Type != FT_MiscImage )
 	{
+		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+		pVars->pane->SetSearching( false );
+
+		delete pVars;
+
 		return 0;
 	}
 
-	FileSystem *pNewFS = pCurrentFS->FileFilesystem( EnterIndex );
+	FileSystem *pNewFS = pCurrentFS->FileFilesystem( pVars->EnterIndex );
 
-	if ( pNewFS )
+	if ( pNewFS != nullptr )
 	{
 		pNewFS->EnterIndex       = 0xFFFFFFFF;
 		pNewFS->pParentFS        = pCurrentFS;
 		pNewFS->UseResolvedIcons = UseResolvedIcons;
+		pNewFS->HideSidecars     = HideSidecars;
 
 		pNewFS->Init();
 
 		pNewFS->hMainWindow = hMainWnd;
-		pNewFS->hPaneWindow = pane->hWnd;
+		pNewFS->hPaneWindow = pVars->pane->hWnd;
 
 		if ( pNewFS ) {
-			pStack->push_back( pNewFS );
+			pVars->pStack->push_back( pNewFS );
 
-			pane->FS	      = pNewFS;
-			pane->CurrentFSID = pNewFS->FSID;
-			pane->Updated     = true;
+			pVars->pane->FS	      = pNewFS;
+			pVars->pane->CurrentFSID = pNewFS->FSID;
+			pVars->pane->Updated     = true;
 
-			pane->SelectionStack.push_back( -1 );
-
-			pane->Update();
+			pVars->pane->SelectionStack.push_back( -1 );
 		}
 	}
 	else
 	{
-		DataSource *pSource = pCurrentFS->FileDataSource( EnterIndex );
+		DataSource *pSource = pCurrentFS->FileDataSource( pVars->EnterIndex );
 
-		FileSystem *newFS = FSPlugins.FindAndLoadFS( pSource, &pCurrentFS->pDirectory->Files[ EnterIndex ] );
+		pNewFS = FSPlugins.FindAndLoadFS( pSource, &pCurrentFS->pDirectory->Files[ pVars->EnterIndex ] );
 
-		if ( newFS != nullptr )
+		if ( pNewFS != nullptr )
 		{
-			newFS->EnterIndex = 0xFFFFFFFF;
-			newFS->pParentFS  = pCurrentFS;
-			newFS->UseResolvedIcons = UseResolvedIcons;
+			pNewFS->EnterIndex       = 0xFFFFFFFF;
+			pNewFS->pParentFS        = pCurrentFS;
+			pNewFS->UseResolvedIcons = UseResolvedIcons;
+			pNewFS->HideSidecars     = HideSidecars;
 
-			newFS->Init();
+			pNewFS->Init();
 
-			newFS->IsRaw = false;
+			pNewFS->IsRaw = false;
 
-			pStack->push_back( newFS );
+			pVars->pStack->push_back( pNewFS );
 
-			pane->FS	       = newFS;
-			pane->CurrentFSID  = newFS->FSID;
-			pane->Updated      = true;
-			newFS->hMainWindow = hMainWnd;
-			newFS->hPaneWindow = pane->hWnd;
+			pVars->pane->FS	           = pNewFS;
+			pVars->pane->CurrentFSID   = pNewFS->FSID;
+			pVars->pane->Updated       = true;
+			pNewFS->hMainWindow        = hMainWnd;
+			pNewFS->hPaneWindow        = pVars->pane->hWnd;
 
-			pane->SelectionStack.push_back( -1 );
-
-			pane->Update();
+			pVars->pane->SelectionStack.push_back( -1 );
 		}
 		else
 		{
@@ -372,15 +460,42 @@ int DoEnter(CFileViewer *pane, std::vector<FileSystem *> *pStack, std::vector<Ti
 				L"NUTS FileSystem Probe", MB_OK|MB_ICONSTOP
 			);
 
+			if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+			if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+			pVars->pane->SetSearching( false );
+
+			delete pVars;
+
 			return NUTSError( 0x00000022, L"Unrecognised file system" );
 		}
 	}
 
-	pCurrentFS->EnterIndex = EnterIndex;
+	if ( pNewFS->Flags & FSF_Reorderable )
+	{
+		EnableWindow( pVars->pane->ControlButtons[ 2 ], TRUE );
+		EnableWindow( pVars->pane->ControlButtons[ 3 ], TRUE );
+	}
+	else
+	{
+		EnableWindow( pVars->pane->ControlButtons[ 2 ], FALSE );
+		EnableWindow( pVars->pane->ControlButtons[ 3 ], FALSE );
+	}
 
-	ReCalculateTitleStack( pStack, pTitleStack, pane );
+	pCurrentFS->EnterIndex = pVars->EnterIndex;
 
-	return 0;
+	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+
+	if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+	if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+	pVars->pane->SetSearching( false );
+	pVars->pane->Updated = true;
+	pVars->pane->Update();
+
+	delete pVars;
+
+	return 0; 
 }
 
 void DoResizeWindow(HWND hWnd) {
@@ -460,56 +575,111 @@ void TrackMouse( void )
 	}
 }
 
+unsigned int __stdcall DoEnterAsThread(void *param);
+
 void DoEnterAs( std::vector<FileSystem *> *pStack, CFileViewer *pPane, FileSystem *pCurrentFS, std::vector<TitleComponent> *pTitleStack, DWORD FSID )
 {
-	DWORD Index = pPane->GetSelectedIndex();
+	DWORD dwthreadid;
 
-	DataSource *pSource    = pCurrentFS->FileDataSource( Index );
-	NativeFile file        = pCurrentFS->pDirectory->Files[ Index ];
+	EnterVars *pVars = new EnterVars;
 
-	pCurrentFS->EnterIndex = Index;
+	pVars->pane        = pPane;
+	pVars->pStack      = pStack;
+	pVars->pTitleStack = pTitleStack;
+	pVars->FSID        = FSID;
+	pVars->FS          = pCurrentFS;
 
-	bool IsRaw = IsRawFS( UString( (char *) pCurrentFS->pDirectory->Files[ Index ].Filename ) );
+	if ( pPane == &leftPane )
+	{
+		leftThread = (HANDLE) _beginthreadex(NULL, NULL, DoEnterAsThread, pVars, NULL, (unsigned int *) &dwthreadid);
+	}
+	else
+	{
+		rightThread = (HANDLE) _beginthreadex(NULL, NULL, DoEnterAsThread, pVars, NULL, (unsigned int *) &dwthreadid);
+	}
+}
+
+unsigned int __stdcall DoEnterAsThread( void *param )
+{
+	EnterVars *pVars = (EnterVars *) param;
+
+	DWORD Index = pVars->pane->GetSelectedIndex();
+
+	DataSource *pSource    = pVars->FS->FileDataSource( Index );
+	NativeFile file        = pVars->FS->pDirectory->Files[ Index ];
+
+	pVars->FS->EnterIndex = Index;
+
+	bool IsRaw = IsRawFS( UString( (char *) pVars->FS->pDirectory->Files[ Index ].Filename ) );
 
 	if (!IsRaw) {
 		if ( MessageBox( hMainWnd,
-			L"The drive you have selected is recognised by Windows as containing a valid volume.\n"
+			L"The drive you have selected is recognised by Windows as containing a valid volume.\n\n"
 			L"Entering this filesystem with an explicit handler will almost certainly cause untold misery, and should "
 			L"only be attempted if you are absolutely certain you know what you are doing.\n\n"
 			L"Are you sure you want to proceed?",
 			L"NUTS File System Probe", MB_YESNO | MB_ICONEXCLAMATION ) != IDYES )
 		{
-			return;
+			if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+			if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+			delete pVars;
+
+			return 0;
 		}
 	}
 
-	if ( FSID != FS_Null )
+	pVars->pane->SetSearching( true );
+
+	if ( pVars->FSID != FS_Null )
 	{
-		FileSystem	*newFS = FSPlugins.LoadFS( FSID, pSource, false );
+		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource, false );
 
 		if (newFS) {
 			newFS->EnterIndex       = 0xFFFFFFFF;
-			newFS->pParentFS        = pCurrentFS;
+			newFS->pParentFS        = pVars->FS;
 			newFS->UseResolvedIcons = UseResolvedIcons;
+			newFS->HideSidecars     = HideSidecars;
 			newFS->hMainWindow      = hMainWnd;
-			newFS->hPaneWindow      = pPane->hWnd;
+			newFS->hPaneWindow      = pVars->pane->hWnd;
 
 			newFS->Init();
 
-			pPane->FS    = newFS;
+			pVars->pane->FS    = newFS;
 
-			pStack->push_back( newFS );
+			pVars->pStack->push_back( newFS );
 
-			pPane->CurrentFSID = newFS->FSID;
+			pVars->pane->CurrentFSID = newFS->FSID;
 
-			pPane->SelectionStack.push_back( -1 );
-			pPane->Updated     = true;
+			pVars->pane->SelectionStack.push_back( -1 );
 
-			pPane->Update();
+			if ( newFS->Flags & FSF_Reorderable )
+			{
+				EnableWindow( pVars->pane->ControlButtons[ 2 ], TRUE );
+				EnableWindow( pVars->pane->ControlButtons[ 3 ], TRUE );
+			}
+			else
+			{
+				EnableWindow( pVars->pane->ControlButtons[ 2 ], FALSE );
+				EnableWindow( pVars->pane->ControlButtons[ 3 ], FALSE );
+			}
 		}
 	}
 
-	ReCalculateTitleStack( pStack, pTitleStack, pPane );
+	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+
+	if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+	if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+	pVars->pane->SetSearching( false );
+
+	pVars->pane->Updated     = true;
+
+	pVars->pane->Update();
+
+	delete pVars;
+
+	return 0;
 }
 
 
@@ -555,6 +725,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			TrackMouse();
 
 			hNextClip = SetClipboardViewer( hWnd );
+
+			HMENU hMainMenu = GetMenu( hWnd );
+
+			CheckMenuItem( hMainMenu, ID_OPTIONS_RESOLVEDICONS, (UseResolvedIcons)?MF_CHECKED:MF_UNCHECKED );
+			CheckMenuItem( hMainMenu, IDM_HIDESIDECARS, (HideSidecars)?MF_CHECKED:MF_UNCHECKED );
+			CheckMenuItem( hMainMenu, IDM_CONFIRM, ((bool)Preference( L"Confirm", true ))?MF_CHECKED:MF_UNCHECKED );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -641,6 +817,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				UseResolvedIcons = !UseResolvedIcons;
 
+				Preference( L"UseResolvedIcons" ) = UseResolvedIcons;
+
 				std::vector< FileSystem *>::iterator iStack;
 
 				for ( iStack = leftFS.begin(); iStack != leftFS.end(); iStack++ )
@@ -666,6 +844,54 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				HMENU hMainMenu = GetMenu( hWnd );
 
 				CheckMenuItem( hMainMenu, ID_OPTIONS_RESOLVEDICONS, (UseResolvedIcons)?MF_CHECKED:MF_UNCHECKED );
+			}
+			break;
+
+		case IDM_HIDESIDECARS:
+			{
+				HideSidecars = !HideSidecars;
+
+				Preference( L"HideSidecars" ) = HideSidecars;
+
+				std::vector< FileSystem *>::iterator iStack;
+
+				for ( iStack = leftFS.begin(); iStack != leftFS.end(); iStack++ )
+				{
+					(*iStack)->HideSidecars = HideSidecars;
+
+					(*iStack)->Refresh();
+				}
+
+				leftPane.Updated = true;
+				leftPane.Redraw();
+
+				for ( iStack = rightFS.begin(); iStack != rightFS.end(); iStack++ )
+				{
+					(*iStack)->HideSidecars = HideSidecars;
+
+					(*iStack)->Refresh();
+				}
+
+				rightPane.Updated = true;
+				rightPane.Redraw();
+
+				HMENU hMainMenu = GetMenu( hWnd );
+
+				CheckMenuItem( hMainMenu, IDM_HIDESIDECARS, (HideSidecars)?MF_CHECKED:MF_UNCHECKED );
+			}
+			break;
+
+		case IDM_CONFIRM:
+			{
+				bool Confirm = Preference( L"Confirm", true );
+
+				Confirm = !Confirm;
+
+				Preference( L"Confirm" ) = Confirm;
+
+				HMENU hMainMenu = GetMenu( hWnd );
+
+				CheckMenuItem( hMainMenu, IDM_CONFIRM, (Confirm)?MF_CHECKED:MF_UNCHECKED );
 			}
 			break;
 
@@ -818,6 +1044,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		rightPane.SetDragType(wParam);
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_FV_FOCUS:
+		FocusPane = (HWND) wParam;
+		return 0;
+
+	case WM_ACTIVATEAPP:
+	case WM_ACTIVATE:
+		{
+			BOOL fActivate = (BOOL) wParam;
+
+			if ( fActivate )
+			{
+				char a[256];
+				sprintf(a, "Activating window %08X\n", FocusPane );
+				OutputDebugStringA( a );
+				SetFocus( FocusPane );
+			}
+		}
+		return 0;
 
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
