@@ -4,6 +4,7 @@
 #include "FontBitmap.h"
 #include "Defs.h"
 #include "BitmapCache.h"
+#include "Preference.h"
 
 #include <CommCtrl.h>
 #include "resource.h"
@@ -899,6 +900,8 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 int	FileOP_Handler(AppAction &Action) {
 
 	CurrentAction	= Action;
+
+	Confirm = Preference( L"Confirm", true );
 
 	DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILEOPS), Action.hWnd, FileWindowProc, NULL);
 
