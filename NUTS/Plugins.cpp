@@ -44,19 +44,29 @@ CPlugins::~CPlugins()
 
 void CPlugins::LoadPlugins()
 {
-	// TODO: Look for plugins with FindFirstFile, etc.
-	// For now, hard code this.
-
-
 	EncodingFontMap[ ENCODING_ASCII ] = std::vector<DWORD>();
 	EncodingFontMap[ ENCODING_ASCII ].push_back( FONTID_PC437 );
 
 	EncodingFontSelectors[ 0 ][ ENCODING_ASCII ] = 0;
 	EncodingFontSelectors[ 1 ][ ENCODING_ASCII ] = 0;
 
-	LoadPlugin( "AcornDLL.dll" );
-	LoadPlugin( "CBMDLL.dll" );
-	LoadPlugin( "SinclairDLL.dll" );
+	WIN32_FIND_DATA wfd;
+
+	HANDLE hFind = FindFirstFile( L"*.dll", &wfd );
+
+	if ( hFind != INVALID_HANDLE_VALUE )
+	{
+		BOOL Files = TRUE;
+
+		while ( Files )
+		{
+			LoadPlugin( AString( wfd.cFileName ) );
+
+			Files = FindNextFile( hFind, &wfd );
+		}
+
+		FindClose( hFind );
+	}
 }
 
 void CPlugins::LoadPlugin( char *plugin )
