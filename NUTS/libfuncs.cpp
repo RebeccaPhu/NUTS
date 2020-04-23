@@ -286,7 +286,7 @@ bool rstrcmp( BYTE *first, BYTE *second, bool i )
 	return rstrncmp( first, second, 0xFF, i );
 }
 
-bool rstrncmp( BYTE *first, BYTE *second, BYTE limit, bool i )
+bool rstrncmp( BYTE *first, BYTE *second, WORD limit, bool i )
 {
 	bool result = true;
 
@@ -344,7 +344,7 @@ bool rstricmp( BYTE *first, BYTE *second )
 	return rstrcmp( first, second, true );
 }
 
-bool rstrnicmp( BYTE *first, BYTE *second, BYTE limit )
+bool rstrnicmp( BYTE *first, BYTE *second, WORD limit )
 {
 	return rstrncmp( first, second, limit, true );
 }
@@ -401,4 +401,14 @@ BYTE *rstrndup( BYTE *src, WORD limit )
 	}
 
 	return target;
+}
+
+DWORD BEDWORD( BYTE *p )
+{
+	return ( p[0] << 24 ) | ( p[1] << 16 ) | ( p[2] << 8 ) | p[3];
+}
+
+WORD BEWORD( BYTE *p )
+{
+	return ( p[0] << 8 ) | p[1];
 }

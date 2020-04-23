@@ -24,10 +24,13 @@ BYTE *rstrncat( BYTE *target, BYTE *src, WORD limit );
 BYTE *rstrrchr( BYTE *target, BYTE chr, WORD limit );
 WORD rstrnlen( BYTE *src, WORD limit );
 bool rstrcmp( BYTE *first, BYTE *second, bool i = false );
-bool rstrncmp( BYTE *first, BYTE *second, BYTE limit, bool i = false );
+bool rstrncmp( BYTE *first, BYTE *second, WORD limit, bool i = false );
 bool rstricmp( BYTE *first, BYTE *second );
-bool rstrnicmp( BYTE *first, BYTE *second, BYTE limit );
+bool rstrnicmp( BYTE *first, BYTE *second, WORD limit );
 BYTE *rstrndup( BYTE *src, WORD limit );
+
+DWORD BEDWORD( BYTE *p );
+WORD BEWORD( BYTE *p );
 
 DWORD dwDiff( DWORD a, DWORD b );
 
