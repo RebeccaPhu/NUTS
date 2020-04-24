@@ -29,10 +29,19 @@ public:
 
 	BYTE *GetTitleString( NativeFile *pFile = nullptr );
 
-	BYTE *GetStatusString(int FileIndex) {
-		static BYTE status[ 128 ];
+	BYTE *GetStatusString( int FileIndex, int SelectedItems )
+	{
+		static BYTE status[64];
 
-		if ( pDirectory->Files[FileIndex].Flags & FF_Directory )
+		if ( SelectedItems == 0 )
+		{
+			rsprintf( status, "%d File System Objects", pDirectory->Files.size() );
+		}
+		else if ( SelectedItems > 1 )
+		{
+			rsprintf( status, "%d Items Selected", SelectedItems );
+		}
+		else if ( pDirectory->Files[FileIndex].Flags & FF_Directory )
 			rsprintf( status, "%s - Folder", pDirectory->Files[FileIndex].Filename );
 		else
 			rsprintf( status, "%s - %d bytes", pDirectory->Files[FileIndex].Filename, pDirectory->Files[FileIndex].Length );

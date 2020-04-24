@@ -50,10 +50,22 @@ BYTE *SpriteFile::DescribeFile(DWORD FileIndex) {
 	return status;
 }
 
-BYTE *SpriteFile::GetStatusString(int FileIndex) {
+BYTE *SpriteFile::GetStatusString( int FileIndex, int SelectedItems )
+{
 	static BYTE status[ 64 ];
 
-	rsprintf( status, "Sprite, %08X bytes", (DWORD) pDirectory->Files[ FileIndex ].Length );
+	if ( SelectedItems == 0 )
+	{
+		rsprintf( status, "%d Sprites", pDirectory->Files.size() );
+	}
+	else if ( SelectedItems > 1 )
+	{
+		rsprintf( status, "%d Sprites Selected", SelectedItems );
+	}
+	else 
+	{
+		rsprintf( status, "Sprite, %08X bytes", (DWORD) pDirectory->Files[ FileIndex ].Length );
+	}
 		
 	return status;
 }

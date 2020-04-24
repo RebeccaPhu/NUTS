@@ -248,26 +248,35 @@ BYTE *IECATAFileSystem::DescribeFile(DWORD FileIndex) {
 	return status;
 }
 
-BYTE *IECATAFileSystem::GetStatusString(int FileIndex) {
-	if ((FileIndex < 0) || ((unsigned) FileIndex > pDirectory->Files.size()))
-		return (BYTE *) "";
-
+BYTE *IECATAFileSystem::GetStatusString( int FileIndex, int SelectedItems )
+{
 	static BYTE status[ 128 ];
 
-	NativeFile *pFile = &pDirectory->Files[FileIndex];
+	if ( SelectedItems == 0 )
+	{
+		rsprintf( status, "%d FILES", pDirectory->Files.size() );
+	}
+	else if ( SelectedItems > 1 )
+	{
+		rsprintf( status, "%d FILES SELECTED", SelectedItems );
+	}
+	else
+	{
+		NativeFile *pFile = &pDirectory->Files[FileIndex];
 
-	if ( pDirectory->Files[ FileIndex ].Flags & FF_Directory ) {
-		rsprintf( status, "%s DIRECTORY", pFile->Filename );
-	} else {
-		rsprintf( status, "%s.%s%s%s - %d BYTES, %s, %s",
-			 pFile->Filename,
-			(pFile->AttrLocked)?"":">",
-			(pFile->AttrClosed)?"":"*",
-			(pFile->Flags & FF_Extension)?(char *) pFile->Extension:"",
-			 (DWORD) pFile->Length,
-			(pFile->AttrLocked)?"LOCKED":"NOT LOCKED",
-			(pFile->AttrClosed)?"CLOSED":"NOT CLOSED (SPLAT)"
-		);
+		if ( pDirectory->Files[ FileIndex ].Flags & FF_Directory ) {
+			rsprintf( status, "%s DIRECTORY", pFile->Filename );
+		} else {
+			rsprintf( status, "%s.%s%s%s - %d BYTES, %s, %s",
+				 pFile->Filename,
+				(pFile->AttrLocked)?"":">",
+				(pFile->AttrClosed)?"":"*",
+				(pFile->Flags & FF_Extension)?(char *) pFile->Extension:"",
+				 (DWORD) pFile->Length,
+				(pFile->AttrLocked)?"LOCKED":"NOT LOCKED",
+				(pFile->AttrClosed)?"CLOSED":"NOT CLOSED (SPLAT)"
+			);
+		}
 	}
 
 	return status;

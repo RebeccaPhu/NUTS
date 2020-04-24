@@ -108,7 +108,7 @@ public:
 		return status;
 	}
 
-	virtual	BYTE *GetStatusString(int FileIndex) {
+	virtual	BYTE *GetStatusString( int FileIndex, int SelectedItems ) {
 		static BYTE *baseStatus = (BYTE *) "Loaded";
 
 		return baseStatus;

@@ -58,14 +58,25 @@ BYTE *AcornDFSFileSystem::DescribeFile(DWORD FileIndex) {
 	return status;
 }
 
-BYTE *AcornDFSFileSystem::GetStatusString(int FileIndex) {
+BYTE *AcornDFSFileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 	static BYTE status[128];
 
-	NativeFile	*pFile	= &pDirectory->Files[FileIndex];
+	if ( SelectedItems == 0 )
+	{
+		rsprintf( status, "%d File System Objects", pDirectory->Files.size() );
+	}
+	else if ( SelectedItems > 1 )
+	{
+		rsprintf( status, "%d Items Selected", SelectedItems );
+	}
+	else 
+	{
+		NativeFile	*pFile	= &pDirectory->Files[FileIndex];
 
-	rsprintf( status, "%s | [%s] - %0X bytes - Load: &%08X Exec: &%08X\n",
-		pFile->Filename, (pFile->AttrLocked)?"L":"-",
-		pFile->Length, pFile->LoadAddr, pFile->ExecAddr);
+		rsprintf( status, "%s | [%s] - %0X bytes - Load: &%08X Exec: &%08X\n",
+			pFile->Filename, (pFile->AttrLocked)?"L":"-",
+			pFile->Length, pFile->LoadAddr, pFile->ExecAddr);
+	}
 		
 	return status;
 }

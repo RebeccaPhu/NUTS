@@ -185,38 +185,50 @@ BYTE *ADFSFileSystem::DescribeFile(DWORD FileIndex) {
 	return status;
 }
 
-BYTE *ADFSFileSystem::GetStatusString(int FileIndex) {
+BYTE *ADFSFileSystem::GetStatusString( int FileIndex, int SelectedItems )
+{
 	static BYTE status[128];
 
-	NativeFile *pFile = &pDirectory->Files[FileIndex];
-
-	if ( !pADFSDirectory->LooksRISCOSIsh )
+	if ( SelectedItems == 0 )
 	{
-		rsprintf( status, "%s | [%s%s%s%s] - %0X bytes - Load: &%08X Exec: &%08X",
-			pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
-			pFile->Length, pFile->LoadAddr, pFile->ExecAddr);
+		rsprintf( status, "%d File System Objects", pDirectory->Files.size() );
+	}
+	else if ( SelectedItems > 1 )
+	{
+		rsprintf( status, "%d Items Selected", SelectedItems );
+	}
+	else 
+	{
+		NativeFile *pFile = &pDirectory->Files[FileIndex];
+
+		if ( !pADFSDirectory->LooksRISCOSIsh )
+		{
+			rsprintf( status, "%s | [%s%s%s%s] - %0X bytes - Load: &%08X Exec: &%08X",
+				pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
+				pFile->Length, pFile->LoadAddr, pFile->ExecAddr);
 		
-		return status;
-	}
+			return status;
+		}
 
-	DWORD Type = ( pFile->LoadAddr & 0x000FFF00 ) >> 8;
+		DWORD Type = ( pFile->LoadAddr & 0x000FFF00 ) >> 8;
 
-	std::string FileTypeName = RISCOSIcons::GetNameForType( Type );
+		std::string FileTypeName = RISCOSIcons::GetNameForType( Type );
 
-	const char *pTypeName = FileTypeName.c_str();
+		const char *pTypeName = FileTypeName.c_str();
 
-	if ( pFile->Flags & FF_Directory )
-	{
-		rsprintf( status, "%s | [%s%s%s%s] - Directory",
-			pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-"
-		);
-	}
-	else
-	{
-		rsprintf( status, "%s | [%s%s%s%s] - %0X bytes - %s/%03X",
-			pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
-			(DWORD) pFile->Length, (char *) pTypeName, Type
-		);
+		if ( pFile->Flags & FF_Directory )
+		{
+			rsprintf( status, "%s | [%s%s%s%s] - Directory",
+				pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-"
+			);
+		}
+		else
+		{
+			rsprintf( status, "%s | [%s%s%s%s] - %0X bytes - %s/%03X",
+				pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
+				(DWORD) pFile->Length, (char *) pTypeName, Type
+			);
+		}
 	}
 		
 	return status;

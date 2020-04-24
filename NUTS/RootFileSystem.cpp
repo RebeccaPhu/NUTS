@@ -2,6 +2,7 @@
 #include "RootFileSystem.h"
 #include "ImageDataSource.h"
 #include "WindowsFileSystem.h"
+#include "libfuncs.h"
 
 BYTE *RootFileSystem::DescribeFile( DWORD FileIndex )
 {
@@ -9,25 +10,33 @@ BYTE *RootFileSystem::DescribeFile( DWORD FileIndex )
 
 	if ( pDirectory->Files[ FileIndex ].Type == FT_Floppy )
 	{
-		sprintf_s( (char *) status, 64, "Removable disk drive or memory card" );
+		rsprintf( status, "Removable disk drive or memory card" );
 	}
 	else if ( pDirectory->Files[ FileIndex ].Type == FT_CDROM )
 	{
-		sprintf_s( (char *) status, 64, "Optical drive" );
+		rsprintf( status, "Optical drive" );
 	}
 	else
 	{
-		sprintf_s( (char *) status, 64, "Hard disk drive" );
+		rsprintf( status, "Hard disk drive" );
 	}
 
 	return status;
 }
 
-BYTE *RootFileSystem::GetStatusString(int FileIndex)
+BYTE *RootFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 {
 	static BYTE status[64];
 
-	if ( pDirectory->Files[ FileIndex ].Type == FT_Floppy )
+	if ( SelectedItems == 0 )
+	{
+		rsprintf( status, "N.U.T.S." );
+	}
+	else if ( SelectedItems > 1 )
+	{
+		rsprintf( status, "%d Items Selected", SelectedItems );
+	}
+	else if ( pDirectory->Files[ FileIndex ].Type == FT_Floppy )
 	{
 		rsprintf( status, "Removable disk drive or memory card" );
 	}

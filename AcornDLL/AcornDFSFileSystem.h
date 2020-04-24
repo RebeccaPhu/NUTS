@@ -29,7 +29,7 @@ public:
 	int	 CreateDirectory( BYTE *Filename);
 	bool IsRoot();
 	BYTE *DescribeFile( DWORD FileIndex );
-	BYTE *GetStatusString(int FileIndex);
+	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 
 	BYTE *GetTitleString( NativeFile *pFile = nullptr ) {
 		static BYTE title[512];

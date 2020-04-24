@@ -130,7 +130,7 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	titleBarFont	= CreateFont(16,6,0,0,FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"MS Shell Dlg");
 	filenameFont	= CreateFont(12,5,0,0,FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"MS Shell Dlg");
 
-	hWnd = CreateWindowEx(NULL, L"NUTS File Browser Pane", L"", SS_BLACKFRAME|SS_NOTIFY|SS_OWNERDRAW|WS_CHILD|WS_VISIBLE, x, 0, w, h, Parent, NULL, hInstance, NULL);
+	hWnd = CreateWindowEx(NULL, L"NUTS File Browser Pane", L"", SS_BLACKFRAME|SS_NOTIFY|SS_OWNERDRAW|WS_CHILD|WS_VISIBLE|WS_TABSTOP, x, 0, w, h, Parent, NULL, hInstance, NULL);
 	//SS_WHITERECT|
 
 	viewers[ hWnd ] = this;
@@ -175,6 +175,8 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	Animate_Open( hSearchAVI, MAKEINTRESOURCE( IDV_SEARCH ) );
 
 	Animate_Play( hSearchAVI, 0, -1, -1 );
+
+	DoStatusBar();
 
 	return 0;
 }
@@ -988,6 +990,8 @@ void CFileViewer::Redraw() {
 				ScrollMax = nwh;
 			} else
 				EnableWindow(hScrollBar, FALSE);
+
+			DoStatusBar();
 		}
 
 		int	IconIndex = 1;
@@ -1513,11 +1517,15 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 				ToggleItem(mouseX, mouseY);
 
 				LastItemIndex = ix;
+
+				DoStatusBar();
 			}
 			else
 			{
 				OutputDebugStringA( "Activating it\n" );
 				ActivateItem(mouseX, mouseY);
+
+				DoStatusBar();
 			}
 		}
 
@@ -1565,28 +1573,7 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 
 		DWORD Selected = GetSelectionCount();
 
-		switch ( Selected ) {
-		case 0:
-			{
-				rsprintf( multi, "%d File System Objects", FS->pDirectory->Files.size() );
-
-				::SendMessage( ParentWnd, WM_UPDATESTATUS, (WPARAM) this, (LPARAM) multi);
-			}
-			break;
-
-		case 1:
-			::SendMessage( ParentWnd, WM_UPDATESTATUS, (WPARAM) this, (LPARAM) FS->GetStatusString( GetSelectedIndex() ) );
-			break;
-
-		default:
-			{
-				rsprintf( multi, "%d Files selected", Selected );
-					
-				::SendMessage( ParentWnd, WM_UPDATESTATUS, (WPARAM) this, (LPARAM) multi );
-			}
-
-			break;
-		}
+		DoStatusBar();
 
 		dragX	= -1;
 		dragY	= -1;
@@ -2228,6 +2215,11 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 		{
 			DWORD si = GetSelectedIndex();
 
+			if ( FS->FSID != FS_Root )
+			{
+				si++;
+			}
+
 			ActivateItem( ( ( si % IconsPerLine ) * ItemWidth ) + ( ItemWidth / 2 ), ( (si / IconsPerLine ) * ItemHeight ) + (ItemHeight / 2 ) );
 		}
 		break;
@@ -2237,10 +2229,7 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 		break;
 	}
 
-	if ( !ParentSelected )
-	{
-		::SendMessage( ParentWnd, WM_UPDATESTATUS, (WPARAM) this, (LPARAM) FS->GetStatusString( GetSelectedIndex() ) );
-	}
+	DoStatusBar();
 
 	Update();
 }
@@ -2298,4 +2287,18 @@ void CFileViewer::DoContextMenu( void )
 	TrackPopupMenu(hSubMenu, 0, rect.left + mouseX, rect.top + mouseY, 0, hWnd, NULL);
 
 	DestroyMenu(hPopup);
+}
+
+void CFileViewer::DoStatusBar( void )
+{
+	static BYTE * const status = (BYTE*) "N.U.T.S.";
+
+	BYTE *pStatus = status;
+	
+	if ( FS != nullptr )
+	{
+		pStatus = FS->GetStatusString( GetSelectedIndex(), GetSelectionCount() );
+	}
+
+	::PostMessage( ParentWnd, WM_UPDATESTATUS, (WPARAM) this, (LPARAM) pStatus );
 }

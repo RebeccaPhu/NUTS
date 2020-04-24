@@ -319,8 +319,6 @@ unsigned int __stdcall DoParentThread( void *param )
 	}
 
 	pVars->pane->SelectionStack.pop_back();
-	pVars->pane->Updated = true;
-	pVars->pane->Update();
 
 	pVars->pane->FS->EnterIndex = 0xFFFFFFFF;
 
@@ -330,6 +328,8 @@ unsigned int __stdcall DoParentThread( void *param )
 	if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
 
 	pVars->pane->SetSearching( false );
+	pVars->pane->Updated = true;
+	pVars->pane->Update();
 
 	delete pVars;
 
@@ -373,9 +373,6 @@ unsigned int __stdcall DoEnterThread(void *param)
 		pCurrentFS->ChangeDirectory( pVars->EnterIndex );
 
 		pVars->pane->SelectionStack.push_back( -1 );
-		pVars->pane->Updated	= true;
-		pVars->pane->Update();
-
 		pCurrentFS->EnterIndex = 0xFFFFFFFF;
 
 		ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
@@ -384,6 +381,8 @@ unsigned int __stdcall DoEnterThread(void *param)
 		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
 
 		pVars->pane->SetSearching( false );
+		pVars->pane->Updated	= true;
+		pVars->pane->Update();
 
 		delete pVars;
 
@@ -421,7 +420,6 @@ unsigned int __stdcall DoEnterThread(void *param)
 
 			pVars->pane->FS	      = pNewFS;
 			pVars->pane->CurrentFSID = pNewFS->FSID;
-			pVars->pane->Updated     = true;
 
 			pVars->pane->SelectionStack.push_back( -1 );
 		}
@@ -447,7 +445,6 @@ unsigned int __stdcall DoEnterThread(void *param)
 
 			pVars->pane->FS	           = pNewFS;
 			pVars->pane->CurrentFSID   = pNewFS->FSID;
-			pVars->pane->Updated       = true;
 			pNewFS->hMainWindow        = hMainWnd;
 			pNewFS->hPaneWindow        = pVars->pane->hWnd;
 

@@ -93,21 +93,32 @@ public:
 		return Desc;
 	}
 
-	BYTE *GetStatusString(int FileIndex)
+	BYTE *GetStatusString( int FileIndex, int SelectedItems )
 	{
-		static BYTE Desc[64];
+		static BYTE status[64];
 
-		if ( FileIndex == 0 )
+		if ( SelectedItems == 0 )
 		{
-			rsprintf( Desc, "Drive 0 (Underside Surface)" );
+			rsprintf( status, "%d File System Objects", pDirectory->Files.size() );
+		}
+		else if ( SelectedItems > 1 )
+		{
+			rsprintf( status, "%d Items Selected", SelectedItems );
+		}
+		else if ( FileIndex == 0 )
+		{
+			rsprintf( status, "Drive 0 (Underside Surface)" );
+		}
+		else if ( FileIndex == 1 )
+		{
+			rsprintf( status, "Drive 2 (Topside Surface)" );
+		}
+		else
+		{
+			status[0] = 0;
 		}
 
-		if ( FileIndex == 1 )
-		{
-			rsprintf( Desc, "Drive 2 (Topside Surface)" );
-		}
-
-		return Desc;
+		return status;
 	}
 
 	BYTE *GetTitleString( NativeFile *pFile = nullptr )

@@ -72,7 +72,7 @@ public:
 	}	
 
 	BYTE *DescribeFile( DWORD FileIndex );
-	BYTE *GetStatusString(int FileIndex);
+	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *GetTitleString( NativeFile *pFile );
 
 	AttrDescriptors GetAttributeDescriptions( void );

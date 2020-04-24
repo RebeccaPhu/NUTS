@@ -24,7 +24,7 @@ public:
 	int	WriteFile(NativeFile *pFile, CTempFile &store, char *Filename);
 
 	BYTE *DescribeFile( DWORD FileIndex );
-	BYTE *GetStatusString(int FileIndex);
+	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *GetTitleString( NativeFile *pFile );
 
 	AttrDescriptors D64FileSystem::GetAttributeDescriptions( void );

@@ -27,7 +27,7 @@ public:
 		return ENCODING_SINCLAIR;
 	}
 
-	BYTE *GetStatusString(int FileIndex);
+	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *GetTitleString( NativeFile *pFile);
 
 	int	ReadFile(DWORD FileID, CTempFile &store);

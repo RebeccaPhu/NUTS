@@ -29,7 +29,7 @@ public:
 	}
 
 	BYTE  *DescribeFile( DWORD FileIndex );
-	BYTE *GetStatusString(int FileIndex);
+	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 
 	DataSource *FileDataSource( DWORD FileID );
 	FileSystem *FileFilesystem( DWORD FileID );

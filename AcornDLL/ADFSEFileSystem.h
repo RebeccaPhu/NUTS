@@ -97,7 +97,7 @@ public:
 	int ReadFile(DWORD FileID, CTempFile &store);
 
 	BYTE *DescribeFile(DWORD FileIndex);
-	BYTE *GetStatusString(int FileIndex);
+	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *GetTitleString( NativeFile *pFile );
 
 	DataSource *FileDataSource( DWORD FileID );

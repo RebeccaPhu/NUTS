@@ -310,11 +310,19 @@ BYTE *AmigaFileSystem::DescribeFile( DWORD FileIndex )
 	return status;
 }
 
-BYTE *AmigaFileSystem::GetStatusString(int FileIndex)
+BYTE *AmigaFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 {
 	static BYTE status[64];
 
-	if ( pDirectory->Files[ FileIndex ].Flags & FF_Directory )
+	if ( SelectedItems == 0 )
+	{
+		rsprintf( status, "%d File System Objects", pDirectory->Files.size() );
+	}
+	else if ( SelectedItems > 1 )
+	{
+		rsprintf( status, "%d Items Selected", SelectedItems );
+	}
+	else if ( pDirectory->Files[ FileIndex ].Flags & FF_Directory )
 	{
 		rsprintf( status, "%s - Directory", pDirectory->Files[ FileIndex ].Filename );
 	}

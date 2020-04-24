@@ -118,6 +118,7 @@ private:
 	void  DoSwapFiles( BYTE UpDown );
 	void  DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam );
 	void  DoContextMenu( void );
+	void  DoStatusBar( void );
 
 	std::map<UINT, DWORD> MenuFSMap;
 	std::map<UINT, DWORD> MenuXlatorMap;

@@ -101,7 +101,7 @@ public:
 
 	BYTE *ADFSFileSystem::GetTitleString( NativeFile *pFile );
 	BYTE *DescribeFile( DWORD FileIndex );
-	BYTE *GetStatusString(int FileIndex);
+	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	WCHAR *Identify( DWORD FileID );
 
 	OldFSMap *pFSMap;

@@ -60,13 +60,20 @@ BYTE *D64FileSystem::DescribeFile(DWORD FileIndex) {
 	return status;
 }
 
-BYTE *D64FileSystem::GetStatusString(int FileIndex) {
-	if ((FileIndex < 0) || ((unsigned) FileIndex > pDirectory->Files.size()))
-		return (BYTE *) "";
-
+BYTE *D64FileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 	static BYTE status[ 128 ];
 
-	rsprintf( status, "%s.%s - %d BYTES, %s, %s",
+	if ( SelectedItems == 0 )
+	{
+		rsprintf( status, "%d FILES", pDirectory->Files.size() );
+	}
+	else if ( SelectedItems > 1 )
+	{
+		rsprintf( status, "%d FILES SELECTED", SelectedItems );
+	}
+	else 
+	{
+		rsprintf( status, "%s.%s - %d BYTES, %s, %s",
 		pDirectory->Files[FileIndex].Filename,
 		pDirectory->Files[FileIndex].Extension,
 		(DWORD) pDirectory->Files[FileIndex].Length,
@@ -74,6 +81,7 @@ BYTE *D64FileSystem::GetStatusString(int FileIndex) {
 //		(pDirectory->Files[FileIndex].Read)?"Closed":"Not Closed (Splat)"
 		"",""
 		);
+	}
 
 	return status;
 }

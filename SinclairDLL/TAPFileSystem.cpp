@@ -53,10 +53,23 @@ FSHint TAPFileSystem::Offer( BYTE *Extension )
 	return hint;
 }
 
-BYTE *TAPFileSystem::GetStatusString(int FileIndex)
+BYTE *TAPFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 {
 	static BYTE status[ 128 ];
 
+	if ( SelectedItems == 0 )
+	{
+		rsprintf( status, "%d File System Objects", pDirectory->Files.size() );
+
+		return status;
+	}
+	else if ( SelectedItems > 1 )
+	{
+		rsprintf( status, "%d Items Selected", SelectedItems );
+
+		return status;
+	}
+	
 	switch ( pDirectory->Files[ FileIndex ].Attributes[ 2 ] )
 	{
 	case 0:
