@@ -58,6 +58,7 @@ typedef enum _ActionID {
 	AA_SET_PROPS   = 5,
 	AA_NEWIMAGE    = 6,
 	AA_SET_FSPROPS = 7,
+	AA_INSTALL     = 8,
 } ActionID;
 
 typedef struct _AppAction {
@@ -317,5 +318,6 @@ typedef FSToolList::iterator FSToolIterator;
 #define WM_FSTOOL_PROGRESS  (WM_APP + 21)
 #define WM_FSTOOL_CURRENTOP (WM_APP + 22)
 #define WM_FV_FOCUS         (WM_APP + 23)
+#define WM_INSTALLOBJECT    (WM_APP + 24)
 
 #define TUID_TEXT           0x73477347

@@ -5,6 +5,7 @@
 #include "Defs.h"
 #include "BitmapCache.h"
 #include "Preference.h"
+#include "Plugins.h"
 
 #include <CommCtrl.h>
 #include "resource.h"
@@ -25,11 +26,14 @@ typedef enum _FileOp {
 	Op_Parent    = 4,
 	Op_Refresh   = 5,
 	Op_Set_Props = 6,
+	Op_Enter_FS  = 7,
+	Op_Leave_FS  = 8,
 } FileOp;
 
 typedef struct _FileOpStep {
 	FileOp     Step;
 	NativeFile Object;
+	FileSystem *FS;
 } FileOpStep;
 
 HDC     hIconDC     = NULL;
@@ -58,6 +62,8 @@ NativeFile CurrentObject;
 
 AttrDescriptors Attrs;
 std::map<DWORD, DWORD> Changes;
+
+FileSystem *SaveFS;
 
 void CreateOpSteps( std::vector<NativeFile> Selection )
 {
@@ -116,6 +122,10 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 			{
 				step.Step = Op_Copy;
 			}
+			else if ( CurrentAction.Action == AA_INSTALL )
+			{
+				step.Step = Op_Copy;
+			}
 			else if ( CurrentAction.Action == AA_DELETE )
 			{
 				step.Step = Op_Delete;
@@ -135,6 +145,114 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 			OpSteps.push_back( Final );
 
 			TotalOps++;
+		}
+	}
+}
+
+void CreateOpStepsByFS( std::vector<NativeFile> Selection )
+{
+	/* This assumes each item in the selection is a file system that
+	   can be copied. If it is not, just skip the item. */
+
+	NativeFileIterator iFile;
+
+	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
+	{
+		FileOpStep step;
+
+		CFileViewer *pPane = (CFileViewer *) CurrentAction.Pane;
+
+		FileSystem *pFS = pPane->FS->FileFilesystem( iFile->fileID );
+
+		if ( pFS != nullptr )
+		{
+			step.Object = *iFile;
+			step.Step   = Op_Directory;
+
+			OpSteps.push_back( step );
+
+			step.Step = Op_Refresh;
+
+			OpSteps.push_back( step );
+
+			step.Step = Op_Enter_FS;
+			step.FS   = pFS;
+
+			OpSteps.push_back( step );
+
+			pFS->Init();
+
+			pFS->pParentFS = pPane->FS;
+
+			SaveFS = (FileSystem *) CurrentAction.FS;
+
+			CurrentAction.FS = pFS;
+
+			CreateOpSteps( pFS->pDirectory->Files );
+
+			CurrentAction.FS = SaveFS;
+
+			step.Step = Op_Leave_FS;
+
+			OpSteps.push_back( step );
+
+			step.Step = Op_Parent;
+
+			OpSteps.push_back( step );
+
+			step.Step = Op_Refresh;
+
+			OpSteps.push_back( step );
+		}
+		else
+		{
+			DataSource *pSource = pPane->FS->FileDataSource( iFile->fileID );
+
+			if ( pSource != nullptr )
+			{
+				pFS = FSPlugins.FindAndLoadFS( pSource, &*iFile );
+
+				if ( pFS != nullptr )
+				{
+					step.Object = *iFile;
+					step.Step   = Op_Directory;
+
+					OpSteps.push_back( step );
+
+					step.Step = Op_Refresh;
+
+					OpSteps.push_back( step );
+
+					step.Step = Op_Enter_FS;
+					step.FS   = pFS;
+
+					OpSteps.push_back( step );
+
+					pFS->Init();
+
+					pFS->pParentFS = pPane->FS;
+
+					SaveFS = (FileSystem *) CurrentAction.FS;
+
+					CurrentAction.FS = pFS;
+
+					CreateOpSteps( pFS->pDirectory->Files );
+
+					CurrentAction.FS = SaveFS;
+
+					step.Step = Op_Leave_FS;
+
+					OpSteps.push_back( step );
+
+					step.Step = Op_Parent;
+
+					OpSteps.push_back( step );
+
+					step.Step = Op_Refresh;
+
+					OpSteps.push_back( step );
+				}
+			}
 		}
 	}
 }
@@ -168,7 +286,14 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 	FSChangeLock = true;
 
-	CreateOpSteps( CurrentAction.Selection );
+	if ( CurrentAction.Action == AA_INSTALL )
+	{
+		CreateOpStepsByFS( CurrentAction.Selection );
+	}
+	else
+	{
+		CreateOpSteps( CurrentAction.Selection );
+	}
 
 	std::vector<FileOpStep>::iterator iStep;
 
@@ -180,8 +305,28 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 		switch ( iStep->Step )
 		{
+		case Op_Enter_FS:
+			SaveFS    = pSourceFS;
+			pSourceFS = iStep->FS;
+
+			CurrentAction.FS = pSourceFS;
+
+			break;
+
+		case Op_Leave_FS:
+			pSourceFS = SaveFS;
+
+			delete iStep->FS;
+
+			CurrentAction.FS = pSourceFS;
+			
+			break;
+
 		case Op_Directory:
-			pSourceFS->ChangeDirectory( iStep->Object.fileID );
+			if ( CurrentAction.Action != AA_INSTALL )
+			{
+				pSourceFS->ChangeDirectory( iStep->Object.fileID );
+			}
 
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
 			{
@@ -193,7 +338,10 @@ unsigned int __stdcall FileOpThread(void *param) {
 			break;
 
 		case Op_Parent:
-			pSourceFS->Parent();
+			if ( CurrentAction.Action != AA_INSTALL )
+			{
+				pSourceFS->Parent();
+			}
 
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
 			{
@@ -533,6 +681,19 @@ void DrawFilename( HWND hWnd, NativeFile *pFile )
 		FrameRect( hDC, &rect, (HBRUSH) GetStockObject( BLACK_BRUSH ) );
 
 		std::vector<TitleComponent> Stack = pSourcePane->GetTitleStack();
+
+		if ( CurrentAction.Action == AA_INSTALL )
+		{
+			TitleComponent title;
+
+			FileSystem *pFS = (FileSystem *) CurrentAction.FS;
+
+			rstrncpy( title.String, pFS->GetTitleString( pFile ), 512 );
+			
+			title.Encoding = pFS->GetEncoding();
+			
+			Stack.push_back( title );
+		}
 
 		DrawClippedTitleStack( &Stack, hDC, pFile );
 	}

@@ -56,6 +56,7 @@ unsigned int __stdcall ActionThread(void *param) {
 				case AA_COPY:
 				case AA_DELETE:
 				case AA_SET_PROPS:
+				case AA_INSTALL:
 					FileOP_Handler(Action);
 
 					break;

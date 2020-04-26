@@ -404,6 +404,13 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 					break;
 
+				case IDM_INSTALL:
+					{
+						::PostMessage(ParentWnd, WM_INSTALLOBJECT, (WPARAM) hWnd, 0 );
+					}
+
+					break;
+
 				case IDM_DELETE:
 					{
 						AppAction Action;

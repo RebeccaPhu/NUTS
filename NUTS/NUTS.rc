@@ -69,7 +69,7 @@ BEGIN
         MENUITEM "&Enter",                      IDM_ENTER
         MENUITEM "&Copy",                       IDM_COPY
         MENUITEM "Re&name",                     IDM_RENAME
-        MENUITEM "&Install",                    IDM_TRANSLATE
+        MENUITEM "&Install",                    IDM_INSTALL
         MENUITEM "&Delete",                     IDM_DELETE
         MENUITEM "&Properties",                 IDM_PROPERTIES
         MENUITEM "&Format",                     IDM_FORMAT
