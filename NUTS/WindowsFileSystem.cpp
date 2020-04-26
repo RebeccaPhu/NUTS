@@ -166,7 +166,7 @@ int	WindowsFileSystem::Parent() {
 	return 0;
 }
 
-int	WindowsFileSystem::CreateDirectory(BYTE *Filename) {
+int	WindowsFileSystem::CreateDirectory(BYTE *Filename, bool EnterAfter) {
 
 	return 0;
 }

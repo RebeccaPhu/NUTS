@@ -71,6 +71,8 @@
 #define IDD_WIZ_DIALOG4                 174
 #define IDD_WIZ_DIALOG5                 176
 #define IDD_FSATTRS                     177
+#define IDD_RENAME1                     178
+#define IDD_NEWDIR                      178
 #define AFX_IDC_PRINT_DOCNAME           201
 #define AFX_IDC_PRINT_PRINTERNAME       202
 #define AFX_IDC_PRINT_PORTNAME          203

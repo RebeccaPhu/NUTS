@@ -26,6 +26,10 @@ public:
 		SecSize    = 256;
 
 		pFSMap = nullptr;
+
+		pDirectory     = nullptr;
+		pADFSDirectory = nullptr;
+		pFSMap         = nullptr;
 	}
 
 	ADFSFileSystem( const ADFSFileSystem &source ) : FileSystem( source.pSource )
@@ -69,9 +73,10 @@ public:
 	int  Init(void);
 	int  ReadFile(DWORD FileID, CTempFile &store);
 	int  WriteFile(NativeFile *pFile, CTempFile &store);
+	int  DeleteFile( NativeFile *pFile, int FileOp );
 	int  ChangeDirectory( DWORD FileID );
 	int  Parent();
-	int  CreateDirectory( BYTE *Filename );
+	int  CreateDirectory( BYTE *Filename, bool EnterAfter );
 	bool IsRoot();
 	int  CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 	int  Refresh( void );
@@ -104,6 +109,9 @@ public:
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	WCHAR *Identify( DWORD FileID );
 
+	int Format_Process( FormatType FT, HWND hWnd );
+	int Format_PreCheck( int FormatType );
+	
 	OldFSMap *pFSMap;
 
 	BYTE path[512];
@@ -112,6 +120,8 @@ public:
 	FSHint Offer( BYTE *Extension );
 
 	FSToolList GetToolsList( void );
+
+	int RunTool( BYTE ToolNum, HWND ProgressWnd );
 
 private:
 	DataSource *pSource;
@@ -122,10 +132,15 @@ private:
 	bool UseDFormat;
 
 	DWORD SecSize;
+	DWORD ValidateItems;
+	DWORD ValidatedItems;
+	HWND  ValidateWnd;
 
 private:
 	DWORD TranslateSector(DWORD InSector);
 
 	int ResolveAppIcons( void );
+
+	void ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs );
 };
 

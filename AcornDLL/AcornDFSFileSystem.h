@@ -26,7 +26,7 @@ public:
 	int  WriteFile(NativeFile *pFile, CTempFile &store);
 	int  ChangeDirectory( DWORD FileID );
 	int	 Parent();
-	int	 CreateDirectory( BYTE *Filename);
+	int	 CreateDirectory( BYTE *Filename, bool EnterAfter);
 	bool IsRoot();
 	BYTE *DescribeFile( DWORD FileIndex );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );

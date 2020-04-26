@@ -40,7 +40,7 @@ public:
 
 	int ChangeDirectory(NativeFile *pFile);
 	int Parent();
-	int CreateDirectory(NativeFile *pFile);
+	int CreateDirectory(NativeFile *pFile, bool EnterAfter);
 	bool IsRoot();
 	int DeleteFile( NativeFile *pFile, int FileOp );
 

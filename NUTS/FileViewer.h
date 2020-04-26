@@ -42,6 +42,9 @@ public:
 	static INT_PTR CALLBACK RenameDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static BYTE *pRenameFile;
 	static EncodingEdit *pRenameEdit;
+	static INT_PTR CALLBACK NewDirDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+	static BYTE *pNewDir;
+	static EncodingEdit *pNewDirEdit;
 
 public:
 	FileSystem *FS;
@@ -95,6 +98,8 @@ private:
 	DWORD   WindowHeight;
 	DWORD   WindowWidth;
 
+	CRITICAL_SECTION RedrawLock;
+
 private:
 	void  DrawBasicLayout();
 	void  DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected);
@@ -119,6 +124,7 @@ private:
 	void  DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam );
 	void  DoContextMenu( void );
 	void  DoStatusBar( void );
+	void  NewDirectory( void );
 
 	std::map<UINT, DWORD> MenuFSMap;
 	std::map<UINT, DWORD> MenuXlatorMap;

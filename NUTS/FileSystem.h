@@ -66,7 +66,7 @@ public:
 		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
 	}
 
-	virtual int	CreateDirectory( BYTE *Filename ) {
+	virtual int	CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
 	}
 

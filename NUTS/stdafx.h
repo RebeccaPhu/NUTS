@@ -18,3 +18,4 @@
 #include <tchar.h>
 
 extern	HINSTANCE	hInst;
+extern  bool        FSChangeLock;

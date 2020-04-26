@@ -29,26 +29,6 @@ public:
 
 	AttrDescriptors D64FileSystem::GetAttributeDescriptions( void );
 
-	//	Sub-directories not supported
-	int ChangeDirectory(NativeFile *pFile) {
-		return -1;
-	}
-
-	//	Sub-directories not supported
-	int Parent() {
-		return -1;
-	}
-
-	//	Sub-directories not supported
-	int CreateDirectory(NativeFile *pFile) {
-		return -1;
-	}
-
-	//	Sub-directories not supported
-	bool IsRoot() {
-		return true;
-	}
-
 	DWORD GetEncoding(void )
 	{
 		return ENCODING_PETSCII;

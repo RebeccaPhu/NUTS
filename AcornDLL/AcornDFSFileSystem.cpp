@@ -41,7 +41,7 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	return 0;
 }
 
-int	AcornDFSFileSystem::CreateDirectory( BYTE *Filename ) {
+int	AcornDFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 
 	return -1;
 }

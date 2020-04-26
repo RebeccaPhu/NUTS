@@ -2,6 +2,7 @@
 #include "ADFSDirectory.h"
 #include "BBCFunctions.h"
 #include "RISCOSIcons.h"
+#include "../NUTS/libfuncs.h"
 
 DWORD ADFSDirectory::TranslateSector(DWORD InSector)
 {
@@ -68,8 +69,16 @@ int	ADFSDirectory::ReadDirectory( void ) {
 
 	MasterSeq = DirBytes[0];
 
-	memcpy( DirString, &DirBytes[0x4cc], 10);
-	memcpy( DirTitle,  &DirBytes[0x4d9], 18);
+	if ( UseDFormat )
+	{
+		rstrncpy( (BYTE *) DirString, &DirBytes[0x7f0], 10 );
+		rstrncpy( (BYTE *) DirTitle,  &DirBytes[0x7dd], 19 );
+	}
+	else
+	{
+		rstrncpy( (BYTE *) DirString, &DirBytes[0x4cc], 10);
+		rstrncpy( (BYTE *) DirTitle,  &DirBytes[0x4d9], 19);
+	}
 
 	DWORD MaxPtr = 1227;
 
@@ -270,17 +279,13 @@ int	ADFSDirectory::WriteDirectory( void ) {
 	}
 
 	//	Write directory structure
-	BYTE DirectorySector[0x500];
+	BYTE DirectorySector[0x800];
 
-	memset(&DirectorySector[0x000], 0, 0x500);
+	memset(&DirectorySector[0x000], 0, 0x800);
 
+	MasterSeq = ( ( MasterSeq / 16 ) * 10 ) + ( MasterSeq % 16 );
 	MasterSeq++;
-
-	if ((MasterSeq & 0x0F) > 0x09)
-		MasterSeq	= (MasterSeq & 0xF0) + 0x10;
-
-	if ((MasterSeq & 0xF0) > 0x90)
-		MasterSeq	= 0;
+	MasterSeq = ( ( MasterSeq / 10 ) * 16 ) + ( MasterSeq % 10 );
 
 	DirectorySector[0x000]	= MasterSeq;
 	DirectorySector[0x001]	= 'H';
@@ -288,18 +293,36 @@ int	ADFSDirectory::WriteDirectory( void ) {
 	DirectorySector[0x003]	= 'g';
 	DirectorySector[0x004]	= 'o';
 
-	memcpy(&DirectorySector[0x4cc], DirString, 10);
-	memcpy(&DirectorySector[0x4d9], DirTitle, 18);
+	if ( UseDFormat )
+	{
+		BBCStringCopy( (char *) &DirectorySector[0x7f0], DirString, 10);
+		BBCStringCopy( (char *) &DirectorySector[0x7dd], DirTitle, 19);
 
-	DirectorySector[0x4d6]	= (unsigned char)   ParentSector & 0xFF;
-	DirectorySector[0x4d7]	= (unsigned char) ((ParentSector & 0xFF00) >> 8);
-	DirectorySector[0x4d8]	= (unsigned char) ((ParentSector & 0xFF0000) >> 16);
+		DirectorySector[0x7da]	= (unsigned char)   ParentSector & 0xFF;
+		DirectorySector[0x7db]	= (unsigned char) ((ParentSector & 0xFF00) >> 8);
+		DirectorySector[0x7dc]	= (unsigned char) ((ParentSector & 0xFF0000) >> 16);
 
-	DirectorySector[0x4fa]	= MasterSeq;
-	DirectorySector[0x4fb]	= 'H';
-	DirectorySector[0x4fc]	= 'u';
-	DirectorySector[0x4fd]	= 'g';
-	DirectorySector[0x4fe]	= 'o';
+		DirectorySector[0x7fa]	= MasterSeq;
+		DirectorySector[0x7fb]	= 'H';
+		DirectorySector[0x7fc]	= 'u';
+		DirectorySector[0x7fd]	= 'g';
+		DirectorySector[0x7fe]	= 'o';
+	}
+	else
+	{
+		BBCStringCopy( (char *) &DirectorySector[0x4cc], DirString, 10);
+		BBCStringCopy( (char *) &DirectorySector[0x4d9], DirTitle, 19);
+
+		DirectorySector[0x4d6]	= (unsigned char)   ParentSector & 0xFF;
+		DirectorySector[0x4d7]	= (unsigned char) ((ParentSector & 0xFF00) >> 8);
+		DirectorySector[0x4d8]	= (unsigned char) ((ParentSector & 0xFF0000) >> 16);
+
+		DirectorySector[0x4fa]	= MasterSeq;
+		DirectorySector[0x4fb]	= 'H';
+		DirectorySector[0x4fc]	= 'u';
+		DirectorySector[0x4fd]	= 'g';
+		DirectorySector[0x4fe]	= 'o';
+	}
 
 	// Write directory entries
 	std::vector<NativeFile>::iterator	iFile;
@@ -309,24 +332,53 @@ int	ADFSDirectory::WriteDirectory( void ) {
 	for (iFile = Files.begin(); iFile != Files.end(); iFile++) {
 		BBCStringCopy((char *) &DirectorySector[ptr + 0], (char *) iFile->Filename, 10);
 
-		if (iFile->AttrRead)
-			DirectorySector[ptr + 0] |= 0x80;
-
-		if (iFile->AttrWrite)
-			DirectorySector[ptr + 1] |= 0x80;
-
-		if (iFile->AttrLocked)
-			DirectorySector[ptr + 2] |= 0x80;
-
-		if (iFile->Flags & FF_Directory)
-			DirectorySector[ptr + 3] |= 0x80;
-
 		* (DWORD *) &DirectorySector[ptr + 0x00a] = iFile->LoadAddr;
 		* (DWORD *) &DirectorySector[ptr + 0x00e] = iFile->ExecAddr;
 		* (DWORD *) &DirectorySector[ptr + 0x012] = (DWORD) iFile->Length;
 		* (DWORD *) &DirectorySector[ptr + 0x016] = iFile->SSector;
 
-		DirectorySector[ptr + 0x019] = (BYTE) iFile->SeqNum;
+		if ( !UseDFormat )
+		{
+			if (iFile->AttrRead)
+				DirectorySector[ptr + 0] |= 0x80;
+
+			if (iFile->AttrWrite)
+				DirectorySector[ptr + 1] |= 0x80;
+
+			if (iFile->AttrLocked)
+				DirectorySector[ptr + 2] |= 0x80;
+
+			if (iFile->Flags & FF_Directory)
+				DirectorySector[ptr + 3] |= 0x80;
+
+			DirectorySector[ptr + 0x019] = (BYTE) iFile->SeqNum;
+		}
+		else
+		{
+			DirectorySector[ ptr + 0x19 ] = 0;
+
+			if (iFile->AttrRead)
+			{
+				DirectorySector[ ptr + 0x19 ] |= 1;
+				DirectorySector[ ptr + 0x19 ] |= 16;
+			}
+
+			if (iFile->AttrWrite)
+			{
+				DirectorySector[ ptr + 0x19 ] |= 2;
+				DirectorySector[ ptr + 0x19 ] |= 32;
+			}
+
+			if (iFile->AttrLocked)
+			{
+				DirectorySector[ ptr + 0x19 ] |= 4;
+			}
+
+			if (iFile->Flags & FF_Directory)
+			{
+				DirectorySector[ ptr + 0x19 ] |= 8;
+			}
+		}		
 
 		ptr	+= 26;
 	}
@@ -336,6 +388,13 @@ int	ADFSDirectory::WriteDirectory( void ) {
 	pSource->WriteSector( TranslateSector( DirSector + 2 ), &DirectorySector[0x200], 256 );
 	pSource->WriteSector( TranslateSector( DirSector + 3 ), &DirectorySector[0x300], 256 );
 	pSource->WriteSector( TranslateSector( DirSector + 4 ), &DirectorySector[0x400], 256 );
+
+	if ( UseDFormat )
+	{
+		pSource->WriteSector( DirSector + 5, &DirectorySector[0x500], 256 );
+		pSource->WriteSector( DirSector + 6, &DirectorySector[0x600], 256 );
+		pSource->WriteSector( DirSector + 7, &DirectorySector[0x700], 256 );
+	}
 
 	return 0;
 }

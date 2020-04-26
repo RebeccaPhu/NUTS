@@ -80,7 +80,7 @@ FSDescriptor AcornFS[13] = {
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
 		0, { }, { },
 		0, { }, { }, { },
-		1024, 1024U * 5U * 80U
+		1024, 1024U * 5U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 800K (D)",
@@ -88,7 +88,7 @@ FSDescriptor AcornFS[13] = {
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
 		0, { }, { },
 		0, { }, { }, { },
-		1024, 1024U * 5U * 80U
+		1024, 1024U * 5U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 800K (E)",
@@ -96,7 +96,7 @@ FSDescriptor AcornFS[13] = {
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
 		13, { }, { },
 		0, { }, { }, { },
-		1024, 1024U * 5U * 80U
+		1024, 1024U * 5U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (F)",
@@ -104,7 +104,7 @@ FSDescriptor AcornFS[13] = {
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
 		0, { }, { },
 		0, { }, { }, { },
-		1024, 1024U * 10U * 80U
+		1024, 1024U * 10U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (Old Map)",

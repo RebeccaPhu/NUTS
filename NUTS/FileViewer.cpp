@@ -110,6 +110,8 @@ CFileViewer::CFileViewer(void) {
 	CurrentPen = 0;
 
 	LastItemIndex = 0x7FFFFFFF;
+
+	InitializeCriticalSection( &RedrawLock );
 }
 
 CFileViewer::~CFileViewer(void) {
@@ -124,6 +126,8 @@ CFileViewer::~CFileViewer(void) {
 		DeleteObject(viewBuffer);
 		DeleteDC(viewDC);
 	}
+
+	DeleteCriticalSection( &RedrawLock );
 }
 
 int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
@@ -458,6 +462,12 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 					}
 					break;
 
+				case IDM_NEWFOLDER:
+					{
+						NewDirectory();
+					}
+					break;
+
 				case IDM_LARGEICONS:
 					Displaying = DisplayLargeIcons;
 
@@ -570,7 +580,10 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 			break;
 
 		case WM_PAINT:
-			Redraw();
+			if ( !FSChangeLock )
+			{
+				Redraw();
+			}
 
 			return DefWindowProc(hSourceWnd, message, wParam, lParam);
 
@@ -915,6 +928,8 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 }
 
 void CFileViewer::Redraw() {
+	EnterCriticalSection( &RedrawLock );
+
 	HDC  hDC = GetDC(hWnd);
 	RECT wndRect;
 
@@ -1088,6 +1103,8 @@ void CFileViewer::Redraw() {
 	BitBlt(hDC, 0,0,(KnownX - (ControlButtons.size() * 21)) + 1,24, viewDC, 0,0, SRCCOPY);
 
 	ReleaseDC(hWnd, hDC);
+
+	LeaveCriticalSection( &RedrawLock );
 }
 
 void CFileViewer::RecalculateDimensions( RECT &wndRect )
@@ -1885,6 +1902,27 @@ void CFileViewer::RenameFile( void )
 	Redraw();
 }
 
+void CFileViewer::NewDirectory( void )
+{
+	CFileViewer::pNewDir = (BYTE *) FS->GetEncoding();
+
+	if ( DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_NEWDIR), hWnd, NewDirDialogProc, (LPARAM) 0 ) == IDOK )
+	{
+		if ( pNewDir != nullptr )
+		{
+			FS->CreateDirectory( pNewDir, false );
+
+			free( pNewDir );
+
+			pNewDir = nullptr;
+		}
+	}
+
+	Updated = true;
+
+	Redraw();
+}
+
 BYTE *CFileViewer::pRenameFile         = nullptr;
 EncodingEdit *CFileViewer::pRenameEdit = nullptr;
 
@@ -1917,6 +1955,47 @@ INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM w
 
 			if ( LOWORD( wParam ) == IDCANCEL )
 			{
+				EndDialog( hDlg, IDCANCEL );
+			}
+		}
+		break;
+	}
+
+	return FALSE;
+}
+
+BYTE *CFileViewer::pNewDir             = nullptr;
+EncodingEdit *CFileViewer::pNewDirEdit = nullptr;
+
+INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch ( message )
+	{
+	case WM_INITDIALOG:
+		{
+			pNewDirEdit = new EncodingEdit( hDlg, 12, 36, 455, true );
+
+			pNewDirEdit->Encoding = (DWORD) CFileViewer::pNewDir;
+
+			CFileViewer::pNewDir = (BYTE *) lParam;
+
+			pNewDirEdit->SetFocus();
+		}
+		break;
+
+	case WM_COMMAND:
+		{
+			if ( LOWORD( wParam ) == IDOK )
+			{
+				CFileViewer::pNewDir = rstrndup( pNewDirEdit->GetText(), 256 );
+
+				EndDialog( hDlg, IDOK );
+			}
+
+			if ( LOWORD( wParam ) == IDCANCEL )
+			{
+				CFileViewer::pNewDir = nullptr;
+
 				EndDialog( hDlg, IDCANCEL );
 			}
 		}
@@ -2264,6 +2343,11 @@ void CFileViewer::DoContextMenu( void )
 	{
 		DeleteMenu(hSubMenu, IDM_FORMAT, MF_BYCOMMAND);
 		DeleteMenu(hSubMenu, IDM_ENTER, MF_BYCOMMAND);
+
+		if ( CurrentFSID == FS_Root )
+		{
+			DeleteMenu(hSubMenu, IDM_PROPERTIES, MF_BYCOMMAND);
+		}
 	}
 
 	if ( Displaying == DisplayLargeIcons ) { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_CHECKED ); } else { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_UNCHECKED ); }
@@ -2282,6 +2366,11 @@ void CFileViewer::DoContextMenu( void )
 			EnableMenuItem( hPopup, IDM_COPY,      MF_BYCOMMAND | MF_DISABLED );
 			EnableMenuItem( hPopup, IDM_TRANSLATE, MF_BYCOMMAND | MF_DISABLED );
 		}
+	}
+
+	if ( ! ( FS->Flags & FSF_Supports_Dirs ) )
+	{
+		EnableMenuItem( hPopup, IDM_NEWFOLDER, MF_BYCOMMAND | MF_DISABLED );
 	}
 
 	TrackPopupMenu(hSubMenu, 0, rect.left + mouseX, rect.top + mouseY, 0, hWnd, NULL);

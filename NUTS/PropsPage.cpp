@@ -1684,7 +1684,11 @@ unsigned int __stdcall ToolThread(void *param) {
 
 	if ( pTargetFS != nullptr )
 	{
+		FSChangeLock = true;
+
 		pTargetFS->RunTool( RunningTool, hToolDlg );
+
+		FSChangeLock = false;
 
 		CloseHandle( hToolThread );
 
@@ -1744,7 +1748,15 @@ INT_PTR CALLBACK ToolsWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 				{
 					if ( *i == (HWND) lParam )
 					{
-						DoTool( t );
+						if ( MessageBox( hwndDlg,
+							L"Running a tool may make changes to the image or disk that are not reversible.\n\n"
+							L"Please ensure the image/disk has been detected as the correct format, otherwise damage may occur.\n\n"
+							L"You should have a backup of the image/disk in case anything goes wrong.\n\n"
+							L"Proceed?", L"NUTS File System Tool", MB_ICONWARNING | MB_YESNO
+							) == IDYES )
+						{
+							DoTool( t );
+						}
 					}
 
 					t++;

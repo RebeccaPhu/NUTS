@@ -25,6 +25,7 @@
 
 // Global Variables:
 HINSTANCE hInst;                     // current instance
+bool      FSChangeLock = false;
 
 TCHAR szTitle[MAX_LOADSTRING];       // The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING]; // the main window class name

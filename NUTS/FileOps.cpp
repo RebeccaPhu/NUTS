@@ -106,7 +106,7 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 	/* Re-iterate the selection and add files */
 	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
 	{
-		if ( ! (iFile->Flags & FF_Directory) )
+		if ( ( ! (iFile->Flags & FF_Directory) ) || ( CurrentAction.Action == AA_DELETE ) || ( CurrentAction.Action == AA_SET_PROPS ) )
 		{
 			FileOpStep step;
 
@@ -166,6 +166,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 	NoToAll  = false;
 	YesToAll = false;
 
+	FSChangeLock = true;
+
 	CreateOpSteps( CurrentAction.Selection );
 
 	std::vector<FileOpStep>::iterator iStep;
@@ -183,7 +185,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
 			{
-				pTargetFS->CreateDirectory( iStep->Object.Filename );
+				pTargetFS->CreateDirectory( iStep->Object.Filename, true );
 			}
 
 			Redraw = true;
@@ -416,6 +418,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 		CurrentOp++;
 	}
+
+	FSChangeLock = false;
 
 	::PostMessage( hFileWnd, WM_CLOSE, 0, 0 );
 

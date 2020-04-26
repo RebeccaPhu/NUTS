@@ -12,6 +12,8 @@ public:
 
 	int	GetStartSector(FreeSpace &space);
 	int	OccupySpace(FreeSpace &space);
+	int ReleaseSpace(FreeSpace &space);
+	int	ClaimSpace(FreeSpace &space);
 
 	int	ReadFSMap();
 	int	WriteFSMap();
@@ -27,5 +29,8 @@ protected:
 	int		BootOption;
 	unsigned short	DiscIdentifier;
 	int		NextEntry;
+
+	BYTE DiscName0[ 5 ];
+	BYTE DiscName1[ 5 ];
 };
 

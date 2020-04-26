@@ -22,7 +22,7 @@ public:
 	unsigned char	MasterSeq;
 
 	char	DirString[11];
-	char	DirTitle[18];
+	char	DirTitle[20];
 
 	DWORD DirSector;
 	DWORD ParentSector;

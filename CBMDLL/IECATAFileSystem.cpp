@@ -139,7 +139,6 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 
 int IECATAFileSystem::DeleteFile( NativeFile *pFile, int FileOP )
 {
-
 	std::vector<NativeFile>::iterator iFile;
 
 	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); )
@@ -336,7 +335,7 @@ int	IECATAFileSystem::Parent() {
 	return 0;
 }
 
-int	IECATAFileSystem::CreateDirectory(NativeFile *pFile) {
+int	IECATAFileSystem::CreateDirectory(NativeFile *pFile, bool EnterAfter) {
 	return -1;
 }
 

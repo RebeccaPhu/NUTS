@@ -494,6 +494,17 @@ BEGIN
     CONTROL         IDI_OPEN,IDC_TOOL_ICON,"Static",SS_BITMAP | WS_BORDER,275,7,24,22,WS_EX_DLGMODALFRAME
 END
 
+IDD_NEWDIR DIALOGEX 0, 0, 318, 64
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,66,43,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,200,43,50,14
+    LTEXT           "Enter the name of the directory to be created:",IDC_STATIC,7,7,304,11
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -593,6 +604,14 @@ BEGIN
         RIGHTMARGIN, 304
         TOPMARGIN, 7
         BOTTOMMARGIN, 98
+    END
+
+    IDD_NEWDIR, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 311
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 57
     END
 END
 #endif    // APSTUDIO_INVOKED
