@@ -9,16 +9,19 @@
 
 #include <string>
 
-#define ERROR_READONLY    0x00000020
-#define ERROR_UNSUPPORTED 0x00000021
-#define USE_STANDARD_WND  0x00000022
-#define USE_CUSTOM_WND    0x00000023
+#define ERROR_READONLY     0x00000020
+#define ERROR_UNSUPPORTED  0x00000021
+#define USE_STANDARD_WND   0x00000022
+#define USE_CUSTOM_WND     0x00000023
+#define ASCIIFILE_REQUIRED 0x00000024
 
 class FileSystem
 {
 public:
 	FileSystem(DataSource *pDataSource) {
 		pSource	= pDataSource;
+
+		if ( pSource != nullptr ) { pSource->Retain(); }
 
 		FSID = FS_Null;
 
@@ -38,12 +41,14 @@ public:
 		pParentFS        = nullptr;
 	}
 
-	~FileSystem(void) {
+	virtual ~FileSystem(void) {
 		CloseHandle( hCancelFormat );
 		CloseHandle( hCancelFree );
 		CloseHandle( hToolEvent );
 
 		free( pBlockMap );
+
+		if ( pSource != nullptr ) { pSource->Release(); }
 	}
 
 	virtual	int	ReadFile(DWORD FileID, CTempFile &store) {
@@ -328,6 +333,23 @@ public:
 
 		pDirectory->WriteDirectory();
 		pDirectory->ReadDirectory();
+
+		return 0;
+	}
+
+	virtual int MakeASCIIFilename( NativeFile *pFile )
+	{
+		for ( WORD i=0; i<256; i++ )
+		{
+			pFile->Filename[ i ] &= 0x7F;
+
+			if ( ( pFile->Filename[ i ] < 32 ) && ( pFile->Filename[ i ] != 0 ) )
+			{
+				pFile->Filename[ i ] = '_';
+			}
+		}
+
+		pFile->EncodingID = ENCODING_ASCII;
 
 		return 0;
 	}

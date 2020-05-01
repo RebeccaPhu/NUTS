@@ -337,6 +337,8 @@ unsigned int __stdcall CreationThread(void *param)
 	if ( pSource != nullptr )
 	{
 		FileSystem *FS = (FileSystem *) FSPlugins.LoadFS( ChosenFS.FUID, pSource, false );
+
+		pSource->Release();
 	
 		Result = FS->Format_Process( FormatType_Quick, hProgressWnd );
 

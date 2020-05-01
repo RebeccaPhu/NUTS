@@ -9,14 +9,14 @@ class ADFSEFileSystem : public FileSystem
 {
 public:
 	ADFSEFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) {
-		pSource = pDataSource;
-
 		FSID  = FSID_ADFS_H;
 		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs;
 
 		rstrncpy( path, (BYTE *) "$", 512 );
 
-		pFSMap = nullptr;
+		pEDirectory = nullptr;
+		pDirectory  = nullptr;
+		pFSMap      = nullptr;
 	}
 
 	ADFSEFileSystem( const ADFSEFileSystem &source ) : FileSystem( source.pSource )
@@ -50,8 +50,15 @@ public:
 	}
 
 	~ADFSEFileSystem(void) {
-		delete pDirectory;
-		delete pFSMap;
+		if ( pEDirectory != nullptr )
+		{
+			delete pEDirectory;
+		}
+
+		if ( pFSMap != nullptr )
+		{
+			delete pFSMap;
+		}
 	}
 
 public:

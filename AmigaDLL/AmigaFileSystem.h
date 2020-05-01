@@ -39,6 +39,7 @@ public:
 
 	~AmigaFileSystem(void)
 	{
+		delete pAmigaDirectory;
 	}
 
 public:

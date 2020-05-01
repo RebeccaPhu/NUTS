@@ -102,22 +102,30 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					L"NUTS Formatter", MB_ICONEXCLAMATION | MB_YESNO) == IDNO) {
 						break;
 				} else {
-					FormatFSID = AvailableFSIDs[
-						(DWORD) SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_LIST), LB_GETCURSEL, 0, 0)
-					];
+					int   pos  = SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_LIST), LB_GETCURSEL, 0, 0);
+					FormatFSID = (DWORD) SendMessage( GetDlgItem(hwndDlg, IDC_FORMAT_LIST), LB_GETITEMDATA, pos, 0 );
 
-					char *drive = ( char * ) CurrentAction.Selection[0].Filename;
+					FileSystem *pFS = (FileSystem *) CurrentAction.FS;
 
-					int pd	=	PhysicalDrive(drive);
+					DataSource *pSource = pFS->FileDataSource( CurrentAction.Selection[ 0 ].fileID );
 
-					if (pd >= 0) {
-						char	path[64];
+					if ( pSource == nullptr )
+					{
+						MessageBox( hwndDlg, L"Could not get data source for selected item.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
 
-						sprintf_s(path,64, "\\\\.\\PhysicalDrive%d", pd);
+						break;
+					}
 
-						pFormatter = FSPlugins.LoadFS( FormatFSID, new ImageDataSource( UString( path ) ) );
-					} else
-						pFormatter = FSPlugins.LoadFS( FormatFSID, new ImageDataSource( UString( drive ) ) );
+					pFormatter = FSPlugins.LoadFS( FormatFSID, pSource, false );
+
+					pSource->Release();
+
+					if ( pFormatter == nullptr )
+					{
+						MessageBox( hwndDlg, L"Could not start file system handler for selected format.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+
+						break;
+					}
 
 					if (pFormatter->Format_PreCheck( Format_FT ) != 0 )
 					{
@@ -176,13 +184,17 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					{
 						if ( iPlugin->FSDescriptors[ i ].Flags & FSF_Formats_Image )
 						{
-							SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iPlugin->FSDescriptors[ i ].FriendlyName.c_str() );
+							int pos = SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iPlugin->FSDescriptors[ i ].FriendlyName.c_str() );
+
+							SendMessage( hList, LB_SETITEMDATA, pos, (LPARAM) iPlugin->FSDescriptors[ i ].PUID );
 
 							AvailableFSIDs.push_back( iPlugin->FSDescriptors[ i ].PUID );
 						}
 						else if ( iPlugin->FSDescriptors[ i ].Flags & FSF_Formats_Raw )
 						{
-							SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iPlugin->FSDescriptors[ i ].FriendlyName.c_str() );
+							int pos = SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iPlugin->FSDescriptors[ i ].FriendlyName.c_str() );
+
+							SendMessage( hList, LB_SETITEMDATA, pos, (LPARAM) iPlugin->FSDescriptors[ i ].PUID );
 
 							AvailableFSIDs.push_back( iPlugin->FSDescriptors[ i ].PUID );
 						}

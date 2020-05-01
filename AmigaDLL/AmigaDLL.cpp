@@ -16,6 +16,9 @@ HMODULE hInstance;
 BYTE *pTopaz1 = nullptr;
 BYTE *pTopaz2 = nullptr;
 
+AMIGADLL_API DataSourceCollector *pExternCollector;
+DataSourceCollector *pCollector;
+
 FSDescriptor AmigaFS[2] = {
 	{
 		/* .FriendlyName = */ L"Commodore Amiga OFS Disk Image",
@@ -114,6 +117,9 @@ AMIGADLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 AMIGADLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
+	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
+	pCollector = pExternCollector;
+
 	void *pFS = NULL;
 
 	switch ( PUID )

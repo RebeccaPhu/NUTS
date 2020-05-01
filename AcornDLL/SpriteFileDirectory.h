@@ -8,8 +8,6 @@ class SpriteFileDirectory : public Directory
 
 public:
 	SpriteFileDirectory(DataSource *pDataSource) : Directory(pDataSource) {
-		pSource = pDataSource;
-
 		UseResolvedIcons = false;
 	}
 
@@ -23,7 +21,5 @@ public:
 public:
 	bool UseResolvedIcons;
 
-private:
-	DataSource *pSource;
 };
 

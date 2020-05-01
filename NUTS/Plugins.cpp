@@ -9,8 +9,11 @@
 
 #include "BitmapCache.h"
 #include "ExtensionRegistry.h"
+#include "DataSourceCollector.h"
 
 #include <string>
+
+extern DataSourceCollector *pCollector;
 
 CPlugins FSPlugins;
 
@@ -81,6 +84,10 @@ void CPlugins::LoadPlugin( char *plugin )
 		plugin.DescriptorFunc  = (fnGetPluginDescriptor) GetProcAddress( hModule, "GetPluginDescriptor" );
 		plugin.CreatorFunc     = (fnCreateFS)            GetProcAddress( hModule, "CreateFS" );
 		plugin.XlatCreatorFunc = (fnCreateTranslator)    GetProcAddress( hModule, "CreateTranslator" );
+
+		DataSourceCollector **ppCollector = (DataSourceCollector **) GetProcAddress( hModule, "pExternCollector" );
+
+		*ppCollector = pCollector;
 
 		Plugins.push_back( plugin );
 

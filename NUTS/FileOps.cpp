@@ -20,14 +20,16 @@
 #define XtraHeight 64
 
 typedef enum _FileOp {
-	Op_Delete    = 1,
-	Op_Copy      = 2,
-	Op_Directory = 3,
-	Op_Parent    = 4,
-	Op_Refresh   = 5,
-	Op_Set_Props = 6,
-	Op_Enter_FS  = 7,
-	Op_Leave_FS  = 8,
+	Op_Delete     = 1,
+	Op_Copy       = 2,
+	Op_Directory  = 3,
+	Op_Parent     = 4,
+	Op_Refresh    = 5,
+	Op_Set_Props  = 6,
+	Op_Enter_FS   = 7,
+	Op_Leave_FS   = 8,
+	Op_CDirectory = 9,
+	Op_CParent    = 10,
 } FileOp;
 
 typedef struct _FileOpStep {
@@ -167,7 +169,7 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 		if ( pFS != nullptr )
 		{
 			step.Object = *iFile;
-			step.Step   = Op_Directory;
+			step.Step   = Op_CDirectory;
 
 			OpSteps.push_back( step );
 
@@ -196,7 +198,7 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 
 			OpSteps.push_back( step );
 
-			step.Step = Op_Parent;
+			step.Step = Op_CParent;
 
 			OpSteps.push_back( step );
 
@@ -212,10 +214,12 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 			{
 				pFS = FSPlugins.FindAndLoadFS( pSource, &*iFile );
 
+				pSource->Release(); // The FS has this now.
+
 				if ( pFS != nullptr )
 				{
 					step.Object = *iFile;
-					step.Step   = Op_Directory;
+					step.Step   = Op_CDirectory;
 
 					OpSteps.push_back( step );
 
@@ -244,7 +248,7 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 
 					OpSteps.push_back( step );
 
-					step.Step = Op_Parent;
+					step.Step = Op_CParent;
 
 					OpSteps.push_back( step );
 
@@ -323,11 +327,9 @@ unsigned int __stdcall FileOpThread(void *param) {
 			break;
 
 		case Op_Directory:
-			if ( CurrentAction.Action != AA_INSTALL )
-			{
-				pSourceFS->ChangeDirectory( iStep->Object.fileID );
-			}
+			pSourceFS->ChangeDirectory( iStep->Object.fileID );
 
+		case Op_CDirectory:
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
 			{
 				pTargetFS->CreateDirectory( iStep->Object.Filename, true );
@@ -338,11 +340,9 @@ unsigned int __stdcall FileOpThread(void *param) {
 			break;
 
 		case Op_Parent:
-			if ( CurrentAction.Action != AA_INSTALL )
-			{
-				pSourceFS->Parent();
-			}
+			pSourceFS->Parent();
 
+		case Op_CParent:
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
 			{
 				pTargetFS->Parent();
@@ -374,6 +374,14 @@ unsigned int __stdcall FileOpThread(void *param) {
 				pSourceFS->ReadFile( iStep->Object.fileID, FileObj );
 				
 				int FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
+
+				/* If the target FS doesn't understand the source encoding, then the source needs to translate the filename */
+				if ( FileResult == FILEOP_NEEDS_ASCII )
+				{
+					pSourceFS->MakeASCIIFilename( &iStep->Object );
+
+					FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
+				}
 
 				if ( FileResult == FILEOP_EXISTS )
 				{

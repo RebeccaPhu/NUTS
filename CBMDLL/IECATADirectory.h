@@ -32,9 +32,6 @@ public:
 	int	ReadDirectory(void);
 	int	WriteDirectory(void);
 
-	void PETSCII(unsigned char *pptr, int chars);
-	void Shorten(unsigned char *sptr, unsigned char *dptr, int chars);
-	
 	int  GetFreeBlock();
 	void ReleaseBlock( std::vector<DWORD> *pBlocks );
 

@@ -3,19 +3,30 @@
 
 class IDE8Source : public DataSource {
 public:
-	IDE8Source(DataSource *pDataSource) {
+	IDE8Source(DataSource *pDataSource) : DataSource() {
 		pSource	= pDataSource;
 
-		PhysicalDiskSize	= pSource->PhysicalDiskSize;
-		LogicalDiskSize		= PhysicalDiskSize / 2;
+		if ( pSource != nullptr )
+		{
+			pSource->Retain();
+		}
+
+		PhysicalDiskSize	= pSource->PhysicalDiskSize /2;
+		LogicalDiskSize		= PhysicalDiskSize;
 	}
 
-	~IDE8Source(void) {
+	virtual ~IDE8Source(void) {
+		if ( pSource != nullptr )
+		{
+			pSource->Release();
+		}
+
 		delete pSource;
 	}
 
 	int	ReadSector(long Sector, void *pSectorBuf, long SectorSize);
 	int	WriteSector(long Sector, void *pSectorBuf, long SectorSize);
+	int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
 	virtual char *GetLocation() {
 		return pSource->GetLocation();

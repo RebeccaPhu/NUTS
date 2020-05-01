@@ -11,10 +11,15 @@ public:
 
 		FSID  = FSID_SPRITE;
 		Flags = FSF_Size;
+
+		pSpriteDirectory = nullptr;
 	}
 
 	~SpriteFile(void) {
-		delete pSpriteDirectory;
+		if ( pSpriteDirectory != nullptr )
+		{
+			delete pSpriteDirectory;
+		}
 	}
 
 public:

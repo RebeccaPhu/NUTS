@@ -346,6 +346,8 @@ int ADFSEFileSystem::ResolveAppIcons( void )
 						}
 						*/
 					}
+
+					pSpriteSource->Release();
 				}
 			}
 		}
@@ -477,6 +479,8 @@ WCHAR *ADFSEFileSystem::Identify( DWORD FileID )
 
 int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 {
+	ResetEvent( hCancelFree );
+
 	static FSSpace Map;
 
 	pFSMap->ReadFSMap();
@@ -516,6 +520,11 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	for ( iFragment = pFSMap->Fragments.begin(); iFragment != pFSMap->Fragments.end(); iFragment++ )
 	{
+		if ( WaitForSingleObject( hCancelFree, 10 ) == WAIT_OBJECT_0 )
+		{
+			return 0;
+		}
+
 		if ( iFragment->FragID != 0U )
 		{
 			Map.UsedBytes -= iFragment->Length;
@@ -528,6 +537,11 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 			for ( iF = FFragments.begin(); iF != FFragments.end(); iF++ )
 			{
+				if ( WaitForSingleObject( hCancelFree, 10 ) == WAIT_OBJECT_0 )
+				{
+					return 0;
+				}
+
 				for ( DWORD Blk = iF->Sector; Blk != iF->Sector + (iF->Length/1024); Blk++ )
 				{
 					BlkNum = (DWORD) ( (double) Blk / BlockRatio );

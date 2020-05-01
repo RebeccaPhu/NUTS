@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "RootFileSystem.h"
 #include "ImageDataSource.h"
+#include "RawDataSource.h"
 #include "WindowsFileSystem.h"
 #include "libfuncs.h"
 
@@ -83,7 +84,9 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 	SetErrorMode( SEM_FAILCRITICALERRORS );
 
-	DataSource *pSource = new ImageDataSource( std::wstring( UString( DPath ) ) );
+	DataSource *pSource = new RawDataSource( std::wstring( UString( DPath ) ) );
+
+	pDirectory->Files[ FileID ].Length = pSource->PhysicalDiskSize;
 
 	return pSource;
 }

@@ -24,7 +24,6 @@ public:
 	int	ReadDirectory(void);
 	int	WriteDirectory(void);
 
-	void PETSCII(unsigned char *pptr, int chars);
 	void Shorten( unsigned char *dptr );
 
 	int	SectorForLink(int track, int sector);

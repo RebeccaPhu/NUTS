@@ -12,6 +12,10 @@ public:
 		Files.clear();
 	}
 
+	~AcornDSDDirectory( void )
+	{
+	}
+
 	int	ReadDirectory(void)
 	{
 		Files.clear();
@@ -55,7 +59,7 @@ public:
 		pDirectory	= new AcornDSDDirectory(pDataSource);
 
 		FSID  = FSID_DFS_DSD;
-		Flags = FSF_Size;
+		Flags = FSF_Size | FSF_ReadOnly;
 	}
 
 	~AcornDFSDSD(void) {

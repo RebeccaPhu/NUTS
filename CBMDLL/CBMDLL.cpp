@@ -19,6 +19,9 @@ BYTE *pPETSCII = nullptr;
 
 HMODULE hInstance;
 
+CBMDLL_API DataSourceCollector *pExternCollector;
+DataSourceCollector *pCollector;
+
 FSDescriptor CBMFS[2] = {
 	{
 		/* .FriendlyName = */ L"D64 Commore Disk Image",
@@ -131,6 +134,9 @@ CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
+	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
+	pCollector = pExternCollector;
+
 	void *pFS = NULL;
 
 	switch ( PUID )

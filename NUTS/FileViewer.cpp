@@ -377,6 +377,21 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 					}
 					break;
 
+				case IDM_SELECTALL:
+					{
+						std::vector<bool>::iterator iSelect;
+
+						for ( iSelect = FileSelections.begin(); iSelect != FileSelections.end(); iSelect ++ )
+						{
+							*iSelect = true;
+						}
+
+						ParentSelected = false;
+
+						Update();
+					}
+					break;
+
 				case IDM_NEWIMAGE:
 					{
 						static DWORD Encoding = ENCODING_ASCII;
@@ -2378,6 +2393,29 @@ void CFileViewer::DoContextMenu( void )
 	if ( ! ( FS->Flags & FSF_Supports_Dirs ) )
 	{
 		EnableMenuItem( hPopup, IDM_NEWFOLDER, MF_BYCOMMAND | MF_DISABLED );
+	}
+
+	NativeFileIterator iFile;
+
+	bool ImageSet = true;
+
+	for ( iFile = FS->pDirectory->Files.begin(); iFile != FS->pDirectory->Files.end(); iFile++ )
+	{
+		if ( ( FileSelections[ iFile->fileID ] ) && ( iFile->Type != FT_MiscImage ) )
+		{
+			ImageSet = false;
+		}
+	}
+
+	if ( ( Selected == 0 ) || ( !ImageSet ) )
+	{
+		EnableMenuItem( hPopup, IDM_INSTALL, MF_BYCOMMAND | MF_DISABLED );
+	}
+
+	if ( ( Selected == 0 ) || ( FS->Flags & FSF_ReadOnly ) )
+	{
+		EnableMenuItem( hPopup, IDM_DELETE, MF_BYCOMMAND | MF_DISABLED );
+		EnableMenuItem( hPopup, IDM_RENAME, MF_BYCOMMAND | MF_DISABLED );
 	}
 
 	TrackPopupMenu(hSubMenu, 0, rect.left + mouseX, rect.top + mouseY, 0, hWnd, NULL);

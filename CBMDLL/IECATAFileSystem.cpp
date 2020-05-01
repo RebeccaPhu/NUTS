@@ -57,6 +57,15 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 		return FILEOP_NEEDS_ASCII;
 	}
 
+	if ( pFile->EncodingID == ENCODING_ASCII )
+	{
+		static NativeFile ASCIIFile = *pFile;
+
+		IncomingASCII( &ASCIIFile );
+
+		pFile = &ASCIIFile;
+	}
+
 	/* Existence check */
 	NativeFileIterator iFile;
 
@@ -130,9 +139,29 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 	pSource->WriteSector(SectorLink, LinkTable, 512);
 
 	//	Step 2.	Create an entry in the Files list, and write the directory back.
+	if ( pFile->FSFileType != FT_C64 )
+	{
+		/* Foreign file. Make this a PRG. */
+		outfile.AttrClosed = 0xFFFFFFFF;
+		outfile.AttrLocked = 0;
+		outfile.AttrType   = 2; // PRG
+		outfile.Type       = FT_Binary;
+		outfile.Icon       = FT_Binary;
+
+		/* Check the extension if it has one, it might be a recognised type */
+		if ( pFile->Flags & FF_Extension )
+		{
+			if ( rstrnicmp( pFile->Extension, (BYTE *) "SEQ", 3 ) )
+			{
+				outfile.AttrType = 1; // SEQ
+			}
+		}
+	}
+
 	pDirectory->Files.push_back(outfile);
 
 	pDirectory->WriteDirectory();
+	pDirectory->ReadDirectory();
 
 	return 0;
 }
@@ -374,18 +403,13 @@ int IECATAFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 		//	Blank sectors
 		memset(blank, 0, 512);
 
-		int	s	= 0;
-
-		FILE	*f;
-
-		fopen_s(&f, pSource->GetLocation(), "r+b");
+		int	s = 0;
 
 		for ( DWORD i=0; i<NumSectors; i++) {
-			if (f)
-				fwrite(blank, 1, 512, f);
+			pSource->WriteSector( s, blank, 512 );
 
 			if ((i / 512) != s) {
-				s	= i / 512;
+				s = i / 512;
 
 				wsprintf( ProgressText, L"Formatting sector %d of %d", s, steps );
 
@@ -394,9 +418,6 @@ int IECATAFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 
 			Sleep(0);
 		}
-
-		if (f)
-			fclose(f);
 	}
 
 	//	Now write the structure.
@@ -647,4 +668,86 @@ std::vector<AttrDesc> IECATAFileSystem::GetAttributeDescriptions( void )
 		
 
 	return Attrs;
+}
+
+/* NOTE!!! This is not a proper PETSCII to ASCII conversion for a good reason:
+   This function is used to convert FILENAMEs to ASCII. Since these are targeting an FS
+   whose allowed character semantics are unknown, if this function needs to be called
+   it assumes a restrictive FS that allows letters, numbers and a limited set of symbols
+   ONLY. Hence, there's a lot of underscores.
+*/
+int IECATAFileSystem::MakeASCIIFilename( NativeFile *pFile )
+{
+	unsigned char ascii[256] = {
+		'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
+		' ', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '-', '_', '_',
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
+		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '_', '_', '_', '_',
+		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
+		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
+		'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
+		' ', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '-', '_', '_',
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
+		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '_', '_', '_', '_',
+		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
+		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
+	};
+
+	/* Technically, PETSCII 0 is a displayable character, and would resolve to 0 if poked
+	   into the text mode screen memory on a C64. But NUTS always uses it as a terminator,
+	   and if you PRINT'd a PETSCII 0 on a C64, you'd get nothing, so it works here.
+	*/
+	for ( WORD n=0; n<256; n++)
+	{
+		if ( pFile->Filename[ n ] != 0 )
+		{
+			pFile->Filename[ n ] = ascii[ pFile->Filename[ n ] ];
+		}
+	}
+
+	for ( WORD n=0; n<4; n++)
+	{
+		if ( pFile->Extension[ n ] != 0 )
+		{
+			pFile->Extension[ n ] = ascii[ pFile->Extension[ n ] ];
+		}
+	}
+
+	pFile->EncodingID = ENCODING_ASCII;
+
+	return 0;
+}
+
+/* This does the reverse of the above; converts ASCII filenames to PETSCII */
+void IECATAFileSystem::IncomingASCII( NativeFile *pFile )
+{
+	for ( WORD n=0; n<256; n++ )
+	{
+		if ( pFile->Filename[ n ] != 0 )
+		{
+			if ( ( pFile->Filename[ n ] >= 'a' ) && ( pFile->Filename[ n ] <= 'z' ) )
+			{
+				pFile->Filename[ n ] -= 0x20;
+			}
+
+			if ( pFile->Filename[ n ] == '\\' )
+			{
+				pFile->Filename[ n ] = '-';
+			}
+
+			if ( ( pFile->Filename[ n ] <= ' ' ) || ( pFile->Filename[ n ] >= ']' ) )
+			{
+				pFile->Filename[ n ] = '-';
+			}
+		}
+	}
+
+	/* Files not in ENCODING_PETSCII are assumed to be foreign, so should be auto-converted to PRG, etc */
+	pFile->Flags |= FF_Extension;
+
+	rstrncpy( pFile->Extension, (BYTE *) "PRG", 3 );
 }

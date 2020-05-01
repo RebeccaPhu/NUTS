@@ -65,6 +65,11 @@ int	ADFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 {
+	if ( ( pFile->EncodingID != ENCODING_ASCII ) && ( pFile->EncodingID != ENCODING_ACORN ) )
+	{
+		return FILEOP_NEEDS_ASCII;
+	}
+
 	if ( UseDFormat )
 	{
 		if ( pDirectory->Files.size() >= 77 )
@@ -416,14 +421,7 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 
 		Sectors &= 0xFFFFFF;
 
-		if ( Sectors <= ( 16 * 40 ) )
-			hint.FSID = FSID_ADFS_S;
-		else if ( Sectors <= ( 16 * 80 ) )
-			hint.FSID = FSID_ADFS_M;
-		else if ( Sectors <= ( 16 * 160 ) )
-			hint.FSID = FSID_ADFS_L;
-		else
-			hint.FSID = FSID_ADFS_H;
+		hint.FSID = FSID;
 
 		if ( ( Extension ) && ( memcmp( Extension, "ADL", 3 ) == 0 ) )
 		{
@@ -436,7 +434,7 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 	if (memcmp(&SectorBuf[1], "Hugo", 4) == 0)
 	{
 		hint.Confidence = 30;
-		hint.FSID       = FSID_ADFS_D;
+		hint.FSID       = FSID;
 	}
 
 	pSource->ReadSector( 1, SectorBuf, 1024 );
@@ -444,7 +442,7 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 	if (memcmp(&SectorBuf[1], "Nick", 4) == 0)
 	{
 		hint.Confidence = 30;
-		hint.FSID       = FSID_ADFS_D;
+		hint.FSID       = FSID;
 	}
 
 	return hint;
@@ -479,6 +477,8 @@ BYTE *ADFSFileSystem::GetTitleString( NativeFile *pFile )
 
 int ADFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 {
+	ResetEvent( hCancelFree );
+
 	BYTE Sector[ 1024 ];
 
 	static FSSpace Map;
@@ -517,6 +517,11 @@ int ADFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 		for ( iMap = pFSMap->Spaces.begin(); iMap != pFSMap->Spaces.end(); iMap++ )
 		{
+			if ( WaitForSingleObject( hCancelFree, 10 ) == WAIT_OBJECT_0 )
+			{
+				return 0;
+			}
+
 			if ( iMap->Length != 0U )
 			{
 				Map.UsedBytes -= iMap->Length * 256;
@@ -525,7 +530,7 @@ int ADFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 				{
 					BlkNum = (DWORD) ( (double) Blk / BlockRatio );
 
-					if ( pBlockMap[ BlkNum ] != BlockFixed )
+					if ( ( BlkNum < TotalBlocks ) && ( pBlockMap[ BlkNum ] != BlockFixed ) )
 					{
 						pBlockMap[ BlkNum ] = BlockFree;
 					}
@@ -763,6 +768,8 @@ int ADFSFileSystem::ResolveAppIcons( void )
 						}
 						*/
 					}
+
+					pSpriteSource->Release();
 				}
 			}
 		}

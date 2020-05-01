@@ -5,7 +5,7 @@
 class DataSource {
 public:
 	DataSource(void);
-	~DataSource(void);
+	virtual ~DataSource(void);
 
 	virtual	int	ReadSector(long Sector, void *pSectorBuf, long SectorSize) = 0;
 	virtual	int	WriteSector(long Sector, void *pSectorBuf, long SectorSize) = 0;
@@ -19,4 +19,20 @@ public:
 
 	__int64	PhysicalDiskSize;
 	__int64	LogicalDiskSize;
+
+	int RefCount;
+
+public:
+	void Retain( void )
+	{
+		RefCount++;
+	}
+
+	void Release (void )
+	{
+		if ( RefCount > 0 )
+		{
+			RefCount--;
+		}
+	}
 };

@@ -17,6 +17,9 @@ BYTE *pTeletextFont;
 
 HMODULE hInstance;
 
+SINCLAIRDLL_API DataSourceCollector *pExternCollector;
+DataSourceCollector *pCollector;
+
 FSDescriptor SinclairFS[6] = {
 	{
 		/* .FriendlyName = */ L"ZX Spectrum TAP Image",
@@ -98,6 +101,9 @@ SINCLAIRDLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 SINCLAIRDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
+	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
+	pCollector = pExternCollector;
+
 	void *pFS = NULL;
 
 	switch ( PUID )

@@ -13,6 +13,7 @@
 #include "EncodingClipboard.h"
 #include "EncodingStatusBar.h"
 #include "Preference.h"
+#include "DataSourceCollector.h"
 
 #include <winioctl.h>
 #include <process.h>
@@ -76,6 +77,8 @@ typedef struct _EnterVars
 	FileSystem *FS;
 	DWORD FSID;
 } EnterVars;
+
+DataSourceCollector *pCollector = new DataSourceCollector();
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -238,8 +241,16 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 	SetUpBaseMappings();
 
-	hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS,
-						CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
+	DWORD WindowWidth  = Preference( L"WindowWidth",  (DWORD) 800 );
+	DWORD WindowHeight = Preference( L"WindowHeight", (DWORD) 500 );
+
+	hWnd = CreateWindow(
+		szWindowClass,
+		szTitle,
+		WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS,
+		CW_USEDEFAULT, 0, WindowWidth, WindowHeight,
+		NULL, NULL, hInstance, NULL
+	);
 
 	if (!hWnd)
 		return FALSE;
@@ -429,43 +440,48 @@ unsigned int __stdcall DoEnterThread(void *param)
 	{
 		DataSource *pSource = pCurrentFS->FileDataSource( pVars->EnterIndex );
 
-		pNewFS = FSPlugins.FindAndLoadFS( pSource, &pCurrentFS->pDirectory->Files[ pVars->EnterIndex ] );
-
-		if ( pNewFS != nullptr )
+		if ( pSource != nullptr )
 		{
-			pNewFS->EnterIndex       = 0xFFFFFFFF;
-			pNewFS->pParentFS        = pCurrentFS;
-			pNewFS->UseResolvedIcons = UseResolvedIcons;
-			pNewFS->HideSidecars     = HideSidecars;
+			pNewFS = FSPlugins.FindAndLoadFS( pSource, &pCurrentFS->pDirectory->Files[ pVars->EnterIndex ] );
 
-			pNewFS->Init();
+			pSource->Release();
 
-			pNewFS->IsRaw = false;
+			if ( pNewFS != nullptr )
+			{
+				pNewFS->EnterIndex       = 0xFFFFFFFF;
+				pNewFS->pParentFS        = pCurrentFS;
+				pNewFS->UseResolvedIcons = UseResolvedIcons;
+				pNewFS->HideSidecars     = HideSidecars;
 
-			pVars->pStack->push_back( pNewFS );
+				pNewFS->Init();
 
-			pVars->pane->FS	           = pNewFS;
-			pVars->pane->CurrentFSID   = pNewFS->FSID;
-			pNewFS->hMainWindow        = hMainWnd;
-			pNewFS->hPaneWindow        = pVars->pane->hWnd;
+				pNewFS->IsRaw = false;
 
-			pVars->pane->SelectionStack.push_back( -1 );
-		}
-		else
-		{
-			MessageBox(hMainWnd,
-				L"The drive or image contains an unrecognised file system.\n\nDo you need to run NUTS as Administrator?",
-				L"NUTS FileSystem Probe", MB_OK|MB_ICONSTOP
-			);
+				pVars->pStack->push_back( pNewFS );
 
-			if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-			if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+				pVars->pane->FS	           = pNewFS;
+				pVars->pane->CurrentFSID   = pNewFS->FSID;
+				pNewFS->hMainWindow        = hMainWnd;
+				pNewFS->hPaneWindow        = pVars->pane->hWnd;
 
-			pVars->pane->SetSearching( false );
+				pVars->pane->SelectionStack.push_back( -1 );
+			}
+			else
+			{
+				MessageBox(hMainWnd,
+					L"The drive or image contains an unrecognised file system.\n\nDo you need to run NUTS as Administrator?",
+					L"NUTS FileSystem Probe", MB_OK|MB_ICONSTOP
+				);
 
-			delete pVars;
+				if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+				if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
 
-			return NUTSError( 0x00000022, L"Unrecognised file system" );
+				pVars->pane->SetSearching( false );
+
+				delete pVars;
+
+				return NUTSError( 0x00000022, L"Unrecognised file system" );
+			}
 		}
 	}
 
@@ -525,6 +541,11 @@ void DoResizeWindow(HWND hWnd) {
 	pStatusBar->SetPanelWidth( PANELID_LEFT_FONT,    80  );
 	pStatusBar->SetPanelWidth( PANELID_RIGHT_STATUS, paneWidth - 80 );
 	pStatusBar->SetPanelWidth( PANELID_RIGHT_FONT,   75 );
+
+	GetWindowRect( hWnd, &rect );
+
+	Preference( L"WindowWidth" )  = (DWORD) rect.right - rect.left;
+	Preference( L"WindowHeight" ) = (DWORD) rect.bottom - rect.top;
 }
 
 void CreateStatusBar(HWND hWnd) {
@@ -608,6 +629,18 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 
 	pVars->FS->EnterIndex = Index;
 
+	if ( pSource == nullptr )
+	{
+		MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+
+		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+		delete pVars;
+
+		return 0;
+	}
+
 	bool IsRaw = IsRawFS( UString( (char *) pVars->FS->pDirectory->Files[ Index ].Filename ) );
 
 	if (!IsRaw) {
@@ -632,6 +665,8 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 	if ( pVars->FSID != FS_Null )
 	{
 		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource, false );
+
+		pSource->Release();
 
 		if (newFS) {
 			newFS->EnterIndex       = 0xFFFFFFFF;
@@ -729,6 +764,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			CheckMenuItem( hMainMenu, ID_OPTIONS_RESOLVEDICONS, (UseResolvedIcons)?MF_CHECKED:MF_UNCHECKED );
 			CheckMenuItem( hMainMenu, IDM_HIDESIDECARS, (HideSidecars)?MF_CHECKED:MF_UNCHECKED );
 			CheckMenuItem( hMainMenu, IDM_CONFIRM, ((bool)Preference( L"Confirm", true ))?MF_CHECKED:MF_UNCHECKED );
+
+			SetTimer( hWnd, 0x5016CE, 5000, NULL );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -1092,6 +1129,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				OutputDebugStringA( a );
 				SetFocus( FocusPane );
 			}
+		}
+		return 0;
+
+	case WM_TIMER:
+		if ( wParam == (WPARAM) 0x5016CE )
+		{
+			pCollector->ReleaseSources();
 		}
 		return 0;
 

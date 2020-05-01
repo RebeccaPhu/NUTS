@@ -203,3 +203,56 @@ AttrDescriptors D64FileSystem::GetAttributeDescriptions( void )
 
 	return Attrs;
 }
+
+/* NOTE!!! This is not a proper PETSCII to ASCII conversion for a good reason:
+   This function is used to convert FILENAMEs to ASCII. Since these are targeting an FS
+   whose allowed character semantics are unknown, if this function needs to be called
+   it assumes a restrictive FS that allows letters, numbers and a limited set of symbols
+   ONLY. Hence, there's a lot of underscores.
+*/
+int D64FileSystem::MakeASCIIFilename( NativeFile *pFile )
+{
+	unsigned char ascii[256] = {
+		'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
+		' ', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '-', '_', '_',
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
+		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '_', '_', '_', '_',
+		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
+		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
+		'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
+		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
+		' ', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '-', '_', '_',
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
+		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '_', '_', '_', '_',
+		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
+		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
+	};
+
+	/* Technically, PETSCII 0 is a displayable character, and would resolve to 0 if poked
+	   into the text mode screen memory on a C64. But NUTS always uses it as a terminator,
+	   and if you PRINT'd a PETSCII 0 on a C64, you'd get nothing, so it works here.
+	*/
+	for ( WORD n=0; n<256; n++)
+	{
+		if ( pFile->Filename[ n ] != 0 )
+		{
+			pFile->Filename[ n ] = ascii[ pFile->Filename[ n ] ];
+		}
+	}
+
+	for ( WORD n=0; n<4; n++)
+	{
+		if ( pFile->Extension[ n ] != 0 )
+		{
+			pFile->Extension[ n ] = ascii[ pFile->Extension[ n ] ];
+		}
+	}
+
+	pFile->EncodingID = ENCODING_ASCII;
+
+	return 0;
+}
+

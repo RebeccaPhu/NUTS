@@ -71,11 +71,11 @@ int	WindowsFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 int	WindowsFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 {
-/*	if ( pFile->EncodingID != ENCODING_ASCII )
+	if ( pFile->EncodingID != ENCODING_ASCII )
 	{
 		return FILEOP_NEEDS_ASCII;
 	}
-*/
+
 	std::wstring destFile = folderPath;
 
 	if ( destFile.substr( destFile.length() - 1 ) != L"\\" )
@@ -84,6 +84,11 @@ int	WindowsFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	}
 
 	destFile += UString( (char *) pFile->Filename );
+
+	if ( pFile->Flags & FF_Extension )
+	{
+		destFile += std::wstring( L"." ) + std::wstring( UString( (char *) pFile->Extension ) );
+	}
 
 	FILE	*f;
 	

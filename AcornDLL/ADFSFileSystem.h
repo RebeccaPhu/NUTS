@@ -13,8 +13,6 @@ class ADFSFileSystem :
 {
 public:
 	ADFSFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) {
-		pSource = pDataSource;
-
 		FSID  = FSID_ADFS_H;
 		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs;
 
@@ -66,8 +64,15 @@ public:
 	}
 
 	~ADFSFileSystem(void) {
-		delete pDirectory;
-		delete pFSMap;
+		if ( pADFSDirectory != nullptr )
+		{
+			delete pADFSDirectory;
+		}
+
+		if ( pFSMap != nullptr )
+		{
+			delete pFSMap;
+		}
 	}
 
 	int  Init(void);
@@ -124,8 +129,6 @@ public:
 	int RunTool( BYTE ToolNum, HWND ProgressWnd );
 
 private:
-	DataSource *pSource;
-
 	ADFSDirectory *pADFSDirectory;
 
 	bool UseLFormat;

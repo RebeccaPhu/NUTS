@@ -14,7 +14,9 @@ public:
 		SecSize    = 256;
 	}
 
-	~ADFSDirectory(void);
+	~ADFSDirectory(void)
+	{
+	}
 
 	int	ReadDirectory(void);
 	int	WriteDirectory(void);

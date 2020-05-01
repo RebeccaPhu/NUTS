@@ -217,7 +217,12 @@ int OldFSMap::ReadFSMap() {
 		fs.StartSector	= (* (DWORD *) &FSSectors[ptr + 000]) & 0xFFFFFF;
 		fs.Length		= (* (DWORD *) &FSSectors[ptr + 256]) & 0xFFFFFF;
 
-		Spaces.push_back(fs);
+		/* Neither a space starting at sector 0 (The FS map itself!) or having a zero-length are valid */
+
+		if ( ( fs.StartSector != 0 ) && ( fs.Length != 0 ) )
+		{
+			Spaces.push_back(fs);
+		}
 
 		ptr	+= 3;
 
@@ -235,13 +240,20 @@ int OldFSMap::WriteFSMap() {
 
 	std::vector<FreeSpace>::iterator iSpace;
 
-	int	ptr = 0;
+	int	ptr  = 0;
+	DWORD NS = 0;
 
 	for (iSpace = Spaces.begin(); iSpace != Spaces.end(); iSpace++) {
-		* (DWORD *) &FSBytes[ptr + 0x000] = iSpace->StartSector;
-		* (DWORD *) &FSBytes[ptr + 0x100] = iSpace->Length;
+		/* Neither a space starting at sector 0 (The FS map itself!) or having a zero-length are valid */
+		if ( ( iSpace->StartSector != 0 ) && ( iSpace->Length != 0 ) )
+		{
+			* (DWORD *) &FSBytes[ptr + 0x000] = iSpace->StartSector;
+			* (DWORD *) &FSBytes[ptr + 0x100] = iSpace->Length;
 
-		ptr += 3;
+			ptr += 3;
+
+			NS++;
+		}
 	}
 
 	* (DWORD *) &FSBytes[0x0fc]	= TotalSectors;
@@ -270,7 +282,7 @@ int OldFSMap::WriteFSMap() {
 	* (WORD *) &FSBytes[0x1fb]	= DiscIdentifier;
 
 	FSBytes[0x1fd]	= BootOption;
-	FSBytes[0x1fe]	= Spaces.size() * 3;
+	FSBytes[0x1fe]	= NS * 3;
 
 	memcpy( &FSBytes[ 0x1F6 ], DiscName1, 5 );
 

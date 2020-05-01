@@ -63,8 +63,6 @@ int	D64Directory::ReadDirectory(void) {
 
 				Shorten( file.Filename );
 
-//				PETSCII(fname, 16);
-
 				//	Getting the length is a fun one. The directory entry doesn't ACTUALLY give the length in
 				//	bytes of the file, only in blocks - for listing purposes - i.e. it's there so your C64
 				//	can show "FILE   [5A]" to give you an idea of the size. The actual size can be found (if required -
@@ -107,32 +105,6 @@ int	D64Directory::ReadDirectory(void) {
 
 int	D64Directory::WriteDirectory(void) {
 	return 0;
-}
-
-
-void D64Directory::PETSCII(unsigned char *pptr, int chars) {
-	unsigned char ascii[256] = {
-		'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '~',
-		' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
-		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '@', '@', '@', '@', '@',
-		'@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@',
-		'@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@',
-		'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '~',
-		' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',
-		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '@', '@', '@', '@', '@',
-		'@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@',
-		'@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@', '@'
-	};
-
-	for (int n=0; n<16; n++)
-		pptr[n]	= ascii[pptr[n]];
-
 }
 
 

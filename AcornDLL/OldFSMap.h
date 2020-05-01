@@ -8,6 +8,13 @@ class OldFSMap
 public:
 	OldFSMap(DataSource *pDataSource) {
 		pSource	= pDataSource;
+
+		pSource->Retain();
+	}
+
+	~OldFSMap( void )
+	{
+		pSource->Release();
 	}
 
 	int	GetStartSector(FreeSpace &space);

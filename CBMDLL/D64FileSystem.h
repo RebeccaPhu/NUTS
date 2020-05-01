@@ -14,6 +14,7 @@ public:
 	}
 
 	~D64FileSystem(void) {
+		delete pDirectory;
 	}
 
 	static FileSystem *createNew(DataSource *pSource) {
@@ -35,4 +36,6 @@ public:
 	}
 
 	FSHint Offer( BYTE *Extension );
+
+	int MakeASCIIFilename( NativeFile *pFile );
 };

@@ -497,11 +497,6 @@ INT_PTR CALLBACK FreeSpaceWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
 	switch ( uMsg )
 	{
 
-	case WM_CLOSE:
-		StopSpaceThread();
-
-		return TRUE;
-
 	case WM_PAINT:
 		DefWindowProc( hwndDlg, uMsg, wParam, lParam );
 
@@ -1785,8 +1780,15 @@ FileSystem *GetFSHandler()
 		// It didn't return a file system. Guess we'll ask the plugin handler.
 		DataSource *pSource = pHostFS->FileDataSource( CurrentAction.Selection[ 0 ].fileID );
 
-		Ptr = FSPlugins.FindAndLoadFS( pSource, &CurrentAction.Selection[ 0 ] );
+		if ( pSource != nullptr )
+		{
+			Ptr = FSPlugins.FindAndLoadFS( pSource, &CurrentAction.Selection[ 0 ] );
+
+			pSource->Release();
+		}
 	}
+
+	CurrentAction.Selection[ 0 ].Length = pHostFS->pDirectory->Files[ CurrentAction.Selection[ 0 ].fileID ].Length;
 
 	return (FileSystem *) Ptr;
 }
@@ -1870,15 +1872,15 @@ int PropsPage_Handler( AppAction Action )
 
 	if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_SupportBlocks ) )
 	{
-		psp[1].dwSize      = sizeof(PROPSHEETPAGE);
-		psp[1].dwFlags     = PSP_USETITLE;
-		psp[1].hInstance   = hInst;
-		psp[1].pszTemplate = MAKEINTRESOURCE(IDD_BLOCKS_DIALOG);
-		psp[1].pszIcon     = 0;
-		psp[1].pfnDlgProc  = BlocksWindowProc;
-		psp[1].pszTitle    = (LPWSTR) L"Block Usage";
-		psp[1].lParam      = 0;
-		psp[1].pfnCallback = NULL;
+		psp[ NumPages ].dwSize      = sizeof(PROPSHEETPAGE);
+		psp[ NumPages ].dwFlags     = PSP_USETITLE;
+		psp[ NumPages ].hInstance   = hInst;
+		psp[ NumPages ].pszTemplate = MAKEINTRESOURCE(IDD_BLOCKS_DIALOG);
+		psp[ NumPages ].pszIcon     = 0;
+		psp[ NumPages ].pfnDlgProc  = BlocksWindowProc;
+		psp[ NumPages ].pszTitle    = (LPWSTR) L"Block Usage";
+		psp[ NumPages ].lParam      = 0;
+		psp[ NumPages ].pfnCallback = NULL;
 
 		NumPages++;
 	}
@@ -1959,7 +1961,11 @@ int PropsPage_Handler( AppAction Action )
 	psh.ppsp        = (LPCPROPSHEETPAGE) &psp;
 	psh.pfnCallback = PropsPageProc;
 	
-	if ( PropertySheet( &psh ) >= 1 )
+	INT_PTR PSH_R = PropertySheet( &psh );
+
+	StopSpaceThread();
+
+	if ( PSH_R >= 1 )
 	{
 		AttrWnd_iter iAttr;
 

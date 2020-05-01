@@ -25,6 +25,7 @@ public:
 	}
 
 	~IECATAFileSystem(void) {
+		delete pIECDirectory;
 	}
 
 	static FileSystem *createNew(DataSource *pSource) {
@@ -48,6 +49,8 @@ public:
 	int Format_Process( FormatType FT, HWND hWnd );
 	int CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 
+	int MakeASCIIFilename( NativeFile *pFile );
+
 	FSHint Offer( BYTE *Extension );
 
 	DWORD GetEncoding(void )
@@ -68,4 +71,6 @@ private:
 
 private:
 	int	ReleaseBlocks( NativeFile *pFile );
+
+	void IncomingASCII( NativeFile *pFile );
 };

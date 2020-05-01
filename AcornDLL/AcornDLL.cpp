@@ -17,6 +17,7 @@
 #include "BBCBASICTranslator.h"
 #include "../NUTS/Defs.h"
 #include "RISCOSIcons.h"
+#include "../NUTS/IDE8Source.h"
 
 #include "resource.h"
 
@@ -25,7 +26,10 @@ BYTE *pTeletextFont;
 
 HMODULE hInstance;
 
-FSDescriptor AcornFS[13] = {
+ACORNDLL_API DataSourceCollector *pExternCollector;
+DataSourceCollector *pCollector;
+
+FSDescriptor AcornFS[14] = {
 	{
 		/* .FriendlyName = */ L"Acorn DFS (40T)",
 		/* .PUID         = */ FSID_DFS_40,
@@ -115,6 +119,14 @@ FSDescriptor AcornFS[13] = {
 		256, 0
 	},
 	{
+		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (8 Bit IDE)",
+		/* .PUID         = */ FSID_ADFS_H8,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		0, { }, { },
+		0, { }, { }, { },
+		256, 0
+	},
+	{
 		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (New Map)",
 		/* .PUID         = */ FSID_ADFS_HN,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
@@ -187,7 +199,7 @@ GraphicTranslator AcornGFX[] = {
 PluginDescriptor AcornDescriptor = {
 	/* .Provider = */ L"Acorn",
 	/* .PUID     = */ PLUGINID_ACORN,
-	/* .NumFS    = */ 13,
+	/* .NumFS    = */ 14,
 	/* .NumFonts = */ 2,
 	/* .BASXlats = */ 1,
 	/* .GFXXlats = */ 2,
@@ -264,6 +276,9 @@ void SetRISCOSIcons( void )
 
 ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
+	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
+	pCollector = pExternCollector;
+
 	FileSystem *pFS = nullptr;
 
 	SetRISCOSIcons();
@@ -282,17 +297,29 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	case FSID_ADFS_S:
 	case FSID_ADFS_M:
 	case FSID_ADFS_H:
+	case FSID_ADFS_H8:
 	case FSID_ADFS_D:
 	case FSID_ADFS_L2:
 		{
-			ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
-
-			if ( PUID == FSID_ADFS_D )
+			if ( PUID == FSID_ADFS_H8 )
 			{
-				pADFS->SetDFormat();
-			}
+				IDE8Source *pIDE8 = new IDE8Source( pSource );
 
-			pFS = pADFS;
+				ADFSFileSystem *pADFS = new ADFSFileSystem( pIDE8 );
+
+				pFS = pADFS;
+			}
+			else
+			{
+				ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
+
+				if ( PUID == FSID_ADFS_D )
+				{
+					pADFS->SetDFormat();
+				}
+
+				pFS = pADFS;
+			}
 		}
 
 		break;

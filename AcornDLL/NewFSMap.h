@@ -9,7 +9,14 @@ public:
 	NewFSMap(DataSource *pDataSource) {
 		pSource	= pDataSource;
 
+		pSource->Retain();
+
 		RootLoc = 0;
+	}
+
+	~NewFSMap( void )
+	{
+		pSource->Release();
 	}
 
 	int	ReadFSMap();
@@ -26,7 +33,6 @@ public:
 
 protected:
 	DataSource	*pSource;
-
 
 private:
 	BYTE  IDLen;

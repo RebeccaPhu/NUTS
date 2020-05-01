@@ -10,9 +10,12 @@ class Directory
 public:
 	Directory(DataSource *pDataSource) {
 		pSource	= pDataSource;
+		
+		if ( pSource != nullptr ) { pSource->Retain(); }
 	}
 
-	~Directory(void) {
+	virtual ~Directory(void) {
+		if ( pSource != nullptr ) { pSource->Release(); }
 	}
 
 	virtual	int	ReadDirectory(void) = 0;

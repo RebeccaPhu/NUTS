@@ -174,6 +174,12 @@
     <ClCompile Include="Preference.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DataSourceCollector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RawDataSource.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -307,6 +313,12 @@
     </ClInclude>
     <ClInclude Include="Preference.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DataSourceCollector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RawDataSource.h">
+      <Filter>Header Files\Data Sources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
