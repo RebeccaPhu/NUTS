@@ -158,6 +158,6 @@ public:
 #define GFX_MENU_BASE     43600
 #define TXT_MENU_BASE     43800
 
-#define FILESYS_MENU_END  ( FILESYS_MENU_BASE + 999 )
+#define FILESYS_MENU_END  ( FILESYS_MENU_BASE + 499 )
 #define GFX_MENU_END      ( GFX_MENU_BASE + 199 )
 #define TXT_MENU_END      ( TXT_MENU_BASE + 199 )

@@ -15,7 +15,10 @@ NestedImageSource::~NestedImageSource(void)
 
 int NestedImageSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize)
 {
-	ImageDataSource::WriteSector( Sector, pSectorBuf, SectorSize );
+	if ( ImageDataSource::WriteSector( Sector, pSectorBuf, SectorSize ) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	CTempFile FileObj( AString( (WCHAR *) TempPath.c_str() ) );
 

@@ -144,52 +144,22 @@ bool ShiftPressed()
 
 bool FilenameCmp( NativeFile *pFirst, NativeFile *pSecond )
 {
-	int i=0;
-
-	BYTE *pFirstF  = pFirst->Filename;
-	BYTE *pSecondF = pSecond->Filename;
-
-	while ( i<256 )
-	{
-		/* Names of shorter length */
-		if ( ( *pFirstF == 0 ) && ( *pSecondF != 0 ) )
-		{
-			return false;
-		}
-
-		if ( ( *pFirstF != 0 ) && ( *pSecondF == 0 ) )
-		{
-			return false;
-		}
-
-		/* Different char */
-		if ( *pFirstF != *pSecondF )
-		{
-			return false;
-		}
-
-		i++;
-
-		/* End of string */
-		if ( *pFirstF == 0 )
-		{
-			break;
-		}
-
-		pFirstF++;
-		pSecondF++;
-	}
-
-	/* No terminator */
-	if ( i == 256 )
+	if ( ( pFirst->Flags & FF_Extension) != ( pSecond->Flags & FF_Extension ) )
 	{
 		return false;
 	}
 
-	/* Check extension */
-	if ( memcmp( pFirst->Extension, pSecond->Extension, 4 ) != 0 )
+	if ( !rstrnicmp( pFirst->Filename, pSecond->Filename, 256 ) )
 	{
 		return false;
+	}
+
+	if ( pFirst->Flags & FF_Extension )
+	{
+		if ( !rstrnicmp( pFirst->Extension, pSecond->Extension, 3 ) )
+		{
+			return false;
+		}
 	}
 
 	/* Seems identical */

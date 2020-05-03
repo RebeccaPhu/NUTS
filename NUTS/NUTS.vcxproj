@@ -97,6 +97,7 @@
     <ClCompile Include="EncodingTextArea.cpp" />
     <ClCompile Include="ExtensionRegistry.cpp" />
     <ClCompile Include="FileOps.cpp" />
+    <ClCompile Include="FloppyDataSource.cpp" />
     <ClCompile Include="FontBitmap.cpp" />
     <ClCompile Include="IconRatio.cpp" />
     <ClCompile Include="ImageWizard.cpp" />
@@ -144,6 +145,7 @@
     <ClInclude Include="EncodingTextArea.h" />
     <ClInclude Include="ExtensionRegistry.h" />
     <ClInclude Include="FileOps.h" />
+    <ClInclude Include="FloppyDataSource.h" />
     <ClInclude Include="FontBitmap.h" />
     <ClInclude Include="IconRatio.h" />
     <ClInclude Include="ImageWizard.h" />

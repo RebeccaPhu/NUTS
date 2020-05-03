@@ -9,6 +9,7 @@
 
 #include <string>
 
+#define NUTS_SUCCESS       0x00000000
 #define ERROR_READONLY     0x00000020
 #define ERROR_UNSUPPORTED  0x00000021
 #define USE_STANDARD_WND   0x00000022
@@ -84,15 +85,11 @@ public:
 
 	virtual DataSource *FileDataSource( DWORD FileID )
 	{
-		NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
-
 		return nullptr;
 	}
 
 	virtual FileSystem *FileFilesystem( DWORD FileID )
 	{
-		NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
-
 		return nullptr;
 	}
 
@@ -351,6 +348,16 @@ public:
 
 		pFile->EncodingID = ENCODING_ASCII;
 
+		return 0;
+	}
+
+	virtual int ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
+	{
+		return 0;
+	}
+
+	virtual int ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj )
+	{
 		return 0;
 	}
 

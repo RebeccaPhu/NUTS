@@ -1,5 +1,7 @@
 #pragma once
 
+#define DS_SUCCESS 0x00000000
+
 #include "Defs.h"
 
 class DataSource {

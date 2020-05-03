@@ -112,6 +112,7 @@ typedef enum _FSFlags {
 	FSF_Size             = 0x00001000,
 	FSF_Capacity         = 0x00002000,
 	FSF_Reorderable      = 0x00004000,
+	FSF_Exports_Sidecars = 0x00008000,
 } FSFlags;
 
 typedef struct _ProviderDesc {
@@ -275,6 +276,15 @@ typedef struct _FSTool {
 	std::wstring ToolName;
 	std::wstring ToolDesc;
 } FSTool;
+
+typedef struct _SidecarExport {
+	BYTE Filename[256];
+	void *FileObj;
+} SidecarExport;
+
+typedef struct _SidecarImport {
+	BYTE Filename[256];
+} SidecarImport;
 
 typedef std::vector<FSTool> FSToolList;
 typedef FSToolList::iterator FSToolIterator;

@@ -12,6 +12,7 @@ public:
 		UseLFormat = false;
 		UseDFormat = false;
 		SecSize    = 256;
+		FSID       = FS_Null;
 	}
 
 	~ADFSDirectory(void)
@@ -28,6 +29,7 @@ public:
 
 	DWORD DirSector;
 	DWORD ParentSector;
+	DWORD FSID;
 
 	bool  UseLFormat;
 	bool  UseDFormat;

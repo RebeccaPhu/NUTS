@@ -194,11 +194,18 @@ int OldFSMap::ReadFSMap() {
 
 	Spaces.clear();
 
-	unsigned char FSSectors[512];
+	BYTE FSSectors[512];
+
+	int Err = 0;
 
 	// Free space map occupies two sectors in track 0, so no translation needed
-	pSource->ReadSector( 0, &FSSectors[0x000], 256);
-	pSource->ReadSector( 1, &FSSectors[0x100], 256);
+	Err += pSource->ReadSector( 0, &FSSectors[0x000], 256);
+	Err += pSource->ReadSector( 1, &FSSectors[0x100], 256);
+
+	if ( Err != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	DiscIdentifier	= * (WORD *) &FSSectors[0x1fb];
 	NextEntry		= FSSectors[0x1fe];
@@ -305,10 +312,12 @@ int OldFSMap::WriteFSMap() {
 
 	FSBytes[0x1ff]	= sum & 0xff;
 
-	// Free space map occupies two sectors in track 0, so no translation needed
-	pSource->WriteSector( 0, &FSBytes[0x000], 256);
-	pSource->WriteSector( 1, &FSBytes[0x100], 256);
+	int Err = DS_SUCCESS;
 
-	return 0;
+	// Free space map occupies two sectors in track 0, so no translation needed
+	Err += pSource->WriteSector( 0, &FSBytes[0x000], 256);
+	Err += pSource->WriteSector( 1, &FSBytes[0x100], 256);
+
+	return Err;
 }
 

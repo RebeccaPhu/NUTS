@@ -73,9 +73,11 @@ BYTE *AcornDFSFileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 	{
 		NativeFile	*pFile	= &pDirectory->Files[FileIndex];
 
-		rsprintf( status, "%s | [%s] - %0X bytes - Load: &%08X Exec: &%08X\n",
+		rsprintf( status,
+			"%s | [%s] - %0X bytes - Load: &%08X Exec: &%08X",
 			pFile->Filename, (pFile->AttrLocked)?"L":"-",
-			pFile->Length, pFile->LoadAddr, pFile->ExecAddr);
+			(DWORD) pFile->Length, pFile->LoadAddr, pFile->ExecAddr
+		);
 	}
 		
 	return status;
@@ -89,38 +91,38 @@ FSHint AcornDFSFileSystem::Offer( BYTE *Extension )
 	FSHint hint;
 
 	hint.Confidence = 0;
-	hint.FSID       = FS_Null;
+	hint.FSID       = FSID;
 
 	if ( Extension != nullptr )
 	{
 		if ( _strnicmp( (char *) Extension, "SSD", 3 ) == 0 )
 		{
 			hint.Confidence = 20;
+		}
 
-			if ( pSource->PhysicalDiskSize <= ( 10 * 40 * 256 ) )
-				hint.FSID = FSID_DFS_40;
-			else if ( pSource->PhysicalDiskSize <= ( 10 * 80 * 256 ) )
-				hint.FSID = FSID_DFS_80;
+		if ( _strnicmp( (char *) Extension, "IMG", 3 ) == 0 )
+		{
+			hint.Confidence = 10;
 		}
 	}
 
-	if ( ( hint.FSID != FSID_DFS_40 ) && ( hint.FSID != FSID_DFS_80 ) )
+	BYTE SectorBuf[ 512 ];
+
+	if ( pSource->ReadSector(0, SectorBuf, 512) != DS_SUCCESS )
 	{
-		BYTE SectorBuf[ 512 ];
+		return hint;
+	}
 
-		pSource->ReadSector(0, SectorBuf, 512);
+	DWORD sectors = ((SectorBuf[256 + 6 + 0] & 3) << 8) | SectorBuf[256 + 6 + 1];
 
-		DWORD sectors = ((SectorBuf[256 + 6 + 0] & 3) << 8) | SectorBuf[256 + 6 + 1];
+	if ( ( sectors == 400 ) && ( FSID == FSID_DFS_40 ) )
+	{
+		hint.Confidence += 20;
+	}
 
-		if ((sectors == 400) || (sectors == 800))
-		{
-			hint.Confidence = 5;
-
-			if ( sectors == 400 )
-				hint.FSID = FSID_DFS_40;
-			else
-				hint.FSID = FSID_DFS_80;
-		}
+	if ( ( sectors == 800 ) && ( FSID == FSID_DFS_80 ) )
+	{
+		hint.Confidence += 20;
 	}
 
 	return hint;

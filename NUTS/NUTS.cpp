@@ -327,7 +327,10 @@ unsigned int __stdcall DoParentThread( void *param )
 		pVars->pane->FS          = FS;
 		pVars->pane->CurrentFSID = FS->FSID;
 	} else {
-		FS->Parent();
+		if ( FS->Parent() != NUTS_SUCCESS )
+		{
+			NUTSError::Report( L"Parent Directory", hMainWnd );
+		}
 	}
 
 	pVars->pane->SelectionStack.pop_back();
@@ -382,12 +385,18 @@ unsigned int __stdcall DoEnterThread(void *param)
 
 	if ( pCurrentFS->pDirectory->Files[pVars->EnterIndex].Flags & FF_Directory )
 	{
-		pCurrentFS->ChangeDirectory( pVars->EnterIndex );
+		if ( pCurrentFS->ChangeDirectory( pVars->EnterIndex ) )
+		{
+			NUTSError::Report( L"Change Directory", hMainWnd );
 
-		pVars->pane->SelectionStack.push_back( -1 );
-		pCurrentFS->EnterIndex = 0xFFFFFFFF;
+		}
+		else
+		{
+			pVars->pane->SelectionStack.push_back( -1 );
+			pCurrentFS->EnterIndex = 0xFFFFFFFF;
 
-		ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+			ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+		}
 
 		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
 		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
@@ -422,7 +431,10 @@ unsigned int __stdcall DoEnterThread(void *param)
 		pNewFS->UseResolvedIcons = UseResolvedIcons;
 		pNewFS->HideSidecars     = HideSidecars;
 
-		pNewFS->Init();
+		if ( pNewFS->Init() != NUTS_SUCCESS )
+		{
+			NUTSError::Report( L"Initialise File System", hMainWnd );
+		}
 
 		pNewFS->hMainWindow = hMainWnd;
 		pNewFS->hPaneWindow = pVars->pane->hWnd;
@@ -438,6 +450,8 @@ unsigned int __stdcall DoEnterThread(void *param)
 	}
 	else
 	{
+		NUTSError::Code = NUTS_SUCCESS;
+
 		DataSource *pSource = pCurrentFS->FileDataSource( pVars->EnterIndex );
 
 		if ( pSource != nullptr )
@@ -453,7 +467,10 @@ unsigned int __stdcall DoEnterThread(void *param)
 				pNewFS->UseResolvedIcons = UseResolvedIcons;
 				pNewFS->HideSidecars     = HideSidecars;
 
-				pNewFS->Init();
+				if ( pNewFS->Init() != NUTS_SUCCESS )
+				{
+					NUTSError::Report( L"Initialise File System", hMainWnd );
+				}
 
 				pNewFS->IsRaw = false;
 
@@ -468,10 +485,17 @@ unsigned int __stdcall DoEnterThread(void *param)
 			}
 			else
 			{
-				MessageBox(hMainWnd,
-					L"The drive or image contains an unrecognised file system.\n\nDo you need to run NUTS as Administrator?",
-					L"NUTS FileSystem Probe", MB_OK|MB_ICONSTOP
-				);
+				if ( NUTSError::Code != NUTS_SUCCESS )
+				{
+					NUTSError::Report( L"Load Data Source", hMainWnd );
+				}
+				else
+				{
+					MessageBox(hMainWnd,
+						L"The drive or image contains an unrecognised file system.\n\nDo you need to run NUTS as Administrator?",
+						L"NUTS FileSystem Probe", MB_OK|MB_ICONSTOP
+					);
+				}
 
 				if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
 				if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
@@ -557,26 +581,6 @@ void CreateStatusBar(HWND hWnd) {
 	pStatusBar->AddPanel( PANELID_RIGHT_FONT,   50, (BYTE *) "PC437",  FONTID_PC437, PF_CENTER | PF_SIZER | PF_SPARE );
 }
 
-void CopyObject(FileSystem *sourceFS, FileSystem *destFS, int FileIndex) {
-	NativeFile srcFile = sourceFS->pDirectory->Files[FileIndex];
-
-	CTempFile FileObj;
-
-	sourceFS->ReadFile( srcFile.fileID, FileObj );
-	destFS->WriteFile( &srcFile, FileObj );
-
-	if ( sourceFS == leftPane.FS )
-	{
-		leftPane.Updated = true;
-		leftPane.Redraw();
-	}
-	else
-	{
-		rightPane.Updated = true;
-		rightPane.Redraw();
-	}
-}
-
 void TrackMouse( void )
 {
 	if ( !Tracking )
@@ -631,7 +635,14 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 
 	if ( pSource == nullptr )
 	{
-		MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+		if ( NUTSError::Code == 0 )
+		{
+			MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+		}
+		else
+		{
+			NUTSError::Report( L"Load Data Source", hMainWnd );
+		}
 
 		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
 		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
@@ -662,6 +673,8 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 
 	pVars->pane->SetSearching( true );
 
+	NUTSError::Code = NUTS_SUCCESS;
+
 	if ( pVars->FSID != FS_Null )
 	{
 		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource, false );
@@ -676,7 +689,10 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 			newFS->hMainWindow      = hMainWnd;
 			newFS->hPaneWindow      = pVars->pane->hWnd;
 
-			newFS->Init();
+			if ( newFS->Init() != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"Initialise File System", hMainWnd );
+			}
 
 			pVars->pane->FS    = newFS;
 
@@ -695,6 +711,17 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 			{
 				EnableWindow( pVars->pane->ControlButtons[ 2 ], FALSE );
 				EnableWindow( pVars->pane->ControlButtons[ 3 ], FALSE );
+			}
+		}
+		else
+		{
+			if ( NUTSError::Code != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"Load Data Source", hMainWnd );
+			}
+			else
+			{
+				MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONERROR | MB_OK );
 			}
 		}
 	}
@@ -1136,6 +1163,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if ( wParam == (WPARAM) 0x5016CE )
 		{
 			pCollector->ReleaseSources();
+		}
+
+		{
+			OutputDebugStringW( L"Last error: " );
+			OutputDebugStringW( NUTSError::String.c_str() );
+			OutputDebugStringW( L"\n" );
 		}
 		return 0;
 

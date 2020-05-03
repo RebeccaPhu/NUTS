@@ -5,9 +5,12 @@
 #include "SpriteFile.h"
 #include "Sprite.h"
 #include "RISCOSIcons.h"
+#include "../NUTS/NUTSError.h"
 #include "resource.h"
 
 #include <time.h>
+#include <sstream>
+#include <iterator>
 
 DWORD ADFSFileSystem::TranslateSector(DWORD InSector)
 {
@@ -35,6 +38,11 @@ DWORD ADFSFileSystem::TranslateSector(DWORD InSector)
 
 int	ADFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 {
+	if ( FileID > pDirectory->Files.size() )
+	{
+		return NUTSError( 0x3D, L"Invalid file index" );
+	}
+
 	NativeFile *pFile = &pDirectory->Files[ FileID ];
 
 	int	Sectors	= (pFile->Length & 0xffffff00) >> 8;
@@ -48,7 +56,10 @@ int	ADFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	DWORD fileSize = (DWORD) pFile->Length;
 
 	while (Sectors) {
-		pSource->ReadSector( TranslateSector( pFile->SSector + offset ), Sector, 256);
+		if ( pSource->ReadSector( TranslateSector( pFile->SSector + offset ), Sector, 256) != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		if (fileSize > 256)
 			store.Write( Sector, 256 );
@@ -106,7 +117,10 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	while (DataLeft) {
 		store.Read( buffer, 256 );
 
-		pSource->WriteSector( TranslateSector( space.StartSector + SectNum ), buffer, 256);
+		if ( pSource->WriteSector( TranslateSector( space.StartSector + SectNum ), buffer, 256) != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		if (DataLeft > 256)	
 			DataLeft	-= 256;
@@ -116,7 +130,10 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		SectNum++;
 	}
 	
-	pFSMap->OccupySpace(space);
+	if ( pFSMap->OccupySpace(space) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	NativeFile	DestFile	= *pFile;
 
@@ -147,11 +164,11 @@ int ADFSFileSystem::ChangeDirectory( DWORD FileID )
 	rstrncat(path, (BYTE *) ".", 512 );
 	rstrncat(path, file->Filename, 512 );
 
-	pDirectory->ReadDirectory();
+	int r = pDirectory->ReadDirectory();
 
 	ResolveAppIcons();
 
-	return 0;
+	return r;
 }
 
 bool ADFSFileSystem::IsRoot() {
@@ -178,7 +195,7 @@ BYTE *ADFSFileSystem::DescribeFile(DWORD FileIndex) {
 
 	NativeFile	*pFile	= &pDirectory->Files[FileIndex];
 
-	if ( !pADFSDirectory->LooksRISCOSIsh )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( ( FSID == FSID_ADFS_H ) && ( pADFSDirectory->LooksRISCOSIsh ) ) )
 	{
 		sprintf_s( (char *) status, 128, "[%s%s%s%s] %06X bytes, &%08X/&%08X",
 			(pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
@@ -226,11 +243,11 @@ BYTE *ADFSFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 	{
 		NativeFile *pFile = &pDirectory->Files[FileIndex];
 
-		if ( !pADFSDirectory->LooksRISCOSIsh )
+		if ( ( FSID != FSID_ADFS_L2 ) && ( FSID != FSID_ADFS_D ) && ( ( FSID != FSID_ADFS_H ) || ( !pADFSDirectory->LooksRISCOSIsh ) ) )
 		{
 			rsprintf( status, "%s | [%s%s%s%s] - %0X bytes - Load: &%08X Exec: &%08X",
 				pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
-				pFile->Length, pFile->LoadAddr, pFile->ExecAddr);
+				(DWORD) pFile->Length, pFile->LoadAddr, pFile->ExecAddr);
 		
 			return status;
 		}
@@ -270,16 +287,18 @@ int	ADFSFileSystem::Parent() {
 
 	pADFSDirectory->SetSector( ParentSector );
 
-	pDirectory->ReadDirectory();
+	int r = pDirectory->ReadDirectory();
 
 	BYTE *p = rstrrchr(path, (BYTE) '.', 512 );
 
 	if (p)
-		*p	= 0;
+	{
+		*p = 0;
+	}
 
 	ResolveAppIcons();
 
-	return 0;
+	return r;
 }
 
 int	ADFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
@@ -352,20 +371,30 @@ int	ADFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 
 	pFSMap->GetStartSector(space);
 
-	pSource->WriteSector(TranslateSector( space.StartSector + 0 ), &DirectorySector[0x000], 256);
-	pSource->WriteSector(TranslateSector( space.StartSector + 1 ), &DirectorySector[0x100], 256);
-	pSource->WriteSector(TranslateSector( space.StartSector + 2 ), &DirectorySector[0x200], 256);
-	pSource->WriteSector(TranslateSector( space.StartSector + 3 ), &DirectorySector[0x300], 256);
-	pSource->WriteSector(TranslateSector( space.StartSector + 4 ), &DirectorySector[0x400], 256);
+	int Err = DS_SUCCESS;
+
+	Err += pSource->WriteSector(TranslateSector( space.StartSector + 0 ), &DirectorySector[0x000], 256);
+	Err += pSource->WriteSector(TranslateSector( space.StartSector + 1 ), &DirectorySector[0x100], 256);
+	Err += pSource->WriteSector(TranslateSector( space.StartSector + 2 ), &DirectorySector[0x200], 256);
+	Err += pSource->WriteSector(TranslateSector( space.StartSector + 3 ), &DirectorySector[0x300], 256);
+	Err += pSource->WriteSector(TranslateSector( space.StartSector + 4 ), &DirectorySector[0x400], 256);
 
 	if ( UseDFormat )
 	{
-		pSource->WriteSector( space.StartSector + 5, &DirectorySector[ 0x500 ], 256 );
-		pSource->WriteSector( space.StartSector + 6, &DirectorySector[ 0x600 ], 256 );
-		pSource->WriteSector( space.StartSector + 7, &DirectorySector[ 0x700 ], 256 );
+		Err += pSource->WriteSector( space.StartSector + 5, &DirectorySector[ 0x500 ], 256 );
+		Err += pSource->WriteSector( space.StartSector + 6, &DirectorySector[ 0x600 ], 256 );
+		Err += pSource->WriteSector( space.StartSector + 7, &DirectorySector[ 0x700 ], 256 );
 	}
 
-	pFSMap->OccupySpace(space);
+	if ( Err != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	if ( pFSMap->OccupySpace(space) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	NativeFile	DirEnt;
 
@@ -383,7 +412,10 @@ int	ADFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 
 	pDirectory->Files.push_back(DirEnt);
 
-	pDirectory->WriteDirectory();
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	if ( EnterAfter )
 	{
@@ -393,11 +425,11 @@ int	ADFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 		rstrncat(path, Filename, 512 );
 	}
 
-	pDirectory->ReadDirectory();
+	int r = pDirectory->ReadDirectory();
 
 	ResolveAppIcons();
 
-	return 0;
+	return r;
 }
 
 FSHint ADFSFileSystem::Offer( BYTE *Extension )
@@ -405,7 +437,7 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 	FSHint hint;
 
 	hint.Confidence = 0;
-	hint.FSID       = FS_Null;
+	hint.FSID       = FSID;
 
 	BYTE SectorBuf[ 1024 ];
 
@@ -413,25 +445,37 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 
 	if (memcmp(&SectorBuf[1], "Hugo", 4) == 0)
 	{
-		hint.Confidence = 30;
-
-		pSource->ReadSector( 0, SectorBuf, 256 );
+		/* This is ADFS S/M/L */
+		if ( pSource->ReadSector( 0, SectorBuf, 256 ) != DS_SUCCESS )
+		{
+			return hint;
+		}
 
 		DWORD Sectors = * (DWORD *) &SectorBuf[ 0xFC ];
 
 		Sectors &= 0xFFFFFF;
 
-		hint.FSID = FSID;
+		hint.FSID       = FSID;
+		hint.Confidence = 20;
 
-		if ( ( Extension ) && ( memcmp( Extension, "ADL", 3 ) == 0 ) )
+		if ( ( Sectors == 0x280 ) && ( FSID == FSID_ADFS_S )  ) { hint.Confidence = 30; }
+		if ( ( Sectors == 0x500 ) && ( FSID == FSID_ADFS_M )  ) { hint.Confidence = 30; }
+		if ( ( Sectors == 0xA00 ) && ( FSID == FSID_ADFS_L2 ) ) { hint.Confidence = 30; }
+		if ( ( Sectors >  0xA00 ) && ( FSID == FSID_ADFS_H )  ) { hint.Confidence = 30; }
+		if ( ( Sectors >  0xA00 ) && ( FSID == FSID_ADFS_H8 ) ) { hint.Confidence = 30; }
+
+		if ( ( Extension ) && ( memcmp( Extension, "ADL", 3 ) == 0 ) && ( FSID == FSID_ADFS_L ) )
 		{
-			hint.FSID = FSID_ADFS_L;
+			hint.Confidence = 30;
 		}
 	}
 
-	pSource->ReadSector( 1, SectorBuf, 1024 );
+	if ( pSource->ReadSector( 1, SectorBuf, 1024 ) != DS_SUCCESS )
+	{
+		return hint;
+	}
 
-	if (memcmp(&SectorBuf[1], "Hugo", 4) == 0)
+	if ( (memcmp(&SectorBuf[1], "Hugo", 4) == 0) && ( FSID == FSID_ADFS_D ) )
 	{
 		hint.Confidence = 30;
 		hint.FSID       = FSID;
@@ -439,7 +483,7 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 
 	pSource->ReadSector( 1, SectorBuf, 1024 );
 
-	if (memcmp(&SectorBuf[1], "Nick", 4) == 0)
+	if ( ( memcmp(&SectorBuf[1], "Nick", 4) == 0) && ( FSID == FSID_ADFS_D ) )
 	{
 		hint.Confidence = 30;
 		hint.FSID       = FSID;
@@ -483,7 +527,10 @@ int ADFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	static FSSpace Map;
 
-	pSource->ReadSector( 0, Sector, 256 );
+	if ( pSource->ReadSector( 0, Sector, 256 ) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	DWORD NumBlocks = * (DWORD *) &Sector[0x0fc];
 
@@ -513,7 +560,10 @@ int ADFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	if ( pFSMap != nullptr )
 	{
-		pFSMap->ReadFSMap();
+		if ( pFSMap->ReadFSMap() != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		for ( iMap = pFSMap->Spaces.begin(); iMap != pFSMap->Spaces.end(); iMap++ )
 		{
@@ -597,7 +647,7 @@ AttrDescriptors ADFSFileSystem::GetAttributeDescriptions( void )
 		Attrs.push_back( Attr );
 	}
 
-	if ( pADFSDirectory->LooksRISCOSIsh )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( ( FSID == FSID_ADFS_H ) && ( pADFSDirectory->LooksRISCOSIsh ) ) )
 	{
 		/* File Type. Hex. */
 		Attr.Index = 7;
@@ -697,7 +747,10 @@ DataSource *ADFSFileSystem::FileDataSource( DWORD FileID )
 {
 	CTempFile FileObj;
 
-	ReadFile( FileID, FileObj );
+	if ( ReadFile( FileID, FileObj ) != DS_SUCCESS )
+	{
+		return nullptr;
+	}
 
 	FileObj.Keep();
 
@@ -725,7 +778,13 @@ int ADFSFileSystem::ResolveAppIcons( void )
 		{
 			ADFSFileSystem TempFS( *this );
 
-			TempFS.ChangeDirectory( iFile->fileID );
+			/* This prevents the cloned FS trying to resolve any icons in the subdirectory we're about to instruct it to enter */
+			TempFS.UseResolvedIcons = false;
+
+			if ( TempFS.ChangeDirectory( iFile->fileID ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			NativeFileIterator iSpriteFile;
 
@@ -735,9 +794,17 @@ int ADFSFileSystem::ResolveAppIcons( void )
 				{
 					DataSource *pSpriteSource = TempFS.FileDataSource( iSpriteFile->fileID );
 
+					if ( pSpriteSource == nullptr )
+					{
+						return -1;
+					}
+
 					SpriteFile spriteFile( pSpriteSource );
 
-					spriteFile.Init();
+					if ( spriteFile.Init() != DS_SUCCESS )
+					{
+						return -1;
+					}
 
 					NativeFileIterator iSprite;
 
@@ -747,7 +814,10 @@ int ADFSFileSystem::ResolveAppIcons( void )
 						{
 							CTempFile FileObj;
 
-							spriteFile.ReadFile( iSprite->fileID, FileObj );
+							if ( spriteFile.ReadFile( iSprite->fileID, FileObj ) != DS_SUCCESS )
+							{
+								return -1;
+							}
 
 							Sprite sprite( FileObj );
 
@@ -782,6 +852,8 @@ int ADFSFileSystem::Init(void) {
 	pADFSDirectory	= new ADFSDirectory( pSource );
 	pDirectory = (Directory *) pADFSDirectory;
 
+	pADFSDirectory->FSID = FSID;
+
 	if ( UseLFormat )
 	{
 		pADFSDirectory->SetLFormat();
@@ -797,14 +869,24 @@ int ADFSFileSystem::Init(void) {
 
 	pFSMap  = new OldFSMap( pSource );
 
-	pFSMap->ReadFSMap();
-	pDirectory->ReadDirectory();
+	if ( pFSMap->ReadFSMap() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	if ( UseDFormat )
 	{
 		BYTE Sectors[ 512 ];
 
-		pSource->ReadSector( 0, Sectors, 512 );
+		if ( pSource->ReadSector( 0, Sectors, 512 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		ZeroMemory( DiscName, 11 );
 
@@ -833,7 +915,10 @@ int ADFSFileSystem::Init(void) {
 
 int ADFSFileSystem::Refresh( void )
 {
-	pDirectory->ReadDirectory();
+	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	ResolveAppIcons();
 
@@ -842,7 +927,7 @@ int ADFSFileSystem::Refresh( void )
 
 WCHAR *ADFSFileSystem::Identify( DWORD FileID )
 {
-	if ( !pADFSDirectory->LooksRISCOSIsh )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( ( FSID == FSID_ADFS_H ) && ( pADFSDirectory->LooksRISCOSIsh ) ) )
 	{
 		return FileSystem::Identify( FileID );
 	}
@@ -942,7 +1027,10 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 		for ( DWORD Sector=0; Sector < Sectors; Sector++ )
 		{
-			pSource->WriteSector( Sector, SectorBuf, 256 );
+			if ( pSource->WriteSector( Sector, SectorBuf, 256 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 1, 3, Sector, Sectors, false ), (LPARAM) EraseMsg );
 		}
@@ -970,7 +1058,10 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 	pFSMap->BootOption     = 0;
 	pFSMap->TotalSectors   = Sectors;
 
-	pFSMap->WriteFSMap();
+	if ( pFSMap->WriteFSMap() != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 0, 1, false ), (LPARAM) RootMsg );
 
@@ -1002,13 +1093,17 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 	}
 
 	pDirectory->Files.clear();
-	pDirectory->WriteDirectory();
+	
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	if ( UseDFormat )
 	{
 		/* Fixup disc name */
-		pSource->ReadSector( 0, &SectorBuf[ 0x000 ], 256 );
-		pSource->ReadSector( 1, &SectorBuf[ 0x100 ], 256 );
+		if ( pSource->ReadSector( 0, &SectorBuf[ 0x000 ], 256 ) != DS_SUCCESS ) { return -1; }
+		if ( pSource->ReadSector( 1, &SectorBuf[ 0x100 ], 256 ) != DS_SUCCESS ) { return -1; }
 
 		char NewDiscName[ 10 ];
 
@@ -1026,8 +1121,8 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 			}
 		}
 
-		pSource->WriteSector( 0, &SectorBuf[ 0x000 ], 256 );
-		pSource->WriteSector( 1, &SectorBuf[ 0x100 ], 256 );
+		if ( pSource->WriteSector( 0, &SectorBuf[ 0x000 ], 256 ) != DS_SUCCESS ) { return -1; }
+		if ( pSource->WriteSector( 1, &SectorBuf[ 0x100 ], 256 ) != DS_SUCCESS ) { return -1; }
 	}
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 1, 1, true ), (LPARAM) DoneMsg );
@@ -1066,7 +1161,10 @@ int ADFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 			space.StartSector = iFile->SSector;
 			space.Length      = FileSectors;
 			
-			pFSMap->ReleaseSpace( space );
+			if ( pFSMap->ReleaseSpace( space ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			iFile = pDirectory->Files.erase( iFile );
 
@@ -1079,13 +1177,19 @@ int ADFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 		}
 		else
 		{
-			pDirectory->WriteDirectory();
+			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			return FILEOP_SUCCESS;
 		}
 	}
 
-	pDirectory->ReadDirectory();
+	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	ResolveAppIcons();
 
@@ -1157,7 +1261,10 @@ int ADFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 
 		pFSMap->Spaces.push_back( space );
 
-		pFSMap->WriteFSMap();
+		if ( pFSMap->WriteFSMap() != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		ValidateItems  = TotalSectors;
 		ValidatedItems = (UseDFormat)?0x08:0x05;
@@ -1165,13 +1272,19 @@ int ADFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 
 		::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 2, 3, 0, (int) TotalSectors, false), 0 );
 
-		ValidateDirectory ( (UseDFormat)?0x04:0x02, (UseDFormat)?0x04:0x02, FixedParentLinks, FixedDirSigs );
+		if ( ValidateDirectory ( (UseDFormat)?0x04:0x02, (UseDFormat)?0x04:0x02, FixedParentLinks, FixedDirSigs ) != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		/* The free space map has now been reset */
 		::SendMessage( ProgressWnd, WM_FSTOOL_CURRENTOP, 0, (LPARAM) L"Writing calculated free space map" );
 		::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 3, 3, 0, 1, false), 0 );
 
-		pFSMap->WriteFSMap();
+		if ( pFSMap->WriteFSMap() != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		::SendMessage( ProgressWnd, WM_FSTOOL_CURRENTOP, 0, (LPARAM) L"Finished" );
 		::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 3, 3, 1, 1, true), 0 );
@@ -1186,7 +1299,7 @@ int ADFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 	return 0;
 }
 
-void ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs )
+int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs )
 {
 	BYTE DirBytes[ 0x800 ];
 
@@ -1199,7 +1312,10 @@ void ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWO
 
 	for ( DWORD s=0; s<DirSectors; s++ )
 	{
-		pSource->ReadSector( TranslateSector( DirSector + s ), &DirBytes[ s * 0x100 ], 256 );
+		if ( pSource->ReadSector( TranslateSector( DirSector + s ), &DirBytes[ s * 0x100 ], 256 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
 	}
 
 	/* Check the signatures are intact */
@@ -1294,7 +1410,10 @@ void ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWO
 	/* Write the fixed directory back */
 	for ( DWORD s=0; s<DirSectors; s++ )
 	{
-		pSource->WriteSector( TranslateSector( DirSector + s ), &DirBytes[ s * 0x100 ], 256 );
+		if ( pSource->WriteSector( TranslateSector( DirSector + s ), &DirBytes[ s * 0x100 ], 256 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
 	}
 
 	/* Rescan the directory for subdirectories, and fix them */
@@ -1325,9 +1444,155 @@ void ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWO
 		{
 			DWORD StartSector  = * (DWORD *) &DirBytes[ptr + 22]; StartSector &= 0xFFFFFF;
 
-			ValidateDirectory( StartSector, DirSector, FixedParents, FixedSigs );
+			if ( ValidateDirectory( StartSector, DirSector, FixedParents, FixedSigs ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 		}
 
 		ptr	+= 26;
 	}
+
+	return 0;
+}
+
+FileSystem *ADFSFileSystem::FileFilesystem( DWORD FileID )
+{
+	if ( FileID > pDirectory->Files.size() )
+	{
+		NUTSError( 0x3E, L"Invalid file index" );
+
+		return nullptr;
+	}
+
+	if ( pDirectory->Files[ FileID ].RISCTYPE == 0xFF9 )
+	{
+		DataSource *pSource = FileDataSource( FileID );
+
+		if ( pSource == nullptr )
+		{
+			return nullptr;
+		}
+
+		FileSystem *pNewFS = new SpriteFile( pSource );
+
+		pSource->Release();
+
+		return pNewFS;
+	}
+
+	return nullptr;
+}
+
+int ADFSFileSystem::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
+{
+	rstrncpy( sidecar.Filename, pFile->Filename, 16 );
+	rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+
+	BYTE INFData[80];
+
+	rsprintf( INFData, "$.%s %06X %06X %s\n", pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
+
+	CTempFile *pTemp = (CTempFile *) sidecar.FileObj;
+
+	pTemp->Seek( 0 );
+	pTemp->Write( INFData, rstrnlen( INFData, 80 ) );
+
+	return 0;
+}
+
+int ADFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj )
+{
+	if ( obj == nullptr )
+	{
+		rstrncpy( sidecar.Filename, pFile->Filename, 16 );
+		rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+	}
+	else
+	{
+		BYTE bINFData[ 256 ];
+
+		ZeroMemory( bINFData, 256 );
+
+		obj->Seek( 0 );
+		obj->Read( bINFData, min( 256, obj->Ext() ) );
+
+		std::string INFData( (char *) bINFData );
+
+		std::istringstream iINFData( INFData );
+
+		std::vector<std::string> parts((std::istream_iterator<std::string>(iINFData)), std::istream_iterator<std::string>());
+
+		/* Need at least 3 parts */
+		if ( parts.size() < 3 )
+		{
+			return 0;
+		}
+
+		try
+		{
+			/* Part deux is the load address. We'll use std::stoull */
+			pFile->LoadAddr = std::stoul( parts[ 1 ], nullptr, 16 );
+			pFile->LoadAddr &= 0xFFFFFF;
+
+			/* Part the third is the exec address. Same again. */
+			pFile->ExecAddr = std::stoul( parts[ 2 ], nullptr, 16 );
+			pFile->ExecAddr &= 0xFFFFFF;
+		}
+
+		catch ( std::exception &e )
+		{
+			/* eh-oh */
+			return NUTSError( 0x2E, L"Bad sidecar file" );
+		}
+
+		/* Fix the standard attrs */
+		pFile->AttrRead   = 0xFFFFFFFF;
+		pFile->AttrWrite  = 0xFFFFFFFF;
+		pFile->AttrLocked = 0x00000000;
+
+		/* Look through the remaining parts for "L" or "Locked" */
+		for ( int i=3; i<parts.size(); i++ )
+		{
+			if ( ( parts[ i ] == "L" ) || ( parts[ i ] == "Locked" ) )
+			{
+				pFile->AttrLocked = 0xFFFFFFFF;
+			}
+		}
+
+		pFile->Flags = 0;
+		
+		/* Find the file being referenced, copy the attrs across, and write the directory */
+		NativeFileIterator iFile;
+
+		for ( iFile=pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+		{
+			if ( FilenameCmp( &*iFile, pFile ) )
+			{
+				/* Found it. Copy the attrs. */
+				iFile->AttrRead   = pFile->AttrRead;
+				iFile->AttrWrite  = pFile->AttrWrite;
+				iFile->AttrLocked = pFile->AttrLocked;
+				iFile->LoadAddr   = pFile->LoadAddr;
+				iFile->ExecAddr   = pFile->ExecAddr;
+
+				/*  Copy the filename - but we must remove the lading directory prefix*/
+				if ( parts[ 0 ].substr( 1, 1 ) == "." )
+				{
+					rstrncpy( iFile->Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
+				}
+				else
+				{
+					rstrncpy( iFile->Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
+				}
+
+			}
+		}
+
+		/* Write the directory out now */
+		pDirectory->WriteDirectory();
+		pDirectory->ReadDirectory();
+	}
+
+	return 0;
 }

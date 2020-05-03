@@ -14,7 +14,7 @@ class ADFSFileSystem :
 public:
 	ADFSFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) {
 		FSID  = FSID_ADFS_H;
-		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs;
+		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs | FSF_Exports_Sidecars;
 
 		rstrncpy( path, (BYTE *) "$", 512 );
 
@@ -46,10 +46,11 @@ public:
 
 		pADFSDirectory = new ADFSDirectory( pSource );
 
+		pADFSDirectory->FSID  = FSID;
 		pADFSDirectory->Files = source.pADFSDirectory->Files;
 
-		if ( pADFSDirectory->UseLFormat ) { source.pADFSDirectory->SetLFormat(); }
-		if ( pADFSDirectory->UseDFormat ) { source.pADFSDirectory->SetDFormat(); }
+		if ( source.pADFSDirectory->UseLFormat ) { pADFSDirectory->SetLFormat(); }
+		if ( source.pADFSDirectory->UseDFormat ) { pADFSDirectory->SetDFormat(); }
 
 		pFSMap = new OldFSMap( pSource );
 
@@ -128,6 +129,11 @@ public:
 
 	int RunTool( BYTE ToolNum, HWND ProgressWnd );
 
+	FileSystem *FileFilesystem( DWORD FileID );
+
+	int ExportSidecar( NativeFile *pFile, SidecarExport &sidecar );
+	int ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj );
+
 private:
 	ADFSDirectory *pADFSDirectory;
 
@@ -144,6 +150,6 @@ private:
 
 	int ResolveAppIcons( void );
 
-	void ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs );
+	int ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs );
 };
 

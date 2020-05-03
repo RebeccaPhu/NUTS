@@ -481,14 +481,17 @@ unsigned int __stdcall SpaceThread(void *param) {
 
 void StopSpaceThread( void )
 {
-	pTargetFS->CancelSpace();
-
-	if ( WaitForSingleObject( hSpaceThread, 500 ) != WAIT_OBJECT_0 )
+	if ( pTargetFS != nullptr )
 	{
-		TerminateThread( hSpaceThread, 500 );
-	}
+		pTargetFS->CancelSpace();
 
-	CloseHandle( hSpaceThread );
+		if ( WaitForSingleObject( hSpaceThread, 500 ) != WAIT_OBJECT_0 )
+		{
+			TerminateThread( hSpaceThread, 500 );
+		}
+
+		CloseHandle( hSpaceThread );
+	}
 }
 
 INT_PTR CALLBACK FreeSpaceWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {

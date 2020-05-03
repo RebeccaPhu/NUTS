@@ -15,7 +15,7 @@ void BBCStringCopy(char *pDest, char *pSrc, int limit) {
 }
 
 // Compare two strings in a BBC-ic way, that is case insensitive.
-int bbc_strcmp(char *a, char *b) {
+int bbc_strcmp( BYTE *a, BYTE *b ) {
 	int i = 0;
 
 	char ca,cb;

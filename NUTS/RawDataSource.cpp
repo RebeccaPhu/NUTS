@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "RawDataSource.h"
+#include "NUTSError.h"
 #include "Defs.h"
 
 #include <assert.h>
@@ -10,8 +11,8 @@ int	RawDataSource::ReadSector(long Sector, void *pSectorBuf, long SectorSize) {
 
 	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
 
-	if (!fFile)
-		return -1;
+	if ( fFile == nullptr )
+		return NUTSError( 0x3F, L"Unable to open data source" );
 
 	fflush(fFile);
 
@@ -30,8 +31,8 @@ int RawDataSource::ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 
 	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
 
-	if (!fFile)
-		return -1;
+	if ( fFile == nullptr )
+		return NUTSError( 0x3F, L"Unable to open data source" );
 
 	fflush(fFile);
 
@@ -49,8 +50,8 @@ int	RawDataSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize) {
 
 	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
 
-	if (!fFile)
-		return -1;
+	if ( fFile == nullptr )
+		return NUTSError( 0x3F, L"Unable to open data source" );
 
 	fflush(fFile);
 
@@ -59,8 +60,6 @@ int	RawDataSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize) {
 	fwrite(pSectorBuf, 1, SectorSize, fFile);
 
 	fclose(fFile);
-
-//	assert(Sector != 0);
 
 	return 0;
 }

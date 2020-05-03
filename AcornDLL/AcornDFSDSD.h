@@ -148,7 +148,7 @@ public:
 	{
 		FSHint hint;
 
-		hint.FSID       = FS_Null;
+		hint.FSID       = FSID;
 		hint.Confidence = 0;
 
 		if ( Extension != nullptr )
@@ -156,7 +156,6 @@ public:
 			if ( rstrncmp( Extension, (BYTE *) "DSD", 3 ) )
 			{
 				hint.Confidence = 30;
-				hint.FSID       = FSID_DFS_DSD;
 			}
 		}
 

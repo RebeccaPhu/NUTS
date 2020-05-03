@@ -5,7 +5,7 @@
 int	IDE8Source::ReadSector(long Sector, void *pSectorBuf, long SectorSize) {
 	BYTE *pWideBuffer = (BYTE *) malloc(SectorSize * 2);
 
-	if (pSource->ReadSector(Sector, pWideBuffer, SectorSize * 2)) {
+	if ( pSource->ReadSector(Sector, pWideBuffer, SectorSize * 2) != DS_SUCCESS ) {
 		free(pWideBuffer);
 
 		return -1;
@@ -26,7 +26,7 @@ int	IDE8Source::WriteSector(long Sector, void *pSectorBuf, long SectorSize) {
 	
 	for (int n=0; n<SectorSize; n++) { pWideBuffer[n << 1] = pSect[n]; }
 
-	if (pSource->WriteSector(Sector, pWideBuffer, SectorSize * 2)) {
+	if ( pSource->WriteSector(Sector, pWideBuffer, SectorSize * 2) != DS_SUCCESS ) {
 		free(pWideBuffer);
 
 		return -1;
@@ -44,7 +44,7 @@ int IDE8Source::ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 
 	int r = pSource->ReadRaw( Offset << 1, Length << 1, pWideBuffer );
 
-	if ( !r )
+	if ( r == DS_SUCCESS )
 	{
 		for (int n=0; n<Length; n++)
 		{

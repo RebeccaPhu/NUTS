@@ -9,7 +9,7 @@ FSHint SpriteFile::Offer( BYTE *Extension )
 	FSHint hint;
 
 	/* There really are no clues on this one :( */
-	hint.Confidence = 1;
+	hint.Confidence = 0;
 	hint.FSID       = FSID_SPRITE;
 
 	return hint;

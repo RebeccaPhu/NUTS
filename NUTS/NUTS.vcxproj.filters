@@ -180,6 +180,9 @@
     <ClCompile Include="RawDataSource.cpp">
       <Filter>Source Files\Data Sources</Filter>
     </ClCompile>
+    <ClCompile Include="FloppyDataSource.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -318,6 +321,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RawDataSource.h">
+      <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="FloppyDataSource.h">
       <Filter>Header Files\Data Sources</Filter>
     </ClInclude>
   </ItemGroup>

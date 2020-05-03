@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "IconRatio.h"
 
+#define HRATIO 5.0
+#define VRATIO 4.0
+
 /* This functon recalculated the dimensions of an icon according to several factors:
 
    * The dimensions of the original screen mode, as mapped onto 4:3 display.
@@ -21,8 +24,8 @@ AspectRatio ScreenCompensatedIconRatio( AspectRatio Icon, AspectRatio Screen, WO
 	{
 		/* Screen is pixelwise wider than it is tall */
 		double sw  = Screen.first;
-               sw /= 4.0;
-			   sw *= 3.0;
+               sw /= HRATIO;
+			   sw *= VRATIO;
 
 		YMultiplier = sw / (double) Screen.second;
 	}
@@ -30,8 +33,8 @@ AspectRatio ScreenCompensatedIconRatio( AspectRatio Icon, AspectRatio Screen, WO
 	{
 		/* Screen is pixelwise taller than it is wide */
 		double sh  = Screen.second;
-               sh /= 3.0;
-			   sh *= 4.0;
+               sh /= VRATIO;
+			   sh *= HRATIO;
 
 		XMultiplier = sh / (double) Screen.second;
 	}

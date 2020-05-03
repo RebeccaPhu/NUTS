@@ -4,6 +4,7 @@
 #include "PaletteWindow.h"
 #include "Plugins.h"
 #include "IconRatio.h"
+#include "NUTSError.h"
 #include "commctrl.h"
 #include "commdlg.h"
 
@@ -459,13 +460,27 @@ int CSCREENContentViewer::Translate( void ) {
 		opts.pPhysicalPalette = &PhysicalPalette;
 		opts.pPhysicalColours = &PhysicalColours;
 
+		NUTSError::Code = NUTS_SUCCESS;
+
 		pXlator->TranslateGraphics( opts, FileObj );
+
+		if ( NUTSError::Code != NUTS_SUCCESS )
+		{
+			NUTSError::Report( L"Read File", hWnd );
+		}
 		
 		opts.pGraphics  = (void **) &pixels2;
 		opts.FlashPhase = true;
 
+		NUTSError::Code = NUTS_SUCCESS;
+
 		pXlator->TranslateGraphics( opts, FileObj );
 
+		if ( NUTSError::Code != NUTS_SUCCESS )
+		{
+			NUTSError::Report( L"Read File", hWnd );
+		}
+		
 		OriginalWidth  = opts.bmi->bmiHeader.biWidth;
 		OriginalHeight = opts.bmi->bmiHeader.biHeight;
 

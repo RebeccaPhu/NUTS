@@ -265,16 +265,23 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 		{
 			FileSystem *pFS = iter->CreatorFunc( D->FSDescriptors[i].PUID, pSource );
 
+			FSHint hint = { 0, 0 };
+
 			if ( pFile == nullptr )
 			{
-				hints.push_back( pFS->Offer( nullptr ) );
+				hint = pFS->Offer( nullptr );
 			}
 			else
 			{
-				hints.push_back( pFS->Offer( pFile->Extension ) );
+				hint = pFS->Offer( pFile->Extension );
 			}
 
 			delete pFS;
+
+			if ( hint.Confidence > 0 )
+			{
+				hints.push_back( hint );
+			}
 		}
 
 		iter++;
@@ -338,7 +345,10 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource, bool Initialise )
 
 				if ( Initialise )
 				{
-					pFS->Init();
+					if ( pFS->Init() != NUTS_SUCCESS )
+					{
+						NUTSError::Report( L"Initialise File System", NULL );
+					}
 				}
 
 				return pFS;

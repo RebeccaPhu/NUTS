@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "TEXTContentViewer.h"
 #include "Plugins.h"
+#include "NUTSError.h"
 #include <richedit.h>
 #include <stdio.h>
 #include "resource.h"
@@ -134,7 +135,14 @@ void CTEXTContentViewer::Translate( void )
 
 		FileObj.Keep();
 
+		NUTSError::Code = NUTS_SUCCESS;
+
 		pXlator->TranslateText( FileObj, &opts );
+
+		if ( NUTSError::Code != NUTS_SUCCESS )
+		{
+			NUTSError::Report( L"Read File", hWnd );
+		}
 
 		if ( XlatorID == TUID_TEXT )
 		{

@@ -4,6 +4,8 @@
 #include "RISCOSIcons.h"
 #include "../NUTS/libfuncs.h"
 
+#include <algorithm>
+
 DWORD ADFSDirectory::TranslateSector(DWORD InSector)
 {
 	if ( !UseLFormat )
@@ -31,13 +33,15 @@ DWORD ADFSDirectory::TranslateSector(DWORD InSector)
 int	ADFSDirectory::ReadDirectory( void ) {
 	unsigned char	DirBytes[0x800];
 
+	int Err = 0;
+
 	if ( !UseDFormat )
 	{
-		pSource->ReadSector( TranslateSector( DirSector + 0 ), &DirBytes[0x000], 256 );	
-		pSource->ReadSector( TranslateSector( DirSector + 1 ), &DirBytes[0x100], 256 );	
-		pSource->ReadSector( TranslateSector( DirSector + 2 ), &DirBytes[0x200], 256 );	
-		pSource->ReadSector( TranslateSector( DirSector + 3 ), &DirBytes[0x300], 256 );	
-		pSource->ReadSector( TranslateSector( DirSector + 4 ), &DirBytes[0x400], 256 );	
+		Err += pSource->ReadSector( TranslateSector( DirSector + 0 ), &DirBytes[0x000], 256 );	
+		Err += pSource->ReadSector( TranslateSector( DirSector + 1 ), &DirBytes[0x100], 256 );	
+		Err += pSource->ReadSector( TranslateSector( DirSector + 2 ), &DirBytes[0x200], 256 );	
+		Err += pSource->ReadSector( TranslateSector( DirSector + 3 ), &DirBytes[0x300], 256 );	
+		Err += pSource->ReadSector( TranslateSector( DirSector + 4 ), &DirBytes[0x400], 256 );	
 	}
 	else
 	{
@@ -46,14 +50,19 @@ int	ADFSDirectory::ReadDirectory( void ) {
 		/* They do seem have peculiar ways of referring to sectors though. The address of a
 		   directory is still in 256-byte sectors, even though the disc uses 1024-byte sectors
 		   in it's logical structure. */
-		pSource->ReadSector( DirSector + 0, &DirBytes[ 0x000 ], 256 );
-		pSource->ReadSector( DirSector + 1, &DirBytes[ 0x100 ], 256 );
-		pSource->ReadSector( DirSector + 2, &DirBytes[ 0x200 ], 256 );
-		pSource->ReadSector( DirSector + 3, &DirBytes[ 0x300 ], 256 );
-		pSource->ReadSector( DirSector + 4, &DirBytes[ 0x400 ], 256 );
-		pSource->ReadSector( DirSector + 5, &DirBytes[ 0x500 ], 256 );
-		pSource->ReadSector( DirSector + 6, &DirBytes[ 0x600 ], 256 );
-		pSource->ReadSector( DirSector + 7, &DirBytes[ 0x700 ], 256 );
+		Err += pSource->ReadSector( DirSector + 0, &DirBytes[ 0x000 ], 256 );
+		Err += pSource->ReadSector( DirSector + 1, &DirBytes[ 0x100 ], 256 );
+		Err += pSource->ReadSector( DirSector + 2, &DirBytes[ 0x200 ], 256 );
+		Err += pSource->ReadSector( DirSector + 3, &DirBytes[ 0x300 ], 256 );
+		Err += pSource->ReadSector( DirSector + 4, &DirBytes[ 0x400 ], 256 );
+		Err += pSource->ReadSector( DirSector + 5, &DirBytes[ 0x500 ], 256 );
+		Err += pSource->ReadSector( DirSector + 6, &DirBytes[ 0x600 ], 256 );
+		Err += pSource->ReadSector( DirSector + 7, &DirBytes[ 0x700 ], 256 );
+	}
+
+	if ( Err != DS_SUCCESS )
+	{
+		return -1;
 	}
 
 	Files.clear();
@@ -186,7 +195,7 @@ int	ADFSDirectory::ReadDirectory( void ) {
 
 	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
 	{
-		if ( LooksRISCOSIsh )
+		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( ( FSID == FSID_ADFS_H ) && ( LooksRISCOSIsh ) ) )
 		{
 			TranslateType( &*iFile );
 		}
@@ -259,29 +268,50 @@ int	ADFSDirectory::ReadDirectory( void ) {
 	return 0;
 }
 
+bool ADFSSort( NativeFile &a, NativeFile &b )
+{
+	/* ADFS is rather stupid about this. A comes first where B.substr( A.length() ) == A. But case-insensitve, coz why not */
+
+	/* std::sort expects true when b comes after a */
+
+	WORD alen = rstrnlen( a.Filename, 10 );
+	WORD blen = rstrnlen( b.Filename, 10 );
+
+	/* this one should never happen, but anyway */
+	if ( ( rstrnicmp( a.Filename, b.Filename, alen ) ) && ( alen == blen ) ) 
+	{
+		return false;
+	}
+
+	/* A is a subset of B */
+	if ( ( rstrnicmp( a.Filename, b.Filename, alen ) ) && ( alen < blen ) )
+	{
+		return true;
+	}
+
+	/* B is a subset of A */
+	if ( ( rstrnicmp( a.Filename, b.Filename, blen ) ) && ( blen < alen ) )
+	{
+		return false;
+	}
+
+	/* Here A and B are completely different to each other. So use bbc_strcmp, which works like strncmp */
+	if ( bbc_strcmp( a.Filename, b.Filename ) > 0 )
+	{
+		return false;
+	}
+
+	return true;
+}
+
 int	ADFSDirectory::WriteDirectory( void ) {
 	//	Sort directory entries
-	int	i;
-	bool sorted	= false;
-
-	while (!sorted) {
-		sorted	= true;
-
-		for (i=0; i< (signed) Files.size() - 1; i++) {
-			if (bbc_strcmp((char *) Files[i].Filename, (char *) Files[i+1].Filename) > 0) {
-				NativeFile f  = Files[i];
-				Files[i]      = Files[i+1];
-				Files[i+1]    = f;
-
-				sorted	= false;
-			}
-		}
-	}
+	std::sort( Files.begin(), Files.end(), ADFSSort );
 
 	//	Write directory structure
 	BYTE DirectorySector[0x800];
 
-	memset(&DirectorySector[0x000], 0, 0x800);
+	ZeroMemory( &DirectorySector[0x000], 0x800 );
 
 	MasterSeq = ( ( MasterSeq / 16 ) * 10 ) + ( MasterSeq % 16 );
 	MasterSeq++;
@@ -383,20 +413,22 @@ int	ADFSDirectory::WriteDirectory( void ) {
 		ptr	+= 26;
 	}
 
-	pSource->WriteSector( TranslateSector( DirSector + 0 ), &DirectorySector[0x000], 256 );
-	pSource->WriteSector( TranslateSector( DirSector + 1 ), &DirectorySector[0x100], 256 );
-	pSource->WriteSector( TranslateSector( DirSector + 2 ), &DirectorySector[0x200], 256 );
-	pSource->WriteSector( TranslateSector( DirSector + 3 ), &DirectorySector[0x300], 256 );
-	pSource->WriteSector( TranslateSector( DirSector + 4 ), &DirectorySector[0x400], 256 );
+	int Err = 0;
+
+	Err += pSource->WriteSector( TranslateSector( DirSector + 0 ), &DirectorySector[0x000], 256 );
+	Err += pSource->WriteSector( TranslateSector( DirSector + 1 ), &DirectorySector[0x100], 256 );
+	Err += pSource->WriteSector( TranslateSector( DirSector + 2 ), &DirectorySector[0x200], 256 );
+	Err += pSource->WriteSector( TranslateSector( DirSector + 3 ), &DirectorySector[0x300], 256 );
+	Err += pSource->WriteSector( TranslateSector( DirSector + 4 ), &DirectorySector[0x400], 256 );
 
 	if ( UseDFormat )
 	{
-		pSource->WriteSector( DirSector + 5, &DirectorySector[0x500], 256 );
-		pSource->WriteSector( DirSector + 6, &DirectorySector[0x600], 256 );
-		pSource->WriteSector( DirSector + 7, &DirectorySector[0x700], 256 );
+		Err += pSource->WriteSector( DirSector + 5, &DirectorySector[0x500], 256 );
+		Err += pSource->WriteSector( DirSector + 6, &DirectorySector[0x600], 256 );
+		Err += pSource->WriteSector( DirSector + 7, &DirectorySector[0x700], 256 );
 	}
 
-	return 0;
+	return Err;
 }
 
 void ADFSDirectory::SetSector( DWORD Sector )

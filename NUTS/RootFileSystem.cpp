@@ -2,6 +2,7 @@
 #include "RootFileSystem.h"
 #include "ImageDataSource.h"
 #include "RawDataSource.h"
+#include "FloppyDataSource.h"
 #include "WindowsFileSystem.h"
 #include "libfuncs.h"
 
@@ -73,20 +74,35 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 	memset(DPath, 0, 64);
 
+	SetErrorMode( SEM_FAILCRITICALERRORS );
+
+	DataSource *pSource = nullptr;
+
 	if (PDN == -2)
+	{
 		sprintf_s(DPath, 63, "\\\\.\\A:");
+
+		pSource = new FloppyDataSource( std::wstring( UString( DPath ) ) );
+	}
 	else if (PDN == -3)
+	{
 		sprintf_s(DPath, 63, "\\\\.\\B:");
+
+		pSource = new FloppyDataSource( std::wstring( UString( DPath ) ) );
+	}
 	else
+	{
 		sprintf_s(DPath, 63, "\\\\.\\PhysicalDrive%d", PDN);
+
+		pSource = new RawDataSource( std::wstring( UString( DPath ) ) );
+	}
 
 	OutputDebugStringA(DPath);
 
-	SetErrorMode( SEM_FAILCRITICALERRORS );
-
-	DataSource *pSource = new RawDataSource( std::wstring( UString( DPath ) ) );
-
-	pDirectory->Files[ FileID ].Length = pSource->PhysicalDiskSize;
+	if ( pSource != nullptr )
+	{
+		pDirectory->Files[ FileID ].Length = pSource->PhysicalDiskSize;
+	}
 
 	return pSource;
 }

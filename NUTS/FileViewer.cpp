@@ -369,11 +369,16 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 			switch ( LOWORD(wParam) ) {
 				case IDM_REFRESH:
 					{
-						FS->Refresh();
-					
-						Updated = true;
+						if ( FS->Refresh() != NUTS_SUCCESS )
+						{
+							NUTSError::Report( L"Refresh", ParentWnd );
+						}
+						else
+						{				
+							Updated = true;
 						
-						Redraw();
+							Redraw();
+						}
 					}
 					break;
 
@@ -1763,7 +1768,12 @@ void CFileViewer::DoSCREENContentViewer( DWORD PrefTUID )
 	{
 		CTempFile FileObj;
 
-		FS->ReadFile( iter->fileID, FileObj );
+		if ( FS->ReadFile( iter->fileID, FileObj ) != NUTS_SUCCESS )
+		{
+			NUTSError::Report( L"Read File", ParentWnd );
+
+			return;
+		}
 
 		CSCREENContentViewer *pSCViewer;
 
@@ -1802,7 +1812,12 @@ void CFileViewer::DoTEXTContentViewer( DWORD PrefTUID )
 	{
 		CTempFile FileObj;
 
-		FS->ReadFile( iter->fileID, FileObj );
+		if ( FS->ReadFile( iter->fileID, FileObj ) != NUTS_SUCCESS )
+		{
+			NUTSError::Report( L"Read File", ParentWnd );
+
+			return;
+		}
 
 		CTEXTContentViewer *pTXViewer;
 
@@ -1848,7 +1863,12 @@ void CFileViewer::DoContentViewer( void )
 	{
 		CTempFile FileObj;
 
-		FS->ReadFile( iter->fileID, FileObj );
+		if ( FS->ReadFile( iter->fileID, FileObj ) != NUTS_SUCCESS )
+		{
+			NUTSError::Report( L"Read File", ParentWnd );
+
+			return;
+		}
 
 		TextTranslatorIterator iText;
 
@@ -1915,7 +1935,10 @@ void CFileViewer::RenameFile( void )
 
 		if ( DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_RENAME), hWnd, RenameDialogProc, (LPARAM) OldName ) == IDOK )
 		{
-			FS->Rename( iter->fileID, OldName );
+			if ( FS->Rename( iter->fileID, OldName ) != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"Rename", ParentWnd );
+			}
 		}
 	}
 
@@ -1932,7 +1955,10 @@ void CFileViewer::NewDirectory( void )
 	{
 		if ( pNewDir != nullptr )
 		{
-			FS->CreateDirectory( pNewDir, false );
+			if ( FS->CreateDirectory( pNewDir, false ) != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"Create Directory", ParentWnd );
+			}
 
 			free( pNewDir );
 
@@ -2049,14 +2075,24 @@ void CFileViewer::DoSwapFiles( BYTE UpDown )
 	{
 		if ( SwapFile > 0 )
 		{
-			FS->SwapFile( SwapFile - 1, SwapFile );
+			if ( FS->SwapFile( SwapFile - 1, SwapFile ) != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"File Swap", ParentWnd );
+
+				return;
+			}
 		}
 	}
 	else
 	{
 		if ( SwapFile < MaxFile )
 		{
-			FS->SwapFile( SwapFile + 1, SwapFile );
+			if ( FS->SwapFile( SwapFile + 1, SwapFile ) != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"File Swap", ParentWnd );
+
+				return;
+			}
 		}
 	}
 }

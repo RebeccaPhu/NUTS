@@ -67,6 +67,8 @@ std::map<DWORD, DWORD> Changes;
 
 FileSystem *SaveFS;
 
+std::vector<NativeFile> IgnoreSidecars;
+
 void CreateOpSteps( std::vector<NativeFile> Selection )
 {
 	CFileViewer *pPane    = (CFileViewer *) CurrentAction.Pane;
@@ -261,6 +263,75 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 	}
 }
 
+void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile )
+{
+	if ( ( pTrg->FSID == FS_Windows ) && ( pSrc->Flags & FSF_Exports_Sidecars ) )
+	{
+		SidecarExport sidecar;
+
+		CTempFile FileObj;
+
+		sidecar.FileObj = &FileObj;
+
+		pSrc->ExportSidecar( pFile, sidecar );
+
+		NativeFile SCFile = *pFile;
+
+		rstrncpy( SCFile.Filename, sidecar.Filename, 256 );
+
+		SCFile.Flags  = 0;
+		SCFile.Length = FileObj.Ext();
+
+		if ( pTrg->WriteFile( &SCFile, FileObj ) != DS_SUCCESS )
+		{
+			NUTSError::Report( L"Create Sidecar File", hFileWnd );
+
+			/* This is not the end of the world, but might be annoying */
+			NUTSError::Code = 0;
+		}
+	}
+
+	if ( ( pSrc->FSID == FS_Windows ) && ( pTrg->Flags & FSF_Exports_Sidecars ) )
+	{
+		/* Two stage process. First, get the file we should be looking for. */
+		SidecarImport sidecar;
+
+		pTrg->ImportSidecar( pFile, sidecar, nullptr );
+
+		/* Search for this file in the Windows FS */
+		NativeFileIterator iFile;
+
+		for ( iFile = pSrc->pDirectory->Files.begin(); iFile != pSrc->pDirectory->Files.end(); iFile++ )
+		{
+			BYTE CollatedFilename[256];
+
+			rstrncpy( CollatedFilename, iFile->Filename, 256 );
+
+			if ( iFile->Flags & FF_Extension )
+			{
+				rstrncat( CollatedFilename, (BYTE *) ".", 256 );
+				rstrncat( CollatedFilename, iFile->Extension, 256 );
+			}
+
+			if ( rstrnicmp( CollatedFilename, sidecar.Filename, 256 ) )
+			{
+				/* Found it. Read it in, and send it to the FS again. */
+				CTempFile FileObj;
+
+				if ( pSrc->ReadFile( iFile->fileID, FileObj ) != DS_SUCCESS )
+				{
+					NUTSError::Report( L"Read sidecar file", hFileWnd );
+				}
+
+				pTrg->ImportSidecar( pFile, sidecar, &FileObj );
+
+				/* Push the original native file in the Windows FS to ignore sidecars, we'll - well - ignore it later */
+				IgnoreSidecars.push_back( *iFile );
+			}
+		}
+	}
+}
+
 unsigned int __stdcall FileOpThread(void *param) {
 	CFileViewer *pSourcePane = (CFileViewer *) CurrentAction.Pane;
 	FileSystem  *pSourceFS   = (FileSystem *)  CurrentAction.FS;
@@ -279,6 +350,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 	}
 
 	OpSteps.clear();
+	IgnoreSidecars.clear();
 
 	TotalOps  = 0;
 	CurrentOp = 0;
@@ -290,6 +362,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 	FSChangeLock = true;
 
+	NUTSError::Code = 0;
+
 	if ( CurrentAction.Action == AA_INSTALL )
 	{
 		CreateOpStepsByFS( CurrentAction.Selection );
@@ -299,10 +373,22 @@ unsigned int __stdcall FileOpThread(void *param) {
 		CreateOpSteps( CurrentAction.Selection );
 	}
 
+	if ( NUTSError::Code != 0 )
+	{
+		NUTSError::Report( L"File Operation Setup", hFileWnd );
+
+		return 0;
+	}
+
 	std::vector<FileOpStep>::iterator iStep;
 
 	for ( iStep = OpSteps.begin(); iStep != OpSteps.end(); iStep++ )
 	{
+		if ( NUTSError::Code != 0 )
+		{
+			break;
+		}
+
 		bool Redraw = false;
 
 		::PostMessage( hFileWnd, WM_FILEOP_PROGRESS, (WPARAM) Percent( 0, 1, CurrentOp, TotalOps, true ), 0 );
@@ -327,12 +413,22 @@ unsigned int __stdcall FileOpThread(void *param) {
 			break;
 
 		case Op_Directory:
-			pSourceFS->ChangeDirectory( iStep->Object.fileID );
+			if ( pSourceFS->ChangeDirectory( iStep->Object.fileID ) != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"Change Directory (Source)", hFileWnd );
+
+				break;
+			}
 
 		case Op_CDirectory:
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
 			{
-				pTargetFS->CreateDirectory( iStep->Object.Filename, true );
+				if ( pTargetFS->CreateDirectory( iStep->Object.Filename, true ) != NUTS_SUCCESS )
+				{
+					NUTSError::Report( L"Create Directory (Target)", hFileWnd );
+
+					break;
+				}
 			}
 
 			Redraw = true;
@@ -340,12 +436,22 @@ unsigned int __stdcall FileOpThread(void *param) {
 			break;
 
 		case Op_Parent:
-			pSourceFS->Parent();
+			if ( pSourceFS->Parent() != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"Parent Directory (Source)", hFileWnd );
+
+				break;
+			}
 
 		case Op_CParent:
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
 			{
-				pTargetFS->Parent();
+				if ( pTargetFS->Parent() != NUTS_SUCCESS )
+				{
+					NUTSError::Report( L"Parent Directory (Target)", hFileWnd );
+
+					break;
+				}
 			}
 
 			Redraw = true;
@@ -369,9 +475,32 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 		case Op_Copy:
 			{
+				/* Check if we already copied this as a sidecar */
+				NativeFileIterator iFile;
+				bool DoneIt = false;
+
+				for ( iFile = IgnoreSidecars.begin(); iFile != IgnoreSidecars.end(); iFile++ )
+				{
+					if ( FilenameCmp( &*iFile, &iStep->Object ) )
+					{
+						DoneIt = true;
+					}
+				}
+
+				if ( DoneIt )
+				{
+					break;
+				}
+
+				/* Not a sidecar we've previously seen, so go ahead with it */
 				CTempFile FileObj;
 
-				pSourceFS->ReadFile( iStep->Object.fileID, FileObj );
+				if ( pSourceFS->ReadFile( iStep->Object.fileID, FileObj ) != NUTS_SUCCESS )
+				{
+					NUTSError::Report( L"File Read (Source)", hFileWnd );
+
+					break;
+				}
 				
 				int FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
 
@@ -390,6 +519,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 						/* File exists and the user doesn't care */
 						pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
 						pTargetFS->WriteFile( &iStep->Object, FileObj );
+
+						DoSidecar( pSourceFS, pTargetFS, &iStep->Object );
 					}
 					else
 					{
@@ -398,6 +529,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 							/* User already agreed to this */
 							pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
 							pTargetFS->WriteFile( &iStep->Object, FileObj );
+
+							DoSidecar( pSourceFS, pTargetFS, &iStep->Object );
 						}
 						else if ( !NoToAll )
 						{
@@ -419,6 +552,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 							{
 								pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
 								pTargetFS->WriteFile( &iStep->Object, FileObj );
+
+								DoSidecar( pSourceFS, pTargetFS, &iStep->Object );
 							}
 						}
 					}
@@ -426,6 +561,11 @@ unsigned int __stdcall FileOpThread(void *param) {
 					YesOnce = false;
 					NoOnce  = false;
 				}
+				else
+				{
+					DoSidecar( pSourceFS, pTargetFS, &iStep->Object );
+				}
+
 
 				if ( FileResult == FILEOP_ISDIR )
 				{
@@ -433,6 +573,13 @@ unsigned int __stdcall FileOpThread(void *param) {
 					::PostMessageA( hFileWnd, WM_FILEOP_SUSPEND, FILEOP_ISDIR, 0 );
 
 					return 0;
+				}
+
+				if ( NUTSError::Code != NUTS_SUCCESS )
+				{
+					NUTSError::Report( L"File Write (Target)", hFileWnd );
+
+					break;
 				}
 
 				Redraw = true;
@@ -444,14 +591,24 @@ unsigned int __stdcall FileOpThread(void *param) {
 				if ( !Confirm )
 				{
 					/* File exists and the user doesn't care */
-					pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE );
+					if ( pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE ) != NUTS_SUCCESS )
+					{
+						NUTSError::Report( L"File Delete", hFileWnd );
+
+						break;
+					}
 				}
 				else
 				{
 					if ( YesToAll )
 					{
 						/* User already agreed to this */
-						pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE );
+						if ( pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE ) != NUTS_SUCCESS )
+						{
+							NUTSError::Report( L"File Delete", hFileWnd );
+
+							break;
+						}
 					}
 					else if ( !NoToAll )
 					{
@@ -471,7 +628,12 @@ unsigned int __stdcall FileOpThread(void *param) {
 						/* Thread resumes here */
 						if ( ( YesOnce ) || ( YesToAll ) )
 						{
-							pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE );
+							if ( pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE ) != NUTS_SUCCESS )
+							{
+								NUTSError::Report( L"Delete File", hFileWnd );
+
+								break;
+							}
 						}
 					}
 				}
@@ -514,20 +676,35 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 				if ( ( !Dangerous ) && ( !Warning ) )
 				{
-					break;
+					if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
+					{
+						NUTSError::Report( L"Set File Properties", hFileWnd );
+
+						break;
+					}
 				}
 
 				if ( !Confirm )
 				{
 					/* File exists and the user doesn't care */
-					pSourceFS->SetProps( iStep->Object.fileID, &Rework );
+					if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
+					{
+						NUTSError::Report( L"Set File Properties", hFileWnd );
+
+						break;
+					}
 				}
 				else
 				{
 					if ( YesToAll )
 					{
 						/* User already agreed to this */
-						pSourceFS->SetProps( iStep->Object.fileID, &Rework );
+						if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
+						{
+							NUTSError::Report( L"Set File Properties", hFileWnd );
+
+							break;
+						}
 					}
 					else if ( !NoToAll )
 					{
@@ -547,7 +724,12 @@ unsigned int __stdcall FileOpThread(void *param) {
 						/* Thread resumes here */
 						if ( ( YesOnce ) || ( YesToAll ) )
 						{
-							pSourceFS->SetProps( iStep->Object.fileID, &Rework );
+							if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
+							{
+								NUTSError::Report( L"Set File Properties", hFileWnd );
+
+								break;
+							}
 						}
 					}
 				}
