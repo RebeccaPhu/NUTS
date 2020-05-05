@@ -241,6 +241,8 @@ typedef struct _TXTTranslateOptions {
 	DWORD  TextBodyLength;
 	std::vector<DWORD> LinePointers;
 	DWORD EncodingID;
+	HWND  ProgressWnd;
+	HANDLE hStop;
 } TXTTranslateOptions;
 
 typedef struct _IconDef {
@@ -329,5 +331,7 @@ typedef FSToolList::iterator FSToolIterator;
 #define WM_FSTOOL_CURRENTOP (WM_APP + 22)
 #define WM_FV_FOCUS         (WM_APP + 23)
 #define WM_INSTALLOBJECT    (WM_APP + 24)
+#define WM_ABOUT_RESIZE     (WM_APP + 25)
+#define WM_TEXT_PROGRESS    (WM_APP + 26)
 
 #define TUID_TEXT           0x73477347

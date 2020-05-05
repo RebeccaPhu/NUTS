@@ -2,13 +2,21 @@
 #include "TEXTContentViewer.h"
 #include "Plugins.h"
 #include "NUTSError.h"
+#include "Preference.h"
+
 #include <richedit.h>
+#include <CommCtrl.h>
 #include <stdio.h>
+#include <process.h>
+
 #include "resource.h"
 
 std::map<HWND,CTEXTContentViewer *> CTEXTContentViewer::viewers;
 
 bool CTEXTContentViewer::WndClassReg = false;
+
+#define ProgW 128
+#define ProgH 18
 
 LRESULT CALLBACK CTEXTContentViewer::TEXTViewerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	if ( viewers.find( hWnd ) != viewers.end() )
@@ -53,9 +61,29 @@ CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, DWORD TUID )
 	FSEncodingID = ENCODING_ASCII;
 
 	pTextBuffer = nullptr;
+
+	Translating      = true;
+	hTranslateThread = NULL;
+	hStopEvent       = CreateEvent( NULL, TRUE, FALSE, NULL );
+	hProgress        = NULL;
 }
 
 CTEXTContentViewer::~CTEXTContentViewer(void) {
+	if ( hTranslateThread != NULL )
+	{
+		SetEvent( hStopEvent );
+
+		if ( WaitForSingleObject( hTranslateThread, 500 ) == WAIT_TIMEOUT )
+		{
+			TerminateThread( hTranslateThread, 500 );
+		}
+
+		CloseHandle( hTranslateThread );
+		CloseHandle( hStopEvent );
+	}
+
+	NixWindow( hProgress );
+
 	DestroyWindow( hWnd );
 
 	delete pTextArea;
@@ -66,13 +94,25 @@ CTEXTContentViewer::~CTEXTContentViewer(void) {
 	}
 }
 
+unsigned int __stdcall CTEXTContentViewer::TranslateThread(void *param)
+{
+	CTEXTContentViewer *pClass = (CTEXTContentViewer *) param;
+
+	pClass->Translate();
+
+	return 0;
+}
+
 int CTEXTContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
+	DWORD ww = Preference( L"TextTranslatorWidth",  (DWORD) 800 );
+	DWORD wh = Preference( L"TextTranslatorHeight", (DWORD) 500 );
+
 	hWnd = CreateWindowEx(
 		NULL,
 		L"NUTS Text Content Renderer",
 		L"NUTS Text Content Renderer",
 		WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_VISIBLE,
-		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0,
+		CW_USEDEFAULT, 0, ww, wh,
 		Parent, NULL, hInstance, NULL
 	);
 
@@ -86,7 +126,20 @@ int CTEXTContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, i
 
 	pTextArea = new EncodingTextArea( hWnd, 0, 0, rect.right - rect.left, rect.bottom - rect.top );
 
-	Translate();
+	ShowWindow( pTextArea->hWnd, SW_HIDE );
+
+	hProgress = CreateWindowEx(
+		0, PROGRESS_CLASS, NULL,
+		WS_CHILD | WS_VISIBLE,
+		0, 0, ProgW, ProgH,
+		hWnd, NULL, hInst, NULL
+	);
+
+	SendMessage( hProgress, PBM_SETRANGE32, 0, 100 );
+
+	DoResize();
+
+	hTranslateThread = (HANDLE) _beginthreadex(NULL, NULL, TranslateThread, this, NULL, (unsigned int *) &dwthreadid);
 
 	ShowWindow(hWnd, TRUE);
 	UpdateWindow( hWnd );
@@ -115,6 +168,12 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				viewers.erase( hWnd );
 			}
 			break;
+
+		case WM_TEXT_PROGRESS:
+			{
+				SendMessage( hProgress, PBM_SETPOS, wParam, 0 );
+			}
+			break;
 	}
 
 	return DefWindowProc( hWnd, message, wParam, lParam);
@@ -126,6 +185,8 @@ void CTEXTContentViewer::Translate( void )
 
 	opts.EncodingID  = ENCODING_ASCII;
 	opts.pTextBuffer = &pTextBuffer;
+	opts.ProgressWnd = hWnd;
+	opts.hStop       = hStopEvent;
 
 	opts.LinePointers.clear();
 
@@ -152,6 +213,11 @@ void CTEXTContentViewer::Translate( void )
 		pTextArea->SetTextBody( opts.EncodingID, *opts.pTextBuffer, opts.TextBodyLength, opts.LinePointers );
 
 		pTextBuffer = *opts.pTextBuffer;
+
+		ShowWindow( hProgress, SW_HIDE );
+		ShowWindow( pTextArea->hWnd, SW_SHOW );
+
+		Translating = false;
 	}
 }
 
@@ -167,4 +233,15 @@ void CTEXTContentViewer::DoResize()
 	GetClientRect( hWnd, &r );
 
 	pTextArea->DoResize( r.right - r.left, r.bottom - r.top );
+
+	SetWindowPos( hProgress, NULL,
+		( ( r.right - r.left ) / 2 ) - ( ProgW / 2 ), ( ( r.bottom - r.top ) / 2 ) - ( ProgH / 2 ),
+		ProgW, ProgH, SWP_NOREPOSITION | SWP_NOZORDER
+	);
+
+	/* Store the size as prefs - need to account for title bar */
+	GetWindowRect( hWnd, &r );
+
+	Preference( L"TextTranslatorWidth" )  = (DWORD) ( r.right - r.left );
+	Preference( L"TextTranslatorHeight" ) = (DWORD) ( r.bottom - r.top );
 }

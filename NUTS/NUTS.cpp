@@ -8,6 +8,7 @@
 #include "FormatWizard.h"
 #include "Plugins.h"
 #include "AppAction.h"
+#include "AboutBox.h"
 #include "resource.h"
 #include "ExtensionRegistry.h"
 #include "EncodingClipboard.h"
@@ -870,8 +871,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wmId)
 		{
 		case IDM_ABOUT:
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			DoAboutBox( hMainWnd );
+
 			break;
+
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
 			break;
@@ -1176,44 +1179,4 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
-}
-
-// Message handler for about box.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_INITDIALOG:
-		{
-		std::vector<PluginDescriptor> Plugins = FSPlugins.GetPluginList();
-
-		std::vector<PluginDescriptor>::iterator i;
-
-		for (i=Plugins.begin(); i!= Plugins.end(); i++ )
-		{
-			SendMessage( GetDlgItem( hDlg, IDC_PLUGINLIST ), LB_ADDSTRING, NULL, (LPARAM) i->Provider.c_str() );
-
-			for (int f=0; f<i->NumFS; f++ )
-			{
-				FSDescriptor *pFS = (FSDescriptor *) &(i->FSDescriptors[f]);
-
-				std::wstring tFS = L"     " + pFS->FriendlyName;
-
-				SendMessage( GetDlgItem( hDlg, IDC_PLUGINLIST ), LB_ADDSTRING, NULL, (LPARAM) tFS.c_str() );
-			}
-		}
-
-		return (INT_PTR)TRUE;
-		}
-
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		}
-		break;
-	}
-	return (INT_PTR)FALSE;
 }

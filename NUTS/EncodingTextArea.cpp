@@ -72,15 +72,8 @@ EncodingTextArea::EncodingTextArea( HWND hParent, int x, int y, int w, int h )
 
 EncodingTextArea::~EncodingTextArea(void)
 {
-	if ( hScrollBar )
-	{
-		DestroyWindow( hScrollBar );
-	}
-
-	if ( hWnd )
-	{
-		DestroyWindow( hWnd );
-	}
+	NixWindow( hScrollBar );
+	NixWindow( hWnd );
 }
 
 LRESULT EncodingTextArea::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
@@ -165,6 +158,7 @@ void EncodingTextArea::PaintTextArea( void )
 	DWORD LineLen = 0;
 	DWORD LineNum = 0;
 	DWORD MaxChars = ( r.right - r.left - 16 ) / 8;
+	DWORD MaxLines = ( r.bottom - r.top ) / 16;
 
 	if ( MaxChars > 255 ) { MaxChars = 255; }
 
@@ -186,8 +180,16 @@ void EncodingTextArea::PaintTextArea( void )
 		}
 	}
 
+	DWORD DisplayedLines = 0;
+
 	while ( 1 )
 	{
+		/* This stops us wasting CPU cycles drawing off screen */
+		if ( DisplayedLines > MaxLines )
+		{
+			break;
+		}
+
 		if ( iLinePtr == LinePointers.end() )
 		{
 			LineLen = lTextBody - TextPtr;
@@ -211,6 +213,7 @@ void EncodingTextArea::PaintTextArea( void )
 			textline.DrawText( hDC, 8, 8 + LineNum * 18, DT_LEFT | DT_TOP );
 
 			LineNum++;
+			DisplayedLines++;
 
 			LineLen     -= ThisLineLen;
 			ThisLinePtr += ThisLineLen;
@@ -286,7 +289,7 @@ int EncodingTextArea::SetTextBody( DWORD EncodingID, BYTE *pBody, DWORD lBody, s
 int EncodingTextArea::DoResize( int w, int h )
 {
 	::SetWindowPos( hWnd, NULL, 0, 0, w, h, SWP_NOMOVE | SWP_NOZORDER | SWP_NOREPOSITION );
-	::SetWindowPos( hScrollBar, NULL, w - 16, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOREPOSITION );
+	::SetWindowPos( hScrollBar, NULL, w - 16, 0, 16, h, SWP_NOZORDER | SWP_NOREPOSITION );
 
 	Update();
 

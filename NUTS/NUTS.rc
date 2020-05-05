@@ -217,17 +217,16 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 170, 197
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_ABOUTBOX DIALOGEX 0, 0, 433, 254
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About NUTS"
 FONT 8, "MS Shell Dlg", 0, 0, 0x1
 BEGIN
-    ICON            IDI_SMALL,IDC_STATIC,14,14,20,20
-    LTEXT           "NUTS, Version 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2011 - 2020",IDC_STATIC,42,26,114,8
-    DEFPUSHBUTTON   "OK",IDOK,117,181,50,14,WS_GROUP
-    LISTBOX         IDC_PLUGINLIST,5,52,161,125,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Loaded Plugins:",IDC_STATIC,7,40,155,9
+    ICON            IDI_SMALL,IDC_STATIC,8,6,21,20
+    LTEXT           "N.U.T.S. - The NAtive Universal Transfer System - Version 1.0",IDC_STATIC,38,5,379,8,SS_NOPREFIX
+    LTEXT           "Written by Rebecca Gellman - Copyright (C) 2011 - 2020 - See COPYRIGHT for terms.",IDC_STATIC,37,15,373,8
+    DEFPUSHBUTTON   "OK",IDOK,377,238,50,14,WS_GROUP
+    CONTROL         "",IDC_ABOUTTABS,"SysTabControl32",0x0,8,33,419,202
 END
 
 
@@ -241,7 +240,9 @@ GUIDELINES DESIGNINFO
 BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
-        BOTTOMMARGIN, 62
+        LEFTMARGIN, 8
+        RIGHTMARGIN, 427
+        BOTTOMMARGIN, 252
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -506,6 +507,71 @@ BEGIN
     LTEXT           "Enter the name of the directory to be created:",IDC_STATIC,7,7,304,11
 END
 
+IDD_PLUGINS DIALOGEX 0, 0, 316, 182
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LISTBOX         IDC_PLUGINLIST,7,7,302,168,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_ICONSDLG DIALOGEX 0, 0, 477, 220
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         114,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,7,26,21,20
+    LTEXT           """Acorn Icon"", FatCow Hosting Extra Icons 2, FatCow, CC Attribution 3.0 US",IDC_STATIC,35,27,169,16
+    CONTROL         163,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,7,48,23,21
+    LTEXT           """Application Icon"", Blue Bits Icons, Icojam, Freeware",IDC_STATIC,35,52,169,16
+    CONTROL         160,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,7,71,23,21
+    LTEXT           """Mimetypes Binary Icon"", Crystal Clear Icons, Everaldo Coelho, LGPL",IDC_STATIC,35,72,169,16
+    CONTROL         158,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,7,94,23,21
+    LTEXT           """CD-Rom Icon"", Influens Icons, Mat-u, CC Attribution-NonCommercial 3.0 Unported",IDC_STATIC,35,96,169,16
+    CONTROL         IDI_SPRITE,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,7,117,23,21
+    LTEXT           """Server Icon"", Latte Developer Icons, Macintex, CC Attribution 3.0 Unported",IDC_STATIC,35,120,169,16
+    CONTROL         136,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,7,140,23,21
+    LTEXT           """Floppy Large Icon"", iIcons, Treetog ArtWork, Free for personal use",IDC_STATIC,35,143,169,16
+    CONTROL         139,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,7,163,23,21
+    LTEXT           """Floppy Drive 5 Icon"", Junior Icons, Treetog ArtWork, Free for personal use",IDC_STATIC,35,165,169,16
+    CONTROL         135,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,224,26,24,22
+    LTEXT           """Folder Gray Icon"", Aqua Candy Revolution Icons, McDo Design, Free for non-commercial use",IDC_STATIC,252,27,169,16
+    LTEXT           "The following icons from www.softicons.com have been used. Listed are the icon name, icon set, icon designer, and license.",IDC_STATIC,7,7,463,15
+    CONTROL         161,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,224,48,24,22
+    LTEXT           """Graphic File Icon"", 32x32 Free Design Icons, Aha-Soft, CC Attribution 3.0 US",IDC_STATIC,252,52,169,16
+    CONTROL         102,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,224,70,24,22
+    LTEXT           """Hard Disk Icon"", Influens Icons, Mat-u, CC Attribution-NonCommercial-NoDerivs 3.0 Unported",IDC_STATIC,252,72,169,16
+    CONTROL         159,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,224,94,24,22
+    LTEXT           """File Script Icon"", Junior Icons, Treetog ArtWork, Free for personal use.",IDC_STATIC,252,96,169,16
+    CONTROL         IDI_BASIC,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,224,117,24,22
+    LTEXT           """Text Icon"", Crystal Office Icon Set, MediaJon (www.iconshots.com), Linkware",IDC_STATIC,252,120,169,16
+    CONTROL         126,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,224,140,24,22
+    LTEXT           """Casette Graphite Icon"", Cassette Icons, iTweek, Free for personal use.",IDC_STATIC,252,142,169,16
+    LTEXT           "Plugins may use additional icons that are not listed here but still subject to license.",IDC_STATIC,252,165,169,16
+END
+
+IDD_THANKS DIALOGEX 0, 0, 410, 228
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Thanks are due to the following people who have provided assistance (knowingly or not) in the development of this program:",IDC_STATIC,7,7,396,19
+    LTEXT           "Duncan Woodward",IDC_STATIC,7,34,96,13
+    LTEXT           "Andy Spencer",IDC_STATIC,7,56,96,13
+    LTEXT           "Gerald Holdsworth",IDC_STATIC,7,78,96,13
+    LTEXT           "Grzegorz Kraszewski",IDC_STATIC,7,112,96,13
+    LTEXT           "Application testing and nagging me to do the Amiga ADF plugin",IDC_STATIC,7,43,396,10
+    LTEXT           "Application testing",IDC_STATIC,7,65,396,10
+    LTEXT           "Information on the RISC OS Sprite format, and description of the Zone Recording system of the RISC OS E, F, F+, G, G+ and New Map Hard Disc formats: http://www.geraldholdsworth.co.uk",IDC_STATIC,7,87,396,21
+    LTEXT           "Information on the Amiga Info/Sprite format: http://krashan.ppa.pl/articles/amigaicons/",IDC_STATIC,8,121,396,11
+    LTEXT           "Simon Rodriguez",IDC_STATIC,7,136,96,13
+    LTEXT           "The FXAA Anti-Alias Algorithm: http://blog.simonrodriguez.fr/articles/30-07-2016_implementing_fxaa.html",IDC_STATIC,7,145,394,21
+END
+
+IDD_LICENSE DIALOGEX 0, 0, 383, 254
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_LICENSE,"RichEdit20W",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_NUMBER | WS_BORDER | WS_VSCROLL | WS_TABSTOP,7,7,369,240
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -613,6 +679,38 @@ BEGIN
         RIGHTMARGIN, 311
         TOPMARGIN, 7
         BOTTOMMARGIN, 57
+    END
+
+    IDD_PLUGINS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_ICONSDLG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 470
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 213
+    END
+
+    IDD_THANKS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 403
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 221
+    END
+
+    IDD_LICENSE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 376
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 247
     END
 END
 #endif    // APSTUDIO_INVOKED

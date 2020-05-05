@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "TextFileTranslator.h"
+#include "libfuncs.h"
 
 
 TextFileTranslator::TextFileTranslator(void)
@@ -31,6 +32,15 @@ int TextFileTranslator::TranslateText( CTempFile &FileObj, TXTTranslateOptions *
 
 	while ( TextFilePtr < TextFileLen )
 	{
+		if ( WaitForSingleObject( opts->hStop, 0 ) == WAIT_OBJECT_0 )
+		{
+			/* ABORT! */
+			*opts->pTextBuffer   = pTextBody;
+			opts->TextBodyLength = TextBodySz;
+
+			return 0;
+		}
+
 		DWORD ReadSize = (DWORD) ( TextFileLen - TextFilePtr );
 
 		if ( ReadSize > 1024 ) { ReadSize = 1024; }
@@ -46,6 +56,8 @@ int TextFileTranslator::TranslateText( CTempFile &FileObj, TXTTranslateOptions *
 					opts->LinePointers.push_back( TextBodyPtr );
 
 					CRLF = true;
+
+					::PostMessage( opts->ProgressWnd, WM_TEXT_PROGRESS, (WPARAM) Percent( 0, 1, TextFilePtr, TextFileLen, true ), 0 );
 				}
 			}
 			else

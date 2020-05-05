@@ -65,6 +65,14 @@ int BBCBASICTranslator::TranslateText( CTempFile &FileObj, TXTTranslateOptions *
 	BYTE tokenOffset = 0x80;
 
 	while ( FilePtr < FileSize ) {
+		if ( WaitForSingleObject( opts->hStop, 0 ) == WAIT_OBJECT_0 )
+		{
+			/* ABORT! */
+			*opts->pTextBuffer   = pOutBuffer;
+			opts->TextBodyLength = lOutSize;
+
+			return 0;
+		}
 
 		/* Max line length in BBC BASIC is 255, plus at least 6 chars for the line number, and a zero terminator */
 		while ( lOutSize < lOutPtr + 1024 )
@@ -129,6 +137,8 @@ int BBCBASICTranslator::TranslateText( CTempFile &FileObj, TXTTranslateOptions *
 
 					TranslatedPtr = 0;
 					IsQuoted      = false;
+
+					::PostMessage( opts->ProgressWnd, WM_TEXT_PROGRESS, (WPARAM) Percent( 0, 1, FilePtr, FileSize, true ), 0 );
 
 				} else if ( ( InChar == 0x8d ) && ( !IsQuoted ) ) {
 					/*

@@ -183,6 +183,9 @@
     <ClCompile Include="FloppyDataSource.cpp">
       <Filter>Source Files\Data Sources</Filter>
     </ClCompile>
+    <ClCompile Include="AboutBox.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -325,6 +328,9 @@
     </ClInclude>
     <ClInclude Include="FloppyDataSource.h">
       <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="AboutBox.h">
+      <Filter>Header Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

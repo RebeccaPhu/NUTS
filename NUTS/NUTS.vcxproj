@@ -87,6 +87,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AboutBox.cpp" />
     <ClCompile Include="AppAction.cpp" />
     <ClCompile Include="BlockMap.cpp" />
     <ClCompile Include="DataSourceCollector.cpp" />
@@ -135,6 +136,7 @@
     <ClCompile Include="SCREENContentViewer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AboutBox.h" />
     <ClInclude Include="AppAction.h" />
     <ClInclude Include="BlockMap.h" />
     <ClInclude Include="DataSourceCollector.h" />

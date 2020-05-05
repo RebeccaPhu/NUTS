@@ -30,6 +30,8 @@ public:
 	static std::map<HWND,CTEXTContentViewer *> viewers;
 	static bool WndClassReg;
 
+	static unsigned int __stdcall TranslateThread(void *param);
+
 private:
 	HWND  ParentWnd;
 	
@@ -44,8 +46,16 @@ private:
 
 	std::string TempPath;
 
+	DWORD  dwthreadid;
+	HANDLE hTranslateThread;
+	HANDLE hStopEvent;
+	HWND   hProgress;
+
+	bool Translating;
+
 private:
 	void Translate( void );
 	void UpdateText( void );
 	void DoResize();
+
 };
