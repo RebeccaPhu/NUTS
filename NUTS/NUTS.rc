@@ -793,7 +793,8 @@ END
 // AVI
 //
 
-IDV_SEARCH              AVI                     "..\\search.avi"
+IDV_FILE                AVI                     "..\\search.avi"
+IDV_SEARCH              AVI                     "..\\file.avi"
 #endif    // English (United Kingdom) resources
 /////////////////////////////////////////////////////////////////////////////
 

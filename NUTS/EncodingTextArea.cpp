@@ -65,7 +65,7 @@ EncodingTextArea::EncodingTextArea( HWND hParent, int x, int y, int w, int h )
 		NULL,
 		L"SCROLLBAR", L"",
 		WS_CHILD|WS_VISIBLE|SBS_VERT|WS_DISABLED,
-		w - 16, 0, 16, h,
+		w - 17, 1, 16, h - 1,
 		hWnd, NULL, hInst, NULL
 	);
 }
@@ -144,11 +144,17 @@ void EncodingTextArea::PaintTextArea( void )
 
 	GetClientRect( hWnd, &r );
 
-	r.right -= 16; // Scrollbar allowance
+	r.right -= 15; // Scrollbar allowance
 
 	HDC hDC = GetDC( hWnd );
 
-	FillRect( hDC, &r, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
+	HDC hArea = CreateCompatibleDC( hDC );
+
+	HBITMAP hAreaCanvas = CreateCompatibleBitmap( hDC, r.right - r.left, r.bottom - r.top );
+
+	HGDIOBJ hAreaOld = SelectObject( hArea, hAreaCanvas );
+
+	FillRect( hArea, &r, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
 
 	/* Draw out the text body */
 	std::vector<DWORD>::iterator iLinePtr;
@@ -161,10 +167,6 @@ void EncodingTextArea::PaintTextArea( void )
 	DWORD MaxLines = ( r.bottom - r.top ) / 16;
 
 	if ( MaxChars > 255 ) { MaxChars = 255; }
-
-	std::vector<DWORD> FontList = FSPlugins.FontListForEncoding( Encoding );
-
-	DWORD FontID = FontList[ 0 ];
 
 	for ( DWORD SkipLine = 0; SkipLine<StartLine; SkipLine++ )
 	{
@@ -208,9 +210,9 @@ void EncodingTextArea::PaintTextArea( void )
 
 			if ( ThisLineLen > MaxChars ) { ThisLineLen = MaxChars; }
 
-			FontBitmap textline( FontID, &pTextBody[ TextPtr + ThisLinePtr ], (BYTE) ThisLineLen, false, false );
+			FontBitmap textline( Font, &pTextBody[ TextPtr + ThisLinePtr ], (BYTE) ThisLineLen, false, false );
 
-			textline.DrawText( hDC, 8, 8 + LineNum * 18, DT_LEFT | DT_TOP );
+			textline.DrawText( hArea, 8, 8 + LineNum * 18, DT_LEFT | DT_TOP );
 
 			LineNum++;
 			DisplayedLines++;
@@ -232,18 +234,176 @@ void EncodingTextArea::PaintTextArea( void )
 		}
 	}
 
-	DrawEdge( hDC, &r, EDGE_SUNKEN, BF_RECT );
+	DrawEdge( hArea, &r, EDGE_SUNKEN, BF_RECT );
+
+	/* Blit the off screen DC to the window */
+	BitBlt( hDC, 0, 0, r.right - r.left, r.bottom - r.top, hArea, 0, 0, SRCCOPY );
+
+	SelectObject( hArea, hAreaOld );
+
+	DeleteObject( hAreaCanvas );
+	DeleteDC( hArea );
 
 	ValidateRect( hWnd, &r );
 
 	ReleaseDC( hWnd, hDC );
 }
 
-int EncodingTextArea::SetTextBody( DWORD EncodingID, BYTE *pBody, DWORD lBody, std::vector<DWORD> &rLinePointers )
+int EncodingTextArea::PrintText( HDC hDC, int pw, int ph )
+{
+	HDC hStaging = CreateCompatibleDC( hDC );
+
+	HBITMAP hCanvas = CreateCompatibleBitmap( hDC, pw, ph );
+
+	HGDIOBJ hOld = SelectObject( hStaging, hCanvas );
+
+	StartPage( hDC );
+
+	/* Draw out the text body */
+	std::vector<DWORD>::iterator iLinePtr;
+
+	iLinePtr      = LinePointers.begin();
+	DWORD TextPtr = 0;
+	DWORD LineLen = 0;
+	DWORD LineNum = 0;
+	DWORD MaxChars = ( ( pw - 800 ) / 7 ) / 8;
+	DWORD MaxLines = ( ( ph - 800 ) / 7 ) / 16;
+
+	if ( MaxChars > 255 ) { MaxChars = 255; }
+
+	DWORD DisplayedLines = 0;
+
+	while ( 1 )
+	{
+		/* This stops us wasting CPU cycles drawing off screen */
+		if ( DisplayedLines > MaxLines )
+		{
+			EndPage( hDC );
+			
+			DisplayedLines = 0;
+			LineNum        = 0;
+
+			StartPage( hDC );
+		}
+
+		if ( iLinePtr == LinePointers.end() )
+		{
+			LineLen = lTextBody - TextPtr;
+		}
+		else
+		{
+			LineLen = *iLinePtr - TextPtr;
+		}
+
+		/* The line must now be divided into logical units of the window width */
+		DWORD ThisLinePtr = 0;
+
+		while ( LineLen > 0 )
+		{
+			DWORD ThisLineLen = LineLen;
+
+			if ( ThisLineLen > MaxChars ) { ThisLineLen = MaxChars; }
+
+			FontBitmap textline( Font, &pTextBody[ TextPtr + ThisLinePtr ], (BYTE) ThisLineLen, false, false );
+
+			textline.DrawText( hStaging, 0, 0, DT_LEFT | DT_TOP );
+
+			StretchBlt( hDC, 400, 400 + LineNum * 16 * 7, ThisLineLen * 8 * 7, 16 * 5, hStaging, 0, 0, ThisLineLen * 8, 16, SRCCOPY );
+
+			LineNum++;
+			DisplayedLines++;
+
+			LineLen     -= ThisLineLen;
+			ThisLinePtr += ThisLineLen;
+		}
+
+		if ( iLinePtr != LinePointers.end() )
+		{
+			TextPtr = *iLinePtr;
+
+			iLinePtr++;
+		}
+
+		if ( iLinePtr == LinePointers.end() )
+		{
+			break;
+		}
+	}
+
+	EndPage( hDC );
+
+	SelectObject( hStaging, hOld );
+
+	DeleteObject( hCanvas );
+	DeleteDC( hStaging );
+
+	return 0;
+}
+
+int EncodingTextArea::SaveText( FILE *fFile )
+{
+	/* Draw out the text body */
+	std::vector<DWORD>::iterator iLinePtr;
+
+	iLinePtr      = LinePointers.begin();
+	DWORD TextPtr = 0;
+	DWORD LineLen = 0;
+	DWORD LineNum = 0;
+
+	while ( 1 )
+	{
+		if ( iLinePtr == LinePointers.end() )
+		{
+			LineLen = lTextBody - TextPtr;
+		}
+		else
+		{
+			LineLen = *iLinePtr - TextPtr;
+		}
+
+		/* The line must now be divided into logical units of the window width */
+		DWORD ThisLinePtr = 0;
+
+		BYTE *pLine = rstrndup( &pTextBody[ TextPtr + ThisLinePtr ], (WORD) LineLen );
+
+		fprintf( fFile, "%s\n", (char *) pLine );
+
+		free( pLine );
+
+		if ( iLinePtr != LinePointers.end() )
+		{
+			TextPtr = *iLinePtr;
+
+			iLinePtr++;
+		}
+
+		if ( iLinePtr == LinePointers.end() )
+		{
+			break;
+		}
+	}
+
+	return 0;
+}
+
+int EncodingTextArea::SetFont( DWORD FontID )
+{
+	Font = FontID;
+
+	RECT r;
+
+	GetClientRect( hWnd, &r );
+
+	InvalidateRect( hWnd, &r, FALSE );
+
+	return 0;
+}
+
+int EncodingTextArea::SetTextBody( DWORD FontID, BYTE *pBody, DWORD lBody, std::vector<DWORD> &rLinePointers )
 {
 	pTextBody = pBody;
 	lTextBody = lBody;
-	Encoding  = EncodingID;
+	Font      = FontID;
 
 	LinePointers = rLinePointers;
 

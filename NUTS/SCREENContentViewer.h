@@ -24,6 +24,7 @@ public:
 	static std::map<HWND, CSCREENContentViewer *> viewers;
 	static bool WndClassReg;
 	static LRESULT CALLBACK SCViewerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	static unsigned int __stdcall CSCREENContentViewer::_TranslateThread(void *param);
 
 public:
 	HWND hWnd;
@@ -39,6 +40,7 @@ private:
 	HWND hPrint;
 	HWND hOffsetPrompt;
 	HWND hLengthPrompt;
+	HWND hProgress;
 
 	EncodingEdit *pOffset;
 	EncodingEdit *pLength;
@@ -78,6 +80,12 @@ private:
 	DWORD ww;
 	DWORD wh;
 
+	HANDLE hTranslateThread;
+	HANDLE hTerminate;
+	HANDLE hPoke;
+
+	bool   Translating;
+
 private:
 	int Translate( void );
 	int CreateToolbar( void );
@@ -102,4 +110,6 @@ private:
 	float rgb2luma( DWORD *pix );
 
 	void DestroyWindows( void );
+
+	int  TranslateThread( void );
 };

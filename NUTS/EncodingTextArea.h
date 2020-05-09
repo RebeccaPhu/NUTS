@@ -18,8 +18,11 @@ public:
 	static LRESULT CALLBACK EncodingTextAreaWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	LRESULT WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam );
-	int     SetTextBody( DWORD EncodingID, BYTE *pBody, DWORD lBody, std::vector<DWORD> &rLinePointers );
+	int     SetTextBody( DWORD FontID, BYTE *pBody, DWORD lBody, std::vector<DWORD> &rLinePointers );
 	int     DoResize( int w, int h );
+	int     SetFont( DWORD FontID );
+	int     SaveText( FILE *fFile );
+	int     PrintText( HDC hDC, int pw, int ph );
 
 public:
 	HWND  hWnd;
@@ -29,7 +32,7 @@ private:
 	HWND  hScrollBar;
 	BYTE  *pTextBody;
 	DWORD lTextBody;
-	DWORD Encoding;
+	DWORD Font;
 	DWORD MaxLine;
 	DWORD StartLine;
 

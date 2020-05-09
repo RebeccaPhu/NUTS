@@ -97,6 +97,7 @@
     <ClCompile Include="EncodingStatusBar.cpp" />
     <ClCompile Include="EncodingTextArea.cpp" />
     <ClCompile Include="ExtensionRegistry.cpp" />
+    <ClCompile Include="FileDialogs.cpp" />
     <ClCompile Include="FileOps.cpp" />
     <ClCompile Include="FloppyDataSource.cpp" />
     <ClCompile Include="FontBitmap.cpp" />
@@ -146,6 +147,7 @@
     <ClInclude Include="EncodingStatusBar.h" />
     <ClInclude Include="EncodingTextArea.h" />
     <ClInclude Include="ExtensionRegistry.h" />
+    <ClInclude Include="FileDialogs.h" />
     <ClInclude Include="FileOps.h" />
     <ClInclude Include="FloppyDataSource.h" />
     <ClInclude Include="FontBitmap.h" />
@@ -209,6 +211,7 @@
     <None Include="..\drawfile.bmp" />
     <None Include="..\exec.bmp" />
     <None Include="..\exec1.bmp" />
+    <None Include="..\file.avi" />
     <None Include="..\fileopen.ico" />
     <None Include="..\filesave.ico" />
     <None Include="..\floppydi.bmp" />

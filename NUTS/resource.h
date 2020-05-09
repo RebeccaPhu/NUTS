@@ -47,13 +47,15 @@
 #define IDI_UPFILE                      130
 #define IDI_DOWNFILE                    131
 #define IDI_NEWDIR                      132
-#define IDV_SEARCH                      133
+#define IDV_SEARCH2                     133
+#define IDV_FILE                        133
 #define IDD_PLUGINS                     134
 #define IDB_FOLDER                      135
 #define IDD_ICONSDLG                    135
 #define IDB_DISKIMAGE                   136
 #define IDD_THANKS                      136
 #define IDD_LICENSE                     137
+#define IDV_SEARCH                      138
 #define IDB_FLOPPYDISC                  139
 #define IDB_CDROM                       158
 #define IDB_PROGRAM                     159
@@ -137,7 +139,6 @@
 #define IDC_TOOL_DESC                   1043
 #define IDC_TOOL_OPERATION              1044
 #define IDC_TOOL_ICON                   1045
-#define IDC_RICHEDIT21                  1046
 #define IDC_LICENSE                     1046
 #define AFX_IDC_COLOR_BLACK             1100
 #define AFX_IDC_COLOR_WHITE             1101
@@ -688,7 +689,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        138
+#define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         40051
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101

@@ -1396,6 +1396,15 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 			space.Length++;
 		}
 
+		if ( UseDFormat )
+		{
+			/* D format requires objects align on a 1024-byte sector boundary == 4x256-sectors boundary */
+			while (  space.Length % 4 )
+			{
+				space.Length++;
+			}
+		}
+
 		space.OccupiedSectors = space.Length;
 
 		pFSMap->ClaimSpace( space );

@@ -174,7 +174,7 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	EnableWindow( ControlButtons[2], FALSE );
 	EnableWindow( ControlButtons[3], FALSE );
 
-	hSearchAVI = Animate_Create( hWnd, 42995, WS_CHILD | ACS_TRANSPARENT, hInst );
+	hSearchAVI = Animate_Create( hWnd, 42995, WS_CHILD | ACS_TRANSPARENT | ACS_AUTOPLAY, hInst );
 	
 	Animate_Open( hSearchAVI, MAKEINTRESOURCE( IDV_SEARCH ) );
 
@@ -714,7 +714,7 @@ void CFileViewer::Resize(int w, int h)
 
 	RecalculateDimensions( ThisRect );
 
-	SetWindowPos( hSearchAVI, NULL, ((ThisRect.right - ThisRect.left) / 2) - 24, ((ThisRect.bottom - ThisRect.top) / 2), 48, 50, SWP_NOZORDER | SWP_NOREPOSITION );
+	SetWindowPos( hSearchAVI, NULL, ((ThisRect.right - ThisRect.left) / 2) - 40, ((ThisRect.bottom - ThisRect.top) / 2) - 25, 80, 50, SWP_NOZORDER | SWP_NOREPOSITION );
 }
 
 void CFileViewer::DrawBasicLayout() {

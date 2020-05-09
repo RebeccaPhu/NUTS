@@ -261,6 +261,12 @@ int OldFSMap::WriteFSMap() {
 
 			NS++;
 		}
+
+		/* Map can't hold more than this */
+		if ( NS == 82 )
+		{
+			break;
+		}
 	}
 
 	* (DWORD *) &FSBytes[0x0fc]	= TotalSectors;

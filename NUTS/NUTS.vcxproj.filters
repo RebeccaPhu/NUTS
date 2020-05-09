@@ -186,6 +186,9 @@
     <ClCompile Include="AboutBox.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="FileDialogs.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -331,6 +334,9 @@
     </ClInclude>
     <ClInclude Include="AboutBox.h">
       <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="FileDialogs.h">
+      <Filter>Header Files\UI\Elements</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -498,6 +504,7 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\search.avi" />
+    <None Include="..\file.avi" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NUTS.rc">

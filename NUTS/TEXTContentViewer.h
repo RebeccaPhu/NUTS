@@ -3,6 +3,7 @@
 #include "TEXTTranslator.h"
 #include "TempFile.h"
 #include "EncodingTextArea.h"
+#include "EncodingStatusBar.h"
 #include "Defs.h"
 
 #include <map>
@@ -19,7 +20,11 @@ public:
 	LRESULT	WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 public:
-	HWND   hWnd;
+	HWND  hWnd;
+	HWND  hChanger;
+	HWND  hCopy;
+	HWND  hSave;
+	HWND  hPrint;
 
 	BYTE  *pContent;
 	QWORD lContent;
@@ -36,6 +41,7 @@ private:
 	HWND  ParentWnd;
 	
 	EncodingTextArea *pTextArea;
+	EncodingStatusBar *pStatusBar;
 
 	BYTE  *pTextBuffer;
 	long  lTextBuffer;
@@ -46,16 +52,22 @@ private:
 
 	std::string TempPath;
 
+	std::vector<DWORD> FontList;
+
+	DWORD  FontNum;
+
 	DWORD  dwthreadid;
 	HANDLE hTranslateThread;
 	HANDLE hStopEvent;
 	HWND   hProgress;
 
-	bool Translating;
+	bool   Translating;
 
 private:
 	void Translate( void );
-	void UpdateText( void );
 	void DoResize();
-
+	int  CreateToolbar( void );
+	int  PaintToolBar( void );
+	void DoSave( void );
+	void DoPrint( void );
 };

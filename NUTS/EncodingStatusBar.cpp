@@ -61,6 +61,7 @@ EncodingStatusBar::EncodingStatusBar( HWND hParent )
 
 EncodingStatusBar::~EncodingStatusBar(void)
 {
+	NixWindow( hWnd );
 }
 
 LRESULT EncodingStatusBar::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
@@ -121,6 +122,16 @@ int EncodingStatusBar::DoPaint( void )
 		if ( iPanel->second.Flags & PF_RIGHT )
 		{
 			tx = px + ( pl - ( tl * 8 ) );
+
+			if ( iPanel->second.Flags & PF_SPARE )
+			{
+				tx -= 8;
+			}
+
+			if ( iPanel->second.Flags & PF_SIZER )
+			{
+				tx -= 8;
+			}
 		}
 
 		if ( iPanel->second.Flags & PF_CENTER )

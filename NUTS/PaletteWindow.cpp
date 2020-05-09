@@ -2,6 +2,7 @@
 #include "PaletteWindow.h"
 #include "Defs.h"
 #include "FontBitmap.h"
+#include "FileDialogs.h"
 #include "Plugins.h"
 
 #include "resource.h"
@@ -667,50 +668,24 @@ INT_PTR CPaletteWindow::LogicalWindowProc( HWND hwndDlg, UINT uMsg, WPARAM wPara
 
 void CPaletteWindow::DoSavePalette( void )
 {
-	WCHAR Filename[ MAX_PATH + 4 ];
+	std::wstring filename;
 
-	Filename[ 0 ] = 0;
-
-	OPENFILENAME of;
-
-	ZeroMemory( &of, sizeof( of ) );
-
-	of.lStructSize       = sizeof( OPENFILENAME );
-	of.hwndOwner         = hWnd;
-	of.lpstrCustomFilter = NULL;
-	of.lpstrFile         = Filename;
-	of.nMaxFile          = MAX_PATH - 1;
-	of.lpstrFileTitle    = NULL;
-	of.nMaxFileTitle     = 0;
-	of.lpstrInitialDir   = NULL;
-	of.nFilterIndex      = 1;
-	of.Flags             = OFN_OVERWRITEPROMPT;
+	bool FileRes = false;
 
 	if ( SelectedTab == TabLogical )
 	{
-		of.lpstrFilter = L"NUTS Logical Palette\0*.LPL\0\0";
-		of.lpstrTitle  = L"Save Logical Palette";
+		FileRes = SaveFileDialog( hWnd, filename, L"NUTS Logical Palette", L"LPL", L"Save Logical Palette" );
 	}
 	else
 	{
-		of.lpstrFilter = L"NUTS Physical Palette\0*.PPL\0\0";
-		of.lpstrTitle  = L"Save Physical Palette";
+		FileRes = SaveFileDialog( hWnd, filename, L"NUTS Physical Palette", L"PPL", L"Save Physical Palette" );
 	}
 
-	if ( GetSaveFileName( &of ) )
+	if ( FileRes )
 	{
-		if ( SelectedTab == TabLogical )
-		{
-			wcscat_s( Filename, MAX_PATH + 4, L".LPL" );
-		}
-		else
-		{
-			wcscat_s( Filename, MAX_PATH + 4, L".PPL" );
-		}
-
 		FILE	*fFile;
 
-		_wfopen_s( &fFile, of.lpstrFile, L"wb" );
+		_wfopen_s( &fFile, filename.c_str(), L"wb" );
 
 		if (!fFile) {
 			MessageBox( hWnd, L"The palette file could not be saved", L"File Save Error", MB_ICONEXCLAMATION | MB_ICONERROR | MB_OK );
@@ -746,41 +721,24 @@ void CPaletteWindow::DoSavePalette( void )
 
 void CPaletteWindow::DoLoadPalette( void )
 {
-	WCHAR Filename[ MAX_PATH ];
+	std::wstring filename;
 
-	Filename[ 0 ] = 0;
-
-	OPENFILENAME of;
-
-	ZeroMemory( &of, sizeof( of ) );
-
-	of.lStructSize       = sizeof( OPENFILENAME );
-	of.hwndOwner         = hWnd;
-	of.lpstrCustomFilter = NULL;
-	of.lpstrFile         = Filename;
-	of.nMaxFile          = MAX_PATH;
-	of.lpstrFileTitle    = NULL;
-	of.nMaxFileTitle     = 0;
-	of.lpstrInitialDir   = NULL;
-	of.nFilterIndex      = 1;
-	of.Flags             = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST;
+	bool FileRes = false;
 
 	if ( SelectedTab == TabLogical )
 	{
-		of.lpstrFilter = L"NUTS Logical Palette\0*.LPL\0\0";
-		of.lpstrTitle  = L"Load Logical Palette";
+		FileRes = OpenFileDialog( hWnd, filename, L"NUTS Logical Palette", L"LPL", L"Load Logical Palette" );
 	}
 	else
 	{
-		of.lpstrFilter = L"NUTS Physical Palette\0*.PPL\0\0";
-		of.lpstrTitle  = L"Load Physical Palette";
+		FileRes = OpenFileDialog( hWnd, filename, L"NUTS Physical Palette", L"PPL", L"Load Physical Palette" );
 	}
 
-	if ( GetOpenFileName( &of ) )
+	if ( FileRes )
 	{
 		FILE	*fFile;
 
-		_wfopen_s( &fFile, of.lpstrFile, L"rb" );
+		_wfopen_s( &fFile, filename.c_str(), L"rb" );
 
 		if (!fFile) {
 			MessageBox( hWnd, L"The palette file could not be opened", L"File Load Error", MB_ICONEXCLAMATION | MB_ICONERROR | MB_OK );

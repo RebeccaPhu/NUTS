@@ -3,6 +3,7 @@
 #include "../nuts/libfuncs.h"
 
 int	IECATADirectory::ReadDirectory(void) {
+	Sleep( 10000 );
 	Files.clear();
 
 	unsigned char d64cache[512];

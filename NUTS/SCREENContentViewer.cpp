@@ -2,18 +2,25 @@
 #include "SCREENContentViewer.h"
 #include "resource.h"
 #include "PaletteWindow.h"
+#include "FileDialogs.h"
 #include "Plugins.h"
 #include "IconRatio.h"
 #include "NUTSError.h"
-#include "commctrl.h"
-#include "commdlg.h"
 
+#include <commctrl.h>
+#include <commdlg.h>
 #include <stdio.h>
+#include <process.h>
 #include <assert.h>
 
 std::map<HWND, CSCREENContentViewer *> CSCREENContentViewer::viewers;
 
 bool CSCREENContentViewer::WndClassReg = false;
+
+static DWORD dwthreadid;
+
+#define ProgW 128
+#define ProgH 18
 
 LRESULT CALLBACK CSCREENContentViewer::SCViewerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	if ( viewers.find( hWnd ) != viewers.end() )
@@ -80,6 +87,10 @@ CSCREENContentViewer::CSCREENContentViewer( CTempFile &FileObj, DWORD TUID ) {
 	hLengthPrompt  = nullptr;
 	pOffset        = nullptr;
 	pLength        = nullptr;
+
+	hTranslateThread = NULL;
+	hTerminate       = NULL;
+	hPoke            = NULL;
 }
 
 CSCREENContentViewer::~CSCREENContentViewer(void) {
@@ -102,6 +113,20 @@ CSCREENContentViewer::~CSCREENContentViewer(void) {
 	if ( pXlator != nullptr )
 	{
 		delete pXlator;
+	}
+
+	if ( hTranslateThread )
+	{
+		SetEvent( hTerminate );
+
+		if ( WaitForSingleObject( hTranslateThread, 5000 ) == WAIT_TIMEOUT )
+		{
+			TerminateThread( hTranslateThread, 500 );
+		}
+
+		CloseHandle( hTranslateThread );
+		CloseHandle( hTerminate );
+		CloseHandle( hPoke );
 	}
 }
 
@@ -229,7 +254,19 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 	LogicalPalette  = pXlator->GetLogicalPalette( Mode );
 	PhysicalColours = pXlator->GetPhysicalColours( );
 
-	Translate();
+	hTerminate = CreateEvent( NULL, TRUE, FALSE, NULL );
+	hPoke      = CreateEvent( NULL, FALSE, TRUE, NULL );
+
+	hProgress = CreateWindowEx(
+		0, PROGRESS_CLASS, NULL,
+		WS_CHILD | PBS_MARQUEE,
+		0, 0, ProgW, ProgH,
+		hWnd, NULL, hInst, NULL
+	);
+	
+	::PostMessage( hProgress, PBM_SETMARQUEE, (WPARAM) TRUE, 0 );
+
+	hTranslateThread = (HANDLE) _beginthreadex(NULL, NULL, _TranslateThread, this, NULL, (unsigned int *) &dwthreadid);
 
 	ShowWindow(hWnd, TRUE);
 	UpdateWindow(hWnd);
@@ -241,6 +278,7 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 
 void CSCREENContentViewer::DestroyWindows( void )
 {
+	NixWindow( hProgress );
 	NixWindow( hLengthPrompt );
 	NixWindow( hOffsetPrompt );
 	NixWindow( hPrint );
@@ -278,7 +316,7 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 			SendMessage(palWnd->hWnd, WM_SCPALCHANGED, 0, 0);
 		}
 
-		Translate();
+		SetEvent( hPoke );
 
 		RECT	rect;
 
@@ -372,7 +410,7 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 
 
 	if (message == WM_SCPALCHANGED) {
-		Translate();
+		SetEvent( hPoke );
 
 		RECT rect;
 
@@ -433,6 +471,60 @@ int CSCREENContentViewer::PaintToolBar( void ) {
 	GetClientRect(hModeList, &rect);      InvalidateRect(hModeList, &rect, FALSE);
 	GetClientRect(hPaletteButton, &rect); InvalidateRect(hPaletteButton, &rect, FALSE);
 	GetClientRect(hEffects, &rect);       InvalidateRect(hEffects, &rect, FALSE);
+
+	return 0;
+}
+
+unsigned int __stdcall CSCREENContentViewer::_TranslateThread(void *param)
+{
+	CSCREENContentViewer *pClass = (CSCREENContentViewer *) param;
+
+	return pClass->TranslateThread();
+}
+
+int CSCREENContentViewer::TranslateThread( void )
+{
+	Translating = false;
+
+	RECT r;
+
+	while ( 1 )
+	{
+		HANDLE handles[ 2 ] = { hPoke, hTerminate };
+
+		switch ( WaitForMultipleObjects( 2, handles, FALSE, 100 ) )
+		{
+		case WAIT_OBJECT_0:
+			{
+				Translating = true;
+
+				GetClientRect( hWnd, &r );
+
+				::SetWindowPos( hProgress, NULL,
+					( ( r.right - r.left ) / 2 ) - ( ProgW / 2 ), ( ( r.bottom - r.top ) / 2 ) - ( ProgH / 2 ), ProgW, ProgH,
+					SWP_NOREPOSITION | SWP_NOZORDER
+				);
+
+				ShowWindow( hProgress, SW_SHOW );
+
+				Translate();
+
+				ShowWindow( hProgress, SW_HIDE );
+
+				Translating = false;
+
+				UpdateWindow( hWnd );
+			}
+
+			break;
+
+		case ( WAIT_OBJECT_0 + 1 ):
+			return 0;
+
+		default:
+			break;
+		}
+	}
 
 	return 0;
 }
@@ -569,6 +661,11 @@ int CSCREENContentViewer::Translate( void ) {
 
 int CSCREENContentViewer::DisplayImage( void )
 {
+	if ( Translating )
+	{
+		return 0;
+	}
+
 	HDC hDC = GetDC( hWnd );
 
 	RECT	rect;
@@ -990,34 +1087,13 @@ int CSCREENContentViewer::DoCopyImage( bool Save )
 	}
 	else
 	{
-		WCHAR Filename[ MAX_PATH + 4 ];
+		std::wstring filename;
 
-		Filename[ 0 ] = 0;
-
-		OPENFILENAME of;
-
-		ZeroMemory( &of, sizeof( of ) );
-
-		of.lStructSize       = sizeof( OPENFILENAME );
-		of.hwndOwner         = hWnd;
-		of.lpstrCustomFilter = NULL;
-		of.lpstrFile         = Filename;
-		of.nMaxFile          = MAX_PATH - 1;
-		of.lpstrFileTitle    = NULL;
-		of.nMaxFileTitle     = 0;
-		of.lpstrInitialDir   = NULL;
-		of.nFilterIndex      = 1;
-		of.Flags             = OFN_OVERWRITEPROMPT;
-		of.lpstrFilter       = L"Windows Bitmap\0*.BMP\0\0";
-		of.lpstrTitle        = L"Save Translated Image";
-
-		if ( GetSaveFileName( &of ) )
+		if ( SaveFileDialog( hWnd, filename, L"Windows Bitmap", L"BMP", L"Save Translated Image" ) )
 		{
-			wcscat_s( Filename, MAX_PATH + 4, L".BMP" );
-
 			FILE	*fFile;
 
-			_wfopen_s( &fFile, of.lpstrFile, L"wb" );
+			_wfopen_s( &fFile, filename.c_str(), L"wb" );
 
 			if (!fFile) {
 				MessageBox( hWnd, L"The image file could not be saved", L"File Save Error", MB_ICONEXCLAMATION | MB_ICONERROR | MB_OK );
@@ -1118,7 +1194,7 @@ void CSCREENContentViewer::DoSnow( DWORD **pPixels, BITMAPINFO *pBMI )
 		double g = (double) pix[ 1 ];
 		double r = (double) pix[ 2 ];
 
-		double o = (double) ( rand() % 250 ); o -= 125.0;
+		double o = (double) ( rand() % 100 ); o -= 50.0;
 
 		b = ( b + o ) / 2.0; b = max(0,b); b = min(255.0,b);
 		g = ( g + o ) / 2.0; g = max(0,g); g = min(255.0,g);

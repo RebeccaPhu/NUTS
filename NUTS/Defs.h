@@ -234,6 +234,7 @@ typedef struct _GFXTranslateOptions {
 	long long Offset;
 	QWORD Length;
 	bool  FlashPhase;
+	HWND  NotifyWnd;
 } GFXTranslateOptions;
 
 typedef struct _TXTTranslateOptions {
