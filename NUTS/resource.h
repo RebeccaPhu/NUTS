@@ -47,15 +47,12 @@
 #define IDI_UPFILE                      130
 #define IDI_DOWNFILE                    131
 #define IDI_NEWDIR                      132
-#define IDV_SEARCH2                     133
-#define IDV_FILE                        133
 #define IDD_PLUGINS                     134
 #define IDB_FOLDER                      135
 #define IDD_ICONSDLG                    135
 #define IDB_DISKIMAGE                   136
 #define IDD_THANKS                      136
 #define IDD_LICENSE                     137
-#define IDV_SEARCH                      138
 #define IDB_FLOPPYDISC                  139
 #define IDB_CDROM                       158
 #define IDB_PROGRAM                     159

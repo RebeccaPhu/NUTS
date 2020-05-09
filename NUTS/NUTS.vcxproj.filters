@@ -503,8 +503,6 @@
     <None Include="..\avi1.bin">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\search.avi" />
-    <None Include="..\file.avi" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NUTS.rc">

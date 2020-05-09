@@ -211,7 +211,6 @@
     <None Include="..\drawfile.bmp" />
     <None Include="..\exec.bmp" />
     <None Include="..\exec1.bmp" />
-    <None Include="..\file.avi" />
     <None Include="..\fileopen.ico" />
     <None Include="..\filesave.ico" />
     <None Include="..\floppydi.bmp" />
@@ -233,7 +232,6 @@
     <None Include="..\pallette.ico" />
     <None Include="..\printer.ico" />
     <None Include="..\reset.ico" />
-    <None Include="..\search.avi" />
     <None Include="..\sprite.bmp" />
     <None Include="..\SPRITE.ico" />
     <None Include="..\TapeImage.bmp" />

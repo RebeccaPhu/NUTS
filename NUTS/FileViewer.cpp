@@ -14,6 +14,9 @@ std::map<HWND, CFileViewer *> CFileViewer::viewers;
 
 bool CFileViewer::WndClassReg = false;
 
+#define ProgW 128
+#define ProgH 18
+
 LRESULT CALLBACK CFileViewer::FileViewerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	if ( viewers.find( hWnd ) != viewers.end() )
 	{
@@ -115,6 +118,10 @@ CFileViewer::CFileViewer(void) {
 }
 
 CFileViewer::~CFileViewer(void) {
+	NixWindow( hProgress );
+	NixWindow( hScrollBar );
+	NixWindow( hWnd );
+
 	if ( hViewerBrush != NULL )
 	{
 		DeleteObject( (HGDIOBJ) hViewerBrush );
@@ -174,11 +181,14 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	EnableWindow( ControlButtons[2], FALSE );
 	EnableWindow( ControlButtons[3], FALSE );
 
-	hSearchAVI = Animate_Create( hWnd, 42995, WS_CHILD | ACS_TRANSPARENT | ACS_AUTOPLAY, hInst );
+	hProgress = CreateWindowEx(
+		0, PROGRESS_CLASS, NULL,
+		WS_CHILD | PBS_MARQUEE,
+		0, 0, ProgW, ProgH,
+		hWnd, NULL, hInst, NULL
+	);
 	
-	Animate_Open( hSearchAVI, MAKEINTRESOURCE( IDV_SEARCH ) );
-
-	Animate_Play( hSearchAVI, 0, -1, -1 );
+	::PostMessage( hProgress, PBM_SETMARQUEE, (WPARAM) TRUE, 0 );
 
 	DoStatusBar();
 
@@ -714,7 +724,7 @@ void CFileViewer::Resize(int w, int h)
 
 	RecalculateDimensions( ThisRect );
 
-	SetWindowPos( hSearchAVI, NULL, ((ThisRect.right - ThisRect.left) / 2) - 40, ((ThisRect.bottom - ThisRect.top) / 2) - 25, 80, 50, SWP_NOZORDER | SWP_NOREPOSITION );
+	SetWindowPos( hProgress, NULL, ((ThisRect.right - ThisRect.left) / 2) - ( ProgW / 2 ), ((ThisRect.bottom - ThisRect.top) / 2) - ( ProgH / 2), ProgW, ProgH, SWP_NOZORDER | SWP_NOREPOSITION );
 }
 
 void CFileViewer::DrawBasicLayout() {
@@ -2103,11 +2113,11 @@ void CFileViewer::SetSearching( bool s )
 
 	if ( s )
 	{
-		ShowWindow( hSearchAVI, SW_SHOW );
+		ShowWindow( hProgress, SW_SHOW );
 	}
 	else
 	{
-		ShowWindow( hSearchAVI, SW_HIDE );
+		ShowWindow( hProgress, SW_HIDE );
 	}
 }
 

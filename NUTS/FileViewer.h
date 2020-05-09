@@ -58,7 +58,7 @@ public:
 private:
 	HWND    ParentWnd;
 	HWND    hScrollBar;
-	HWND    hSearchAVI;
+	HWND    hProgress;
 
 	HFONT   titleBarFont;
 	HFONT   filenameFont;
