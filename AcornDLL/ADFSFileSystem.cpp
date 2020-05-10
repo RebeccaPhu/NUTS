@@ -143,11 +143,14 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	pDirectory->Files.push_back(DestFile);
 
 	pDirectory->WriteDirectory();
-	pDirectory->ReadDirectory();
+
+	FreeAppIcons();
+
+	int r = pDirectory->ReadDirectory();
 
 	ResolveAppIcons();
 
-	return 0;
+	return r;
 }
 
 int ADFSFileSystem::ChangeDirectory( DWORD FileID )
@@ -163,6 +166,8 @@ int ADFSFileSystem::ChangeDirectory( DWORD FileID )
 
 	rstrncat(path, (BYTE *) ".", 512 );
 	rstrncat(path, file->Filename, 512 );
+
+	FreeAppIcons();
 
 	int r = pDirectory->ReadDirectory();
 
@@ -286,6 +291,8 @@ int	ADFSFileSystem::Parent() {
 	DWORD ParentSector = pADFSDirectory->GetParentSector();
 
 	pADFSDirectory->SetSector( ParentSector );
+
+	FreeAppIcons();
 
 	int r = pDirectory->ReadDirectory();
 
@@ -424,6 +431,8 @@ int	ADFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 		rstrncat(path, (BYTE *) ".", 512 );
 		rstrncat(path, Filename, 512 );
 	}
+
+	FreeAppIcons();
 
 	int r = pDirectory->ReadDirectory();
 
@@ -874,6 +883,8 @@ int ADFSFileSystem::Init(void) {
 		return -1;
 	}
 
+	FreeAppIcons();
+
 	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 	{
 		return -1;
@@ -915,6 +926,8 @@ int ADFSFileSystem::Init(void) {
 
 int ADFSFileSystem::Refresh( void )
 {
+	FreeAppIcons();
+
 	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 	{
 		return -1;
@@ -1185,6 +1198,8 @@ int ADFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 			return FILEOP_SUCCESS;
 		}
 	}
+
+	FreeAppIcons();
 
 	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 	{
@@ -1512,6 +1527,8 @@ int ADFSFileSystem::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
 
 int ADFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj )
 {
+	int r = 0;
+
 	if ( obj == nullptr )
 	{
 		rstrncpy( sidecar.Filename, pFile->Filename, 16 );
@@ -1599,9 +1616,30 @@ int ADFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CT
 		}
 
 		/* Write the directory out now */
-		pDirectory->WriteDirectory();
-		pDirectory->ReadDirectory();
+		r = pDirectory->WriteDirectory();
+
+		if ( r == 0 )
+		{
+			FreeAppIcons();
+
+			r = pDirectory->ReadDirectory();
+		}
 	}
 
-	return 0;
+	return r;
+}
+
+void ADFSFileSystem::FreeAppIcons( void )
+{
+	ResolvedIcon_iter iIcon;
+
+	for ( iIcon = pDirectory->ResolvedIcons.begin(); iIcon != pDirectory->ResolvedIcons.end(); iIcon++ )
+	{
+		if ( iIcon->second.pImage != nullptr )
+		{
+			free( iIcon->second.pImage );
+		}
+	}
+
+	pDirectory->ResolvedIcons.clear();
 }

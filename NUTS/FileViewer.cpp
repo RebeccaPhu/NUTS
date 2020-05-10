@@ -532,14 +532,6 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 					break;
 			}
 
-			for ( std::map<UINT, DWORD>::iterator m=MenuFSMap.begin(); m!=MenuFSMap.end(); m++ )
-			{
-				if ( wParam == m->first )
-				{
-					// TODO: Fire a function here
-				}
-			}
-
 			return DefWindowProc(hSourceWnd, message, wParam, lParam);
 
 		case WM_SCCLOSED:
@@ -1075,10 +1067,6 @@ void CFileViewer::Redraw() {
 				SendMessage( ParentWnd, WM_IDENTIFYFONT, (WPARAM) this, (LPARAM) FSPlugins.FindFont( iFile->EncodingID, PaneIndex ) );
 			}
 
-
-			// See that weird way of getting the NativeFile object? Yeah.. MSVC says iFile (iterator of NativeFile, and
-			// thus yields a point to a NativeFile, as demonstrated above, can't be cast to NativeFile*......
-
 			NativeFile file = *iFile;
 			
 			bool Selected =  false;
@@ -1587,7 +1575,7 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 			OutputDebugStringA( "Dragging it " );
 			SetCursor(LoadCursor(NULL, IDC_ARROW));
 
-			SendMessage(ParentWnd, WM_FVENDDRAG, 0, 0);
+			SendMessage(ParentWnd, WM_FVENDDRAG, (WPARAM) hWnd, 0);
 		}
 
 		if ( Bounding )
@@ -1680,7 +1668,7 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 	
 		if (Dragging)
 		{
-			SendMessage(ParentWnd, WM_FVSTARTDRAG, 0, 0);
+			SendMessage(ParentWnd, WM_FVSTARTDRAG, (WPARAM) hWnd, 0);
 			SetCursor(LoadCursor(hInst, MAKEINTRESOURCE(IDI_SINGLEFILE)));
 		}
 		else

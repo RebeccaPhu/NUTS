@@ -107,6 +107,8 @@ int ADFSEFileSystem::ChangeDirectory( DWORD FileID )
 	rstrncat(path, (BYTE *) ".",   512 );
 	rstrncat(path, file->Filename, 512 );
 
+	FreeAppIcons();
+
 	pDirectory->ReadDirectory();
 
 	ResolveAppIcons();
@@ -122,6 +124,8 @@ int	ADFSEFileSystem::Parent() {
 	}
 
 	pEDirectory->DirSector = pEDirectory->ParentSector;
+
+	FreeAppIcons();
 
 	pDirectory->ReadDirectory();
 
@@ -420,6 +424,8 @@ FileSystem *ADFSEFileSystem::FileFilesystem( DWORD FileID )
 
 int ADFSEFileSystem::Refresh( void )
 {
+	FreeAppIcons();
+
 	pDirectory->ReadDirectory();
 
 	ResolveAppIcons();
@@ -709,4 +715,19 @@ AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
 	Attrs.push_back( Attr );
 
 	return Attrs;
+}
+
+void ADFSEFileSystem::FreeAppIcons( void )
+{
+	ResolvedIcon_iter iIcon;
+
+	for ( iIcon = pDirectory->ResolvedIcons.begin(); iIcon != pDirectory->ResolvedIcons.end(); iIcon++ )
+	{
+		if ( iIcon->second.pImage != nullptr )
+		{
+			free( iIcon->second.pImage );
+		}
+	}
+
+	pDirectory->ResolvedIcons.clear();
 }

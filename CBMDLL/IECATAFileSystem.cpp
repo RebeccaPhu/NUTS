@@ -59,7 +59,9 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 
 	if ( pFile->EncodingID == ENCODING_ASCII )
 	{
-		static NativeFile ASCIIFile = *pFile;
+		static NativeFile ASCIIFile;
+		
+		ASCIIFile = *pFile;
 
 		IncomingASCII( &ASCIIFile );
 

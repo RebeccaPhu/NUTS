@@ -149,6 +149,7 @@ private:
 	DWORD TranslateSector(DWORD InSector);
 
 	int ResolveAppIcons( void );
+	void FreeAppIcons( void );
 
 	int ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs );
 };

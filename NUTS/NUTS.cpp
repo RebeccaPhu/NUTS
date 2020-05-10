@@ -68,6 +68,7 @@ HANDLE leftThread  = NULL;
 HANDLE rightThread = NULL;
 
 HWND   FocusPane   = NULL;
+HWND   DragSource  = NULL;
 
 typedef struct _EnterVars
 {
@@ -1114,10 +1115,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_FVSTARTDRAG:
-		leftPane.StartDragging();
-		rightPane.StartDragging();
+		if ( DragSource == NULL )
+		{
+			leftPane.StartDragging();
+			rightPane.StartDragging();
 
-		SetCursor(LoadCursor(hInst, MAKEINTRESOURCE(IDI_SINGLEFILE)));
+			char smeg[256];
+			sprintf(smeg, "Start drag from %08X, left is %08X, right is %08X\n", wParam, leftPane.hWnd, rightPane.hWnd );
+			OutputDebugStringA( smeg );
+
+			SetCursor(LoadCursor(hInst, MAKEINTRESOURCE(IDI_SINGLEFILE)));
+
+			DragSource = (HWND) wParam;
+		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
@@ -1133,7 +1143,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		leftPane.EndDragging();
 		rightPane.EndDragging();
 
+		char smeg[256];
+		sprintf(smeg, "End drag from %08X, left is %08X, right is %08X\n", wParam, leftPane.hWnd, rightPane.hWnd );
+		OutputDebugStringA( smeg );
+
 		SetCursor(LoadCursor(NULL, IDC_ARROW));
+
+		/* Post a copy object to ourselves to trigger the action of dragging */
+		if ( message == WM_FVENDDRAG )
+		{
+			if ( wParam != (WPARAM) DragSource )
+			{
+				::PostMessage( hWnd, WM_COPYOBJECT, (WPARAM) DragSource, 0 );
+			}
+		}
+
+		DragSource = NULL;
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 

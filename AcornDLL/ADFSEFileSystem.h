@@ -125,5 +125,8 @@ public:
 
 private:
 	NewFSMap *pFSMap;
+
+private:
+	void FreeAppIcons( void );
 };
 
