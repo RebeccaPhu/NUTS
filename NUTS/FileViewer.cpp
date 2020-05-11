@@ -114,6 +114,8 @@ CFileViewer::CFileViewer(void) {
 
 	LastItemIndex = 0x7FFFFFFF;
 
+	pDropSite = nullptr;
+
 	InitializeCriticalSection( &RedrawLock );
 }
 
@@ -135,6 +137,14 @@ CFileViewer::~CFileViewer(void) {
 	}
 
 	DeleteCriticalSection( &RedrawLock );
+
+	if ( pDropSite != nullptr )
+	{
+		pDropSite->Revoke();
+
+		/* This deletes itself when the ref count goes to zero */
+		pDropSite->Release();
+	}
 }
 
 int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
@@ -147,6 +157,8 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	viewers[ hWnd ] = this;
 
 	ParentWnd	= Parent;
+
+	pDropSite = new DropSite( hWnd );
 
 	int tw = w - 140;
 
@@ -678,6 +690,11 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 			Update();
 
+			break;
+
+		case WM_EXTERNALDROP:
+			/* Pass directly to MainWnd */
+			::PostMessage( ParentWnd, WM_EXTERNALDROP, wParam, lParam );
 			break;
 
 		default:

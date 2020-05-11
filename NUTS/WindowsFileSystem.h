@@ -52,5 +52,6 @@ public:
 private:
 	std::wstring folderPath;
 
+public:
 	WindowsDirectory *pWindowsDirectory;
 };

@@ -96,6 +96,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	leftPane.PaneIndex  = 0;
 	rightPane.PaneIndex = 1;
 
+	/* This is used by the drop target mechanism */
+	OleInitialize( NULL );
+
 	// Initialize global strings
 	LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadString(hInstance, IDC_NUTS, szWindowClass, MAX_LOADSTRING);
@@ -109,7 +112,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	InitAppActions();
 
-	hAccelTable		= LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_NUTS));
+	hAccelTable	= LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_NUTS));
 
 	// Main message loop:
 	while (GetMessage(&msg, NULL, 0, 0)) {
@@ -744,6 +747,122 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 	return 0;
 }
 
+void DoExternalDrop( HWND hDroppedWindow, void *pPaths )
+{
+	std::vector<std::wstring> *Paths = (std::vector<std::wstring> *) pPaths;
+
+	/* Prepare some vars for the AppAction */
+	AppAction action;
+
+	CFileViewer *pane = &leftPane;
+
+	if ( hDroppedWindow == rightPane.hWnd )
+	{
+		pane = &rightPane;
+	}
+
+	action.Action = AA_COPY;
+	action.hWnd   = hMainWnd;
+	action.Pane   = nullptr; /* Source pane, which does not exist - FileOps will ignore this */
+	action.pData  = pane;
+	
+	/* Validate the selection - all the paths should start the same */
+	std::vector<std::wstring>::iterator iPath;
+
+	std::wstring root = L"";
+
+	std::vector<std::wstring> Trailers;
+
+	for ( iPath = Paths->begin(); iPath != Paths->end(); iPath++ )
+	{
+		if ( iPath->length() == 3 )
+		{
+			/* Someone tried to drop a drive on us - no way josè */
+			MessageBox( hMainWnd, L"Can't drop a whole drive onto NUTS.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+
+			delete pPaths;
+
+			return;
+		}
+
+		if ( iPath->substr(0, 2) == L"\\\\" )
+		{
+			/* UNC paths? nope nope noep nope */
+			MessageBox( hMainWnd, L"NUTS received an unsupported UNC path. Try dropping from a mapped network drive.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+
+			delete pPaths;
+
+			return;
+		}
+
+		size_t p = iPath->find_last_of( L'\\' );
+
+		if ( ( p == std::wstring::npos ) || ( p == iPath->length() - 1 ) )
+		{
+			/* Uh.... */
+			MessageBox( hMainWnd, L"NUTS received an unsupported path.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+
+			delete pPaths;
+
+			return;
+		}
+
+		std::wstring prefix  = iPath->substr( 0, p );
+		std::wstring trailer = iPath->substr( p + 1 );
+
+		if ( prefix != root )
+		{
+			if ( root == L"" )
+			{
+				root = prefix;
+			}
+			else
+			{
+				MessageBox( hMainWnd, L"NUTS received multiple paths from different locations which is not supported.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+
+				delete pPaths;
+
+				return;
+			}
+		}
+
+		Trailers.push_back( trailer );
+	}
+
+	/* Delete this now as we don't want to leak memory */
+	delete pPaths;
+
+	/* Create a Windows File System object to represent the source */
+	WindowsFileSystem *pWFS = new WindowsFileSystem( root );
+
+	action.FS = pWFS;
+
+	/* Search the directory for the files we're looking for. We don't need case matching as the right case
+	   should already have been provided */
+	std::vector<std::wstring>::iterator iDir;
+
+	DWORD iIndex = 0;
+
+	for ( iDir = pWFS->pWindowsDirectory->WindowsFiles.begin(); iDir != pWFS->pWindowsDirectory->WindowsFiles.end(); iDir++ )
+	{
+		for ( iPath = Trailers.begin(); iPath != Trailers.end(); iPath++ )
+		{
+			if ( *iDir == *iPath )
+			{
+				action.Selection.push_back( pWFS->pDirectory->Files[ iIndex ] );
+			}
+		}
+
+		iIndex++;
+	}
+
+	/* And finally, let this be AppAction's problem */
+	QueueAction( action );
+
+	action.Action = AA_DELETE_FS;
+
+	QueueAction( action );
+}
 
 void DoTitleStrings( std::vector<FileSystem *> *pStack, CFileViewer *pPane, int PanelIndex, DWORD TitleSize );
 
@@ -1197,6 +1316,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			OutputDebugStringW( L"Last error: " );
 			OutputDebugStringW( NUTSError::String.c_str() );
 			OutputDebugStringW( L"\n" );
+		}
+		return 0;
+
+	case WM_EXTERNALDROP:
+		{
+			DoExternalDrop( (HWND) wParam, (void *) lParam );
 		}
 		return 0;
 

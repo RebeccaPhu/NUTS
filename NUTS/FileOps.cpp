@@ -467,8 +467,11 @@ unsigned int __stdcall FileOpThread(void *param) {
 			
 			if ( ( CurrentAction.Action == AA_DELETE ) || ( CurrentAction.Action == AA_SET_PROPS ) )
 			{
-				pSourcePane->Updated = true;
-				pSourcePane->Redraw();
+				if ( pSourcePane != nullptr )
+				{
+					pSourcePane->Updated = true;
+					pSourcePane->Redraw();
+				}
 			}
 
 			break;
@@ -769,6 +772,11 @@ void DrawClippedTitleStack( std::vector<TitleComponent> *pStack, HDC hWindowDC, 
 	CFileViewer *pSourcePane = (CFileViewer *) CurrentAction.Pane;
 	FileSystem *pSourceFS = (FileSystem *) CurrentAction.FS;
 
+	if ( pSourcePane == nullptr )
+	{
+		return;
+	}
+
 	std::vector<TitleComponent>::iterator iStack;
 
 	DWORD FullWidth = 0;
@@ -841,9 +849,14 @@ void DrawClippedTitleStack( std::vector<TitleComponent> *pStack, HDC hWindowDC, 
 
 void DrawFilename( HWND hWnd, NativeFile *pFile )
 {
-	HDC hDC = GetDC( hWnd );
-
 	CFileViewer *pSourcePane = (CFileViewer *) CurrentAction.Pane;
+
+	if ( pSourcePane == nullptr )
+	{
+		return;
+	}
+
+	HDC hDC = GetDC( hWnd );
 
 	if ( hIconDC == NULL )
 	{

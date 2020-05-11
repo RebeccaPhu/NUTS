@@ -189,6 +189,9 @@
     <ClCompile Include="FileDialogs.cpp">
       <Filter>Source Files\UI\Elements</Filter>
     </ClCompile>
+    <ClCompile Include="DropSite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -337,6 +340,9 @@
     </ClInclude>
     <ClInclude Include="FileDialogs.h">
       <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="DropSite.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

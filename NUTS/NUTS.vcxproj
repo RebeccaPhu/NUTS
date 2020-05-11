@@ -91,6 +91,7 @@
     <ClCompile Include="AppAction.cpp" />
     <ClCompile Include="BlockMap.cpp" />
     <ClCompile Include="DataSourceCollector.cpp" />
+    <ClCompile Include="DropSite.cpp" />
     <ClCompile Include="EncodingClipboard.cpp" />
     <ClCompile Include="EncodingComboBox.cpp" />
     <ClCompile Include="EncodingEdit.cpp" />
@@ -141,6 +142,7 @@
     <ClInclude Include="AppAction.h" />
     <ClInclude Include="BlockMap.h" />
     <ClInclude Include="DataSourceCollector.h" />
+    <ClInclude Include="DropSite.h" />
     <ClInclude Include="EncodingClipboard.h" />
     <ClInclude Include="EncodingComboBox.h" />
     <ClInclude Include="EncodingEdit.h" />

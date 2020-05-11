@@ -5,6 +5,7 @@
 #include "TEXTContentViewer.h"
 #include "SCREENContentViewer.h"
 #include "EncodingEdit.h"
+#include "DropSite.h"
 #include "Defs.h"
 
 #include <vector>
@@ -99,6 +100,8 @@ private:
 	DWORD   WindowWidth;
 
 	CRITICAL_SECTION RedrawLock;
+
+	DropSite *pDropSite;
 
 private:
 	void  DrawBasicLayout();

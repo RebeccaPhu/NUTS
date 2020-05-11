@@ -68,6 +68,12 @@ unsigned int __stdcall ActionThread(void *param) {
 
 				case AA_NEWIMAGE:
 					ImageWiz_Handler( Action );
+					break;
+
+				case AA_DELETE_FS:
+					delete Action.FS;
+
+					break;
 
 				default:
 					break;
