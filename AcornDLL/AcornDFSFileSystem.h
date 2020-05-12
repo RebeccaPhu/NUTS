@@ -24,6 +24,7 @@ public:
 
 	int	 ReadFile(DWORD FileID, CTempFile &store);
 	int  WriteFile(NativeFile *pFile, CTempFile &store);
+	int  DeleteFile( NativeFile *pFile, int FileOp );
 	int  ChangeDirectory( DWORD FileID );
 	int	 Parent();
 	int	 CreateDirectory( BYTE *Filename, bool EnterAfter);
@@ -58,6 +59,8 @@ public:
 	char	path[8192];
 
 	FSHint Offer( BYTE *Extension );
+
+	int Format_Process( FormatType FT, HWND hWnd );
 
 private:
 	AcornDFSDirectory *pDFSDirectory;

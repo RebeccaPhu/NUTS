@@ -38,6 +38,149 @@ int	AcornDFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 {
+	if ( ( pFile->EncodingID != ENCODING_ASCII ) && ( pFile->EncodingID != ENCODING_ACORN ) )
+	{
+		return FILEOP_NEEDS_ASCII;
+	}
+
+	if ( pDirectory->Files.size() >= 31 )
+	{
+		return NUTSError( 0x80, L"Directory Full" );
+	}
+
+	/* Check we don't already have this */
+	NativeFileIterator iFile;
+
+	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
+	{
+		if ( rstrnicmp( pFile->Filename, iFile->Filename, 7 ) ) /* DFS limits files to 7 chars */
+		{
+			return FILEOP_EXISTS;
+		}
+	}
+
+	/* No DFS disk has more than 800 sectors */
+	BYTE Occupied[ 800 ];
+
+	ZeroMemory( Occupied, 800 );
+
+	Occupied[ 0 ] = 0xFF;
+	Occupied[ 1 ] = 0xFF;
+
+	/* Build up a map of occupied sectors */
+	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
+	{
+		DWORD NSectors = iFile->Length / 256;
+
+		if ( iFile->Length % 256 ) { NSectors++; }
+
+		DWORD Sector   = iFile->SSector;
+
+		for ( BYTE n = 0; n < NSectors; n++ )
+		{
+			if ( ( Sector + n ) < 800 )
+			{
+				Occupied[ Sector + n ] = 0xFF;
+			}
+		}
+	}
+
+	/* Get the size of the disk. We can't store a file bigger than the capacity */
+	BYTE SectorBuf[ 512 ];
+
+	/* Now find a space in the map big enough for the incoming file */
+	DWORD NSectors = pFile->Length / 256;
+
+	if ( pFile->Length % 256 ) { NSectors++; }
+
+	if ( NSectors > ( pDFSDirectory->NumSectors - 2 ) )
+	{
+		/* 2 sectors for the catalogue */
+		return NUTSError( 0x35, L"File too large for this image" );
+	}
+
+	DWORD Sector = 0;
+
+	for ( WORD n = 0; n < (pDFSDirectory->NumSectors - NSectors ); n++ )
+	{
+		Sector = n;
+
+		for ( WORD s = 0; s < NSectors; s++ )
+		{
+			if ( Occupied[ n + s ] != 0 )
+			{
+				Sector = 0;
+
+				break;
+			}
+		}
+
+		if ( Sector != 0 )
+		{
+			/* Found one */
+			break;
+		}
+	}
+
+	if ( Sector == 0 )
+	{
+		return NUTSError( 0x35, L"Disk full" );
+	}
+
+	/* Sector now holds the starting point to write. Now fill in a NativeFile. */
+	NativeFile file;
+
+	if ( pFile->FSFileType == FT_ACORN )
+	{
+		file         = *pFile;
+		file.SSector = Sector;
+	}
+	else
+	{
+		/* File being imported. Set a few sensibilities. */
+		file            = *pFile;
+		file.AttrLocked = 0xFFFFFFFF;
+		file.LoadAddr   = 0xFFFFFFFF;
+		file.ExecAddr   = 0xFFFFFFFF;
+		file.Flags      = 0; /* No extensions here, ta */
+	}
+
+	file.AttrPrefix = pDFSDirectory->CurrentDir;
+
+	/* Write the sectors out */
+	DWORD CSector = Sector;
+	DWORD Bytes   = pFile->Length;
+
+	while ( Bytes > 0 )
+	{
+		DWORD BytesToGo = Bytes;
+
+		if ( BytesToGo > 256 )
+		{
+			BytesToGo = 256;
+		}
+
+		store.Read( SectorBuf, BytesToGo );
+
+		pSource->WriteSector( CSector, SectorBuf, BytesToGo );
+
+		Bytes -= BytesToGo;
+		CSector++;
+	}
+
+	/* Write out the new directory */
+	pDFSDirectory->RealFiles.push_back( file );
+
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -148,7 +291,7 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	Map.Capacity  = NumBlocks * 256;
 	Map.pBlockMap = pBlockMap;
-	Map.UsedBytes = Map.Capacity;
+	Map.UsedBytes = 512;
 
 	std::vector<NativeFile>::iterator iFile;
 
@@ -179,7 +322,7 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 				UBlocks++;
 			}
 
-			Map.UsedBytes -= UBlocks * 256;
+			Map.UsedBytes += UBlocks * 256;
 
 			for ( DWORD Blk = iFile->SSector; Blk != iFile->SSector + UBlocks; Blk++ )
 			{
@@ -194,6 +337,8 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 			SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
 		}
 	}
+
+	SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
 
 	return 0;
 }
@@ -314,6 +459,12 @@ AttrDescriptors AcornDFSFileSystem::GetAttributeDescriptions( void )
 	Attr.Name  = L"Locked";
 	Attrs.push_back( Attr );
 
+	/* Locked */
+	Attr.Index = 1;
+	Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrFile;
+	Attr.Name  = L"Directory";
+	Attrs.push_back( Attr );
+
 	/* Load address. Hex. */
 	Attr.Index = 4;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrWarning | AttrFile;;
@@ -329,3 +480,82 @@ AttrDescriptors AcornDFSFileSystem::GetAttributeDescriptions( void )
 	return Attrs;
 }
 
+int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
+
+	int Stages = 1;
+
+	DWORD NumSectors = 0;
+
+	if ( FSID == FSID_DFS_40 )
+	{
+		NumSectors = 40 * 10;
+	}
+
+	if ( FSID == FSID_DFS_80 )
+	{
+		NumSectors = 80 * 10;
+	}
+
+	if ( NumSectors == 0 )
+	{
+		return NUTSError( 0x36, L"Invalid format specified" );
+	}
+
+	if ( FT = FormatType_Full )
+	{
+		Stages++;
+
+		BYTE SectorBuf[ 256 ];
+
+		ZeroMemory( SectorBuf, 256 );
+
+		for ( WORD n=0; n < NumSectors; n++ )
+		{
+			pSource->WriteSector( n, SectorBuf, 256 );
+
+			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 0, Stages, n, NumSectors, false ), 0 );
+		}
+	}
+
+	pDFSDirectory->RealFiles.clear();
+	pDFSDirectory->NumSectors = NumSectors;
+	pDFSDirectory->MasterSeq  = 0;
+	pDFSDirectory->Option     = 0;
+
+	rstrncpy( pDFSDirectory->DiscTitle, (BYTE *) "            ", 12 );
+
+	pDirectory->WriteDirectory();
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, 100, 0);
+
+	return 0;
+}
+
+
+int AcornDFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+{
+	/* This is easy, we literally just removing the offending file from the directory, and save */
+	NativeFileIterator iFile;
+
+	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
+	{
+		if ( iFile->SSector == pFile->SSector )
+		{
+			pDFSDirectory->RealFiles.erase( iFile );
+
+			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			return 0;
+		}
+	}
+
+	return NUTSError( 0x37, L"File not found" );
+}

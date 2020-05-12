@@ -661,7 +661,7 @@ AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
 	/* Write */
 	Attr.Index = 3;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
-	Attr.Name  = L"Read";
+	Attr.Name  = L"Write";
 	Attrs.push_back( Attr );
 
 	/* Load address. Hex. */

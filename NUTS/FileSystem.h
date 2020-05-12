@@ -264,7 +264,7 @@ public:
 
 	//	Run the actual format process. Intended to be run in a separate thread from the format wizard.
 	virtual	int Format_Process( FormatType FT, HWND hWnd ) {
-		PostMessage( hWnd, WM_FORMATPROGRESS, 200, 0);
+		PostMessage( hWnd, WM_FORMATPROGRESS, 100, 0);
 
 		return 0;
 	}

@@ -3,6 +3,7 @@
 #define SSector    Attributes[0]
 #define AttrLocked Attributes[1]
 #define AttrRead   Attributes[2]
+#define AttrPrefix Attributes[2]
 #define AttrWrite  Attributes[3]
 #define LoadAddr   Attributes[4]
 #define ExecAddr   Attributes[5]

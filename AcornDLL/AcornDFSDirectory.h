@@ -18,12 +18,14 @@ public:
 	int	ReadDirectory(void);
 	int	WriteDirectory(void);
 
-	unsigned char	MasterSeq;
+	BYTE MasterSeq;
 
-	BYTE	Option;
-	WORD	NumSectors;
+	BYTE Option;
+	WORD NumSectors;
 
-	BYTE	DiscTitle[12];
+	BYTE DiscTitle[12];
 
-	BYTE    CurrentDir;
+	BYTE CurrentDir;
+
+	std::vector<NativeFile> RealFiles;
 };
