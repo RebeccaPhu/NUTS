@@ -441,6 +441,8 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 				case IDM_COPY:
 					{
+						if ( GetSelectionCount() == 0 ) { break; }
+
 						::PostMessage(ParentWnd, WM_COPYOBJECT, (WPARAM) hWnd, 0 );
 					}
 
@@ -448,6 +450,8 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 				case IDM_INSTALL:
 					{
+						if ( GetSelectionCount() == 0 ) { break; }
+
 						::PostMessage(ParentWnd, WM_INSTALLOBJECT, (WPARAM) hWnd, 0 );
 					}
 
@@ -455,6 +459,8 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 				case IDM_DELETE:
 					{
+						if ( GetSelectionCount() == 0 ) { break; }
+
 						AppAction Action;
 
 						Action.Action = AA_DELETE;
@@ -471,6 +477,8 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 				case IDM_FORMAT:
 					{
+						if ( GetSelectionCount() == 0 ) { break; }
+
 						AppAction Action;
 
 						Action.Action    = AA_FORMAT;
@@ -501,12 +509,16 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 					break;
 
 				case IDM_ENTER:
+					if ( GetSelectionCount() == 0 ) { break; }
+
 					ActivateItem(mouseX, mouseY);
 
 					break;
 
 				case IDM_RENAME:
 					{
+						if ( GetSelectionCount() == 0 ) { break; }
+
 						RenameFile();
 					}
 					break;

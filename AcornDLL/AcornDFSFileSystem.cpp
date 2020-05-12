@@ -133,7 +133,7 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	/* DFS doesn't have a free space map, but rather the directory is considered
 	   to be an inverse of one. Since there are no subdirectories (and thus no
 	   tree to traverse) and only 31 files max per disk, the table can be parsed
-	   easily to subtract occupied sectors from a transiet free space map,
+	   easily to subtract occupied sectors from a transient free space map,
 	   resulting in a temporary free space map. DFS then uses this to locate
 	   a space to save a file. To construct the block map, we can do the same
 	   (using the sector count) and subtract each file's allocation from the map. */

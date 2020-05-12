@@ -859,6 +859,7 @@ void DoExternalDrop( HWND hDroppedWindow, void *pPaths )
 	/* And finally, let this be AppAction's problem */
 	QueueAction( action );
 
+	/* This is a special action to ask AppAction to delete the FS object after the copy action is done */
 	action.Action = AA_DELETE_FS;
 
 	QueueAction( action );
