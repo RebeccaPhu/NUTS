@@ -93,7 +93,7 @@ int	ADFSEDirectory::ReadDirectory( void ) {
 		TranslateType( &file );
 
 		file.EncodingID = ENCODING_ACORN;
-		file.FSFileType = FT_ACORN;
+		file.FSFileType = FT_ACORNX;
 
 		Files.push_back(file);
 

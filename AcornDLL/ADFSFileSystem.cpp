@@ -76,6 +76,13 @@ int	ADFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 {
+	if ( Override )
+	{
+		pFile = &OverrideFile;
+
+		Override = false;
+	}
+
 	if ( ( pFile->EncodingID != ENCODING_ASCII ) && ( pFile->EncodingID != ENCODING_ACORN ) )
 	{
 		return FILEOP_NEEDS_ASCII;
@@ -93,6 +100,17 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		if (pDirectory->Files.size() >= 47)
 		{
 			return NUTSError( 0x80, L"Directory Full" );
+		}
+	}
+
+	/* Check it doesn't already exist */
+	NativeFileIterator iFile;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile ++ )
+	{
+		if ( rstrnicmp( pFile->Filename, iFile->Filename, 10 ) )
+		{
+			return FILEOP_EXISTS;
 		}
 	}
 
@@ -139,6 +157,22 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	DestFile.SeqNum  = 0;
 	DestFile.SSector = space.StartSector;
+
+	if ( pFile->FSFileType == FT_ACORN )
+	{
+		/* Preset the read and write attribtues, as DFS doesn't have them */
+		DestFile.AttrRead  = 0xFFFFFFFF;
+		DestFile.AttrWrite = 0xFFFFFFFF;
+	}
+	else if ( pFile->FSFileType != FT_ACORNX )
+	{
+		/* Preset EVERYTHING! */
+		DestFile.AttrRead   = 0xFFFFFFFF;
+		DestFile.AttrWrite  = 0xFFFFFFFF;
+		DestFile.AttrLocked = 0x00000000;
+	}
+
+	DestFile.Flags &= ( 0xFFFFFFFF ^ FF_Extension );
 
 	pDirectory->Files.push_back(DestFile);
 
@@ -1145,13 +1179,20 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 int ADFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 {
+	if ( Override )
+	{
+		pFile = &OverrideFile;
+
+		Override = false;
+	}
+
 	std::vector<NativeFile>::iterator iFile;
 
 	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); )
 	{
 		bool DidErase = false;
 
-		if ( ( FilenameCmp( pFile, &*iFile ) ) && ( pFile->SSector == iFile->SSector ) )
+		if ( FilenameCmp( pFile, &*iFile ) )
 		{
 			DWORD FileSectors;
 			
@@ -1549,6 +1590,8 @@ int ADFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CT
 
 		std::vector<std::string> parts((std::istream_iterator<std::string>(iINFData)), std::istream_iterator<std::string>());
 
+		OverrideFile = *pFile;
+
 		/* Need at least 3 parts */
 		if ( parts.size() < 3 )
 		{
@@ -1558,12 +1601,12 @@ int ADFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CT
 		try
 		{
 			/* Part deux is the load address. We'll use std::stoull */
-			pFile->LoadAddr = std::stoul( parts[ 1 ], nullptr, 16 );
-			pFile->LoadAddr &= 0xFFFFFF;
+			OverrideFile.LoadAddr = std::stoul( parts[ 1 ], nullptr, 16 );
+			OverrideFile.LoadAddr &= 0xFFFFFF;
 
 			/* Part the third is the exec address. Same again. */
-			pFile->ExecAddr = std::stoul( parts[ 2 ], nullptr, 16 );
-			pFile->ExecAddr &= 0xFFFFFF;
+			OverrideFile.ExecAddr = std::stoul( parts[ 2 ], nullptr, 16 );
+			OverrideFile.ExecAddr &= 0xFFFFFF;
 		}
 
 		catch ( std::exception &e )
@@ -1573,57 +1616,32 @@ int ADFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CT
 		}
 
 		/* Fix the standard attrs */
-		pFile->AttrRead   = 0xFFFFFFFF;
-		pFile->AttrWrite  = 0xFFFFFFFF;
-		pFile->AttrLocked = 0x00000000;
+		OverrideFile.AttrRead   = 0xFFFFFFFF;
+		OverrideFile.AttrWrite  = 0xFFFFFFFF;
+		OverrideFile.AttrLocked = 0x00000000;
 
 		/* Look through the remaining parts for "L" or "Locked" */
 		for ( int i=3; i<parts.size(); i++ )
 		{
 			if ( ( parts[ i ] == "L" ) || ( parts[ i ] == "Locked" ) )
 			{
-				pFile->AttrLocked = 0xFFFFFFFF;
+				OverrideFile.AttrLocked = 0xFFFFFFFF;
 			}
 		}
 
-		pFile->Flags = 0;
+		OverrideFile.Flags = 0;
 		
-		/* Find the file being referenced, copy the attrs across, and write the directory */
-		NativeFileIterator iFile;
-
-		for ( iFile=pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+		/*  Copy the filename - but we must remove the lading directory prefix*/
+		if ( parts[ 0 ].substr( 1, 1 ) == "." )
 		{
-			if ( FilenameCmp( &*iFile, pFile ) )
-			{
-				/* Found it. Copy the attrs. */
-				iFile->AttrRead   = pFile->AttrRead;
-				iFile->AttrWrite  = pFile->AttrWrite;
-				iFile->AttrLocked = pFile->AttrLocked;
-				iFile->LoadAddr   = pFile->LoadAddr;
-				iFile->ExecAddr   = pFile->ExecAddr;
-
-				/*  Copy the filename - but we must remove the lading directory prefix*/
-				if ( parts[ 0 ].substr( 1, 1 ) == "." )
-				{
-					rstrncpy( iFile->Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
-				}
-				else
-				{
-					rstrncpy( iFile->Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
-				}
-
-			}
+			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
+		}
+		else
+		{
+			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
 		}
 
-		/* Write the directory out now */
-		r = pDirectory->WriteDirectory();
-
-		if ( r == 0 )
-		{
-			FreeAppIcons();
-
-			r = pDirectory->ReadDirectory();
-		}
+		Override = true;
 	}
 
 	return r;

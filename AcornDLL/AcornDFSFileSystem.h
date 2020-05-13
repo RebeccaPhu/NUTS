@@ -13,9 +13,11 @@ public:
 		pDirectory      = (Directory *) pDFSDirectory;
 
 		FSID  = FSID_DFS_80;
-		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs;
+		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs | FSF_Exports_Sidecars;
 
 		strncpy_s(path, 8192, "$", 8192);
+
+		Override = false;
 	}
 
 	~AcornDFSFileSystem(void) {
@@ -83,6 +85,12 @@ public:
 		return 0;
 	}
 
+	int ExportSidecar( NativeFile *pFile, SidecarExport &sidecar );
+	int ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj );
+
 private:
 	AcornDFSDirectory *pDFSDirectory;
+
+	NativeFile OverrideFile;
+	bool Override;
 };

@@ -913,6 +913,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			CheckMenuItem( hMainMenu, ID_OPTIONS_RESOLVEDICONS, (UseResolvedIcons)?MF_CHECKED:MF_UNCHECKED );
 			CheckMenuItem( hMainMenu, IDM_HIDESIDECARS, (HideSidecars)?MF_CHECKED:MF_UNCHECKED );
 			CheckMenuItem( hMainMenu, IDM_CONFIRM, ((bool)Preference( L"Confirm", true ))?MF_CHECKED:MF_UNCHECKED );
+			CheckMenuItem( hMainMenu, IDM_SIDECAR_PATHS, ((bool)Preference( L"SidecarPaths", true ))?MF_CHECKED:MF_UNCHECKED );
 
 			SetTimer( hWnd, 0x5016CE, 5000, NULL );
 		}
@@ -1078,6 +1079,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				HMENU hMainMenu = GetMenu( hWnd );
 
 				CheckMenuItem( hMainMenu, IDM_CONFIRM, (Confirm)?MF_CHECKED:MF_UNCHECKED );
+			}
+			break;
+
+		case IDM_SIDECAR_PATHS:
+			{
+				bool Respect = Preference( L"SidecarPaths", true );
+
+				Respect = !Respect;
+
+				Preference( L"SidecarPaths" ) = Respect;
+
+				HMENU hMainMenu = GetMenu( hWnd );
+
+				CheckMenuItem( hMainMenu, IDM_SIDECAR_PATHS, (Respect)?MF_CHECKED:MF_UNCHECKED );
 			}
 			break;
 

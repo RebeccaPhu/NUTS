@@ -203,7 +203,8 @@ BEGIN
     BEGIN
         MENUITEM "Resolved &Icons",             ID_OPTIONS_RESOLVEDICONS
         MENUITEM "Hide Sidecar Files",          IDM_HIDESIDECARS
-        MENUITEM "Confirm file operations",     IDM_CONFIRM
+        MENUITEM "Confirm File Operations",     IDM_CONFIRM
+        MENUITEM "Respect Sidecar Paths",       IDM_SIDECAR_PATHS
     END
     POPUP "&Help"
     BEGIN

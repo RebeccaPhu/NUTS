@@ -1935,7 +1935,12 @@ int PropsPage_Handler( AppAction Action )
 
 		NumPages++;
 		
-		FSToolList tools = pTargetFS->GetToolsList();
+		FSToolList tools;
+		
+		if ( pTargetFS != nullptr )
+		{
+			tools = pTargetFS->GetToolsList();
+		}
 
 		if ( tools.size() > 0 )
 		{

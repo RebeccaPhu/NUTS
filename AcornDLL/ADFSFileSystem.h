@@ -28,6 +28,7 @@ public:
 		pDirectory     = nullptr;
 		pADFSDirectory = nullptr;
 		pFSMap         = nullptr;
+		Override       = false;
 	}
 
 	ADFSFileSystem( const ADFSFileSystem &source ) : FileSystem( source.pSource )
@@ -144,6 +145,10 @@ private:
 	DWORD ValidateItems;
 	DWORD ValidatedItems;
 	HWND  ValidateWnd;
+
+	NativeFile OverrideFile;
+
+	bool Override;
 
 private:
 	DWORD TranslateSector(DWORD InSector);

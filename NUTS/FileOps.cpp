@@ -263,9 +263,9 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 	}
 }
 
-void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile )
+void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreCopy )
 {
-	if ( ( pTrg->FSID == FS_Windows ) && ( pSrc->Flags & FSF_Exports_Sidecars ) )
+	if ( ( pTrg->FSID == FS_Windows ) && ( pSrc->Flags & FSF_Exports_Sidecars ) && ( !PreCopy ) )
 	{
 		SidecarExport sidecar;
 
@@ -291,7 +291,7 @@ void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile )
 		}
 	}
 
-	if ( ( pSrc->FSID == FS_Windows ) && ( pTrg->Flags & FSF_Exports_Sidecars ) )
+	if ( ( pSrc->FSID == FS_Windows ) && ( pTrg->Flags & FSF_Exports_Sidecars ) && ( PreCopy ) )
 	{
 		/* Two stage process. First, get the file we should be looking for. */
 		SidecarImport sidecar;
@@ -505,12 +505,23 @@ unsigned int __stdcall FileOpThread(void *param) {
 					break;
 				}
 				
+				DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+
 				int FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
+
+				if ( FileResult == -1 )
+				{
+					NUTSError::Report( L"Copy file", hFileWnd );
+
+					break;
+				}
 
 				/* If the target FS doesn't understand the source encoding, then the source needs to translate the filename */
 				if ( FileResult == FILEOP_NEEDS_ASCII )
 				{
 					pSourceFS->MakeASCIIFilename( &iStep->Object );
+
+					DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
 					FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
 				}
@@ -520,20 +531,30 @@ unsigned int __stdcall FileOpThread(void *param) {
 					if ( !Confirm )
 					{
 						/* File exists and the user doesn't care */
+						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+
 						pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
+
+						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+
 						pTargetFS->WriteFile( &iStep->Object, FileObj );
 
-						DoSidecar( pSourceFS, pTargetFS, &iStep->Object );
+						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
 					}
 					else
 					{
 						if ( YesToAll )
 						{
 							/* User already agreed to this */
+							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+
 							pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
+
+							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+
 							pTargetFS->WriteFile( &iStep->Object, FileObj );
 
-							DoSidecar( pSourceFS, pTargetFS, &iStep->Object );
+							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
 						}
 						else if ( !NoToAll )
 						{
@@ -553,10 +574,15 @@ unsigned int __stdcall FileOpThread(void *param) {
 							/* Thread resumes here */
 							if ( ( YesOnce ) || ( YesToAll ) )
 							{
+								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+
 								pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
+
+								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+
 								pTargetFS->WriteFile( &iStep->Object, FileObj );
 
-								DoSidecar( pSourceFS, pTargetFS, &iStep->Object );
+								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
 							}
 						}
 					}
@@ -566,7 +592,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 				}
 				else
 				{
-					DoSidecar( pSourceFS, pTargetFS, &iStep->Object );
+					DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
 				}
 
 

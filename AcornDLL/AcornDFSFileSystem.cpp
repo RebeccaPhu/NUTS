@@ -1,6 +1,10 @@
 #include "StdAfx.h"
 #include "AcornDFSFileSystem.h"
 #include "../NUTS/TempFile.h"
+#include "../NUTS/Preference.h"
+
+#include <sstream>
+#include <iterator>
 
 int	AcornDFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 {
@@ -38,22 +42,31 @@ int	AcornDFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 {
+	if ( Override )
+	{
+		pFile = &OverrideFile;
+
+		Override = false;
+	}
+
 	if ( ( pFile->EncodingID != ENCODING_ASCII ) && ( pFile->EncodingID != ENCODING_ACORN ) )
 	{
 		return FILEOP_NEEDS_ASCII;
 	}
 
-	if ( pDirectory->Files.size() >= 31 )
+	if ( pDFSDirectory->RealFiles.size() >= 31 )
 	{
 		return NUTSError( 0x80, L"Directory Full" );
 	}
+
+	bool Respect = Preference( L"SidecarPaths", true );
 
 	/* Check we don't already have this */
 	NativeFileIterator iFile;
 
 	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
 	{
-		if ( rstrnicmp( pFile->Filename, iFile->Filename, 7 ) ) /* DFS limits files to 7 chars */
+		if ( ( rstrnicmp( pFile->Filename, iFile->Filename, 7 ) ) && ( iFile->AttrPrefix == pFile->AttrPrefix ) ) /* DFS limits files to 7 chars */
 		{
 			return FILEOP_EXISTS;
 		}
@@ -132,8 +145,12 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	if ( pFile->FSFileType == FT_ACORN )
 	{
-		file         = *pFile;
-		file.SSector = Sector;
+		file            = *pFile;
+		file.AttrPrefix = pFile->AttrPrefix;
+	}
+	else if ( pFile->FSFileType == FT_ACORNX )
+	{
+		file            = *pFile;
 	}
 	else
 	{
@@ -145,7 +162,12 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		file.Flags      = 0; /* No extensions here, ta */
 	}
 
-	file.AttrPrefix = pDFSDirectory->CurrentDir;
+	if ( ( pFile->FSFileType != FT_ACORN ) || ( !Respect ) )
+	{
+		file.AttrPrefix = pDFSDirectory->CurrentDir;
+	}
+
+	file.SSector  = Sector;
 
 	/* Write the sectors out */
 	DWORD CSector = Sector;
@@ -542,9 +564,14 @@ int AcornDFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 	/* This is easy, we literally just removing the offending file from the directory, and save */
 	NativeFileIterator iFile;
 
+	if ( Override )
+	{
+		pFile = &OverrideFile;
+	}
+
 	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
 	{
-		if ( iFile->SSector == pFile->SSector )
+		if ( ( rstrnicmp( iFile->Filename, pFile->Filename, 7 ) ) && ( iFile->AttrPrefix == pFile->AttrPrefix ) )
 		{
 			pDFSDirectory->RealFiles.erase( iFile );
 
@@ -564,3 +591,120 @@ int AcornDFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 
 	return NUTSError( 0x37, L"File not found" );
 }
+
+int AcornDFSFileSystem::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
+{
+	bool Respect = Preference( L"SidecarPaths", true );
+
+	rstrncpy( sidecar.Filename, pFile->Filename, 16 );
+	rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+
+	BYTE INFData[80];
+
+	char Dir = '$';
+
+	if ( Respect )
+	{
+		Dir = pDFSDirectory->CurrentDir;
+	}
+
+	rsprintf( INFData, "%c.%s %06X %06X %s\n", Dir, pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
+
+	CTempFile *pTemp = (CTempFile *) sidecar.FileObj;
+
+	pTemp->Seek( 0 );
+	pTemp->Write( INFData, rstrnlen( INFData, 80 ) );
+
+	return 0;
+}
+
+int AcornDFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj )
+{
+	int r = 0;
+
+	if ( obj == nullptr )
+	{
+		rstrncpy( sidecar.Filename, pFile->Filename, 16 );
+		rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+	}
+	else
+	{
+		bool Respect = Preference( L"SidecarPaths", true );
+
+		BYTE bINFData[ 256 ];
+
+		ZeroMemory( bINFData, 256 );
+
+		obj->Seek( 0 );
+		obj->Read( bINFData, min( 256, obj->Ext() ) );
+
+		std::string INFData( (char *) bINFData );
+
+		std::istringstream iINFData( INFData );
+
+		std::vector<std::string> parts((std::istream_iterator<std::string>(iINFData)), std::istream_iterator<std::string>());
+
+		/* Need at least 3 parts */
+		if ( parts.size() < 3 )
+		{
+			return 0;
+		}
+
+		OverrideFile = *pFile;
+
+		OverrideFile.AttrPrefix = pDFSDirectory->CurrentDir;
+
+		try
+		{
+			/* Part deux is the load address. We'll use std::stoull */
+			OverrideFile.LoadAddr = std::stoul( parts[ 1 ], nullptr, 16 );
+			OverrideFile.LoadAddr &= 0xFFFFFF;
+
+			/* Part the third is the exec address. Same again. */
+			OverrideFile.ExecAddr = std::stoul( parts[ 2 ], nullptr, 16 );
+			OverrideFile.ExecAddr &= 0xFFFFFF;
+		}
+
+		catch ( std::exception &e )
+		{
+			/* eh-oh */
+			return NUTSError( 0x2E, L"Bad sidecar file" );
+		}
+
+		/* Fix the standard attrs */
+		OverrideFile.AttrLocked = 0x00000000;
+
+		/* Look through the remaining parts for "L" or "Locked" */
+		for ( int i=3; i<parts.size(); i++ )
+		{
+			if ( ( parts[ i ] == "L" ) || ( parts[ i ] == "Locked" ) )
+			{
+				OverrideFile.AttrLocked = 0xFFFFFFFF;
+			}
+		}
+
+		OverrideFile.Flags = 0;
+		
+		/*  Copy the filename - but we must remove the leading directory prefix*/
+		if ( parts[ 0 ].substr( 1, 1 ) == "." )
+		{
+			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
+
+			if ( Respect )
+			{
+				OverrideFile.AttrPrefix = parts[ 0 ].at( 0 );
+			}
+		}
+		else
+		{
+			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
+		}
+
+		OverrideFile.FSFileType = FT_ACORN;
+
+		Override     = true;
+	}
+
+	return r;
+}
+

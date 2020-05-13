@@ -284,6 +284,8 @@
 #define IDM_INSTALL                     40048
 #define ID__SELECTALL                   40049
 #define IDM_SELECTALL                   40050
+#define ID_OPTIONS_RESPECTSIDECARPATHS  40061
+#define IDM_SIDECAR_PATHS               40062
 #define IDM_VIEW_BBCSCREEN              41001
 #define IDM_VIEW_ZXSSCREEN              41002
 #define IDM_VIEW_BBCBASIC               42001
@@ -687,7 +689,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        139
-#define _APS_NEXT_COMMAND_VALUE         40061
+#define _APS_NEXT_COMMAND_VALUE         40063
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

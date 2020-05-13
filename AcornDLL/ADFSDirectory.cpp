@@ -161,7 +161,7 @@ int	ADFSDirectory::ReadDirectory( void ) {
 		}
 
 		file.EncodingID = ENCODING_ACORN;
-		file.FSFileType = FT_ACORN;
+		file.FSFileType = FT_ACORNX;
 
 		if ( file.Flags && FF_Directory )
 		{
