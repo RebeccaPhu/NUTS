@@ -60,6 +60,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
+      <OutputFile>$(OutDir)Acorn.dll</OutputFile>
     </Link>
     <Manifest>
       <AdditionalOptions>/validate_manifest %(AdditionalOptions)</AdditionalOptions>
@@ -82,6 +83,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <OutputFile>$(OutDir)Acorn.dll</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

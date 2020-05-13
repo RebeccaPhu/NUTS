@@ -62,6 +62,27 @@ public:
 
 	int Format_Process( FormatType FT, HWND hWnd );
 
+	int SetProps( DWORD FileID, NativeFile *Changes )
+	{
+		NativeFileIterator iFile;
+
+		for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
+		{
+			if ( iFile->fileID = FileID )
+			{
+				for ( BYTE i=0; i<16; i++ )
+				{
+					iFile->Attributes[ i ] = Changes->Attributes[ i ];
+				}
+			}
+		}
+
+		pDirectory->WriteDirectory();
+		pDirectory->ReadDirectory();
+
+		return 0;
+	}
+
 private:
 	AcornDFSDirectory *pDFSDirectory;
 };

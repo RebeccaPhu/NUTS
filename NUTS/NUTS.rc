@@ -784,9 +784,9 @@ BEGIN
             VALUE "FileDescription", "Native Universal Transfer System"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "NUTS"
-            VALUE "LegalCopyright", "Copyright (C) 2011-2020 Rebecca Gellman - OSS License TBD"
+            VALUE "LegalCopyright", "Copyright (C) 2011-2020 Rebecca Gellman - See License"
             VALUE "OriginalFilename", "NUTS.exe"
-            VALUE "ProductName", "NUTS"
+            VALUE "ProductName", "N.U.T.S. - The Native Universal Transfer System"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END

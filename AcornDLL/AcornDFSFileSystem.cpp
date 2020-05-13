@@ -511,6 +511,11 @@ int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 
 		for ( WORD n=0; n < NumSectors; n++ )
 		{
+			if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+			{
+				return 0;
+			}
+
 			pSource->WriteSector( n, SectorBuf, 256 );
 
 			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 0, Stages, n, NumSectors, false ), 0 );
