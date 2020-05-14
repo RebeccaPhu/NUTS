@@ -88,8 +88,6 @@ public:
 	int  CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 	int  Refresh( void );
 
-	DataSource *FileDataSource( DWORD FileID );
-
 	AttrDescriptors GetAttributeDescriptions( void );
 	AttrDescriptors GetFSAttributeDescriptions( void );
 

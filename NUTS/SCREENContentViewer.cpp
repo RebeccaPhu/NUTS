@@ -108,7 +108,7 @@ CSCREENContentViewer::~CSCREENContentViewer(void) {
 		free(pixels2);
 	}
 
-	_unlink( Path.c_str() );
+	_wunlink( Path.c_str() );
 
 	if ( pXlator != nullptr )
 	{

@@ -50,7 +50,7 @@ private:
 
 	TEXTTranslator *pXlator;
 
-	std::string TempPath;
+	std::wstring TempPath;
 
 	std::vector<DWORD> FontList;
 

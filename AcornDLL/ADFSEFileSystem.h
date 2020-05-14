@@ -107,7 +107,6 @@ public:
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *GetTitleString( NativeFile *pFile );
 
-	DataSource *FileDataSource( DWORD FileID );
 	FileSystem *FileFilesystem( DWORD FileID );
 	WCHAR *Identify( DWORD FileID );
 	int  CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );

@@ -8,11 +8,11 @@ class CTempFile
 {
 public:
 	CTempFile(void);
-	CTempFile( std::string exFile );
+	CTempFile( std::wstring exFile );
 	~CTempFile(void);
 
 private:
-	std::string PathName;
+	std::wstring PathName;
 	QWORD Ptr;
 
 	bool bKeep;
@@ -22,7 +22,7 @@ public:
 	QWORD Ext( void );
 	void Write( void *Buffer, DWORD Length );
 	void Read( void *Buffer, DWORD Length );
-	std::string Name( void ) { return PathName; }
+	std::wstring Name( void ) { return PathName; }
 	void SetExt( QWORD NewPtr );
 	void Keep( void );
 };

@@ -8,7 +8,8 @@ class RootFileSystem :
 {
 public:
 	RootFileSystem(void) : FileSystem(NULL) {
-		pDirectory	= new RootDirectory();
+		pRootDirectory = new RootDirectory();
+		pDirectory     = (Directory *) pRootDirectory;
 
 		pDirectory->ReadDirectory();
 
@@ -33,4 +34,7 @@ public:
 
 	DataSource *FileDataSource( DWORD FileID );
 	FileSystem *FileFilesystem( DWORD FileID );
+
+private:
+	RootDirectory *pRootDirectory;
 };

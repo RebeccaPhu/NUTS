@@ -84,7 +84,10 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\NUTS\DataSource.cpp" />
+    <ClCompile Include="..\NUTS\ImageDataSource.cpp" />
     <ClCompile Include="..\NUTS\libfuncs.cpp" />
+    <ClCompile Include="..\NUTS\NestedImageSource.cpp" />
     <ClCompile Include="..\NUTS\NUTSError.cpp" />
     <ClCompile Include="..\NUTS\TempFile.cpp" />
     <ClCompile Include="CBMDLL.cpp" />

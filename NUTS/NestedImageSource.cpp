@@ -1,8 +1,8 @@
 #include "StdAfx.h"
 #include "NestedImageSource.h"
+#include "FileSystem.h"
 
-
-NestedImageSource::NestedImageSource( FileSystem *pFS, NativeFile *pSource, std::wstring Path ) : ImageDataSource( Path )
+NestedImageSource::NestedImageSource( void *pFS, NativeFile *pSource, std::wstring Path ) : ImageDataSource( Path )
 {
 	pSourceFS    = pFS;
 	TempPath     = Path;
@@ -15,14 +15,16 @@ NestedImageSource::~NestedImageSource(void)
 
 int NestedImageSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize)
 {
+	FileSystem *pFS = (FileSystem *) pSourceFS;
+
 	if ( ImageDataSource::WriteSector( Sector, pSectorBuf, SectorSize ) != DS_SUCCESS )
 	{
 		return -1;
 	}
 
-	CTempFile FileObj( AString( (WCHAR *) TempPath.c_str() ) );
+	CTempFile FileObj( TempPath.c_str() );
 
 	FileObj.Keep();
 
-	return pSourceFS->ReplaceFile( &SourceObject, FileObj );
+	return pFS->ReplaceFile( &SourceObject, FileObj );
 }

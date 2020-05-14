@@ -6,6 +6,8 @@
 #include "WindowsFileSystem.h"
 #include "libfuncs.h"
 
+#include <ShlObj.h>
+
 BYTE *RootFileSystem::DescribeFile( DWORD FileIndex )
 {
 	static BYTE status[64];
@@ -56,6 +58,11 @@ BYTE *RootFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 
 DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 {
+	if ( pDirectory->Files[ FileID ].Icon == FT_Directory )
+	{
+		return nullptr;
+	}
+
 	bool IsRaw = IsRawFS( UString( (char *) pDirectory->Files[ FileID ].Filename ) );
 
 	OutputDebugString(L"RAW FS\n");
@@ -109,6 +116,22 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )
 {
+	if ( pDirectory->Files[ FileID ].Icon == FT_Directory )
+	{
+		WindowsFileSystem *pWFS = nullptr;
+
+		int fIndex = pDirectory->Files[ FileID].Attributes[ 0 ];
+
+		WCHAR path[ MAX_PATH + 1];
+
+		if ( SHGetFolderPath( NULL, RootDirectory::Folders[ fIndex ].FolderID, NULL, SHGFP_TYPE_CURRENT, path ) == S_OK )
+		{
+			pWFS = new WindowsFileSystem( std::wstring( path ) );
+		}
+
+		return pWFS;
+	}
+
 	bool IsRaw = IsRawFS( UString( (char *) pDirectory->Files[ FileID ].Filename ) );
 
 	if (!IsRaw) {

@@ -4,21 +4,21 @@
 
 CTempFile::CTempFile(void)
 {
-	CHAR TempPath[ MAX_PATH + 1 ];
-	CHAR TempName[ MAX_PATH + 1 ];
+	WCHAR TempPath[ MAX_PATH + 1 ];
+	WCHAR TempName[ MAX_PATH + 1 ];
 
-	GetTempPathA( MAX_PATH, TempPath );
+	GetTempPathW( MAX_PATH, TempPath );
 
-	GetTempFileNameA( TempPath, "NUTS", 0, TempName );
+	GetTempFileNameW( TempPath, L"NUTS", 0, TempName );
 
-	PathName = std::string( TempName );
+	PathName = std::wstring( TempName );
 
 	Ptr = 0;
 
 	bKeep = false;
 }
 
-CTempFile::CTempFile( std::string exFile )
+CTempFile::CTempFile( std::wstring exFile )
 {
 	PathName = exFile;
 
@@ -31,7 +31,7 @@ CTempFile::~CTempFile(void)
 {
 	if ( !bKeep )
 	{
-		_unlink( PathName.c_str() );
+		_wunlink( PathName.c_str() );
 	}
 }
 
@@ -44,7 +44,7 @@ QWORD CTempFile::Ext( void )
 {
 	FILE *f = nullptr;
 	
-	fopen_s( &f, PathName.c_str(), "rb" );
+	_wfopen_s( &f, PathName.c_str(), L"rb" );
 
 	if ( f == nullptr )
 	{
@@ -64,11 +64,11 @@ void CTempFile::Write( void *Buffer, DWORD Length )
 {
 	FILE *f = nullptr;
 	
-	fopen_s( &f, PathName.c_str(), "rb+" );
+	_wfopen_s( &f, PathName.c_str(), L"rb+" );
 
 	if ( f == nullptr )
 	{
-		fopen_s( &f, PathName.c_str(), "wb" );
+		_wfopen_s( &f, PathName.c_str(), L"wb" );
 	}
 
 	if ( f == nullptr )
@@ -89,7 +89,7 @@ void CTempFile::Read( void *Buffer, DWORD Length )
 {
 	FILE *f = nullptr;
 	
-	fopen_s( &f, PathName.c_str(), "rb" );
+	_wfopen_s( &f, PathName.c_str(), L"rb" );
 
 	if ( f == nullptr )
 	{
@@ -109,11 +109,11 @@ void CTempFile::SetExt( QWORD NewPtr )
 {
 	FILE *f = nullptr;
 	
-	fopen_s( &f, PathName.c_str(), "rb+" );
+	_wfopen_s( &f, PathName.c_str(), L"rb+" );
 
 	if ( f == nullptr )
 	{
-		fopen_s( &f, PathName.c_str(), "wb" );
+		_wfopen_s( &f, PathName.c_str(), L"wb" );
 	}
 
 	if ( f == nullptr )

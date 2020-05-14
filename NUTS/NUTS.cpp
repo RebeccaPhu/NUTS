@@ -338,7 +338,10 @@ unsigned int __stdcall DoParentThread( void *param )
 		}
 	}
 
-	pVars->pane->SelectionStack.pop_back();
+	if ( pVars->pane->SelectionStack.size() > 0 )
+	{
+		pVars->pane->SelectionStack.pop_back();
+	}
 
 	pVars->pane->FS->EnterIndex = 0xFFFFFFFF;
 

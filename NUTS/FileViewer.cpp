@@ -973,10 +973,12 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 	SelectObject(hSourceDC, hO);
 
 	DeleteDC(hSourceDC);
-
-	if ( ( Updated ) && ( SelectionStack.back() != -1 ) && ( i == SelectionStack.back() ) )
+	if ( SelectionStack.size() > 0 )
 	{
-		CalculatedY = y;
+		if ( ( Updated ) && ( SelectionStack.back() != -1 ) && ( i == SelectionStack.back() ) )
+		{
+			CalculatedY = y;
+		}
 	}
 
 	if ( hCreatedIcon != NULL )
@@ -1090,12 +1092,9 @@ void CFileViewer::Redraw() {
 			DrawFile( 0, &Dummy, FT_Directory, ParentSelected);
 		}
 
-		for (iFile=FS->pDirectory->Files.begin(); iFile != FS->pDirectory->Files.end(); iFile++) {
-			if ( iFile->fileID == 0U )
-			{
-				SendMessage( ParentWnd, WM_IDENTIFYFONT, (WPARAM) this, (LPARAM) FSPlugins.FindFont( iFile->EncodingID, PaneIndex ) );
-			}
+		SendMessage( ParentWnd, WM_IDENTIFYFONT, (WPARAM) this, (LPARAM) FSPlugins.FindFont( FS->GetEncoding(), PaneIndex ) );
 
+		for (iFile=FS->pDirectory->Files.begin(); iFile != FS->pDirectory->Files.end(); iFile++) {
 			NativeFile file = *iFile;
 			
 			bool Selected =  false;
@@ -1111,7 +1110,7 @@ void CFileViewer::Redraw() {
 			FileIndex++;
 		}
 
-		if ( ( Updated ) && ( SelectionStack.back() != -1 ) )
+		if ( ( Updated ) && ( ( SelectionStack.size() > 0 ) && ( SelectionStack.back() != -1 ) ) )
 		{
 			LastItemIndex = 0x7FFFFFFF;
 
@@ -1282,7 +1281,10 @@ void CFileViewer::ActivateItem(int x, int y) {
 			return;
 		}
 
-		SelectionStack.back() = ix;
+		if ( SelectionStack.size() > 0 )
+		{
+			SelectionStack.back() = ix;
+		}
 
 		::SendMessage(ParentWnd, WM_ENTERICON, (WPARAM) hWnd, ix);
 	}

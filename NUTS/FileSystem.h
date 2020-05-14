@@ -6,6 +6,7 @@
 #include "FormatWizard.h"
 #include "TempFile.h"
 #include "NUTSError.h"
+#include "NestedImageSource.h"
 
 #include <string>
 
@@ -85,7 +86,18 @@ public:
 
 	virtual DataSource *FileDataSource( DWORD FileID )
 	{
-		return nullptr;
+		CTempFile FileObj;
+
+		if ( ReadFile( FileID, FileObj ) != DS_SUCCESS )
+		{
+			return nullptr;
+		}
+
+		FileObj.Keep();
+
+		DataSource *pNewSource = new NestedImageSource( this, &pDirectory->Files[ FileID ], FileObj.Name() );
+
+		return pNewSource;
 	}
 
 	virtual FileSystem *FileFilesystem( DWORD FileID )

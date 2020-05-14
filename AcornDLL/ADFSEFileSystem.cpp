@@ -275,21 +275,6 @@ BYTE *ADFSEFileSystem::GetTitleString( NativeFile *pFile )
 	return ADFSPath;
 }
 
-DataSource *ADFSEFileSystem::FileDataSource( DWORD FileID )
-{
-	CTempFile FileObj;
-
-	ReadFile( FileID, FileObj );
-
-	FileObj.Keep();
-
-	std::string sName = FileObj.Name();
-
-	const char *pName = sName.c_str();
-
-	return new NestedImageSource( this, &pDirectory->Files[ FileID ], UString( (char *) pName ) );
-}
-
 int ADFSEFileSystem::ResolveAppIcons( void )
 {
 	if ( !UseResolvedIcons )

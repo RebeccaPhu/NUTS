@@ -74,6 +74,15 @@
     <ClCompile Include="..\NUTS\TempFile.cpp">
       <Filter>Source Files\Imported Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\NUTS\DataSource.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\ImageDataSource.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\NestedImageSource.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CBMDLL.rc">

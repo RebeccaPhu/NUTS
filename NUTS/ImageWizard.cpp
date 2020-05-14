@@ -326,13 +326,7 @@ unsigned int __stdcall CreationThread(void *param)
 		Length = 0;
 	}
 
-	std::string TempName = NewImage.Name();
-
-	const char *pName = TempName.c_str();
-
-	std::wstring UName( UString( (char *) pName ) );
-
-	pSource = (DataSource *) new ImageDataSource( UName );
+	pSource = (DataSource *) new ImageDataSource( NewImage.Name() );
 
 	if ( pSource != nullptr )
 	{

@@ -786,24 +786,6 @@ AttrDescriptors ADFSFileSystem::GetFSAttributeDescriptions( void )
 	return Attrs;
 }
 
-DataSource *ADFSFileSystem::FileDataSource( DWORD FileID )
-{
-	CTempFile FileObj;
-
-	if ( ReadFile( FileID, FileObj ) != DS_SUCCESS )
-	{
-		return nullptr;
-	}
-
-	FileObj.Keep();
-
-	std::string sName = FileObj.Name();
-
-	const char *pName = sName.c_str();
-
-	return new NestedImageSource( this, &pDirectory->Files[ FileID ], UString( (char *) pName ) );
-}
-
 int ADFSFileSystem::ResolveAppIcons( void )
 {
 	if ( !UseResolvedIcons )

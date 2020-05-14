@@ -62,7 +62,7 @@ private:
 
 	SCREENTranslator *pXlator;
 	DWORD            XlatorID;
-	std::string      Path;
+	std::wstring     Path;
 
 	typedef enum _EffectID {
 		Effect_Antialias = 0x00000001,
