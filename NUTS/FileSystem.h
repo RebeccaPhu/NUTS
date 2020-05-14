@@ -325,7 +325,11 @@ public:
 	{
 		rstrncpy( pDirectory->Files[ FileID ].Filename, NewName, 256 );
 
-		return pDirectory->WriteDirectory();
+		int r = pDirectory->WriteDirectory();
+
+		pDirectory->ReadDirectory();
+
+		return r;
 	}
 
 	virtual void CancelTool( void )

@@ -85,8 +85,14 @@ public:
 		return 0;
 	}
 
+	int SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );
+
 	int ExportSidecar( NativeFile *pFile, SidecarExport &sidecar );
 	int ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj );
+
+	FSToolList GetToolsList( void );
+	int RunTool( BYTE ToolNum, HWND ProgressWnd );
+	int Rename( DWORD FileID, BYTE *NewName );
 
 private:
 	AcornDFSDirectory *pDFSDirectory;

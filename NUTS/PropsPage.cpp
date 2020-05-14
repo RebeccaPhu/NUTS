@@ -717,20 +717,17 @@ void SetupFSAttributes( HWND hWnd, bool CreateWindows )
 
 					NumBuf[0] = 0;
 
-					if ( AggregateValue( iAttr->Index, &val ) )
+					if ( iAttr->Type & AttrHex )
 					{
-						if ( iAttr->Type & AttrHex )
-						{
-							rsprintf( NumBuf, "%08X", val );
-						}
-
-						if ( iAttr->Type & AttrDec )
-						{
-							rsprintf( NumBuf, "%08d", val );
-						}
-
-						pEdit->SetText( NumBuf );
+						rsprintf( NumBuf, "%08X", iAttr->StartingValue );
 					}
+
+					if ( iAttr->Type & AttrDec )
+					{
+						rsprintf( NumBuf, "%08d", iAttr->StartingValue );
+					}
+
+					pEdit->SetText( NumBuf );
 				}
 			}
 
@@ -774,20 +771,13 @@ void SetupFSAttributes( HWND hWnd, bool CreateWindows )
 					Windows.push_back( A.ControlWnd );
 				}
 
-				if ( AggregateValue( iAttr->Index, &val ) )
+				if ( iAttr->StartingValue != 0U )
 				{
-					if ( CurrentAction.Selection[ 0 ].Attributes[ iAttr->Index ] != 0U )
-					{
-						::SendMessage( A.ControlWnd, BM_SETCHECK, (WPARAM) BST_CHECKED, 0 );
-					}
-					else
-					{
-						::SendMessage( A.ControlWnd, BM_SETCHECK, (WPARAM) BST_UNCHECKED, 0 );
-					}
+					::SendMessage( A.ControlWnd, BM_SETCHECK, (WPARAM) BST_CHECKED, 0 );
 				}
 				else
 				{
-					::SendMessage( A.ControlWnd, BM_SETCHECK, (WPARAM) BST_INDETERMINATE, 0 );
+					::SendMessage( A.ControlWnd, BM_SETCHECK, (WPARAM) BST_UNCHECKED, 0 );
 				}
 			}
 
@@ -825,18 +815,18 @@ void SetupFSAttributes( HWND hWnd, bool CreateWindows )
 				{
 					A.pComboClass->AddTextItem( (BYTE *) AString( (WCHAR *) iOption->Name.c_str() ) );
 
-					if ( val == iOption->EquivalentValue )
+					if ( iAttr->StartingValue == iOption->EquivalentValue )
 					{
 						if ( iAttr->Type & AttrCombo )
 						{
 							if ( iAttr->Type & AttrHex )
 							{
-								rsprintf( NumBuf, "%08X", val );
+								rsprintf( NumBuf, "%08X", iAttr->StartingValue );
 							}
 
 							if ( iAttr->Type & AttrDec )
 							{
-								rsprintf( NumBuf, "%08d", val );
+								rsprintf( NumBuf, "%08d", iAttr->StartingValue );
 							}
 
 							A.pComboClass->SetSelText( NumBuf );

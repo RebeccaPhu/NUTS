@@ -10,6 +10,10 @@ class AcornDFSDirectory :
 public:
 	AcornDFSDirectory(DataSource *pSource) : Directory(pSource) {
 		CurrentDir = '$';
+
+		memset( DiscTitle, 0x20, 12 );
+
+		ExtraDirectories.clear();
 	}
 
 	~AcornDFSDirectory(void) {
@@ -28,4 +32,6 @@ public:
 	BYTE CurrentDir;
 
 	std::vector<NativeFile> RealFiles;
+	
+	std::map<BYTE, bool> ExtraDirectories;
 };

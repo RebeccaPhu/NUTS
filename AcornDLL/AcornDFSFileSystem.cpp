@@ -1,7 +1,10 @@
 #include "StdAfx.h"
+#include "AcornDLL.h"
 #include "AcornDFSFileSystem.h"
 #include "../NUTS/TempFile.h"
 #include "../NUTS/Preference.h"
+
+#include "resource.h"
 
 #include <sstream>
 #include <iterator>
@@ -210,7 +213,18 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 int	AcornDFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 
-	return -1;
+	pDFSDirectory->ExtraDirectories[ Filename[ 0 ] ] = true;
+
+	int r = 0;
+
+	if ( EnterAfter )
+	{
+		pDFSDirectory->CurrentDir = Filename[ 0 ];
+
+		r = pDirectory->ReadDirectory();
+	}
+
+	return r;
 }
 
 BYTE *AcornDFSFileSystem::DescribeFile(DWORD FileIndex) {
@@ -218,9 +232,17 @@ BYTE *AcornDFSFileSystem::DescribeFile(DWORD FileIndex) {
 
 	NativeFile	*pFile	= &pDirectory->Files[FileIndex];
 
-	sprintf_s( (char *) status, 8192, "[%s] %06X bytes, &%08X/&%08X",
-		(pFile->AttrLocked)?"L":"-",
-		pFile->Length, pFile->LoadAddr, pFile->ExecAddr);
+	if ( pFile->Flags & FF_Directory ) 
+	{
+		rsprintf( status, "Directory Prefix" );
+	}
+	else
+	{
+		rsprintf( status, "[%s] %06X bytes, &%08X/&%08X",
+			(pFile->AttrLocked)?"L":"-",
+			(QWORD) pFile->Length, pFile->LoadAddr, pFile->ExecAddr
+		);
+	}
 		
 	return status;
 }
@@ -240,11 +262,18 @@ BYTE *AcornDFSFileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 	{
 		NativeFile	*pFile	= &pDirectory->Files[FileIndex];
 
-		rsprintf( status,
-			"%s | [%s] - %0X bytes - Load: &%08X Exec: &%08X",
-			pFile->Filename, (pFile->AttrLocked)?"L":"-",
-			(DWORD) pFile->Length, pFile->LoadAddr, pFile->ExecAddr
-		);
+		if ( pFile->Flags & FF_Directory )
+		{
+			rsprintf( status, "%s | Directory Prefix", pFile->Filename );
+		}
+		else
+		{
+			rsprintf( status,
+				"%s | [%s] - %0X bytes - Load: &%08X Exec: &%08X",
+				pFile->Filename, (pFile->AttrLocked)?"L":"-",
+				(QWORD) pFile->Length, pFile->LoadAddr, pFile->ExecAddr
+			);
+		}
 	}
 		
 	return status;
@@ -557,7 +586,7 @@ int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 	pDFSDirectory->MasterSeq  = 0;
 	pDFSDirectory->Option     = 0;
 
-	rstrncpy( pDFSDirectory->DiscTitle, (BYTE *) "            ", 12 );
+	memset( pDFSDirectory->DiscTitle, 0x20, 12 );
 
 	pDirectory->WriteDirectory();
 
@@ -569,6 +598,23 @@ int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 
 int AcornDFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 {
+	if ( ( pFile->Flags & FF_Directory ) && ( FileOp == FILEOP_DELETE_FILE ) )
+	{
+		BYTE Prefix = pFile->Filename[ 0 ];
+
+		std::map<BYTE,bool>::iterator iDir = pDFSDirectory->ExtraDirectories.find( Prefix );
+
+		if ( iDir != pDFSDirectory->ExtraDirectories.end() )
+		{
+			pDFSDirectory->ExtraDirectories.erase( iDir );
+		}
+
+		/* Nothing to write as these virtual directories don't technically exist */
+		int r = pDirectory->ReadDirectory();
+
+		return r;
+	}
+
 	/* This is easy, we literally just removing the offending file from the directory, and save */
 	NativeFileIterator iFile;
 
@@ -716,3 +762,95 @@ int AcornDFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar
 	return r;
 }
 
+int AcornDFSFileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
+{
+	int r = 0;
+
+	if ( PropID == 0 )
+	{
+		rstrncpy( pDFSDirectory->DiscTitle, pNewVal, 12 );
+
+		/* Fix up the title string - rstrncpy puts a terminator on the end - we don't want that */
+		bool Done =false;
+
+		for ( BYTE i=0; i<12; i++ )
+		{
+			if ( ( pDFSDirectory->DiscTitle[ i ] == 0 ) || ( Done ) )
+			{
+				pDFSDirectory->DiscTitle[ i ] = 0x20;
+
+				Done = true;
+			}
+		}
+
+		r = pDirectory->WriteDirectory();
+
+		if ( r == DS_SUCCESS )
+		{
+			r = pDirectory->ReadDirectory();
+		}
+	}
+
+	if ( PropID == 1 )
+	{
+		pDFSDirectory->Option = NewVal & 3;
+
+		r = pDirectory->WriteDirectory();
+
+		if ( r == DS_SUCCESS )
+		{
+			r = pDirectory->ReadDirectory();
+		}
+	}
+
+	return r;
+}
+
+FSToolList AcornDFSFileSystem::GetToolsList( void )
+{
+	FSToolList tools;
+
+	FSTool tool;
+
+	tool.ToolIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_COMPACT ) );
+	tool.ToolName = L"Compact";
+	tool.ToolDesc = L"Move files from used sectors together so that free space is one contiguous block";
+
+	tools.push_back( tool );
+
+	return tools;
+}
+
+int AcornDFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
+{
+	// TODO: Compaction
+
+	return 0;
+}
+
+int AcornDFSFileSystem::Rename( DWORD FileID, BYTE *NewName )
+{
+	int r = 0;
+
+	/* Find the file this really refers to */
+	NativeFileIterator iFile;
+
+	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
+	{
+		if ( iFile->SSector == pDirectory->Files[ FileID ].SSector )
+		{
+			rstrncpy( iFile->Filename, NewName, 7 );
+
+			r = pDirectory->WriteDirectory();
+
+			if ( r == DS_SUCCESS )
+			{
+				r = pDirectory->ReadDirectory();
+			}
+
+			return r;
+		}
+	}
+
+	return r;
+}

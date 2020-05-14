@@ -67,6 +67,11 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 			}
 		}
 
+		if ( ThisDir != '$' )
+		{
+			ExtraDirectories[ ThisDir ] = true;
+		}
+
 		Dirs[ ThisDir ] = true;
 
 		file.AttrPrefix = ThisDir;
@@ -170,12 +175,41 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 		offset	+= 8;
 	}
 
+	std::map<BYTE, bool>::iterator iExtra;
+
+	for ( iExtra = ExtraDirectories.begin(); iExtra != ExtraDirectories.end(); iExtra++ )
+	{
+		if ( ( CurrentDir == '$' ) && ( Dirs.find( iExtra->first ) == Dirs.end() ) )
+		{
+			NativeFile FakeSubDir;
+
+			FakeSubDir.EncodingID      = ENCODING_ACORN;
+			FakeSubDir.fileID          = FileID;
+			FakeSubDir.Filename[0]     = iExtra->first;
+			FakeSubDir.Filename[1]     = 0;
+			FakeSubDir.FSFileType      = FT_ACORN;
+			FakeSubDir.HasResolvedIcon = false;
+			FakeSubDir.XlatorID        = 0;
+			FakeSubDir.Flags           = FF_Directory;
+			FakeSubDir.Icon            = FT_Directory;
+			FakeSubDir.Type            = FT_Directory;
+
+			Files.push_back( FakeSubDir );
+
+			FileID++;
+
+			file.fileID = FileID;
+		}
+	}
+
 	return 0;
 }
 
 int	AcornDFSDirectory::WriteDirectory(void) {
 
 	BYTE SectorBuf[ 512 ];
+
+	ZeroMemory( SectorBuf, 512 );
 
 	MasterSeq++;
 
@@ -184,8 +218,8 @@ int	AcornDFSDirectory::WriteDirectory(void) {
 		MasterSeq = ( MasterSeq & 0xF0 ) + 0x10;
 	}
 
-	memcpy( &SectorBuf[ 0 ],       &DiscTitle[ 0 ], 8 );
-	memcpy( &SectorBuf[ 256 + 8 ], &DiscTitle[ 8 ], 4 );
+	memcpy( &SectorBuf[ 0 ],   &DiscTitle[ 0 ], 8 );
+	memcpy( &SectorBuf[ 256 ], &DiscTitle[ 8 ], 4 );
 
 	SectorBuf[ 256 + 4 ] = MasterSeq;
 	SectorBuf[ 256 + 7 ] = NumSectors & 0xFF;
