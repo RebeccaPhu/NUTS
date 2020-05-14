@@ -173,6 +173,8 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	DWORD CSector = Sector;
 	DWORD Bytes   = pFile->Length;
 
+	store.Seek( 0 );
+
 	while ( Bytes > 0 )
 	{
 		DWORD BytesToGo = Bytes;
@@ -330,7 +332,10 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	{
 		BlkNum = (DWORD) ( (double) FixedBlk / BlockRatio );
 	
-		pBlockMap[ BlkNum ] = (BYTE) BlockFixed;
+		if ( BlkNum < TotalBlocks )
+		{
+			pBlockMap[ BlkNum ] = (BYTE) BlockFixed;
+		}
 	}
 
 	if ( pDirectory != nullptr )
@@ -350,9 +355,12 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 			{
 				BlkNum = (DWORD) ( (double) Blk / BlockRatio );
 
-				if ( pBlockMap[ BlkNum ] != BlockFixed )
+				if ( BlkNum < TotalBlocks )
 				{
-					pBlockMap[ BlkNum ] = BlockUsed;
+					if ( pBlockMap[ BlkNum ] != BlockFixed )
+					{
+						pBlockMap[ BlkNum ] = BlockUsed;
+					}
 				}
 			}
 

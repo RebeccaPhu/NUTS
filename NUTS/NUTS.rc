@@ -117,7 +117,7 @@ CAPTION "Format disk or image"
 FONT 8, "Ms Shell Dlg", 0, 0, 0x0
 BEGIN
     PUSHBUTTON      "&Start Format...",IDC_FORMAT_START,101,163,60,14,WS_DISABLED
-    DEFPUSHBUTTON   "Cancel",IDC_FORMAT_CANCEL,166,163,50,14
+    DEFPUSHBUTTON   "Close",IDC_FORMAT_CANCEL,166,163,50,14
     LTEXT           "All Your Base Are Belong To Us",IDC_FORMAT_TITLE,0,0,328,29
     GROUPBOX        "Format Options",IDC_STATIC,3,60,158,70
     GROUPBOX        "Disk Format",IDC_STATIC,166,60,158,70

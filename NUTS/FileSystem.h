@@ -271,7 +271,7 @@ public:
 
 	//	Gives a file system the opportunity to ask any additional questions or post information etc, before the format begins.
 	virtual int	Format_PreCheck( int FormatType ) {
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return 0;
 	}
 
 	//	Run the actual format process. Intended to be run in a separate thread from the format wizard.

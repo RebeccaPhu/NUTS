@@ -74,6 +74,8 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						L"NUTS Formatter", MB_ICONEXCLAMATION | MB_YESNO ) == IDYES )
 					{
 						pFormatter->CancelFormat();
+
+						::SendMessage( GetDlgItem( hwndDlg, IDC_FORMAT_CANCEL), WM_SETTEXT, 0, (LPARAM) L"Close" );
 					}
 
 					ResumeThread( hFormatThread );
@@ -102,6 +104,8 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					L"NUTS Formatter", MB_ICONEXCLAMATION | MB_YESNO) == IDNO) {
 						break;
 				} else {
+					::SendMessage( GetDlgItem( hwndDlg, IDC_FORMAT_CANCEL), WM_SETTEXT, 0, (LPARAM) L"Cancel" );
+
 					int   pos  = SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_LIST), LB_GETCURSEL, 0, 0);
 					FormatFSID = (DWORD) SendMessage( GetDlgItem(hwndDlg, IDC_FORMAT_LIST), LB_GETITEMDATA, pos, 0 );
 
@@ -151,6 +155,11 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case WM_FORMATPROGRESS:
 			SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_PROGRESS), PBM_SETPOS, wParam, 0 );
 			SendMessage(GetDlgItem(hwndDlg, IDC_PROGRESS_TEXT),   WM_SETTEXT, 0,      lParam );
+
+			if ( wParam == 100 )
+			{
+				::SendMessage( GetDlgItem( hwndDlg, IDC_FORMAT_CANCEL), WM_SETTEXT, 0, (LPARAM) L"Close" );
+			}
 
 			break;
 
