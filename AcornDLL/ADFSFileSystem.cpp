@@ -1339,6 +1339,11 @@ int ADFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 
 int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs )
 {
+	if ( WaitForSingleObject( hToolEvent, 0 ) == WAIT_OBJECT_0 )
+	{
+		return -1;
+	}
+
 	BYTE DirBytes[ 0x800 ];
 
 	DWORD DirSectors = 5;

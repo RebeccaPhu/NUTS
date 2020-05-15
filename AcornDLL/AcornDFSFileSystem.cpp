@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <iterator>
+#include <algorithm>
 
 int	AcornDFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 {
@@ -101,9 +102,6 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		}
 	}
 
-	/* Get the size of the disk. We can't store a file bigger than the capacity */
-	BYTE SectorBuf[ 512 ];
-
 	/* Now find a space in the map big enough for the incoming file */
 	DWORD NSectors = pFile->Length / 256;
 
@@ -173,6 +171,8 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	file.SSector  = Sector;
 
 	/* Write the sectors out */
+	BYTE SectorBuf[ 256 ];
+
 	DWORD CSector = Sector;
 	DWORD Bytes   = pFile->Length;
 
@@ -346,6 +346,14 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	Map.pBlockMap = pBlockMap;
 	Map.UsedBytes = 512;
 
+	if ( pDFSDirectory->NumSectors > ( 80 * 10 ) )
+	{
+		/* Obviously a corrupt file. Don't even try */
+		SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
+
+		return NUTSError( 0x38, L"Corrupt image" );
+	}
+
 	std::vector<NativeFile>::iterator iFile;
 
 	double BlockRatio = ( (double) NumBlocks / (double) TotalBlocks );
@@ -369,8 +377,13 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	if ( pDirectory != nullptr )
 	{
-		for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+		for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
 		{
+			if ( iFile->Length > ( pDFSDirectory->NumSectors * 256 ) )
+			{
+				continue;
+			}
+
 			DWORD UBlocks = (DWORD) ( iFile->Length / 256 );
 			
 			if ( iFile->Length % 256 )
@@ -821,11 +834,151 @@ FSToolList AcornDFSFileSystem::GetToolsList( void )
 	return tools;
 }
 
+bool DFSSectorSort( NativeFile &a, NativeFile &b )
+{
+	if ( a.SSector < b.SSector )
+	{
+		return true;
+	}
+	
+	return false;
+}
+
 int AcornDFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 {
-	// TODO: Compaction
+	::SendMessage( ProgressWnd, WM_FSTOOL_CURRENTOP, 0, (LPARAM) L"Compacting image" );
 
-	return 0;
+	/* First, we'll need a list of RealFiles sorted by Start Sector */
+	std::vector<NativeFile> SortedFiles = pDFSDirectory->RealFiles;
+
+	std::sort( SortedFiles.begin(), SortedFiles.end(), DFSSectorSort );
+
+	/* Now build up a map of sectors, as per WriteFile */
+
+	/* No DFS disk has more than 800 sectors */
+	BYTE Occupied[ 800 ];
+
+	ZeroMemory( Occupied, 800 );
+
+	Occupied[ 0 ] = 0xFF;
+	Occupied[ 1 ] = 0xFF;
+
+	NativeFileIterator iFile;
+
+	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
+	{
+		DWORD NSectors = iFile->Length / 256;
+
+		if ( iFile->Length % 256 ) { NSectors++; }
+
+		DWORD Sector   = iFile->SSector;
+
+		for ( BYTE n = 0; n < NSectors; n++ )
+		{
+			if ( ( Sector + n ) < 800 )
+			{
+				Occupied[ Sector + n ] = 0xFF;
+			}
+		}
+	}
+
+	/* Now here's how we'll do this. Proceed through the block map until an unused block is found.
+	   Then find the file in the SortedFiles vector whose start sector is greather than the unused
+	   block. Perform the move sector-by-sector, and record the new start sector in RealFiles.
+
+	   Each source block is marked as free. Each destination block marked as occupied.
+
+	   Once all the moves are done, write the directory back. Because we search a sorted list, it
+	   is always the file nearest the start of the free space that gets moved, and we'll never
+	   overwrite any other data. */
+
+	WORD s = 2; /* Directory is 2 sectors */
+
+	while ( s < pDFSDirectory->NumSectors )
+	{
+		if ( WaitForSingleObject( hToolEvent, 0 ) == WAIT_OBJECT_0 )
+		{
+			return -1;
+		}
+
+		if ( Occupied[ s ] == 0 )
+		{
+			/* Empty space - find a file */
+			for ( iFile = SortedFiles.begin(); iFile != SortedFiles.end(); )
+			{
+				if ( iFile->SSector >= s )
+				{
+					/* This file will do. We now need to locate it in the RealFiles vector, as this
+					   is what gets written back */
+					NativeFileIterator realFile;
+
+					for ( realFile = pDFSDirectory->RealFiles.begin(); realFile != pDFSDirectory->RealFiles.end(); )
+					{
+						if ( realFile->SSector == iFile->SSector )
+						{
+							/* Found it. Start moving */
+							WORD NSectors = iFile->Length / 256;
+
+							if ( iFile->Length % 256 ) { NSectors++; }
+
+							BYTE SectorBuf[ 256 ];
+							WORD d = s;
+
+							for ( WORD n = iFile->SSector; n < iFile->SSector + NSectors; n++ )
+							{
+								if ( pSource->ReadSector( n, SectorBuf, 256 ) != DS_SUCCESS )
+								{
+									return -1;
+								}
+								
+								if ( pSource->WriteSector( d, SectorBuf, 256 ) != DS_SUCCESS )
+								{
+									return -1;
+								}
+
+								Occupied[ n ] = 0x00;
+								Occupied[ d ] = 0xFF;
+
+								d++;
+							}
+
+							realFile->SSector = s;
+
+							realFile = pDFSDirectory->RealFiles.end();
+							iFile    = SortedFiles.end();
+						}
+						else
+						{
+							realFile++;
+						}
+					}
+				}
+
+				if ( iFile != SortedFiles.end() )
+				{
+					iFile++;
+				}
+			}
+		}
+
+		s++;
+
+		::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 0, 1, s, pDFSDirectory->NumSectors, false), 0 );
+	}
+
+	/* Write the directory back now */
+	int r = pDirectory->WriteDirectory();
+
+	if ( r == DS_SUCCESS )
+	{
+		r = pDirectory->ReadDirectory();
+	}
+
+	MessageBox( ProgressWnd, L"Compaction complete.", L"NUTS Acorn DFS File System", MB_ICONINFORMATION | MB_OK );
+
+	::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, 100, 0 );
+	
+	return r;
 }
 
 int AcornDFSFileSystem::Rename( DWORD FileID, BYTE *NewName )
@@ -854,3 +1007,4 @@ int AcornDFSFileSystem::Rename( DWORD FileID, BYTE *NewName )
 
 	return r;
 }
+

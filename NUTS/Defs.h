@@ -336,5 +336,6 @@ typedef FSToolList::iterator FSToolIterator;
 #define WM_ABOUT_RESIZE     (WM_APP + 25)
 #define WM_TEXT_PROGRESS    (WM_APP + 26)
 #define WM_EXTERNALDROP     (WM_APP + 27)
+#define WM_THREADDONE       (WM_APP + 28)
 
 #define TUID_TEXT           0x73477347

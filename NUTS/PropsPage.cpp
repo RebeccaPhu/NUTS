@@ -511,7 +511,7 @@ INT_PTR CALLBACK FreeSpaceWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
 		{
 			ConfigureSpaceProps( hwndDlg );
 
-			if ( hSpaceThread == NULL )
+			if ( ( hSpaceThread == NULL ) && ( hToolDlg == NULL ) )
 			{
 				hSpaceThread = (HANDLE) _beginthreadex(NULL, NULL, SpaceThread, NULL, NULL, (unsigned int *) &dwthreadid);
 			}
@@ -564,7 +564,7 @@ INT_PTR CALLBACK BlocksWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 		{
 			hBlocksWnd = hwndDlg;
 
-			if ( hSpaceThread == NULL )
+			if ( ( hSpaceThread == NULL ) && ( hToolDlg == NULL ) )
 			{
 				hSpaceThread = (HANDLE) _beginthreadex(NULL, NULL, SpaceThread, NULL, NULL, (unsigned int *) &dwthreadid);
 			}
@@ -1648,6 +1648,10 @@ INT_PTR CALLBACK ToolDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		::SendMessage( GetDlgItem( hDlg, IDC_TOOL_PROGRESS), PBM_SETPOS, wParam, 0 );
 		break;
 
+	case WM_THREADDONE:
+		EndDialog( hDlg, 0 );
+		break;
+
 	case WM_FSTOOL_CURRENTOP:
 		{
 			std::wstring Op = L"Current Operation: " + std::wstring( (WCHAR *) lParam );
@@ -1681,6 +1685,8 @@ unsigned int __stdcall ToolThread(void *param) {
 		CloseHandle( hToolThread );
 
 		hToolThread = NULL;
+
+		::PostMessage( hToolDlg, WM_THREADDONE, 0, 0 );
 	}
 
 	return 0;
@@ -1743,7 +1749,13 @@ INT_PTR CALLBACK ToolsWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM 
 							L"Proceed?", L"NUTS File System Tool", MB_ICONWARNING | MB_YESNO
 							) == IDYES )
 						{
+							/* Stop the space thread as it'll probably try and access structures that are being changed */
+							StopSpaceThread();
+
 							DoTool( t );
+
+							/* The structure has changed, so re-examine it */
+							hSpaceThread = (HANDLE) _beginthreadex(NULL, NULL, SpaceThread, NULL, NULL, (unsigned int *) &dwthreadid);
 						}
 					}
 
@@ -1824,6 +1836,21 @@ int PropsPage_Handler( AppAction Action )
 	hSpaceThread = NULL;
 	hBlocksWnd   = NULL;
 	hSpaceWnd    = NULL;
+	hAttrsWnd    = NULL;
+	hFSAttrsWnd  = NULL;
+	hPropSheet   = NULL;
+	hToolsWnd    = NULL;
+	hToolDlg     = NULL;
+
+	MagBrush     = NULL;
+	BluBrush     = NULL;
+	RedBrush     = NULL;
+	hFont        = NULL;
+	hToolFont    = NULL;
+
+	hToolThread       = NULL;
+	hToolWindowThread = NULL;
+	hToolWindowEvent  = NULL;
 
 	PROPSHEETPAGE psp[ 5 ];
 
