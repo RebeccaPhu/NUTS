@@ -64,5 +64,9 @@ typedef std::vector<FileFragment> FileFragments;
 typedef FragmentList::iterator Fragment_iter;
 typedef FileFragments::iterator FileFragment_iter;
 
-
-
+typedef struct _TargetedFileFragments
+{
+	DWORD FragID;
+	DWORD SectorOffset;
+	FileFragments Frags;
+} TargetedFileFragments;

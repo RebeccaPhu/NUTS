@@ -115,7 +115,7 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	DWORD Sector = 0;
 
-	for ( WORD n = 0; n < (pDFSDirectory->NumSectors - NSectors ); n++ )
+	for ( WORD n = 0; n <= (pDFSDirectory->NumSectors - NSectors ); n++ )
 	{
 		Sector = n;
 

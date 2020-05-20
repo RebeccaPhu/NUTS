@@ -7,61 +7,70 @@
 #include "Sprite.h"
 
 #include <assert.h>
+#include <sstream>
+#include <iterator>
 
 FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 {
 	FSHint hint;
 
 	hint.Confidence = 0;
-	hint.FSID       = FS_Null;
+	hint.FSID       = FSID;
 
 	BYTE SectorBuf[1024];
 
-	/* Use ReadRaw because the sector size isn't known */
-	pSource->ReadRaw( 0, 1024, SectorBuf );
+	BYTE CheckByte;
 
-	BYTE CheckByte = pFSMap->ZoneCheck( SectorBuf );
-
-	if ( CheckByte == SectorBuf[ 0 ] )
+	if ( FSID == FSID_ADFS_E )
 	{
-		pSource->ReadRaw( 0x800, 256, SectorBuf );
+		/* Use ReadRaw because the sector size isn't known */
+		pSource->ReadRaw( 0, 1024, SectorBuf );
 
-		if ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) )
+		CheckByte = pFSMap->ZoneCheck( SectorBuf );
+
+		if ( CheckByte == SectorBuf[ 0 ] )
 		{
-			hint.Confidence = 25;
-			hint.FSID       = FSID_ADFS_E;
+			pSource->ReadRaw( 0x800, 256, SectorBuf );
 
-			return hint;
+			if ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) )
+			{
+				hint.Confidence = 25;
+
+				return hint;
+			}
 		}
-	}
 
-	// Sector 0 can be damaged, because there's a backup on Sector 1.
+		// Sector 0 can be damaged, because there's a backup on Sector 1.
 	
-	pSource->ReadRaw( 1024, 1024, SectorBuf );
+		pSource->ReadRaw( 1024, 1024, SectorBuf );
 
-	CheckByte = pFSMap->ZoneCheck( SectorBuf );
+		CheckByte = pFSMap->ZoneCheck( SectorBuf );
 
-	if ( CheckByte == SectorBuf[ 0 ] )
-	{
-		pSource->ReadRaw( 0x800, 256, SectorBuf );
-
-		if ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) )
+		if ( CheckByte == SectorBuf[ 0 ] )
 		{
-			hint.Confidence = 25;
-			hint.FSID       = FSID_ADFS_E;
+			pSource->ReadRaw( 0x800, 256, SectorBuf );
 
-			return hint;
+			if ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) )
+			{
+				hint.Confidence = 25;
+
+				return hint;
+			}
 		}
 	}
 	
 	/* Going to need to read the Boot Block and locate the map base. */
-
 	pSource->ReadRaw( 0x0C00, 1024, SectorBuf );
 
 	BYTE *pRecord   = &SectorBuf[ 0x1C0 ]; // Bit o' boot block.
 	DWORD BPMB      = 1 << pRecord[ 0x05 ];
 	WORD  ZoneSpare = * (WORD *) &pRecord[ 0x0A ];
 	WORD  Zones     = pRecord[ 0x09 ];
+
+	BYTE  TypeByte  = pRecord[ 0x03 ];
+
+	DWORD SecSize   = 1 << pRecord[ 0x00 ];
+	DWORD SecsTrack = pRecord[ 0x01 ];
 
 	if ( Zones < 2 )
 	{
@@ -84,7 +93,18 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	if ( CheckByte == SectorBuf[ 0 ] )
 	{
 		hint.Confidence = 25;
-		hint.FSID       = FSID_ADFS_F;
+
+		/* So it looks like new-map, but what kind? Could be F,E+,F+,G or a hard disc */
+		switch ( FSID )
+		{
+		case FSID_ADFS_HN:
+			if ( TypeByte == 0 ) { hint.Confidence += 5; }
+			break;
+
+		case FSID_ADFS_F:
+			if ( SecsTrack == 10 ) { hint.Confidence += 5; }
+			break;
+		}
 
 		return hint;
 	}
@@ -191,6 +211,132 @@ int	ADFSEFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	return 0;
 }
 
+int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
+{
+	if ( Override )
+	{
+		pFile = &OverrideFile;
+
+		Override = false;
+	}
+
+	if ( ( pFile->EncodingID != ENCODING_ASCII ) && ( pFile->EncodingID != ENCODING_ACORN ) )
+	{
+		return FILEOP_NEEDS_ASCII;
+	}
+
+	if ( pDirectory->Files.size() >= 77 )
+	{
+		return NUTSError( 0x80, L"Directory Full" );
+	}
+
+	/* Check it doesn't already exist */
+	NativeFileIterator iFile;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile ++ )
+	{
+		if ( rstrnicmp( pFile->Filename, iFile->Filename, 10 ) )
+		{
+			return FILEOP_EXISTS;
+		}
+	}
+
+	DWORD SectorsRequired = pFile->Length / pFSMap->SecSize;
+
+	if ( ( pFile->Length % pFSMap->SecSize ) != 0 )
+		SectorsRequired++;
+
+	TargetedFileFragments StorageFrags = FindSpace( pFile->Length );
+
+	if ( StorageFrags.Frags.size() == 0 )
+	{
+		/* No space on disk */
+		return NUTSError( 0x3A, L"Disc full" );
+	}
+
+	store.Seek( 0 );
+
+	BYTE *SectorBuf = (BYTE *) malloc( pFSMap->SecSize );
+
+	FileFragment_iter iFrag;
+
+	QWORD FileToGo = store.Ext();
+
+	for ( iFrag = StorageFrags.Frags.begin(); iFrag != StorageFrags.Frags.end(); )
+	{
+		DWORD SecNum    = iFrag->Sector;
+		DWORD BytesToGo = iFrag->Length;
+
+		if ( FileToGo == 0 )
+		{
+			iFrag = StorageFrags.Frags.end();
+
+			continue;
+		}
+
+		while ( ( BytesToGo != 0 ) && ( FileToGo != 0 ) )
+		{
+			store.Read( SectorBuf, pFSMap->SecSize );
+
+			DWORD BytesToWrite = pFSMap->SecSize;
+
+			if ( BytesToWrite > FileToGo )
+			{
+				BytesToWrite = FileToGo;
+			}
+
+			pSource->WriteSector( SecNum, SectorBuf, pFSMap->SecSize );
+
+			SecNum++;
+
+			BytesToGo -= pFSMap->SecSize;
+
+			FileToGo  -= BytesToWrite;
+		}
+
+		if ( FileToGo != 0 )
+		{
+			iFrag++;
+		}
+	}
+
+	/* We're on */
+	NativeFile	DestFile	= *pFile;
+
+	DestFile.SeqNum   = 0;
+	DestFile.SSector  = StorageFrags.FragID << 8;
+	DestFile.SSector |= StorageFrags.SectorOffset & 0xFF;
+
+	if ( pFile->FSFileType == FT_ACORN )
+	{
+		/* Preset the read and write attribtues, as DFS doesn't have them */
+		DestFile.AttrRead  = 0xFFFFFFFF;
+		DestFile.AttrWrite = 0xFFFFFFFF;
+	}
+	else if ( pFile->FSFileType != FT_ACORNX )
+	{
+		/* Preset EVERYTHING! */
+		DestFile.AttrRead   = 0xFFFFFFFF;
+		DestFile.AttrWrite  = 0xFFFFFFFF;
+		DestFile.AttrLocked = 0x00000000;
+
+		// TODO: Convert FT_ enumeration to Risc OS FileType.
+	}
+
+	DestFile.Flags &= ( 0xFFFFFFFF ^ FF_Extension );
+
+	pDirectory->Files.push_back(DestFile);
+
+	pDirectory->WriteDirectory();
+
+	FreeAppIcons();
+
+	int r = pDirectory->ReadDirectory();
+
+	ResolveAppIcons();
+
+	return r;
+}
 
 BYTE *ADFSEFileSystem::DescribeFile(DWORD FileIndex) {
 	static BYTE status[ 128 ];
@@ -324,9 +470,12 @@ int ADFSEFileSystem::ResolveAppIcons( void )
 
 							icon.Aspect = sprite.SpriteAspect;
 
-							pDirectory->ResolvedIcons[ iFile->fileID ] = icon;
+							if ( sprite.Valid() )
+							{
+								pDirectory->ResolvedIcons[ iFile->fileID ] = icon;
 
-							iFile->HasResolvedIcon = true;
+								iFile->HasResolvedIcon = true;
+							}
 						}
 						/*
 						if ( rstrnicmp( iSprite->Filename, (BYTE *) "file_", 5 ) )
@@ -488,7 +637,7 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	Map.Capacity  = NumBlocks;
 	Map.pBlockMap = pBlockMap;
-	Map.UsedBytes = Map.Capacity;
+	Map.UsedBytes = 0;
 
 	NumBlocks /= 1024;
 
@@ -518,7 +667,7 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 		if ( iFragment->FragID != 0U )
 		{
-			Map.UsedBytes -= iFragment->Length;
+			Map.UsedBytes += iFragment->Length;
 
 			/* This is a bit wrong, as it doesn't take into account pieces of fragments (I hate you for this Acorn),
 			   but it will give a good enough approximation for the free space/block map dialog. */
@@ -541,13 +690,22 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 					
 					if ( ( pBlockMap[ BlkNum ] == BlockFree ) || ( pBlockMap[ BlkNum ] == BlockUsed ) )
 					{
-						if ( iFragment->FragID == 2 ) /* Root Directory */
+						switch ( iFragment->FragID )
 						{
-							pBlockMap[ BlkNum ] = BlockFixed;
-						}
-						else
-						{
-							pBlockMap[ BlkNum ] = BlockUsed;
+							case 0: /* Free space - ignore*/
+								break;
+
+							case 1: /* Hard error - unmovable */
+							case 2: /* Root Directory */
+								pBlockMap[ BlkNum ] = BlockFixed;
+								break;
+
+							default:
+								if ( pBlockMap[ BlkNum ] == BlockFree )
+								{
+									pBlockMap[ BlkNum ] = BlockUsed;
+								}
+								break;
 						}
 					}
 				}
@@ -617,6 +775,13 @@ AttrDescriptors ADFSEFileSystem::GetFSAttributeDescriptions( void )
 	return Attrs;
 }
 
+int ADFSEFileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
+{
+
+
+	return 0;
+}
+
 AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
 {
 	static std::vector<AttrDesc> Attrs;
@@ -625,10 +790,10 @@ AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
 
 	AttrDesc Attr;
 
-	/* Start sector. Hex, visible, disabled */
+	/* Indirect disc address. Hex, visible, disabled */
 	Attr.Index = 0;
 	Attr.Type  = AttrVisible | AttrNumeric | AttrHex | AttrFile | AttrDir;
-	Attr.Name  = L"Start sector";
+	Attr.Name  = L"Disc address";
 	Attrs.push_back( Attr );
 
 	/* Locked */
@@ -659,12 +824,6 @@ AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
 	Attr.Index = 5;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrWarning | AttrFile;
 	Attr.Name  = L"Execute address";
-	Attrs.push_back( Attr );
-
-	/* Sequence number. Hex. */
-	Attr.Index = 6;
-	Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrFile | AttrDir;
-	Attr.Name  = L"Sequence #";
 	Attrs.push_back( Attr );
 
 	/* File Type. Hex. */
@@ -716,3 +875,469 @@ void ADFSEFileSystem::FreeAppIcons( void )
 
 	pDirectory->ResolvedIcons.clear();
 }
+
+TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length )
+{
+	/* OK, big long explanation time.
+
+	   New map formats (E/E+/F/F+/G) support fragmentation through a system similar to what Microsoft
+	   termed "Allocation Units" (and previously referred to as "Clusters"). The problem with clusters
+	   (or "Fragments" as Acorn calls them) is that they are wasteful with small files. An 800K E disc
+	   for example uses 128-byte clusters, with a minimum size of 16 clusters, for a minimum allocation
+	   of 2K. That means 16 files taking up 64 bytes each should take only 1K
+	   of space, but with 2K effective clusters would take up 32K!
+
+	   Acorn developed a clever, if complicated solution to this. The disc address used in each file
+	   is actually in two parts - a fragment ID (bits 8 upwards), and a sector number (bits 0-7).
+	   Any fragment used by at least one file in the current directory in which the entire fragment
+	   is unused is game to have the remainder used by one or more files that will fit the remainder
+	   of the fragment (that is to say, a file that requires multiple fragments may not start part
+	   way through a fragment).
+
+	   This even allows storage of small files in the fragment allocated to the directory itself, as
+	   the fragment is very often bigger than the directory required to contain it.
+
+	   This means that we have to use two allocation strategies:
+
+	   1) Scan the current directory and build up a sector-in-fragment allocation map for every
+	      fragment in use by all files (and the directory itself). Then scan these allocation maps
+	      for a set of sectors that are free for use. The Free Space Map doesn't need modifying for
+	      this, as the map only records whole fragments in use. Note that any file that occupies more
+	      than one fragment is disqualified from this (or rather, it's fragment is) as it otherwise
+	      invalidates the reading algorithm for reading sub-fragment files.
+
+	   2) If this fails, we have to look to the space map. As stated before, a file that can't fit
+	      using strategy 1 may not start midway through a fragment. So Find the first fragment in
+	      the map that has an ID of 0 and is big enough to contain the file in terms of sectors
+	      as a subset of fragment length in sectors. If there are no whole fragments big enough,
+	      then the file can be stored in multiple fragments, starting with the largest (for read
+	      efficiency). Here the fragments need their IDs changing to match each other. This fragment
+	      ID needs to come from the NewFSMap class itself. If the map cannot provide then the result
+	      is "Disc Full".
+
+	   There are two notes on this whole process:
+
+	   Fragment ID 2 is special, and must be handled with care, as the beginning of fragment 2 is the
+	   free space map itself (or one of them on multizone discs). Fragment ID 1 refers to a hard error,
+	   and absolutely must not be touched or relocated, or even contemplated.
+	*/
+
+	/* Step one: Build up maps of the directory and it's files in terms of sectors used in fragments */
+	std::map< DWORD, BYTE *> FragMaps;
+	std::map< DWORD, DWORD > FragSizes;
+
+	DWORD SecLength = Length / 1024;
+
+	if ( Length % 1024 ) { SecLength++; }
+
+	DWORD DirFragID = pEDirectory->DirSector >> 8;
+	DWORD DirSector = pEDirectory->DirSector & 0xFF;
+
+	/* Step 1a: The directory itself. */
+	DWORD DirFrags = pFSMap->GetMatchingFragmentCount( DirFragID );
+	DWORD DirSize  = pFSMap->GetSingleFragmentSize( DirFragID );
+
+	if ( DirSector != 0 ) { DirSector--; }
+
+	DWORD NumSectors = 0x800 / pFSMap->SecSize;
+
+	if ( DirFrags == 1 )
+	{
+		FragMaps[ DirFragID ] = (BYTE *) malloc( DirSize );
+
+		ZeroMemory( FragMaps[ DirFragID ], DirSize );
+
+		if ( DirFragID == 2 )
+		{
+			FragMaps[ DirFragID ][ 0 ] = 0xFF;
+			FragMaps[ DirFragID ][ 1 ] = 0xFF;
+		}
+
+		for ( DWORD i=DirSector; i<(DirSector + NumSectors ); i++ )
+		{
+			FragMaps[ DirFragID ][ i ] = 0xFF;
+		}
+
+		FragSizes[ DirFragID ] = DirSize;
+	}
+
+	/* Step 1b: Files within the directory */
+	NativeFileIterator iFile;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		DWORD FileFragID = iFile->SSector >> 8;
+		DWORD FileSector = iFile->SSector & 0xFF;
+
+		DWORD FileFrags = pFSMap->GetMatchingFragmentCount( FileFragID );
+		DWORD FileSize  = pFSMap->GetSingleFragmentSize( FileFragID );
+
+		if ( FileSector != 0 ) { FileSector--; }
+
+		NumSectors = iFile->Length / pFSMap->SecSize;
+
+		if ( ( iFile->Length % pFSMap->SecSize ) != 0 ) { NumSectors++; }
+
+		if ( iFile->Flags & FF_Directory )
+		{
+			NumSectors = 0x800 / pFSMap->SecSize;
+
+			if ( ( 0x800 % pFSMap->SecSize ) != 0 ) { NumSectors++; }
+		}
+
+		if ( FileFrags == 1 )
+		{
+			if ( FragMaps.find( FileFragID ) == FragMaps.end() )
+			{
+				FragMaps[ FileFragID ] = (BYTE *) malloc( FileSize );
+
+				ZeroMemory( FragMaps[ FileFragID ], FileSize );
+			}
+
+			for ( DWORD i = FileSector; i<( FileSector + NumSectors ); i++ )
+			{
+				FragMaps[ FileFragID ][ i ] = 0xFF;
+			}
+
+			FragSizes[ FileFragID ] = FileSize;
+		}
+	}
+
+	/* Step 1c: Find a fragment with sufficient space */
+	std::map< DWORD, DWORD >::iterator iSingleFrag;
+
+	bool FoundSpace = false;
+	DWORD SecLoc    = 0;
+	DWORD FragLoc   = 0;
+
+	for ( iSingleFrag = FragSizes.begin(); iSingleFrag != FragSizes.end(); iSingleFrag++ )
+	{
+		/* Discard any fragment that is clearly not big enough */
+		if ( iSingleFrag->second < SecLength )
+		{
+			continue;
+		}
+
+		/* Step 1c-ii: See if there's a gap here that can fit the file */
+
+		for ( DWORD i=0; i<=( iSingleFrag->second - SecLength ); i++ )
+		{
+			bool Contiguous = true;
+			for ( DWORD n=i; n<(i+SecLength); n++ )
+			{
+				if ( FragMaps[ iSingleFrag->first ][ n ] == 0xFF )
+				{
+					Contiguous = false;
+				}
+			}
+
+			if ( Contiguous )
+			{
+				FoundSpace  = true;
+				SecLoc      = i;
+				FragLoc     = iSingleFrag->first;
+
+				break;
+			}
+		}
+	}
+
+	/* If we found a space, return it. But free the frag map */
+	for ( iSingleFrag = FragSizes.begin(); iSingleFrag != FragSizes.end(); iSingleFrag++ )
+	{
+		free( FragMaps[ iSingleFrag->first ] );
+	}
+
+	if ( FoundSpace )
+	{
+		TargetedFileFragments Frags;
+
+		FileFragment f;
+
+		f.Length = SecLength * 1024;
+		
+		/* Step 1d: Find the fragment in the free space map, and determine it's location */
+		f.Sector = pFSMap->SectorForSingleFragment( FragLoc );
+
+		f.Sector += SecLoc;
+
+		Frags.FragID       = FragLoc;
+		Frags.SectorOffset = SecLoc + 1;
+		Frags.Frags.push_back( f );
+
+		return Frags;
+	}
+
+	/* Step 2: No sub-fragments, so we must find a fragment in the map */
+	TargetedFileFragments Frags = pFSMap->GetWriteFileFragments( SecLength );
+
+	return Frags;
+}
+
+int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
+
+	unsigned char DirectorySector[0x800];
+
+	if ( pDirectory->Files.size() >= 77 )
+	{
+		return NUTSError( 0x80, L"Directory Full" );
+	}
+
+	/* This is allocated bigger than needed in order to store small files in the same fragment */
+	TargetedFileFragments DirSpace = FindSpace( 0x1000 );
+
+	ADFSEDirectory *pNewDirectory = new ADFSEDirectory( pSource );
+
+	pNewDirectory->DirSector    = ( ( DirSpace.FragID ) << 8 ) | ( DirSpace.SectorOffset & 0xFF );
+	pNewDirectory->ParentSector = pEDirectory->DirSector;
+	pNewDirectory->MasterSeq    = 0;
+	pNewDirectory->pMap         = pFSMap;
+	
+	BBCStringCopy( (char *) pNewDirectory->DirName,  (char *) Filename, 10 );
+	BBCStringCopy( (char *) pNewDirectory->DirTitle, (char *) Filename, 10 );
+
+	int Err = pNewDirectory->WriteDirectory();
+
+	if ( Err != DS_SUCCESS )
+	{
+		delete pNewDirectory;
+
+		return -1;
+	}
+
+	NativeFile	DirEnt;
+
+	rstrncpy( DirEnt.Filename, Filename, 10 ); DirEnt.Filename[ 10 ] = 0;
+
+	DirEnt.ExecAddr   = 0;
+	DirEnt.LoadAddr   = 0;
+	DirEnt.Length     = 0;
+	DirEnt.Flags      = FF_Directory;
+	DirEnt.AttrLocked = 0xFFFFFFFF;
+	DirEnt.AttrRead   = 0xFFFFFFFF;
+	DirEnt.AttrWrite  = 0xFFFFFFFF;
+	DirEnt.SeqNum     = 0;
+	DirEnt.SSector    = pNewDirectory->DirSector;
+
+	pDirectory->Files.push_back(DirEnt);
+
+	/* No longer need this */
+	delete pNewDirectory;
+
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	if ( EnterAfter )
+	{
+		pEDirectory->DirSector = DirEnt.SSector;
+
+		rstrncat(path, (BYTE *) ".", 512 );
+		rstrncat(path, Filename, 512 );
+	}
+
+	FreeAppIcons();
+
+	int r = pDirectory->ReadDirectory();
+
+	ResolveAppIcons();
+
+	return r;
+}
+
+int ADFSEFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+{
+	if ( Override )
+	{
+		pFile = &OverrideFile;
+
+		Override = false;
+	}
+
+	std::vector<NativeFile>::iterator iFile;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); )
+	{
+		bool DidErase = false;
+
+		if ( FilenameCmp( pFile, &*iFile ) )
+		{
+			/* This is way easier than writing a file. Because of the two allocation strategies,
+			   there is therefore two deletion strategies to match. If the fragment is an isolated
+			   fragment (that is there is only one fragment with that fragment ID), then examine
+			   the directory to see what other files are using it. If it's only one (i.e. this one)
+			   then change the fragment ID to 0 (via NewFSMap) and write out the FSMap, otherwise
+			   do nothing.
+
+			   If on the other hand, the fragment count > 1, then this is a multi-fragment file spread
+			   across the disk, and we just instruct NewFSMap to delete all of them by changing their
+			   IDs to 0. We'll let NewFSMap collapse adjacent spaces before writing.
+
+			   Finally, remove the directory entry and write to disk.
+			*/
+
+			if ( pFSMap->GetMatchingFragmentCount( iFile->SSector >> 8 ) == 1 )
+			{
+				/* Step one: Count the files using this fragment */
+				DWORD FilesUsing = 0;
+
+				NativeFileIterator iOther;
+
+				for ( iOther = pDirectory->Files.begin(); iOther != pDirectory->Files.end(); iOther++ )
+				{
+					if ( ( iOther->SSector & 0xFFFFFF00 ) == ( iFile->SSector & 0xFFFFFF00 ) )
+					{
+						FilesUsing++;
+					}
+				}
+			
+				/* Must consider this directory itself */
+				if ( ( pEDirectory->DirSector & 0xFFFFFF00 ) == ( iFile->SSector & 0xFFFFFF00 ) )
+				{
+					FilesUsing++;
+				}
+
+				if ( FilesUsing == 1 )
+				{
+					pFSMap->ReleaseFragment( iFile->SSector >> 8 );
+				}
+
+				/* If more than one file is using this fragment, leave it alone */
+			}
+			else
+			{
+				/* Multiple fragment file (or fragment doesn't somehow exist). Just delete them */
+				pFSMap->ReleaseFragment( iFile->SSector >> 8 );
+			}			
+
+			DidErase = true;
+
+			iFile = pDirectory->Files.erase( iFile );
+		}
+
+		if ( !DidErase )
+		{
+			iFile++;
+		}
+		else
+		{
+			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			iFile = pDirectory->Files.end();
+		}
+	}
+
+	FreeAppIcons();
+
+	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	ResolveAppIcons();
+
+	return FILEOP_SUCCESS;
+}
+
+int ADFSEFileSystem::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
+{
+	rstrncpy( sidecar.Filename, pFile->Filename, 16 );
+	rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+
+	BYTE INFData[80];
+
+	rsprintf( INFData, "$.%s %06X %06X %s\n", pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
+
+	CTempFile *pTemp = (CTempFile *) sidecar.FileObj;
+
+	pTemp->Seek( 0 );
+	pTemp->Write( INFData, rstrnlen( INFData, 80 ) );
+
+	return 0;
+}
+
+int ADFSEFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj )
+{
+	int r = 0;
+
+	if ( obj == nullptr )
+	{
+		rstrncpy( sidecar.Filename, pFile->Filename, 16 );
+		rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+	}
+	else
+	{
+		BYTE bINFData[ 256 ];
+
+		ZeroMemory( bINFData, 256 );
+
+		obj->Seek( 0 );
+		obj->Read( bINFData, min( 256, obj->Ext() ) );
+
+		std::string INFData( (char *) bINFData );
+
+		std::istringstream iINFData( INFData );
+
+		std::vector<std::string> parts((std::istream_iterator<std::string>(iINFData)), std::istream_iterator<std::string>());
+
+		OverrideFile = *pFile;
+
+		/* Need at least 3 parts */
+		if ( parts.size() < 3 )
+		{
+			return 0;
+		}
+
+		try
+		{
+			/* Part deux is the load address. We'll use std::stoull */
+			OverrideFile.LoadAddr = std::stoul( parts[ 1 ], nullptr, 16 );
+			OverrideFile.LoadAddr &= 0xFFFFFF;
+
+			/* Part the third is the exec address. Same again. */
+			OverrideFile.ExecAddr = std::stoul( parts[ 2 ], nullptr, 16 );
+			OverrideFile.ExecAddr &= 0xFFFFFF;
+		}
+
+		catch ( std::exception &e )
+		{
+			/* eh-oh */
+			return NUTSError( 0x2E, L"Bad sidecar file" );
+		}
+
+		/* Fix the standard attrs */
+		OverrideFile.AttrRead   = 0xFFFFFFFF;
+		OverrideFile.AttrWrite  = 0xFFFFFFFF;
+		OverrideFile.AttrLocked = 0x00000000;
+
+		/* Look through the remaining parts for "L" or "Locked" */
+		for ( int i=3; i<parts.size(); i++ )
+		{
+			if ( ( parts[ i ] == "L" ) || ( parts[ i ] == "Locked" ) )
+			{
+				OverrideFile.AttrLocked = 0xFFFFFFFF;
+			}
+		}
+
+		OverrideFile.Flags = 0;
+		
+		/*  Copy the filename - but we must remove the lading directory prefix*/
+		if ( parts[ 0 ].substr( 1, 1 ) == "." )
+		{
+			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
+		}
+		else
+		{
+			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
+		}
+
+		Override = true;
+	}
+
+	return r;
+}
+

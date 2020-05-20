@@ -401,3 +401,13 @@ int Sprite::GetNaturalBitmap( BITMAPINFOHEADER *bmi, void **pImage, DWORD MaskCo
 
 	return 0;
 }
+
+bool Sprite::Valid( void )
+{
+	if ( pBitmap != nullptr )
+	{
+		return true;
+	}
+
+	return false;
+}

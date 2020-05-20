@@ -852,9 +852,12 @@ int ADFSFileSystem::ResolveAppIcons( void )
 
 							icon.Aspect = sprite.SpriteAspect;
 
-							pDirectory->ResolvedIcons[ iFile->fileID ] = icon;
+							if ( sprite.Valid() )
+							{
+								pDirectory->ResolvedIcons[ iFile->fileID ] = icon;
 
-							iFile->HasResolvedIcon = true;
+								iFile->HasResolvedIcon = true;
+							}
 						}
 						/*
 						if ( rstrnicmp( iSprite->Filename, (BYTE *) "file_", 5 ) )

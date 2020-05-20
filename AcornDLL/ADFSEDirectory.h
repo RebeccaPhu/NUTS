@@ -25,6 +25,10 @@ public:
 	DWORD DirSector;
 	DWORD ParentSector;
 
+	BYTE MasterSeq;
+	BYTE DirTitle[ 19 ];
+	BYTE DirName[  10 ];
+
 private:
 	void TranslateType( NativeFile *file );
 };

@@ -10,7 +10,7 @@ class ADFSEFileSystem : public FileSystem
 public:
 	ADFSEFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) {
 		FSID  = FSID_ADFS_H;
-		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs;
+		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs | FSF_Exports_Sidecars;
 
 		rstrncpy( path, (BYTE *) "$", 512 );
 
@@ -102,6 +102,9 @@ public:
 	}
 
 	int ReadFile(DWORD FileID, CTempFile &store);
+	int	WriteFile(NativeFile *pFile, CTempFile &store);
+	int	CreateDirectory( BYTE *Filename, bool EnterAfter );
+	int DeleteFile( NativeFile *pFile, int FileOp );
 
 	BYTE *DescribeFile(DWORD FileIndex);
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
@@ -122,10 +125,21 @@ public:
 		return ENCODING_ACORN;
 	}
 
+	int ExportSidecar( NativeFile *pFile, SidecarExport &sidecar );
+	int ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj );
+
+	int SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );
+
 private:
 	NewFSMap *pFSMap;
 
+	NativeFile OverrideFile;
+
+	bool Override;
+
 private:
 	void FreeAppIcons( void );
+
+	TargetedFileFragments FindSpace( DWORD Length );
 };
 

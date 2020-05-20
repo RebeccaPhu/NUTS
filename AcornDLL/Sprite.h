@@ -34,6 +34,8 @@ public:
 
 	AspectRatio SpriteAspect;
 
+	bool Valid( void );
+
 private:
 	DWORD SpritePalette[ 256 ];
 	WORD  SuppliedPaletteEntries;

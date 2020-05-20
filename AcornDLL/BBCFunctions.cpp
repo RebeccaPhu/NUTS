@@ -4,7 +4,7 @@
 void BBCStringCopy(char *pDest, char *pSrc, int limit) {
 	int n	= 0;
 
-	while ((n<limit) && (*pSrc)) {
+	while ( (n<limit) && (*pSrc) && (*pSrc != 0x0D) ) {
 		*pDest++	= *pSrc++;
 
 		n++;

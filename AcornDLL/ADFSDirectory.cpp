@@ -268,7 +268,7 @@ int	ADFSDirectory::ReadDirectory( void ) {
 	return 0;
 }
 
-bool ADFSSort( NativeFile &a, NativeFile &b )
+static bool ADFSSort( NativeFile &a, NativeFile &b )
 {
 	/* ADFS is rather stupid about this. A comes first where B.substr( A.length() ) == A. But case-insensitve, coz why not */
 
@@ -317,6 +317,10 @@ int	ADFSDirectory::WriteDirectory( void ) {
 	MasterSeq++;
 	MasterSeq = ( ( MasterSeq / 10 ) * 16 ) + ( MasterSeq % 10 );
 
+	/* There seems to be confusion as to whether this should be Hugo or Nick on D format.
+	   The use of new directory format suggests Nick, but Apps Disc 1 & 2 have Hugo.
+	   It seems Hugo refers to Old FS Map (absolute addresses, contiguous files) and Nick
+	   refers to New FS Map (indirect addresses, fragmented files). */
 	DirectorySector[0x000]	= MasterSeq;
 	DirectorySector[0x001]	= 'H';
 	DirectorySector[0x002]	= 'u';
@@ -325,9 +329,11 @@ int	ADFSDirectory::WriteDirectory( void ) {
 
 	if ( UseDFormat )
 	{
-		BBCStringCopy( (char *) &DirectorySector[0x7f0], DirString, 10);
-		BBCStringCopy( (char *) &DirectorySector[0x7dd], DirTitle, 19);
+		BBCStringCopy( (char *) &DirectorySector[0x7f0], DirString, 10 );
+		BBCStringCopy( (char *) &DirectorySector[0x7dd], DirTitle,  19 );
 
+		DirectorySector[0x7d8]  = 0;
+		DirectorySector[0x7d9]  = 0;
 		DirectorySector[0x7da]	= (unsigned char)   ParentSector & 0xFF;
 		DirectorySector[0x7db]	= (unsigned char) ((ParentSector & 0xFF00) >> 8);
 		DirectorySector[0x7dc]	= (unsigned char) ((ParentSector & 0xFF0000) >> 16);
@@ -340,13 +346,14 @@ int	ADFSDirectory::WriteDirectory( void ) {
 	}
 	else
 	{
-		BBCStringCopy( (char *) &DirectorySector[0x4cc], DirString, 10);
-		BBCStringCopy( (char *) &DirectorySector[0x4d9], DirTitle, 19);
+		BBCStringCopy( (char *) &DirectorySector[0x4cc], DirString, 10 );
+		BBCStringCopy( (char *) &DirectorySector[0x4d9], DirTitle,  19 );
 
 		DirectorySector[0x4d6]	= (unsigned char)   ParentSector & 0xFF;
 		DirectorySector[0x4d7]	= (unsigned char) ((ParentSector & 0xFF00) >> 8);
 		DirectorySector[0x4d8]	= (unsigned char) ((ParentSector & 0xFF0000) >> 16);
 
+		DirectorySector[0x4f9]  = 0;
 		DirectorySector[0x4fa]	= MasterSeq;
 		DirectorySector[0x4fb]	= 'H';
 		DirectorySector[0x4fc]	= 'u';
@@ -367,6 +374,7 @@ int	ADFSDirectory::WriteDirectory( void ) {
 		* (DWORD *) &DirectorySector[ptr + 0x012] = (DWORD) iFile->Length;
 		* (DWORD *) &DirectorySector[ptr + 0x016] = iFile->SSector;
 
+		/* SML uses top bits of first four chars of filename. D uses an attribute byte */
 		if ( !UseDFormat )
 		{
 			if (iFile->AttrRead)
@@ -411,6 +419,38 @@ int	ADFSDirectory::WriteDirectory( void ) {
 		}		
 
 		ptr	+= 26;
+	}
+
+	if ( UseDFormat )
+	{
+		/* D requires a check byte */
+		DWORD Accumulator = 0;
+
+		/* Directory words, up to, but not including the end-of-files marker */
+		for ( WORD i=0; i < (ptr & 0xFFF8); i+=4 )
+		{
+			DWORD v = * (DWORD *) &DirectorySector[ i ] ;
+
+			Accumulator = v ^ ( ( Accumulator >> 13 ) | ( Accumulator << 19 ) );
+		}
+
+		/* Trailing directory bytes */
+		for ( WORD i=(ptr & 0xFFF8); i < ptr; i++ )
+		{
+			DWORD v = DirectorySector[ i ] ;
+
+			Accumulator = v ^ ( ( Accumulator >> 13 ) | ( Accumulator << 19 ) );
+		}
+
+		/* Directory tail words */
+		for ( WORD i=0x7D8; i < 0x7FC; i+=4 )
+		{
+			DWORD v = * (DWORD *) &DirectorySector[ i ] ;
+
+			Accumulator = v ^ ( ( Accumulator >> 13 ) | ( Accumulator << 19 ) );
+		}
+
+		DirectorySector[ 0x7FF ] = ( BYTE) ( ( Accumulator & 0xFF ) ^ ( ( Accumulator & 0xFF00 ) >> 8 ) ^ ( ( Accumulator & 0xFF0000 ) >> 16 ) ^ ( ( Accumulator &0xFF000000 ) >> 24 ) );
 	}
 
 	int Err = 0;

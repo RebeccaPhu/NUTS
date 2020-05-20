@@ -110,6 +110,13 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 			OpSteps.push_back( ParentStep );
 
 			pSourceFS->Parent();
+
+			FileOpStep Final;
+
+			Final.Step = Op_Refresh;
+			OpSteps.push_back( Final );
+
+			TotalOps++;
 		}
 	}
 
