@@ -637,6 +637,19 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 	/* It's important to not do this on the original vector, otherwise the map becomes meaningless */
 	std::sort( SortedFrags.begin(), SortedFrags.end(), FragmentSort );
 
+	/* Prune out the used fragments. They're of no use to us */
+	for ( iFrag = SortedFrags.begin(); iFrag != SortedFrags.end(); )
+	{
+		if ( iFrag->FragID != 0 )
+		{
+			iFrag = SortedFrags.erase( iFrag );
+		}
+		else
+		{
+			iFrag++;
+		}
+	}
+
 	      iFrag  = SortedFrags.begin();
 	DWORD Secs   = AbsLength / SecSize;
 
