@@ -468,6 +468,8 @@ int ADFSEFileSystem::ResolveAppIcons( void )
 
 							sprite.GetNaturalBitmap( &icon.bmi, &icon.pImage, MaskColour );
 
+							assert( (DWORD) icon.pImage != 0xCCCCCCCC );
+
 							icon.Aspect = sprite.SpriteAspect;
 
 							if ( sprite.Valid() )

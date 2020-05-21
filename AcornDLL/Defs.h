@@ -57,6 +57,7 @@ typedef struct _Fragment {
 typedef struct _FileFragment {
 	DWORD Sector;
 	DWORD Length;
+	DWORD Zone;
 } FileFragment;
 
 typedef std::vector<Fragment> FragmentList;

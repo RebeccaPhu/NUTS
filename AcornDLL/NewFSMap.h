@@ -14,7 +14,9 @@ public:
 		RootLoc = 0;
 
 		SecSize = 1024; // Pre-emptively
-		SingleZoneMapSector = 0;
+		
+		ZoneMapSectors.clear();
+		UsedExtraSector.clear();
 	}
 
 	~NewFSMap( void )
@@ -40,7 +42,8 @@ public:
 	BYTE ZoneCheck( BYTE *map_base );
 
 	DWORD RootLoc;
-	BYTE DiscName[ 11 ];
+	BYTE  DiscName[ 11 ];
+	BYTE  BootOption;
 
 	WORD  SecSize;
 
@@ -54,9 +57,29 @@ private:
 	WORD  Zones;
 	WORD  ZoneSpare;
 
-	DWORD SingleZoneMapSector;
+	std::map<WORD, DWORD> ZoneMapSectors;
+	std::map<WORD, bool>  UsedExtraSector;
 
 	FragmentList Fragments;
+
+	DWORD IDsPerZone;
+
+	/* Extra disc record bits that we don't actually use */
+	BYTE  LogSecSize;
+	BYTE  LogBPMB;
+	BYTE  SecsPerTrack;
+	BYTE  Heads;
+	BYTE  Density;
+	BYTE  LowSector;
+	QWORD DiscSize;
+	WORD  CycleID;
+	BYTE  DiscType;
+
+	/* These fields are E+/F+/Big Hard Disc */
+	BYTE  LogShareSize;
+	BYTE  BigFlag;
+	BYTE  FormatVersion;
+	DWORD RootSize;
 
 private:
 	DWORD ReadBits( BYTE *map, DWORD offset, BYTE length );
@@ -65,10 +88,14 @@ private:
 	int   ReadSubMap( BYTE *pMap, DWORD NumBits, WORD zone, DWORD BitsOffset );
 	int   WriteSubMap( BYTE *pMap, DWORD NumBits, WORD zone );
 
-	DWORD GetUnusedFragmentID( void );
+	DWORD GetUnusedFragmentID( DWORD Zone );
 
 	void  ClaimFragment( Fragment_iter iFrag, DWORD SecLength, DWORD ProposedFragID );
 	void  ClaimFragmentByOffset( DWORD FragOffset, DWORD SecLength, DWORD ProposedFragID );
 	DWORD SectorForFragmentOffset( DWORD FragOffset );
+
+	void  ReadDiscRecord( BYTE *pRecord );
+	void  WriteDiscRecord( BYTE *pRecord, bool Partial );
+	void  ReorderWriteFragments( TargetedFileFragments *pFrags );
 };
 

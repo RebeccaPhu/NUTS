@@ -20,7 +20,7 @@ int	ADFSEDirectory::ReadDirectory( void ) {
 
 	DWORD ReadSize = 0;
 
-	for ( iFrag = Frags.begin(); iFrag != Frags.end(); iFrag++ )
+	for ( iFrag = Frags.begin(); iFrag != Frags.end(); )
 	{
 		DWORD Sectors = iFrag->Length / pMap->SecSize;
 
@@ -36,6 +36,11 @@ int	ADFSEDirectory::ReadDirectory( void ) {
 			{
 				break;
 			}
+		}
+
+		if ( ReadSize >= 0x800 )
+		{
+			iFrag = Frags.end();
 		}
 	}
 

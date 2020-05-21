@@ -70,9 +70,64 @@ void NewFSMap::WriteBits( BYTE *map, DWORD offset, BYTE length, DWORD v )
 	}
 }
 
+void NewFSMap::WriteDiscRecord( BYTE *pRecord, bool Partial )
+{
+	pRecord[ 0x00 ] = LogSecSize;
+	pRecord[ 0x01 ] = SecsPerTrack;
+	pRecord[ 0x02 ] = Heads;
+	pRecord[ 0x03 ] = Density;
+	pRecord[ 0x04 ] = IDLen;
+	pRecord[ 0x05 ] = LogBPMB;
+	pRecord[ 0x06 ] = Skew;
+	pRecord[ 0x07 ] = BootOption;
+	pRecord[ 0x08 ] = LowSector;
+	pRecord[ 0x09 ] = Zones;
+
+	* (WORD *)  &pRecord[ 0x0A ] = ZoneSpare;
+	* (DWORD *) &pRecord[ 0x0C ] = RootLoc;
+	* (DWORD *) &pRecord[ 0x10 ] = DiscSize;
+
+	if ( Partial )
+	{
+		return;
+	}
+
+	pRecord[ 0x14 ] = CycleID;
+	pRecord[ 0x20 ] = DiscType;
+
+	BBCStringCopy( (char *) &pRecord[ 0x16 ], (char *) DiscName, 10 );
+}
+
+void NewFSMap::ReadDiscRecord( BYTE *pRecord )
+{
+	LogSecSize   = pRecord[ 0x00 ];
+	SecsPerTrack = pRecord[ 0x01 ];
+	Heads        = pRecord[ 0x02 ];
+	Density      = pRecord[ 0x03 ];
+	IDLen        = pRecord[ 0x04 ];
+	LogBPMB      = pRecord[ 0x05 ];
+	Skew         = pRecord[ 0x06 ];
+	BootOption   = pRecord[ 0x07 ];
+	LowSector    = pRecord[ 0x08 ];
+	Zones        = pRecord[ 0x09 ];
+	ZoneSpare    = * (WORD *)  &pRecord[ 0x0A ];
+	RootLoc      = * (DWORD *) &pRecord[ 0x0C ];
+	DiscSize     = * (DWORD *) &pRecord[ 0x10 ];
+	CycleID      = pRecord[ 0x14 ];
+	DiscType     = pRecord[ 0x20 ];
+
+	rstrncpy( DiscName, &pRecord[ 0x16 ], 10 );
+
+	SecSize = 1 << LogSecSize;
+	BPMB    = 1 << LogBPMB;
+}
+
 int	NewFSMap::ReadFSMap()
 {
 	Fragments.clear();
+
+	ZoneMapSectors.clear();
+	UsedExtraSector.clear();
 
 	/* Read disc record. This tells us a few vital bits */
 	BYTE Sector[ 1024 ];
@@ -105,7 +160,7 @@ int	NewFSMap::ReadFSMap()
 
 		HaveValidRecord = true;
 
-		SingleZoneMapSector = SectorStage;
+		ZoneMapSectors[ 0 ] = SectorStage;
 	}
 
 	/* Disc record starts at sector offset 4. */
@@ -116,16 +171,7 @@ int	NewFSMap::ReadFSMap()
 		pRecord = &Sector[ 0x1C0 ]; // Bit o' boot block.
 	}
 
-	IDLen = pRecord[ 0x04 ];
-	BPMB  = 1 << pRecord[ 0x05 ];
-	Skew  = pRecord[ 0x05 ]; // Used when accessing physical floppies only.
-	Zones = pRecord[ 0x09 ];
-
-	ZoneSpare = * (WORD *) &pRecord[ 0x0A ];
-	RootLoc   = * (WORD *) &pRecord[ 0x0C ];
-	SecSize   = 1 << pRecord[ 0x00 ];
-
-	DiscName[ 10 ] = 0;
+	ReadDiscRecord( pRecord );
 
 	if ( Zones == 1 )
 	{
@@ -133,25 +179,6 @@ int	NewFSMap::ReadFSMap()
 		pMap = &Sector[ 0x40 ];
 
 		ReadSubMap( pMap, 0x1E00, 0, 0 );
-
-		/* Read the disc name */
-		rstrncpy( DiscName, &pRecord[ 0x16 ], 10 );
-
-		BYTE c = 9;
-
-		while ( c < 10 )
-		{
-			if ( DiscName[ c ] != 0x20 )
-			{
-				break;
-			}
-			else
-			{
-				DiscName[ c ] = 0;
-			}
-
-			c--;
-		}
 	}
 	else
 	{
@@ -172,29 +199,22 @@ int	NewFSMap::ReadFSMap()
 
 			pSource->ReadSector( SubMapAddr / SecSize, Sector, SecSize );
 
+			if ( ZoneCheck( Sector ) != Sector[ 0 ] )
+			{
+				UsedExtraSector[ z ] = true;
+
+				SubMapAddr += ( Zones * SecSize );
+
+				pSource->ReadSector( SubMapAddr / SecSize, Sector, SecSize );
+			}
+
+			ZoneMapSectors[ z ] = SubMapAddr / SecSize;
+
 			if ( z == 0 ) {
 				Offset = 0x40;
 
-				RootLoc = * (WORD *) &Sector[ 0x10 ];
-
-				/* Read the disc name */
-				rstrncpy( DiscName, &Sector[ 0x1A ], 10 );
-
-				BYTE c = 9;
-
-				while ( c < 10 )
-				{
-					if ( DiscName[ c ] != 0x20 )
-					{
-						break;
-					}
-					else
-					{
-						DiscName[ c ] = 0;
-					}
-
-					c--;
-				}
+				/* This is the real disc record, and the one to trust */
+				ReadDiscRecord( &Sector[ 0x04 ] );
 			}
 
 			ReadSubMap( &Sector[ Offset ], (SecSize - Offset) * 8, z, Bits );
@@ -208,6 +228,22 @@ int	NewFSMap::ReadFSMap()
 				Bits += 0x2000;
 			}
 		}
+	}
+
+	BYTE c = 9;
+
+	while ( c < 10 )
+	{
+		if ( DiscName[ c ] != 0x20 )
+		{
+			break;
+		}
+		else
+		{
+			DiscName[ c ] = 0;
+		}
+
+		c--;
 	}
 
 	return 0;
@@ -303,7 +339,7 @@ int	NewFSMap::WriteFSMap()
 	{
 		BYTE MapSector[ 1024 ];
 
-		pSource->ReadSector( SingleZoneMapSector, MapSector, 1024 );
+		WriteDiscRecord( &MapSector[ 0x04 ], false );
 
 		/* Do submap */
 		WriteSubMap( &MapSector[ 0x40 ], 0x3C0 * 8, 0 );
@@ -313,16 +349,62 @@ int	NewFSMap::WriteFSMap()
 		pSource->WriteSector( 0, MapSector, 1024 );
 		pSource->WriteSector( 1, MapSector, 1024 );
 	}
+	else 
+	{
+		for ( WORD n=0; n<Zones; n++ )
+		{
+			BYTE MapSector[ 1024 ];
+
+			DWORD Offset = 0x4;
+
+			if ( n == 0 )
+			{
+				Offset = 0x40;
+
+				/* Disc record in zone 0 */
+				WriteDiscRecord( &MapSector[ 0x04 ], false );
+			}
+
+			/* Do submap */
+			WriteSubMap( &MapSector[ Offset ], (SecSize - Offset) * 8, n );
+
+			MapSector[ 0 ] = ZoneCheck( MapSector );
+
+			pSource->WriteSector( ZoneMapSectors[ n ], MapSector, 1024 );
+
+			DWORD SecondSector = ZoneMapSectors[ n ];
+
+			if ( UsedExtraSector[ n ] )
+			{
+				SecondSector -= Zones;
+			}
+			else
+			{
+				SecondSector += Zones;
+			}
+
+			pSource->WriteSector( SecondSector, MapSector, 1024 );
+		}
+	}
+
+	IDsPerZone = ((SecSize * 8) - ZoneSpare) / (IDLen + 1 );
 
 	return 0;
 }
 
-DWORD NewFSMap::GetUnusedFragmentID( void )
+DWORD NewFSMap::GetUnusedFragmentID( DWORD Zone )
 {
 	Fragment_iter iFrag;
 
 	DWORD Frag      = 0;
 	DWORD MaybeFrag = 3; /* IDs 0 to 2 are reserved */
+
+	if ( Zone > 0 )
+	{
+		MaybeFrag = IDsPerZone * Zone;
+	}
+
+	DWORD HighFrag  = IDsPerZone * ( Zone + 1 );
 
 	while ( Frag == 0 )
 	{
@@ -330,6 +412,13 @@ DWORD NewFSMap::GetUnusedFragmentID( void )
 
 		for ( iFrag = Fragments.begin(); iFrag != Fragments.end(); )
 		{
+			if ( iFrag->Zone != Zone )
+			{
+				iFrag++;
+
+				continue;
+			}
+
 			if ( iFrag->FragID == MaybeFrag )
 			{
 				FreeFrag = false;
@@ -349,7 +438,7 @@ DWORD NewFSMap::GetUnusedFragmentID( void )
 			Frag = MaybeFrag;
 		}
 
-		if ( MaybeFrag > ( ( 1 << IDLen ) - 1 ) )
+		if ( MaybeFrag >= HighFrag )
 		{
 			break;
 		}
@@ -366,6 +455,21 @@ bool FragmentSort( Fragment &a, Fragment &b )
 	}
 
 	if ( a.Length > b.Length )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool ZoneSort( Fragment &a, Fragment &b )
+{
+	if ( a.Zone == b.Zone )
+	{
+		return false;
+	}
+
+	if ( a.Zone < b.Zone )
 	{
 		return true;
 	}
@@ -487,13 +591,6 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 
 	Frags.SectorOffset = 0;
 
-	DWORD ProposedFragID = GetUnusedFragmentID();
-
-	if ( ProposedFragID == 0 )
-	{
-		return Frags;
-	}
-
 	/* First try and find a space begin enough for the file */
 	DWORD AbsLength = SecLength * SecSize;
 
@@ -509,6 +606,13 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 	{
 		if ( ( iFrag->Length >= AbsLength ) && ( iFrag->FragID == 0 ) )
 		{
+			DWORD ProposedFragID = GetUnusedFragmentID( iFrag->Zone );
+
+			if ( ProposedFragID == 0 )
+			{
+				return Frags;
+			}
+
 			/* Woot - We now need to split this up */
 			ClaimFragment( iFrag, AbsLength / SecSize, ProposedFragID );
 
@@ -536,6 +640,19 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 	      iFrag  = SortedFrags.begin();
 	DWORD Secs   = AbsLength / SecSize;
 
+	if ( SortedFrags.size() == 0 )
+	{
+		return Frags;
+	}
+
+	/* The frag ID will be based on the zone of the first fragment (the biggest), but may cycle around */
+	DWORD ProposedFragID = GetUnusedFragmentID( SortedFrags.begin()->Zone );
+
+	if ( ProposedFragID == 0 )
+	{
+		return Frags;
+	}
+
 	while ( Secs > 0 )
 	{
 		if ( iFrag == SortedFrags.end() )
@@ -556,6 +673,12 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 			ThisSecs = Secs;
 		}
 
+		/* The fragment size must be at least big enough to be represented by IDLen + 1 bits */
+		while ( ( ThisSecs * SecSize ) < ( ( IDLen + 1 ) * BPMB ) )
+		{
+			ThisSecs++;
+		}
+
 		if ( iFrag->FragID == 0 )
 		{
 			ClaimFragmentByOffset( iFrag->FragOffset, ThisSecs, ProposedFragID );
@@ -564,6 +687,7 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 
 			f.Sector = SectorForFragmentOffset( iFrag->FragOffset );
 			f.Sector = ThisSecs * SecSize;
+			f.Zone   = iFrag->Zone;
 
 			Frags.Frags.push_back( f );
 			Frags.FragID = ProposedFragID;
@@ -577,7 +701,51 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 	/* Write the changes to the disk/image */
 	WriteFSMap();
 
+	/* We need to re-order the fragments at this point, as they will be in a higgledy-piggledy order.
+	   The fragments need to be sorted by zone, then re-ordered to start at the beginning zone for the fragment ID. */
+
+	ReorderWriteFragments( &Frags );
+
 	return Frags;
+}
+
+bool OffsetSort( FileFragment &a, FileFragment &b )
+{
+	if ( a.Sector == b.Sector )
+	{
+		return false;
+	}
+	else
+	{
+		if ( a.Sector < b.Sector )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void NewFSMap::ReorderWriteFragments( TargetedFileFragments *pFrags )
+{
+	FileFragments ZonedFrags = pFrags->Frags;
+
+	DWORD StartingZone = pFrags->FragID / IDsPerZone;
+
+	/* Now we must sort fragment sets within each zone to be in order of offset */
+	std::sort( ZonedFrags.begin(), ZonedFrags.end(), OffsetSort );
+
+	/* Rotate the vector until the first fragment's Zone matches the starting zone */
+	while ( ZonedFrags.begin()->Zone != StartingZone )
+	{
+		FileFragment tFrag = ZonedFrags.front();
+
+		ZonedFrags.erase( ZonedFrags.begin() );
+
+		ZonedFrags.push_back( tFrag );
+	}
+
+	pFrags->Frags = ZonedFrags;
 }
 
 DWORD NewFSMap::GetMatchingFragmentCount( DWORD FragmentID )
