@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 #include "Sprite.h"
 
+#include <assert.h>
+
 BYTE Sprite::BPPs[ 128 ] = {
 	1, 2, 4, 1, 1, 2, 1, 4, // Technically Mode 7 can't support sprites
 	2, 4, 8, 2, 4, 8, 4, 8,
@@ -339,6 +341,8 @@ DWORD *Sprite::GetPalette( DWORD ModeID, DWORD *Entries )
 int Sprite::GetNaturalBitmap( BITMAPINFOHEADER *bmi, void **pImage, DWORD MaskColour )
 {
 	*pImage = malloc( Width * Height * 4 );
+
+	assert( (DWORD) *pImage != 0xCCCCCCCC );
 
 	DWORD Entries;
 	DWORD *Palette = GetPalette( Mode, &Entries );

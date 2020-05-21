@@ -110,7 +110,12 @@ void DrawLayout()
 	{
 		pFile        = &pHostFS->pParentFS->pDirectory->Files[ pHostFS->pParentFS->EnterIndex ];
 
-		ResolvedIcon = pHostFS->pParentFS->pDirectory->ResolvedIcons[ pHostFS->pParentFS->EnterIndex ];
+		/* We must check this, otherwise the std::map object will autovivify an IconDef object into existence with uninitialised values,
+		   which in turn will cause crashy-crashy later on when the FS object comes to free it. */
+		if ( pHostFS->pParentFS->pDirectory->ResolvedIcons.find( pHostFS->pParentFS->EnterIndex ) != pHostFS->pParentFS->pDirectory->ResolvedIcons.end() )
+		{
+			ResolvedIcon = pHostFS->pParentFS->pDirectory->ResolvedIcons[ pHostFS->pParentFS->EnterIndex ];
+		}
 	}
 	else
 	{
@@ -118,7 +123,10 @@ void DrawLayout()
 		{
 			pFile        = &CurrentAction.Selection[ 0 ];
 
-			ResolvedIcon = pHostFS->pDirectory->ResolvedIcons[ pFile->fileID ];
+			if ( pHostFS->pDirectory->ResolvedIcons.find( pFile->fileID ) != pHostFS->pDirectory->ResolvedIcons.end() )
+			{
+				ResolvedIcon = pHostFS->pDirectory->ResolvedIcons[ pFile->fileID ];
+			}
 		}
 		else
 		{

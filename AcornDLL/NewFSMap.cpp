@@ -246,6 +246,8 @@ int	NewFSMap::ReadFSMap()
 		c--;
 	}
 
+	IDsPerZone = ((SecSize * 8) - ZoneSpare) / (IDLen + 1 );
+
 	return 0;
 }
 
@@ -386,8 +388,6 @@ int	NewFSMap::WriteFSMap()
 			pSource->WriteSector( SecondSector, MapSector, 1024 );
 		}
 	}
-
-	IDsPerZone = ((SecSize * 8) - ZoneSpare) / (IDLen + 1 );
 
 	return 0;
 }

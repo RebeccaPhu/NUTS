@@ -795,7 +795,7 @@ AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
 	/* Indirect disc address. Hex, visible, disabled */
 	Attr.Index = 0;
 	Attr.Type  = AttrVisible | AttrNumeric | AttrHex | AttrFile | AttrDir;
-	Attr.Name  = L"Disc address";
+	Attr.Name  = L"Indirect address";
 	Attrs.push_back( Attr );
 
 	/* Locked */
