@@ -217,7 +217,9 @@ int	NewFSMap::ReadFSMap()
 				ReadDiscRecord( &Sector[ 0x04 ] );
 			}
 
-			ReadSubMap( &Sector[ Offset ], (SecSize - Offset) * 8, z, Bits );
+			DWORD BitsInZone = ( ( SecSize - Offset )  * 8 ) - ( ZoneSpare - 32 );
+
+			ReadSubMap( &Sector[ Offset ], BitsInZone, z, Bits );
 
 			/*
 			if ( z == 0 )
@@ -229,7 +231,7 @@ int	NewFSMap::ReadFSMap()
 				Bits += 0x2000;
 			}
 			*/
-			Bits += ( ( ( SecSize - Offset ) + 4 ) * 8 ) - 0; // ZoneSpare;
+			Bits += BitsInZone;
 		}
 	}
 
@@ -371,7 +373,9 @@ int	NewFSMap::WriteFSMap()
 			}
 
 			/* Do submap */
-			WriteSubMap( &MapSector[ Offset ], (SecSize - Offset) * 8, n );
+			DWORD BitsInZone = ( ( SecSize - Offset )  * 8 ) - ( ZoneSpare - 32 );
+
+			WriteSubMap( &MapSector[ Offset ], BitsInZone, n );
 
 			MapSector[ 0 ] = ZoneCheck( MapSector, SecSize );
 
@@ -500,7 +504,8 @@ DWORD NewFSMap::SectorForFragmentOffset( DWORD FragOffset )
 		{
 			if ( ( iFrag->FragOffset == FragOffset ) && ( iFrag->Zone == SearchZone ) )
 			{
-				DWORD FullAddress = ((iFrag->FragOffset - (ZoneSpare * iFrag->Zone)) * BPMB);
+				DWORD FullAddress = ( iFrag->FragOffset * BPMB );
+//				DWORD FullAddress = ((iFrag->FragOffset - (ZoneSpare * iFrag->Zone)) * BPMB);
 
 				return FullAddress / SecSize;
 			}
@@ -814,7 +819,7 @@ DWORD NewFSMap::SectorForSingleFragment( DWORD FragmentID )
 
 	if ( Zones > 1 )
 	{
-		DWORD IDsPerZone = ((1 << (10 + 3)) - ZoneSpare) / (IDLen + 1);
+		DWORD IDsPerZone = ( (1 << ( LogSecSize + 3) ) - ZoneSpare) / (IDLen + 1);
 		
 		StartZone = FragmentID / IDsPerZone;
 	}
@@ -834,7 +839,8 @@ DWORD NewFSMap::SectorForSingleFragment( DWORD FragmentID )
 		{
 			if ( ( iFrag->FragID == FragmentID ) && ( iFrag->Zone == SearchZone ) )
 			{
-				DWORD FullAddress = ((iFrag->FragOffset - (ZoneSpare * iFrag->Zone)) * BPMB);
+				DWORD FullAddress = ( iFrag->FragOffset * BPMB);
+//				DWORD FullAddress = ((iFrag->FragOffset - (ZoneSpare * iFrag->Zone)) * BPMB);
 
 				return FullAddress / SecSize;
 			}
@@ -886,12 +892,13 @@ FileFragments NewFSMap::GetFileFragments( DWORD DiscAddr )
 	{
 		if ( iFrag->FragID == FragmentID )
 		{
-			DWORD FullAddress = ((iFrag->FragOffset - (ZoneSpare * iFrag->Zone)) * BPMB);
+//			DWORD FullAddress = ((iFrag->FragOffset - (ZoneSpare * iFrag->Zone)) * BPMB);
+			DWORD FullAddress = ( iFrag->FragOffset * BPMB );
 
 			FileFragment f;
 
 			f.Sector = FullAddress / SecSize;
-			f.Length = iFrag->Length - ( SectorID * SecSize );
+			f.Length = iFrag->Length;
 			f.Zone   = iFrag->Zone;
 
 			frags.push_back( f );
@@ -910,6 +917,9 @@ FileFragments NewFSMap::GetFileFragments( DWORD DiscAddr )
 
 	/* Add the sector offset to the first fragment */
 	frags.begin()->Sector += SectorID;
+
+	/* ... and subtract the length */
+	frags.begin()->Length -= ( SectorID * SecSize );
 
 	return frags;
 }

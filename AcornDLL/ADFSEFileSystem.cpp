@@ -442,53 +442,66 @@ int ADFSEFileSystem::ResolveAppIcons( void )
 
 			NativeFileIterator iSpriteFile;
 
+			NativeFile *pSpriteFile;
+
+			DWORD PrefSpriteFileId = 0xFFFFFFFF;
+
 			for ( iSpriteFile = TempFS.pDirectory->Files.begin(); iSpriteFile != TempFS.pDirectory->Files.end(); iSpriteFile++)
 			{
 				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "!Sprites" ) )
 				{
-					DataSource *pSpriteSource = TempFS.FileDataSource( iSpriteFile->fileID );
-
-					SpriteFile spriteFile( pSpriteSource );
-
-					spriteFile.Init();
-
-					NativeFileIterator iSprite;
-
-					for ( iSprite = spriteFile.pDirectory->Files.begin(); iSprite != spriteFile.pDirectory->Files.end(); iSprite++ )
+					if ( PrefSpriteFileId == 0xFFFFFFFF )
 					{
-						if ( rstricmp( iSprite->Filename, iFile->Filename ) )
-						{
-							CTempFile FileObj;
-
-							spriteFile.ReadFile( iSprite->fileID, FileObj );
-
-							Sprite sprite( FileObj );
-
-							IconDef icon;
-
-							sprite.GetNaturalBitmap( &icon.bmi, &icon.pImage, MaskColour );
-
-							assert( (DWORD) icon.pImage != 0xCCCCCCCC );
-
-							icon.Aspect = sprite.SpriteAspect;
-
-							if ( sprite.Valid() )
-							{
-								pDirectory->ResolvedIcons[ iFile->fileID ] = icon;
-
-								iFile->HasResolvedIcon = true;
-							}
-						}
-						/*
-						if ( rstrnicmp( iSprite->Filename, (BYTE *) "file_", 5 ) )
-						{
-							ResolveAuxFileType( &*iSprite, &*iFile, spriteFile );
-						}
-						*/
+						PrefSpriteFileId = iSpriteFile->fileID;
 					}
-
-					pSpriteSource->Release();
 				}
+
+				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "!Sprites22" ) )
+				{
+					PrefSpriteFileId = iSpriteFile->fileID;
+				}
+			}
+
+			if ( PrefSpriteFileId != 0xFFFFFFFF )
+			{
+				pSpriteFile = &( TempFS.pDirectory->Files[ PrefSpriteFileId ] );
+
+				DataSource *pSpriteSource = TempFS.FileDataSource( pSpriteFile->fileID );
+
+				SpriteFile spriteFile( pSpriteSource );
+
+				spriteFile.Init();
+
+				NativeFileIterator iSprite;
+
+				for ( iSprite = spriteFile.pDirectory->Files.begin(); iSprite != spriteFile.pDirectory->Files.end(); iSprite++ )
+				{
+					if ( rstricmp( iSprite->Filename, iFile->Filename ) )
+					{
+						CTempFile FileObj;
+
+						spriteFile.ReadFile( iSprite->fileID, FileObj );
+
+						Sprite sprite( FileObj );
+
+						IconDef icon;
+
+						sprite.GetNaturalBitmap( &icon.bmi, &icon.pImage, MaskColour );
+
+						assert( (DWORD) icon.pImage != 0xCCCCCCCC );
+
+						icon.Aspect = sprite.SpriteAspect;
+
+						if ( sprite.Valid() )
+						{
+							pDirectory->ResolvedIcons[ iFile->fileID ] = icon;
+
+							iFile->HasResolvedIcon = true;
+						}
+					}
+				}
+
+				pSpriteSource->Release();
 			}
 		}
 	}
