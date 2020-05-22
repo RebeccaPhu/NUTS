@@ -29,6 +29,8 @@ public:
 	BYTE DirTitle[ 19 ];
 	BYTE DirName[  10 ];
 
+	DWORD SecSize;
+
 private:
 	void TranslateType( NativeFile *file );
 };

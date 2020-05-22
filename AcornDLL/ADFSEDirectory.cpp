@@ -60,7 +60,7 @@ int	ADFSEDirectory::ReadDirectory( void ) {
 	memcpy( DirTitle, &DirBytes[0x7DD], 18);
 	memcpy( DirName,  &DirBytes[0x7F0], 10);
 
-	while ( ptr < 1227 ) {
+	while ( ptr < 2007 ) {
 		memset( &file, 0, sizeof(file) );
 		memcpy( &file.Filename, &DirBytes[ptr], 10 );
 
@@ -170,9 +170,9 @@ int	ADFSEDirectory::WriteDirectory( void )
 		TotalSize += iFrag->Length;
 	}
 
-	while ( TotalSize % 1024 )
+	while ( TotalSize % pMap->SecSize )
 	{
-		TotalSize += ( 1024 - ( TotalSize % 1024 ) );
+		TotalSize += ( pMap->SecSize - ( TotalSize % pMap->SecSize ) );
 	}
 
 	if ( TotalSize < 0x800 )

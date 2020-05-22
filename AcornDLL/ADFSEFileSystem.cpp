@@ -17,7 +17,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	hint.Confidence = 0;
 	hint.FSID       = FSID;
 
-	BYTE SectorBuf[1024];
+	BYTE SectorBuf[4096];
 
 	BYTE CheckByte;
 
@@ -26,7 +26,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		/* Use ReadRaw because the sector size isn't known */
 		pSource->ReadRaw( 0, 1024, SectorBuf );
 
-		CheckByte = pFSMap->ZoneCheck( SectorBuf );
+		CheckByte = pFSMap->ZoneCheck( SectorBuf, 1024 );
 
 		if ( CheckByte == SectorBuf[ 0 ] )
 		{
@@ -44,7 +44,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	
 		pSource->ReadRaw( 1024, 1024, SectorBuf );
 
-		CheckByte = pFSMap->ZoneCheck( SectorBuf );
+		CheckByte = pFSMap->ZoneCheck( SectorBuf, 1024 );
 
 		if ( CheckByte == SectorBuf[ 0 ] )
 		{
@@ -83,12 +83,12 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	DWORD DR_Size = 60;
 	DWORD ZZ      = DR_Size * 8;
 
-	DWORD MapAddr = ((Zones / 2) * (8*1024-ZoneSpare)-ZZ)*BPMB;
+	DWORD MapAddr = ((Zones / 2) * (8*SecSize-ZoneSpare)-ZZ)*BPMB;
 	DWORD Bits    = 0;
 
-	pSource->ReadRaw( MapAddr, 1024, SectorBuf );
+	pSource->ReadRaw( MapAddr, SecSize, SectorBuf );
 
-	CheckByte = pFSMap->ZoneCheck( SectorBuf );
+	CheckByte = pFSMap->ZoneCheck( SectorBuf, SecSize );
 
 	if ( CheckByte == SectorBuf[ 0 ] )
 	{
@@ -163,7 +163,7 @@ int	ADFSEFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 {
 	NativeFile *pFile = &pDirectory->Files[ FileID ];
 
-	BYTE Sector[ 1024 ];
+	BYTE Sector[ 4096 ];
 
 	DWORD fileSize = (DWORD) pFile->Length;
 
@@ -175,7 +175,7 @@ int	ADFSEFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	DWORD FragSector  = 0;
 
 	while ( iFrag != Frags.end() ) {
-		FragSectors = iFrag->Length / 1024;
+		FragSectors = iFrag->Length / pFSMap->SecSize;
 
 		for ( FragSector = 0; FragSector < FragSectors; FragSector++ )
 		{
@@ -184,13 +184,13 @@ int	ADFSEFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 				return 0;
 			}
 
-			pSource->ReadSector( iFrag->Sector + FragSector, Sector, 1024 );
+			pSource->ReadSector( iFrag->Sector + FragSector, Sector, pFSMap->SecSize );
 
-			if (fileSize > 1024 )
+			if ( fileSize > pFSMap->SecSize )
 			{
-				store.Write( Sector, 1024 );
+				store.Write( Sector, pFSMap->SecSize );
 
-				fileSize -= 1024;
+				fileSize -= pFSMap->SecSize;
 			}
 			else
 			{
@@ -641,7 +641,7 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	Map.pBlockMap = pBlockMap;
 	Map.UsedBytes = 0;
 
-	NumBlocks /= 1024;
+	NumBlocks /= pFSMap->SecSize;
 
 	double BlockRatio = ( (double) NumBlocks / (double) TotalBlocks );
 
@@ -684,7 +684,7 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 					return 0;
 				}
 
-				for ( DWORD Blk = iF->Sector; Blk != iF->Sector + (iF->Length/1024); Blk++ )
+				for ( DWORD Blk = iF->Sector; Blk != iF->Sector + (iF->Length/pFSMap->SecSize); Blk++ )
 				{
 					BlkNum = (DWORD) ( (double) Blk / BlockRatio );
 
@@ -928,9 +928,9 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length )
 	std::map< DWORD, BYTE *> FragMaps;
 	std::map< DWORD, DWORD > FragSizes;
 
-	DWORD SecLength = Length / 1024;
+	DWORD SecLength = Length / pFSMap->SecSize;
 
-	if ( Length % 1024 ) { SecLength++; }
+	if ( Length % pFSMap->SecSize ) { SecLength++; }
 
 	DWORD DirFragID = pEDirectory->DirSector >> 8;
 	DWORD DirSector = pEDirectory->DirSector & 0xFF;
@@ -1056,7 +1056,7 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length )
 
 		FileFragment f;
 
-		f.Length = SecLength * 1024;
+		f.Length = SecLength * pFSMap->SecSize;
 		
 		/* Step 1d: Find the fragment in the free space map, and determine it's location */
 		f.Sector = pFSMap->SectorForSingleFragment( FragLoc );

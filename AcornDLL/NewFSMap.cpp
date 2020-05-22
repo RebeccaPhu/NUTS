@@ -130,7 +130,7 @@ int	NewFSMap::ReadFSMap()
 	UsedExtraSector.clear();
 
 	/* Read disc record. This tells us a few vital bits */
-	BYTE Sector[ 1024 ];
+	BYTE Sector[ 4096 ];
 
 	bool HaveValidRecord = false;
 	BYTE SectorStage     = 0;
@@ -147,9 +147,9 @@ int	NewFSMap::ReadFSMap()
 			break;
 		}
 
-		BYTE CheckByte = ZoneCheck( Sector );
+		BYTE CheckByte = ZoneCheck( Sector, 1024 );
 
-		if ( CheckByte != Sector[ 0 ] )
+		if ( ( CheckByte != Sector[ 0 ] ) || ( Sector[ 0x04 + 0x09 ] == 0 ) || ( Sector[ 0x04 + 0x04 ] >= 22 ) )
 		{
 			SectorStage++;
 
@@ -199,7 +199,7 @@ int	NewFSMap::ReadFSMap()
 
 			pSource->ReadSector( SubMapAddr / SecSize, Sector, SecSize );
 
-			if ( ZoneCheck( Sector ) != Sector[ 0 ] )
+			if ( ZoneCheck( Sector, SecSize ) != Sector[ 0 ] )
 			{
 				UsedExtraSector[ z ] = true;
 
@@ -219,6 +219,7 @@ int	NewFSMap::ReadFSMap()
 
 			ReadSubMap( &Sector[ Offset ], (SecSize - Offset) * 8, z, Bits );
 
+			/*
 			if ( z == 0 )
 			{
 				Bits += 0x1E20;
@@ -227,6 +228,8 @@ int	NewFSMap::ReadFSMap()
 			{
 				Bits += 0x2000;
 			}
+			*/
+			Bits += ( ( ( SecSize - Offset ) + 4 ) * 8 ) - 0; // ZoneSpare;
 		}
 	}
 
@@ -346,7 +349,7 @@ int	NewFSMap::WriteFSMap()
 		/* Do submap */
 		WriteSubMap( &MapSector[ 0x40 ], 0x3C0 * 8, 0 );
 
-		MapSector[ 0 ] = ZoneCheck( MapSector );
+		MapSector[ 0 ] = ZoneCheck( MapSector, 1024 );
 
 		pSource->WriteSector( 0, MapSector, 1024 );
 		pSource->WriteSector( 1, MapSector, 1024 );
@@ -355,7 +358,7 @@ int	NewFSMap::WriteFSMap()
 	{
 		for ( WORD n=0; n<Zones; n++ )
 		{
-			BYTE MapSector[ 1024 ];
+			BYTE MapSector[ 4096 ];
 
 			DWORD Offset = 0x4;
 
@@ -370,9 +373,9 @@ int	NewFSMap::WriteFSMap()
 			/* Do submap */
 			WriteSubMap( &MapSector[ Offset ], (SecSize - Offset) * 8, n );
 
-			MapSector[ 0 ] = ZoneCheck( MapSector );
+			MapSector[ 0 ] = ZoneCheck( MapSector, SecSize );
 
-			pSource->WriteSector( ZoneMapSectors[ n ], MapSector, 1024 );
+			pSource->WriteSector( ZoneMapSectors[ n ], MapSector, SecSize );
 
 			DWORD SecondSector = ZoneMapSectors[ n ];
 
@@ -385,7 +388,7 @@ int	NewFSMap::WriteFSMap()
 				SecondSector += Zones;
 			}
 
-			pSource->WriteSector( SecondSector, MapSector, 1024 );
+			pSource->WriteSector( SecondSector, MapSector, SecSize );
 		}
 	}
 
@@ -679,6 +682,7 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 			return NullFrags;
 		}
 
+		/* Claim from this fragment however many sectors remain */
 		DWORD ThisSecs = iFrag->Length / SecSize;
 
 		if ( ThisSecs > Secs )
@@ -867,7 +871,7 @@ FileFragments NewFSMap::GetFileFragments( DWORD DiscAddr )
 
 	if ( Zones > 1 )
 	{
-		DWORD IDsPerZone = ((1 << (10 + 3)) - ZoneSpare) / (IDLen + 1);
+		DWORD IDsPerZone = ((1 << (LogSecSize + 3)) - ZoneSpare) / (IDLen + 1);
 		
 		StartZone = FragmentID / IDsPerZone;
 	}
@@ -878,41 +882,39 @@ FileFragments NewFSMap::GetFileFragments( DWORD DiscAddr )
 		StartZone = Zones / 2;
 	}
 
-	DWORD SearchZone = StartZone;
-	bool  AllZones   = false;
-
-	while ( !AllZones )
+	for ( iFrag = Fragments.begin(); iFrag != Fragments.end(); iFrag++ )
 	{
-		for ( iFrag = Fragments.begin(); iFrag != Fragments.end(); iFrag++ )
+		if ( iFrag->FragID == FragmentID )
 		{
-			if ( ( iFrag->FragID == FragmentID ) && ( iFrag->Zone == SearchZone ) )
-			{
-				DWORD FullAddress = ((iFrag->FragOffset - (ZoneSpare * iFrag->Zone)) * BPMB) + (SectorID * 0x0400);
+			DWORD FullAddress = ((iFrag->FragOffset - (ZoneSpare * iFrag->Zone)) * BPMB);
 
-				FileFragment f;
+			FileFragment f;
 
-				f.Sector = FullAddress / SecSize;
-				f.Length = iFrag->Length - ( SectorID * 0x0400 );
+			f.Sector = FullAddress / SecSize;
+			f.Length = iFrag->Length - ( SectorID * SecSize );
+			f.Zone   = iFrag->Zone;
 
-				frags.push_back( f );
-
-				/* Sector offset is only valid for the first fragment */
-				SectorID = 0;
-			}
-		}
-
-		SearchZone = ( SearchZone + 1 ) % Zones;
-
-		if ( SearchZone == StartZone )
-		{
-			AllZones = true;
+			frags.push_back( f );
 		}
 	}
+
+	/* Rotate the vector until the first fragment's Zone matches the starting zone */
+	while ( frags.begin()->Zone != StartZone )
+	{
+		FileFragment tFrag = frags.front();
+
+		frags.erase( frags.begin() );
+
+		frags.push_back( tFrag );
+	}
+
+	/* Add the sector offset to the first fragment */
+	frags.begin()->Sector += SectorID;
 
 	return frags;
 }
 
-BYTE NewFSMap::ZoneCheck( BYTE *map_base )
+BYTE NewFSMap::ZoneCheck( BYTE *map_base, DWORD SSize )
 {
 	DWORD sum_vector0 = 0;
 	DWORD sum_vector1 = 0;
@@ -920,7 +922,7 @@ BYTE NewFSMap::ZoneCheck( BYTE *map_base )
 	DWORD sum_vector3 = 0;
 	DWORD rover;
 
-	for (rover = 1020; rover>0; rover-=4)
+	for (rover = SSize - 4; rover>0; rover-=4)
 	{
 		sum_vector0 += map_base[ rover + 0 ] + (sum_vector3>>8);
 		sum_vector3 &= 0xFF;

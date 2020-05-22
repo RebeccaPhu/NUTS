@@ -79,6 +79,7 @@ public:
 		pFSMap->ReadFSMap();
 
 		pEDirectory->DirSector = pFSMap->RootLoc;
+		pEDirectory->SecSize   = pFSMap->SecSize;
 
 		pDirectory->ReadDirectory();
 

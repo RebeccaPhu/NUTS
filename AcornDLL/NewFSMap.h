@@ -39,7 +39,7 @@ public:
 
 	void ReleaseFragment( DWORD FragmentID );
 
-	BYTE ZoneCheck( BYTE *map_base );
+	static BYTE ZoneCheck( BYTE *map_base, DWORD SSize );
 
 	DWORD RootLoc;
 	BYTE  DiscName[ 11 ];
@@ -53,7 +53,7 @@ protected:
 private:
 	BYTE  IDLen;
 	BYTE  Skew;
-	BYTE  BPMB;
+	WORD  BPMB;
 	WORD  Zones;
 	WORD  ZoneSpare;
 
