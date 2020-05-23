@@ -6,6 +6,12 @@
 #include "SpriteFile.h"
 #include "Sprite.h"
 
+#include "AcornDLL.h"
+#include "resource.h"
+
+#include <time.h>
+#include <CommCtrl.h>
+
 #include <assert.h>
 #include <sstream>
 #include <iterator>
@@ -266,7 +272,7 @@ int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	if ( ( pFile->Length % pFSMap->SecSize ) != 0 )
 		SectorsRequired++;
 
-	TargetedFileFragments StorageFrags = FindSpace( pFile->Length );
+	TargetedFileFragments StorageFrags = FindSpace( pFile->Length, false );
 
 	if ( StorageFrags.Frags.size() == 0 )
 	{
@@ -693,6 +699,16 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 		pBlockMap[ BlkNum ] = (BYTE) BlockFixed;
 	}
 
+	DWORD LastUsed  = 0;
+	DWORD Increment = Map.Capacity / 1000;
+
+	if ( Increment < ( 200 * 1024 ) )
+	{
+		Increment = 200 * 1024;
+	}
+
+	SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
+
 	for ( iFragment = pFSMap->Fragments.begin(); iFragment != pFSMap->Fragments.end(); iFragment++ )
 	{
 		if ( WaitForSingleObject( hCancelFree, 10 ) == WAIT_OBJECT_0 )
@@ -746,9 +762,16 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 				}
 			}
 
-			SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
+			if ( ( Map.UsedBytes - LastUsed ) > Increment )
+			{
+				SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
+
+				LastUsed = Map.UsedBytes;
+			}
 		}
 	}
+
+	SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
 
 	return 0;
 }
@@ -911,7 +934,7 @@ void ADFSEFileSystem::FreeAppIcons( void )
 	pDirectory->ResolvedIcons.clear();
 }
 
-TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length )
+TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length, bool ForDir )
 {
 	/* OK, big long explanation time.
 
@@ -955,6 +978,10 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length )
 	   Fragment ID 2 is special, and must be handled with care, as the beginning of fragment 2 is the
 	   free space map itself (or one of them on multizone discs). Fragment ID 1 refers to a hard error,
 	   and absolutely must not be touched or relocated, or even contemplated.
+
+	   Additional additional: Directories must always occupy a fragment at the beginning (except the root).
+	   This is because otherwise the sub-fragment system can't determine what other things are in the
+	   sub-fragment occupied by the newly created directory, and thus will probably overwrite something.
 	*/
 
 	/* Step one: Build up maps of the directory and it's files in terms of sectors used in fragments */
@@ -982,13 +1009,7 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length )
 
 		ZeroMemory( FragMaps[ DirFragID ], DirSize );
 
-		if ( DirFragID == 2 )
-		{
-			FragMaps[ DirFragID ][ 0 ] = 0xFF;
-			FragMaps[ DirFragID ][ 1 ] = 0xFF;
-		}
-
-		for ( DWORD i=DirSector; i<(DirSector + NumSectors ); i++ )
+		for ( DWORD i=0; i<(DirSector + NumSectors ); i++ )
 		{
 			FragMaps[ DirFragID ][ i ] = 0xFF;
 		}
@@ -1083,7 +1104,7 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length )
 		free( FragMaps[ iSingleFrag->first ] );
 	}
 
-	if ( FoundSpace )
+	if ( ( FoundSpace ) && ( !ForDir ) )
 	{
 		TargetedFileFragments Frags;
 
@@ -1119,7 +1140,7 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 	}
 
 	/* This is allocated bigger than needed in order to store small files in the same fragment */
-	TargetedFileFragments DirSpace = FindSpace( 0x1000 );
+	TargetedFileFragments DirSpace = FindSpace( 0x1000, true );
 
 	ADFSEDirectory *pNewDirectory = new ADFSEDirectory( pSource );
 
@@ -1376,3 +1397,217 @@ int ADFSEFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, C
 	return r;
 }
 
+ADFSEFileSystem *pSystem = nullptr;
+
+INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch ( uMsg )
+	{
+		case WM_INITDIALOG:
+			pSystem = (ADFSEFileSystem *) lParam;
+
+			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x000A0006 );
+			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00150006 );
+
+			if ( pSystem->FSID == FSID_ADFS_E )
+			{
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0007 );
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "128 bytes" );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+
+				pSystem->pFSMap->LogBPMB = 7;
+				pSystem->pFSMap->BPMB    = 128;
+				pSystem->pFSMap->IDLen   = 15;
+			}
+
+			if ( pSystem->FSID == FSID_ADFS_F )
+			{
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "64 bytes" );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+
+				pSystem->pFSMap->LogBPMB = 6;
+				pSystem->pFSMap->BPMB    = 64;
+				pSystem->pFSMap->IDLen   = 15;
+			}
+
+			if ( pSystem->FSID == FSID_ADFS_HN )
+			{
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0009 );
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "1024 bytes" );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+
+				pSystem->pFSMap->LogBPMB = 0x0A;
+				pSystem->pFSMap->BPMB    = 1024;
+				pSystem->pFSMap->IDLen   = 15;
+			}
+
+			return TRUE;
+
+		case WM_HSCROLL:
+			{
+				pSystem->pFSMap->LogBPMB  = ::SendMessage( GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_GETPOS, 0 ,0 );
+				pSystem->pFSMap->IDLen    = ::SendMessage( GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_GETPOS, 0 ,0 );
+				pSystem->pFSMap->BPMB     = 1 << pSystem->pFSMap->LogBPMB;
+
+				BYTE TextBuf[ 128 ];
+
+				rsprintf( TextBuf, "%d bytes", pSystem->pFSMap->BPMB );
+
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM) TextBuf );
+
+				rsprintf( TextBuf, "%d bits", pSystem->pFSMap->IDLen );
+
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) TextBuf );
+			}
+			return FALSE;
+
+		case WM_COMMAND:
+			if ( wParam == IDOK )
+			{
+				/* Some sanity checks here. The BPMB and IDLen values must be able to reference the whole disk, and
+				   identify each fragment at it's smallest size uniquely. */
+
+				QWORD DiskSize  = pSystem->pSource->PhysicalDiskSize;
+				      DiskSize /= pSystem->pFSMap->BPMB;
+
+				/* DiskSize now contains the number of map bits required to represnt the disk */
+				QWORD RequiredFrags = DiskSize / ( pSystem->pFSMap->IDLen + 1 );
+
+				/* RequiredFrags is now the maximum number of fragments that need to be representable */
+				DWORD MaxFragID = ( (1 << (pSystem->pFSMap->IDLen + 1 ) ) - 1 );
+
+				DWORD IDsPerZone = ( ( 1 << (pSystem->pFSMap->LogSecSize + 3 ) ) - pSystem->pFSMap->ZoneSpare ) / ( pSystem->pFSMap->IDLen + 1 );
+
+				DWORD Zones = 0;
+
+				while ( ( Zones * ( IDsPerZone * ( pSystem->pFSMap->IDLen + 1 ) ) ) < DiskSize )
+				{
+					Zones++;
+				}
+
+				if ( ( RequiredFrags > ( MaxFragID + 3 ) ) || ( Zones > 240 ) )
+				{
+					/* Oh dear. This is not addressable. */
+					MessageBox( hwndDlg,
+						L"The Bytes Per Map Bit (BPMB) and ID Length values chosen do not allow the entire disk to be presented in the map.\n\nPlease select alternate values.",
+						L"NUTS ADFS New Map FileSystem",
+						MB_ICONEXCLAMATION | MB_OK
+					);
+				}
+				else
+				{
+					EndDialog( hwndDlg, 0 );
+				}
+			}
+			return FALSE;
+	}
+
+	return FALSE;
+}
+
+int ADFSEFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
+{
+	pFSMap = new NewFSMap( pSource );
+
+	DialogBoxParam( hInstance, MAKEINTRESOURCE( IDD_ADFSFORMAT ), hWnd, FormatProc, (LPARAM) this );
+
+	return 0;
+}
+
+int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
+{
+	static WCHAR * const InitMsg  = L"Initialising";
+	static WCHAR * const EraseMsg = L"Erasing";
+	static WCHAR * const MapMsg   = L"Creating FS Map";
+	static WCHAR * const RootMsg  = L"Creating Root Directory";
+	static WCHAR * const DoneMsg  = L"Complete";
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, 0, (LPARAM) InitMsg );
+
+	DWORD SecSize = 512;
+
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) )
+	{
+		SecSize = 1024;
+	}
+
+	DWORD Sectors = pSource->PhysicalDiskSize / (DWORD) SecSize;
+
+	/* This will hold two sectors later, for setting up the disc name for D format discs */
+	BYTE SectorBuf[ 1024 ];
+
+	if ( FT == FormatType_Full )
+	{
+		ZeroMemory( SectorBuf, 1024 );
+
+		for ( DWORD Sector=0; Sector < Sectors; Sector++ )
+		{
+			if ( pSource->WriteSector( Sector, SectorBuf, SecSize ) != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 1, 3, Sector, Sectors, false ), (LPARAM) EraseMsg );
+		}
+	}
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 3, 0, 1, false ), (LPARAM) MapMsg );
+
+	pFSMap->ConfigureDisk( FSID );
+
+	if ( pDirectory == nullptr )
+	{
+		pEDirectory = new ADFSEDirectory( pSource );
+		pDirectory  = (Directory *) pEDirectory;
+
+		pEDirectory->pMap = pFSMap;
+	}
+		
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID==FSID_ADFS_F ) )
+	{
+		time_t t = time(NULL);
+		struct tm *pT = localtime( &t );
+
+		static const char * const days[8] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+
+		BYTE Title[ 20 ];
+
+		rsprintf( Title, "%02d_%02d_%s", pT->tm_hour, pT->tm_min, days[ pT->tm_wday ] );
+
+		rstrncpy( pEDirectory->DirTitle, Title, 19 );
+		rstrncpy( pFSMap->DiscName,      Title, 10 );
+	}
+	else
+	{
+		rstrncpy( pEDirectory->DirTitle, (BYTE *) "ADFSDisc4", 19 );
+		rstrncpy( pFSMap->DiscName,      (BYTE *) "ADFSDisc4", 10 );
+	}
+
+	if ( pFSMap->WriteFSMap() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 0, 1, false ), (LPARAM) RootMsg );
+
+	pEDirectory->DirSector    = pFSMap->RootLoc;
+	pEDirectory->ParentSector = pEDirectory->DirSector;
+	pEDirectory->MasterSeq    = 0;
+
+	rstrncpy( (BYTE *) pEDirectory->DirName, (BYTE *) "$", 10 );
+
+	pDirectory->Files.clear();
+	
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 1, 1, true ), (LPARAM) DoneMsg );
+
+	return 0;
+}

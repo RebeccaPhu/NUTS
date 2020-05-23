@@ -115,7 +115,7 @@ public:
 	WCHAR *Identify( DWORD FileID );
 
 	int Format_Process( FormatType FT, HWND hWnd );
-	int Format_PreCheck( int FormatType );
+	int Format_PreCheck( int FormatType, HWND hWnd );
 	
 	OldFSMap *pFSMap;
 

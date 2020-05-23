@@ -131,7 +131,7 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						break;
 					}
 
-					if (pFormatter->Format_PreCheck( Format_FT ) != 0 )
+					if (pFormatter->Format_PreCheck( Format_FT, hwndDlg ) != 0 )
 					{
 						break;
 					}

@@ -1028,7 +1028,7 @@ FSToolList ADFSFileSystem::GetToolsList( void )
 	return list;
 }
 
-int ADFSFileSystem::Format_PreCheck( int FormatType )
+int ADFSFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
 {
 	// Nothing extra to do
 	return 0;
@@ -1060,11 +1060,11 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 				return -1;
 			}
 
-			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 1, 3, Sector, Sectors, false ), (LPARAM) EraseMsg );
+			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 1, 4, Sector, Sectors, false ), (LPARAM) EraseMsg );
 		}
 	}
 
-	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 3, 0, 1, false ), (LPARAM) MapMsg );
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 4, 0, 1, false ), (LPARAM) MapMsg );
 
 	if( pFSMap == nullptr )
 	{
@@ -1091,7 +1091,7 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 		return -1;
 	}
 
-	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 0, 1, false ), (LPARAM) RootMsg );
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 4, 0, 1, false ), (LPARAM) RootMsg );
 
 	if ( pDirectory == nullptr )
 	{
@@ -1153,7 +1153,7 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 		if ( pSource->WriteSector( 1, &SectorBuf[ 0x100 ], 256 ) != DS_SUCCESS ) { return -1; }
 	}
 
-	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 1, 1, true ), (LPARAM) DoneMsg );
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 4, 1, 1, true ), (LPARAM) DoneMsg );
 
 	return 0;
 }

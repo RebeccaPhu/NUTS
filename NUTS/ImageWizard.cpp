@@ -333,6 +333,15 @@ unsigned int __stdcall CreationThread(void *param)
 		FileSystem *FS = (FileSystem *) FSPlugins.LoadFS( ChosenFS.FUID, pSource, false );
 
 		pSource->Release();
+
+		if ( FS->Format_PreCheck( FormatType_Quick, hProgressWnd ) != 0 )
+		{
+			::SendMessage( hWizard, PSM_SETCURSEL, (WPARAM) 4, (LPARAM) NULL );
+
+			delete FS;
+
+			return -1;
+		}
 	
 		Result = FS->Format_Process( FormatType_Quick, hProgressWnd );
 

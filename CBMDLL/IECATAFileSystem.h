@@ -45,7 +45,7 @@ public:
 	bool IsRoot();
 	int DeleteFile( NativeFile *pFile, int FileOp );
 
-	int Format_PreCheck(int FormatType);
+	int Format_PreCheck(int FormatType, HWND hWnd);
 	int Format_Process( FormatType FT, HWND hWnd );
 	int CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 

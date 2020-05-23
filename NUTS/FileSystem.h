@@ -270,7 +270,7 @@ public:
 	//	Formatting functions where available:
 
 	//	Gives a file system the opportunity to ask any additional questions or post information etc, before the format begins.
-	virtual int	Format_PreCheck( int FormatType ) {
+	virtual int	Format_PreCheck( int FormatType, HWND hWnd ) {
 		return 0;
 	}
 

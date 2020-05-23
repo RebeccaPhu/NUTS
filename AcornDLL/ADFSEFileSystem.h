@@ -61,6 +61,8 @@ public:
 		}
 	}
 
+	NewFSMap *pFSMap;
+
 public:
 	ADFSEDirectory *pEDirectory;
 
@@ -131,9 +133,10 @@ public:
 
 	int SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );
 
-private:
-	NewFSMap *pFSMap;
+	int Format_Process( FormatType FT, HWND hWnd );
+	int Format_PreCheck( int FormatType, HWND hWnd );	
 
+private:
 	NativeFile OverrideFile;
 
 	bool Override;
@@ -141,6 +144,6 @@ private:
 private:
 	void FreeAppIcons( void );
 
-	TargetedFileFragments FindSpace( DWORD Length );
+	TargetedFileFragments FindSpace( DWORD Length, bool ForDir );
 };
 

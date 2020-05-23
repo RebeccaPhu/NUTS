@@ -42,21 +42,26 @@ public:
 	static BYTE ZoneCheck( BYTE *map_base, DWORD SSize );
 	static BYTE BootBlockCheck( BYTE *block );
 
+	void ConfigureDisk( DWORD FSID );
+
 	DWORD RootLoc;
 	BYTE  DiscName[ 11 ];
 	BYTE  BootOption;
+	WORD  ZoneSpare;
+	BYTE  LogSecSize;
 
 	WORD  SecSize;
+
+	BYTE  IDLen;
+	WORD  BPMB;
+	BYTE  LogBPMB;
 
 protected:
 	DataSource	*pSource;
 
 private:
-	BYTE  IDLen;
 	BYTE  Skew;
-	WORD  BPMB;
 	WORD  Zones;
-	WORD  ZoneSpare;
 
 	std::map<WORD, DWORD> ZoneMapSectors;
 	std::map<WORD, bool>  UsedExtraSector;
@@ -66,8 +71,6 @@ private:
 	DWORD IDsPerZone;
 
 	/* Extra disc record bits that we don't actually use */
-	BYTE  LogSecSize;
-	BYTE  LogBPMB;
 	BYTE  SecsPerTrack;
 	BYTE  Heads;
 	BYTE  Density;

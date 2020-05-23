@@ -378,7 +378,7 @@ bool IECATAFileSystem::IsRoot() {
 }
 
 
-int IECATAFileSystem::Format_PreCheck(int FormatType) {
+int IECATAFileSystem::Format_PreCheck(int FormatType, HWND hWnd) {
 	//	No further options to check.
 
 	return 0;

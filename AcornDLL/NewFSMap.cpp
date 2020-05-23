@@ -72,6 +72,8 @@ void NewFSMap::WriteBits( BYTE *map, DWORD offset, BYTE length, DWORD v )
 
 void NewFSMap::WriteDiscRecord( BYTE *pRecord, bool Partial )
 {
+	ZeroMemory( pRecord, (Partial)?0x16:0x3C );
+
 	pRecord[ 0x00 ] = LogSecSize;
 	pRecord[ 0x01 ] = SecsPerTrack;
 	pRecord[ 0x02 ] = Heads;
@@ -92,7 +94,8 @@ void NewFSMap::WriteDiscRecord( BYTE *pRecord, bool Partial )
 		return;
 	}
 
-	pRecord[ 0x14 ] = CycleID;
+	* (WORD *)  &pRecord[ 0x14 ] = CycleID;
+
 	pRecord[ 0x20 ] = DiscType;
 
 	BBCStringCopy( (char *) &pRecord[ 0x16 ], (char *) DiscName, 10 );
@@ -1019,4 +1022,226 @@ BYTE NewFSMap::BootBlockCheck( BYTE *block )
 	}
 
 	return (BYTE) ( c & 0xFF );
+}
+
+void NewFSMap::ConfigureDisk( DWORD FSID )
+{
+	QWORD PhysicalDiskSize = pSource->PhysicalDiskSize;
+
+	/* First calculate how many bits we need to represent the bitmap */
+	QWORD BitsRequired = PhysicalDiskSize / BPMB;
+
+	/* Now we need to settle on a ZoneSpare value. This is the number of bits from the end of the
+	   last zone's bitmap to the start of this zone's map. This needs to take into account that
+	   zone 0 has the disc record, and thus is 0x3C bytes shorter than the other zones.
+
+	   This is based on SecSize as well.
+	
+	   To do this, start with an assumed ZoneSpare of 0 (best case scenario). The remaining space in
+	   both circumstances should be either SecSize - 4 or SecSize - 64 bytes, times 8 bits. This space
+	   should be exactly divisible by IDLen + 1 (the smallest fragment size). If it is, congratulations,
+	   ZoneSpare has been found. If not, add 1 to ZoneSpare and repeat. If ZoneSpare reaches (SecSize - 64)
+	   bytes, then the calculation has failed and the disk cannot be configured.
+	*/
+
+	WORD  MaxID   = IDLen + 1;
+
+	ZoneSpare = 0;
+	bool Done = false;
+
+	while ( ZoneSpare < ( (SecSize - 64 ) * 8 ) )
+	{
+		DWORD Bitmap1 = ( ( SecSize - 64 ) * 8 ) - ZoneSpare;
+		DWORD Bitmap2 = ( ( SecSize - 4  ) * 8 ) - ZoneSpare;
+
+		if ( ( Bitmap1 % MaxID ) || ( Bitmap2 % MaxID ) )
+		{
+			ZoneSpare++;
+
+			continue;
+		}
+		else
+		{
+			Done = true;
+
+			break;
+		}
+	}
+
+	if ( !Done )
+	{
+		return;
+	}
+
+	/* We'll need Sector Size presetting, as it features in many calculations */
+	switch ( FSID )
+	{
+	case FSID_ADFS_E:
+	case FSID_ADFS_F:
+		LogSecSize = 0xA;
+		SecSize    = 0x400;
+		break;
+
+	case FSID_ADFS_HN:
+		LogSecSize = 0x9;
+		SecSize    = 0x200;
+		break;
+	}
+
+	/* Add on 32 bits for the header in the next block */
+	ZoneSpare += 32;
+
+	/* Now we know how many bits are in each zone, we can calculate the number of zones we need. */
+	Zones = 0;
+
+	IDsPerZone = ( ( 1 << (LogSecSize + 3 ) ) - ZoneSpare ) / MaxID;
+
+	while ( ( Zones * ( IDsPerZone * MaxID ) ) < BitsRequired )
+	{
+		Zones++;
+	}
+
+	/* Fill in the other details */
+	LowSector = 0;
+	DiscSize  = (DWORD) PhysicalDiskSize & 0xFFFFFFFF;
+	CycleID   = 0;
+
+	SecsPerTrack = 5;
+	Density      = 2;
+	BootOption   = 0;
+	Skew         = 1;
+	LogSecSize   = 0xA;
+
+	switch ( FSID )
+	{
+	case FSID_ADFS_F:
+		SecsPerTrack += 5;
+		Density      += 2;
+	case FSID_ADFS_E:
+		Heads    = 2;
+		DiscType = 0;
+		break;
+
+	case FSID_ADFS_HN:
+		LogSecSize   = 0x9;
+		Heads        = 16;
+		DiscType     = 0x00040000;
+		SecsPerTrack = 0x34;
+		Density      = 0;
+		break;
+	}
+
+	/* Now we must determine the location of the root cluster. For ADFS E/E+, this is sector 0. For everything else,
+	   this must becalculated. 
+	*/
+
+	ZoneMapSectors.clear();
+	UsedExtraSector.clear();
+
+	if ( FSID == FSID_ADFS_E )
+	{
+		ZoneMapSectors[ 0 ]  = 0;
+		UsedExtraSector[ 0 ] = false;
+	}
+	else
+	{
+		/* Calculate location of root zone */
+		DWORD DR_Size = 60;
+		DWORD ZZ      = DR_Size * 8;
+
+		DWORD MapAddr = ((Zones / 2) * (8*SecSize-ZoneSpare)-ZZ)*BPMB;
+
+		for ( WORD z=0; z<Zones; z++ )
+		{
+			ZoneMapSectors[ z ]  = ( MapAddr / SecSize ) + z;
+			UsedExtraSector[ z ] = 0;
+		}
+	}
+
+	/* Now fill in the one free fragment for each zone. The middle zone is special, because it contains the root
+	   directory, which will be ( Zones * 2 ) + 0x8 + 0x08 sectors. ( 8 sectors for the directory itself, plus 8
+	   spare for small file recording.
+	   
+	   We'll also need to grab a small bit at the beginning of Zone 0, to cover the boot block, otherwise the
+	   first file write that's big enough will wipe it out.
+	*/
+	Fragments.clear();
+
+	DWORD BitsOffset = 0;
+	DWORD BitsLeft   = BitsRequired;
+
+	for ( WORD z=0; z<Zones; z++ )
+	{
+		DWORD Offset = 4;
+
+		if ( z == 0 ) { Offset += 60; }
+
+		Fragment f;
+
+		f.FragID     = 0;
+		f.FragOffset = BitsOffset;
+		f.Zone       = z;
+
+		BitsOffset += ( ( SecSize - Offset ) * 8 ) - ZoneSpare;
+
+		DWORD ThisLen = ( ( SecSize - Offset ) * 8 ) - ZoneSpare - 32;
+
+		if ( ThisLen > BitsLeft ) { ThisLen = BitsLeft; }
+
+		f.Length     = ThisLen * BPMB;
+
+		if ( z == ( Zones / 2 ) )
+		{
+			Fragment r;
+
+			r.FragID     = 2;
+			r.FragOffset = f.FragOffset;
+			r.Length     = ( ( Zones * 2 ) * SecSize)  + 0x1000;
+			r.Zone       = z;
+
+			Fragments.push_back( r );
+
+			f.FragOffset += r.Length / BPMB;
+			f.Length     -= r.Length;
+		}
+
+		if ( ( z == 0 ) && ( Zones > 2 ) )
+		{
+			/* This only applies on multi-zone discs. Single-zone discs have their zone 0's covered by the block above. */
+			Fragment r;
+
+			r.FragID     = 2; // This is ignored by the root dir, which always starts from the middle zone.
+			r.FragOffset = 0;
+			r.Length     = max( MaxID * BPMB, 0x1000 ); // Smallest size possbile
+			r.Zone       = 0;
+
+			Fragments.push_back( r );
+
+			f.FragOffset += r.Length / BPMB;
+			f.Length     -= r.Length;
+		}
+
+		Fragments.push_back( f );
+
+		BitsLeft -= ThisLen;
+	}
+
+	/* Set the root directory location, which is one sector higher because of sub-fragment usage */
+	RootLoc = 0x000200 + ( Zones * 2 ) + 1;
+
+	if ( ( FSID == FSID_ADFS_F ) || ( FSID = FSID_ADFS_HN ) )
+	{
+		/* Finally, Create a boot block */
+		BYTE BootBlock[ 0x200 ];
+
+		ZeroMemory( BootBlock, 0x200 );
+
+		WriteDiscRecord( &BootBlock[ 0x1C0 ], true );
+
+		BootBlock[ 0x1FF ] = BootBlockCheck( BootBlock );
+
+		pSource->WriteSector( 6, BootBlock, 0x200 );
+	}
+
+	/* Done! */
 }
