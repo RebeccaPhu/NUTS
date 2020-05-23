@@ -72,10 +72,30 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	DWORD SecSize   = 1 << pRecord[ 0x00 ];
 	DWORD SecsTrack = pRecord[ 0x01 ];
 
+	if ( SecSize < 256 )
+	{
+		/* No ADFS disc is this small */
+		hint.FSID       = FSID;
+		hint.Confidence = 0;
+
+		return hint;
+	}
+
 	if ( Zones < 2 )
 	{
 		/* We're beyond E format and into the multi-zone F/F+/G/G+ territory now,
 		   so if Zones is less than 2, this ain't one o' them. */
+		return hint;
+	}
+
+	BYTE BootCheck = pFSMap->BootBlockCheck( SectorBuf );
+
+	if ( BootCheck != SectorBuf[ 0x1FF ] )
+	{
+		/* Boot block makes no sense - is this correct? */
+		hint.FSID       = FSID;
+		hint.Confidence = 0;
+
 		return hint;
 	}
 

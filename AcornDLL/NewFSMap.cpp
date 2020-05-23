@@ -1001,3 +1001,22 @@ void NewFSMap::ReleaseFragment( DWORD FragmentID )
 
 	WriteFSMap();
 }
+
+BYTE NewFSMap::BootBlockCheck( BYTE *block )
+{
+	WORD c = 0x0000;
+
+	for ( WORD n=0; n<0x1FF; n++ )
+	{
+		c += block[ n ];
+
+		if ( c > 0x100 )
+		{
+			c++;
+
+			c &= 0xFF;
+		}
+	}
+
+	return (BYTE) ( c & 0xFF );
+}

@@ -40,6 +40,7 @@ public:
 	void ReleaseFragment( DWORD FragmentID );
 
 	static BYTE ZoneCheck( BYTE *map_base, DWORD SSize );
+	static BYTE BootBlockCheck( BYTE *block );
 
 	DWORD RootLoc;
 	BYTE  DiscName[ 11 ];
