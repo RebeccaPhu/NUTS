@@ -27,7 +27,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 
 	BYTE CheckByte;
 
-	if ( FSID == FSID_ADFS_E )
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_EP ) )
 	{
 		/* Use ReadRaw because the sector size isn't known */
 		pSource->ReadRaw( 0, 1024, SectorBuf );
@@ -124,11 +124,17 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		switch ( FSID )
 		{
 		case FSID_ADFS_HN:
+		case FSID_ADFS_HP:
 			if ( TypeByte == 0 ) { hint.Confidence += 5; }
 			break;
 
 		case FSID_ADFS_F:
+		case FSID_ADFS_FP:
 			if ( SecsTrack == 10 ) { hint.Confidence += 5; }
+			break;
+
+		case FSID_ADFS_G:
+			if ( SecsTrack == 20 ) { hint.Confidence += 5; }
 			break;
 		}
 

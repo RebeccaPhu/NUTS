@@ -33,7 +33,6 @@ public:
 
 	bool  UseLFormat;
 	bool  UseDFormat;
-	bool  LooksRISCOSIsh;
 
 public:
 	void SetSector( DWORD Sector );

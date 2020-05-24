@@ -93,10 +93,6 @@ int	ADFSDirectory::ReadDirectory( void ) {
 
 	if ( UseDFormat ) { MaxPtr = 3162; }
 
-	/* This flag is set if any load address has the top 16 bits set to
-	   anything other than FFFF or 0000, i.e. it looks like a RISC OS time stmap */
-	LooksRISCOSIsh = false;
-
 	while ( ptr < MaxPtr ) {
 		memset( &file, 0, sizeof(file) );
 		memcpy( &file.Filename, &DirBytes[ptr], 10 );
@@ -149,17 +145,6 @@ int	ADFSDirectory::ReadDirectory( void ) {
 		file.XlatorID = NULL;
 		file.HasResolvedIcon = false;
 
-		if ( ( file.ExecAddr & 0xFFF00000 ) == 0xFFF00000 )
-		{
-			if ( ( file.LoadAddr & 0xFFFF0000 ) != 0xFFFF0000 )
-			{
-				if ( ( file.LoadAddr &0xFFFF0000 ) != 0x00000000 )
-				{
-					LooksRISCOSIsh = true;
-				}
-			}
-		}
-
 		file.EncodingID = ENCODING_ACORN;
 		file.FSFileType = FT_ACORNX;
 
@@ -185,17 +170,11 @@ int	ADFSDirectory::ReadDirectory( void ) {
 		ParentSector = * (DWORD *) &DirBytes[ 2010 ]; ParentSector &= 0xFFFFFF;
 	}
 
-	if ( UseDFormat )
-	{
-		/* Always true on D format discs */
-		LooksRISCOSIsh = true;
-	}
-
 	NativeFileIterator iFile;
 
 	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
 	{
-		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( ( FSID == FSID_ADFS_H ) && ( LooksRISCOSIsh ) ) )
+		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 		{
 			TranslateType( &*iFile );
 		}

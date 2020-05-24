@@ -82,7 +82,7 @@ private:
 	/* These fields are E+/F+/Big Hard Disc */
 	BYTE  LogShareSize;
 	BYTE  BigFlag;
-	BYTE  FormatVersion;
+	DWORD FormatVersion;
 	DWORD RootSize;
 
 private:

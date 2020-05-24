@@ -72,7 +72,7 @@ void NewFSMap::WriteBits( BYTE *map, DWORD offset, BYTE length, DWORD v )
 
 void NewFSMap::WriteDiscRecord( BYTE *pRecord, bool Partial )
 {
-	ZeroMemory( pRecord, (Partial)?0x16:0x3C );
+	ZeroMemory( pRecord, (Partial)?0x3B:0x3C );
 
 	pRecord[ 0x00 ] = LogSecSize;
 	pRecord[ 0x01 ] = SecsPerTrack;
@@ -83,11 +83,11 @@ void NewFSMap::WriteDiscRecord( BYTE *pRecord, bool Partial )
 	pRecord[ 0x06 ] = Skew;
 	pRecord[ 0x07 ] = BootOption;
 	pRecord[ 0x08 ] = LowSector;
-	pRecord[ 0x09 ] = Zones;
+	pRecord[ 0x09 ] = Zones & 0xFF;
 
 	* (WORD *)  &pRecord[ 0x0A ] = ZoneSpare;
 	* (DWORD *) &pRecord[ 0x0C ] = RootLoc;
-	* (DWORD *) &pRecord[ 0x10 ] = DiscSize;
+	* (DWORD *) &pRecord[ 0x10 ] = (DWORD) ( DiscSize & 0xFFFFFFFF );
 
 	if ( Partial )
 	{
@@ -99,6 +99,21 @@ void NewFSMap::WriteDiscRecord( BYTE *pRecord, bool Partial )
 	pRecord[ 0x20 ] = DiscType;
 
 	BBCStringCopy( (char *) &pRecord[ 0x16 ], (char *) DiscName, 10 );
+
+	
+	/* Big fields */
+	pRecord[ 0x28 ] = LogShareSize;
+	pRecord[ 0x29 ] = BigFlag;
+
+	* (DWORD *) &pRecord[ 0x2C ] = FormatVersion;
+	* (DWORD *) &pRecord[ 0x30 ] = RootSize;
+
+	if ( BigFlag != 0x00 )
+	{
+		pRecord[ 0x2A ] = ( BYTE ) Zones >> 8;
+
+		* (DWORD *) &pRecord[ 0x24 ] = ( DWORD ) ( DiscSize >> 32 );
+	}
 }
 
 void NewFSMap::ReadDiscRecord( BYTE *pRecord )
@@ -123,6 +138,21 @@ void NewFSMap::ReadDiscRecord( BYTE *pRecord )
 
 	SecSize = 1 << LogSecSize;
 	BPMB    = 1 << LogBPMB;
+
+	/* Big fields */
+	LogShareSize  = pRecord[ 0x28 ];
+	BigFlag       = pRecord[ 0x29 ];
+	FormatVersion = * (DWORD *) &pRecord[ 0x2C ];
+	RootSize      = * (DWORD *) &pRecord[ 0x30 ];
+
+	if ( BigFlag != 0x00 )
+	{
+		Zones += ( pRecord[ 0x2A ] * 256 );
+
+		QWORD HighDiscSize = * (DWORD *) &pRecord[ 0x24 ];
+
+		DiscSize += HighDiscSize * 0x100000000;
+	}
 }
 
 int	NewFSMap::ReadFSMap()

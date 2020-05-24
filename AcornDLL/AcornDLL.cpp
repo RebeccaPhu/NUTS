@@ -29,7 +29,7 @@ HMODULE hInstance;
 ACORNDLL_API DataSourceCollector *pExternCollector;
 DataSourceCollector *pCollector;
 
-FSDescriptor AcornFS[14] = {
+FSDescriptor AcornFS[19] = {
 	{
 		/* .FriendlyName = */ L"Acorn DFS (40T)",
 		/* .PUID         = */ FSID_DFS_40,
@@ -79,6 +79,22 @@ FSDescriptor AcornFS[14] = {
 		256, 256U * 16U * 160U
 	},
 	{
+		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (Old Map)",
+		/* .PUID         = */ FSID_ADFS_H,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		0, { }, { },
+		0, { }, { }, { },
+		256, 0
+	},
+	{
+		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (8 Bit IDE)",
+		/* .PUID         = */ FSID_ADFS_H8,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		0, { }, { },
+		0, { }, { }, { },
+		256, 0
+	},
+	{
 		/* .FriendlyName = */ L"RISC OS ADFS 640K (L)",
 		/* .PUID         = */ FSID_ADFS_L2,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
@@ -103,6 +119,14 @@ FSDescriptor AcornFS[14] = {
 		1024, 1024U * 5U * 160U
 	},
 	{
+		/* .FriendlyName = */ L"RISC OS ADFS 800K (E+)",
+		/* .PUID         = */ FSID_ADFS_EP,
+		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		0, { }, { },
+		0, { }, { }, { },
+		1024, 1024U * 5U * 160U
+	},
+	{
 		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (F)",
 		/* .PUID         = */ FSID_ADFS_F,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
@@ -111,16 +135,24 @@ FSDescriptor AcornFS[14] = {
 		1024, 1024U * 10U * 160U
 	},
 	{
-		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (Old Map)",
-		/* .PUID         = */ FSID_ADFS_H,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (F+)",
+		/* .PUID         = */ FSID_ADFS_FP,
+		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
 		0, { }, { },
 		0, { }, { }, { },
-		256, 0
+		1024, 1024U * 10U * 160U
 	},
 	{
-		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (8 Bit IDE)",
-		/* .PUID         = */ FSID_ADFS_H8,
+		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (G)",
+		/* .PUID         = */ FSID_ADFS_F,
+		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		0, { }, { },
+		0, { }, { }, { },
+		1024, 1024U * 20U * 160U
+	},
+	{
+		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (Old Map)",
+		/* .PUID         = */ FSID_ADFS_HO,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
 		0, { }, { },
 		0, { }, { }, { },
@@ -129,6 +161,14 @@ FSDescriptor AcornFS[14] = {
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (New Map)",
 		/* .PUID         = */ FSID_ADFS_HN,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		0, { }, { },
+		0, { }, { }, { },
+		256, 0
+	},
+	{
+		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (Long Names)",
+		/* .PUID         = */ FSID_ADFS_HP,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
 		0, { }, { },
 		0, { }, { }, { },
@@ -199,7 +239,7 @@ GraphicTranslator AcornGFX[] = {
 PluginDescriptor AcornDescriptor = {
 	/* .Provider = */ L"Acorn",
 	/* .PUID     = */ PLUGINID_ACORN,
-	/* .NumFS    = */ 14,
+	/* .NumFS    = */ 19,
 	/* .NumFonts = */ 2,
 	/* .BASXlats = */ 1,
 	/* .GFXXlats = */ 2,
@@ -248,7 +288,7 @@ ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
 		{
 			HBITMAP bmp = LoadBitmap( hInstance, MAKEINTRESOURCE( IconBitmapIDs[ i ] ) );
 
-			AcornDescriptor.FSDescriptors[ 8 ].Icons[ i ] = (void *) bmp;
+			AcornDescriptor.FSDescriptors[ 10 ].Icons[ i ] = (void *) bmp;
 		}
 	}
 
@@ -265,11 +305,11 @@ void SetRISCOSIcons( void )
 	for ( BYTE i=0; i<13; i++ )
 	{
 		RISCOSIcons::AddIconMaps(
-			AcornDescriptor.FSDescriptors[ 8 ].IconIDs[ i ],
+			AcornDescriptor.FSDescriptors[ 10 ].IconIDs[ i ],
 			FileTypes[ i ],
 			IntTypes[ i ],
 			Names[ i ],
-			(HBITMAP) AcornDescriptor.FSDescriptors[ 8 ].Icons[ i ]
+			(HBITMAP) AcornDescriptor.FSDescriptors[ 10 ].Icons[ i ]
 		);
 	}
 }
@@ -298,6 +338,7 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	case FSID_ADFS_M:
 	case FSID_ADFS_H:
 	case FSID_ADFS_H8:
+	case FSID_ADFS_HO:
 	case FSID_ADFS_D:
 	case FSID_ADFS_L2:
 		{
@@ -326,7 +367,11 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 
 	case FSID_ADFS_E:
 	case FSID_ADFS_F:
+	case FSID_ADFS_G:
+	case FSID_ADFS_EP:
+	case FSID_ADFS_FP:
 	case FSID_ADFS_HN:
+	case FSID_ADFS_HP:
 		{
 			pFS = new ADFSEFileSystem( pSource );
 		}

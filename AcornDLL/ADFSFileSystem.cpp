@@ -234,7 +234,7 @@ BYTE *ADFSFileSystem::DescribeFile(DWORD FileIndex) {
 
 	NativeFile	*pFile	= &pDirectory->Files[FileIndex];
 
-	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( ( FSID == FSID_ADFS_H ) && ( pADFSDirectory->LooksRISCOSIsh ) ) )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 	{
 		sprintf_s( (char *) status, 128, "[%s%s%s%s] %06X bytes, &%08X/&%08X",
 			(pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
@@ -282,7 +282,7 @@ BYTE *ADFSFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 	{
 		NativeFile *pFile = &pDirectory->Files[FileIndex];
 
-		if ( ( FSID != FSID_ADFS_L2 ) && ( FSID != FSID_ADFS_D ) && ( ( FSID != FSID_ADFS_H ) || ( !pADFSDirectory->LooksRISCOSIsh ) ) )
+		if ( ( FSID != FSID_ADFS_L2 ) && ( FSID != FSID_ADFS_D ) && ( FSID != FSID_ADFS_HO ) )
 		{
 			rsprintf( status, "%s | [%s%s%s%s] - %0X bytes - Load: &%08X Exec: &%08X",
 				pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
@@ -690,7 +690,7 @@ AttrDescriptors ADFSFileSystem::GetAttributeDescriptions( void )
 		Attrs.push_back( Attr );
 	}
 
-	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( ( FSID == FSID_ADFS_H ) && ( pADFSDirectory->LooksRISCOSIsh ) ) )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 	{
 		/* File Type. Hex. */
 		Attr.Index = 7;
@@ -955,7 +955,7 @@ int ADFSFileSystem::Refresh( void )
 
 WCHAR *ADFSFileSystem::Identify( DWORD FileID )
 {
-	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( ( FSID == FSID_ADFS_H ) && ( pADFSDirectory->LooksRISCOSIsh ) ) )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 	{
 		return FileSystem::Identify( FileID );
 	}
