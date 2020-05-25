@@ -749,7 +749,7 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	for ( iFragment = pFSMap->Fragments.begin(); iFragment != pFSMap->Fragments.end(); iFragment++ )
 	{
-		if ( WaitForSingleObject( hCancelFree, 10 ) == WAIT_OBJECT_0 )
+		if ( WaitForSingleObject( hCancelFree, 0 ) == WAIT_OBJECT_0 )
 		{
 			return 0;
 		}
@@ -758,44 +758,38 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 		{
 			Map.UsedBytes += iFragment->Length;
 
-			/* This is a bit wrong, as it doesn't take into account pieces of fragments (I hate you for this Acorn),
-			   but it will give a good enough approximation for the free space/block map dialog. */
-			FileFragments FFragments = pFSMap->GetFileFragments( iFragment->FragID << 8 );
-
-			FileFragment_iter iF;
-
-			for ( iF = FFragments.begin(); iF != FFragments.end(); iF++ )
+			if ( WaitForSingleObject( hCancelFree, 0 ) == WAIT_OBJECT_0 )
 			{
-				if ( WaitForSingleObject( hCancelFree, 10 ) == WAIT_OBJECT_0 )
-				{
-					return 0;
-				}
+				return 0;
+			}
 
-				for ( DWORD Blk = iF->Sector; Blk != iF->Sector + (iF->Length/pFSMap->SecSize); Blk++ )
-				{
-					BlkNum = (DWORD) ( (double) Blk / BlockRatio );
+			DWORD StartBlk = ( iFragment->FragOffset * pFSMap->BPMB ) / pFSMap->SecSize;
+			DWORD NumBlks  = iFragment->Length / pFSMap->SecSize;
 
-					assert( BlkNum < TotalBlocks );
+			for ( DWORD Blk = StartBlk; Blk != StartBlk + NumBlks; Blk++ )
+			{
+				BlkNum = (DWORD) ( (double) Blk / BlockRatio );
+
+				assert( BlkNum < TotalBlocks );
 					
-					if ( ( pBlockMap[ BlkNum ] == BlockFree ) || ( pBlockMap[ BlkNum ] == BlockUsed ) )
+				if ( ( pBlockMap[ BlkNum ] == BlockFree ) || ( pBlockMap[ BlkNum ] == BlockUsed ) )
+				{
+					switch ( iFragment->FragID )
 					{
-						switch ( iFragment->FragID )
-						{
-							case 0: /* Free space - ignore*/
-								break;
+						case 0: /* Free space - ignore*/
+							break;
 
-							case 1: /* Hard error - unmovable */
-							case 2: /* Root Directory */
-								pBlockMap[ BlkNum ] = BlockFixed;
-								break;
+						case 1: /* Hard error - unmovable */
+						case 2: /* Root Directory */
+							pBlockMap[ BlkNum ] = BlockFixed;
+							break;
 
-							default:
-								if ( pBlockMap[ BlkNum ] == BlockFree )
-								{
-									pBlockMap[ BlkNum ] = BlockUsed;
-								}
-								break;
-						}
+						default:
+							if ( pBlockMap[ BlkNum ] == BlockFree )
+							{
+								pBlockMap[ BlkNum ] = BlockUsed;
+							}
+							break;
 					}
 				}
 			}
