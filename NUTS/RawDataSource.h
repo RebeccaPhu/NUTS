@@ -48,7 +48,8 @@ public:
 	virtual int ReadSector(long Sector, void *pSectorBuf, long SectorSize);
 	virtual int WriteSector(long Sector, void *pSectorBuf, long SectorSize);
 	
-	int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
+	virtual int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
+	virtual int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
 	std::wstring( ImageSource );
 };

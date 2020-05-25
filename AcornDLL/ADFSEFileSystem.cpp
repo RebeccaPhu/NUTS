@@ -38,7 +38,14 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		{
 			pSource->ReadRaw( 0x800, 256, SectorBuf );
 
-			if ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) )
+			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( FSID == FSID_ADFS_E ) )
+			{
+				hint.Confidence = 25;
+
+				return hint;
+			}
+
+			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( FSID == FSID_ADFS_EP ) )
 			{
 				hint.Confidence = 25;
 
@@ -56,7 +63,14 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		{
 			pSource->ReadRaw( 0x800, 256, SectorBuf );
 
-			if ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) )
+			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( FSID == FSID_ADFS_E ) )
+			{
+				hint.Confidence = 25;
+
+				return hint;
+			}
+
+			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( FSID == FSID_ADFS_EP ) )
 			{
 				hint.Confidence = 25;
 
@@ -71,7 +85,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	BYTE *pRecord   = &SectorBuf[ 0x1C0 ]; // Bit o' boot block.
 	DWORD BPMB      = 1 << pRecord[ 0x05 ];
 	WORD  ZoneSpare = * (WORD *) &pRecord[ 0x0A ];
-	WORD  Zones     = pRecord[ 0x09 ];
+	WORD  Zones     = pRecord[ 0x09 ] + ( pRecord[ 0x2A ] * 256 );
 
 	BYTE  TypeByte  = pRecord[ 0x03 ];
 
@@ -114,6 +128,10 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 
 	pSource->ReadRaw( MapAddr, SecSize, SectorBuf );
 
+	pFSMap = new NewFSMap( pSource );
+
+	pFSMap->ReadDiscRecord( &SectorBuf[ 4 ] );
+
 	CheckByte = pFSMap->ZoneCheck( SectorBuf, SecSize );
 
 	if ( CheckByte == SectorBuf[ 0 ] )
@@ -138,8 +156,22 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 			break;
 		}
 
-		return hint;
+		if ( ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_HP ) || ( FSID == FSID_ADFS_G ) )
+		{
+			if ( pFSMap->FormatVersion == 1 )
+			{
+				hint.Confidence += 5;
+			}
+			else
+			{
+				hint.Confidence = 5;
+			}
+		}
 	}
+
+	delete pFSMap;
+
+	pFSMap = nullptr;
 	
 	return hint;
 }
@@ -988,6 +1020,13 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length, bool ForDir )
 	   Additional additional: Directories must always occupy a fragment at the beginning (except the root).
 	   This is because otherwise the sub-fragment system can't determine what other things are in the
 	   sub-fragment occupied by the newly created directory, and thus will probably overwrite something.
+
+	   Additional additional additional: Big directories have their own issues. They are exstensible, so
+	   we can't store files in the spare space. They are thus excluded from the calculations for sub-fragment
+	   allocations. Note that extending the directory is taken care of in ADFSEDirectory::WritePDirectory()
+	   which precalculates the data space required, then determines if the current fragment set is big enough,
+	   asking NewFSMap for more sectors if required. This extensibility explains why Big root directories
+	   are in 0x00000301 rather than the usual 0x0002xx of the New types.
 	*/
 
 	/* Step one: Build up maps of the directory and it's files in terms of sectors used in fragments */
@@ -1001,26 +1040,31 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length, bool ForDir )
 	DWORD DirFragID = pEDirectory->DirSector >> 8;
 	DWORD DirSector = pEDirectory->DirSector & 0xFF;
 
-	/* Step 1a: The directory itself. */
-	DWORD DirFrags = pFSMap->GetMatchingFragmentCount( DirFragID );
-	DWORD DirSize  = pFSMap->GetSingleFragmentSize( DirFragID );
+	DWORD NumSectors;
 
-	if ( DirSector != 0 ) { DirSector--; }
-
-	DWORD NumSectors = 0x800 / pFSMap->SecSize;
-
-	if ( DirFrags == 1 )
+	/* Step 1a: The directory itself, but not for Big Directories! */
+	if ( pFSMap->FormatVersion != 0x00000001 )
 	{
-		FragMaps[ DirFragID ] = (BYTE *) malloc( DirSize );
+		DWORD DirFrags = pFSMap->GetMatchingFragmentCount( DirFragID );
+		DWORD DirSize  = pFSMap->GetSingleFragmentSize( DirFragID );
 
-		ZeroMemory( FragMaps[ DirFragID ], DirSize );
+		if ( DirSector != 0 ) { DirSector--; }
 
-		for ( DWORD i=0; i<(DirSector + NumSectors ); i++ )
+		NumSectors = 0x800 / pFSMap->SecSize;
+
+		if ( DirFrags == 1 )
 		{
-			FragMaps[ DirFragID ][ i ] = 0xFF;
-		}
+			FragMaps[ DirFragID ] = (BYTE *) malloc( DirSize );
 
-		FragSizes[ DirFragID ] = DirSize;
+			ZeroMemory( FragMaps[ DirFragID ], DirSize );
+
+			for ( DWORD i=0; i<(DirSector + NumSectors ); i++ )
+			{
+				FragMaps[ DirFragID ][ i ] = 0xFF;
+			}
+
+			FragSizes[ DirFragID ] = DirSize;
+		}
 	}
 
 	/* Step 1b: Files within the directory */
@@ -1131,7 +1175,7 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length, bool ForDir )
 	}
 
 	/* Step 2: No sub-fragments, so we must find a fragment in the map */
-	TargetedFileFragments Frags = pFSMap->GetWriteFileFragments( SecLength );
+	TargetedFileFragments Frags = pFSMap->GetWriteFileFragments( SecLength, 0, false );
 
 	return Frags;
 }
@@ -1155,8 +1199,15 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 	pNewDirectory->MasterSeq    = 0;
 	pNewDirectory->pMap         = pFSMap;
 	
-	BBCStringCopy( (char *) pNewDirectory->DirName,  (char *) Filename, 10 );
-	BBCStringCopy( (char *) pNewDirectory->DirTitle, (char *) Filename, 10 );
+	if ( pFSMap->FormatVersion == 0x00000001 )
+	{
+		pNewDirectory->BigDirName = rstrndup( Filename, 255 );
+	}
+	else
+	{
+		BBCStringCopy( (char *) pNewDirectory->DirName,  (char *) Filename, 10 );
+		BBCStringCopy( (char *) pNewDirectory->DirTitle, (char *) Filename, 10 );
+	}
 
 	int Err = pNewDirectory->WriteDirectory();
 

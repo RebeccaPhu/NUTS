@@ -37,6 +37,7 @@ public:
 	virtual int WriteSector(long Sector, void *pSectorBuf, long SectorSize);
 	
 	int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
+	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
 	std::wstring( ImageSource );
 };

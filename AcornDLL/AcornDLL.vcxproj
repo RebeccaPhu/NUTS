@@ -95,6 +95,7 @@
     <ClCompile Include="..\NUTS\libfuncs.cpp" />
     <ClCompile Include="..\NUTS\NestedImageSource.cpp" />
     <ClCompile Include="..\NUTS\NUTSError.cpp" />
+    <ClCompile Include="..\NUTS\OffsetDataSource.cpp" />
     <ClCompile Include="..\NUTS\Preference.cpp" />
     <ClCompile Include="..\NUTS\TempFile.cpp" />
     <ClCompile Include="AcornDFSDirectory.cpp" />

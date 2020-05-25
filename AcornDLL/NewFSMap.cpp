@@ -108,9 +108,9 @@ void NewFSMap::WriteDiscRecord( BYTE *pRecord, bool Partial )
 	* (DWORD *) &pRecord[ 0x2C ] = FormatVersion;
 	* (DWORD *) &pRecord[ 0x30 ] = RootSize;
 
-	if ( BigFlag != 0x00 )
+	if ( FormatVersion == 0x01 )
 	{
-		pRecord[ 0x2A ] = ( BYTE ) Zones >> 8;
+		pRecord[ 0x2A ] = ( BYTE ) ( Zones >> 8 );
 
 		* (DWORD *) &pRecord[ 0x24 ] = ( DWORD ) ( DiscSize >> 32 );
 	}
@@ -145,7 +145,7 @@ void NewFSMap::ReadDiscRecord( BYTE *pRecord )
 	FormatVersion = * (DWORD *) &pRecord[ 0x2C ];
 	RootSize      = * (DWORD *) &pRecord[ 0x30 ];
 
-	if ( BigFlag != 0x00 )
+	if ( FormatVersion == 0x01 )
 	{
 		Zones += ( pRecord[ 0x2A ] * 256 );
 
@@ -285,6 +285,15 @@ int	NewFSMap::ReadFSMap()
 	}
 
 	IDsPerZone = ((SecSize * 8) - ZoneSpare) / (IDLen + 1 );
+
+	/* Fix up the disc name */
+	for ( BYTE i=0; i<10; i++ )
+	{
+		if ( DiscName[ i ] == 0x0D ) 
+		{
+			DiscName[ i ] = 0;
+		}
+	}
 
 	return 0;
 }
@@ -626,8 +635,11 @@ void NewFSMap::ClaimFragmentByOffset( DWORD FragOffset, DWORD SecLength, DWORD P
 	}
 }
 
-TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
+TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength, DWORD ExistingFragID, bool UseExistingFragID )
 {
+	/* The ExistingFragID stuff is used to extend Big directories, by allocating additional fragments under the existing
+	   Fragment ID. This works, because all the newly allocated fragments will have the same ID, and will still be
+	   returned in offset order, then cycled to start at the starting zone according to the fragment ID. */
 	TargetedFileFragments Frags;
 
 	Frags.SectorOffset = 0;
@@ -647,7 +659,16 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 	{
 		if ( ( iFrag->Length >= AbsLength ) && ( iFrag->FragID == 0 ) )
 		{
-			DWORD ProposedFragID = GetUnusedFragmentID( iFrag->Zone );
+			DWORD ProposedFragID = 0;
+			
+			if ( !UseExistingFragID )
+			{
+				ProposedFragID = GetUnusedFragmentID( iFrag->Zone );
+			}
+			else
+			{
+				ProposedFragID = ExistingFragID;
+			}
 
 			if ( ProposedFragID == 0 )
 			{
@@ -700,7 +721,16 @@ TargetedFileFragments NewFSMap::GetWriteFileFragments( DWORD SecLength )
 	}
 
 	/* The frag ID will be based on the zone of the first fragment (the biggest), but may cycle around */
-	DWORD ProposedFragID = GetUnusedFragmentID( SortedFrags.begin()->Zone );
+	DWORD ProposedFragID = 0;
+
+	if ( !UseExistingFragID )
+	{
+		ProposedFragID = GetUnusedFragmentID( iFrag->Zone );
+	}
+	else
+	{
+		ProposedFragID = ExistingFragID;
+	}
 
 	if ( ProposedFragID == 0 )
 	{

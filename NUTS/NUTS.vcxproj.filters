@@ -192,6 +192,9 @@
     <ClCompile Include="DropSite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OffsetDataSource.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -343,6 +346,9 @@
     </ClInclude>
     <ClInclude Include="DropSite.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OffsetDataSource.h">
+      <Filter>Header Files\Data Sources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -102,6 +102,9 @@
     <ClCompile Include="..\NUTS\Preference.cpp">
       <Filter>Source Files\Imported Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\NUTS\OffsetDataSource.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AcornDFSDirectory.h">

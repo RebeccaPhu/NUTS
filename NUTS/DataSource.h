@@ -13,6 +13,7 @@ public:
 	virtual	int	WriteSector(long Sector, void *pSectorBuf, long SectorSize) = 0;
 
 	virtual int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer ) = 0;
+	virtual int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer ) = 0;
 
 	virtual char *GetLocation()
 	{

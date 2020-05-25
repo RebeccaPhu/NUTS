@@ -9,6 +9,15 @@
 #include <algorithm>
 
 int	ADFSEDirectory::ReadDirectory( void ) {
+	if ( pMap->FormatVersion == 1 )
+	{
+		return ReadPDirectory();
+	}
+
+	return ReadEDirectory();
+}
+
+int	ADFSEDirectory::ReadEDirectory( void ) {
 
 	FileFragments Frags = pMap->GetFileFragments( DirSector );
 
@@ -118,6 +127,131 @@ int	ADFSEDirectory::ReadDirectory( void ) {
 	return 0;
 }
 
+int	ADFSEDirectory::ReadPDirectory( void ) {
+
+	FileFragments Frags = pMap->GetFileFragments( DirSector );
+
+	FileFragment_iter iFrag;
+
+	DWORD TotalSize = 0;
+
+	/* Big directories can grow, so we need to allocate the memory for this (hopefully it won't be toooo big... ) */
+	DWORD DirSize = 0;
+
+	for ( iFrag = Frags.begin(); iFrag != Frags.end(); iFrag++ )
+	{
+		DirSize += iFrag->Length;
+	}
+
+	BYTE *DirBytes = (BYTE *) malloc( DirSize );
+
+	DWORD ReadSize = 0;
+
+	for ( iFrag = Frags.begin(); iFrag != Frags.end(); )
+	{
+		DWORD Sectors = iFrag->Length / pMap->SecSize;
+
+		if ( iFrag->Length % pMap->SecSize ) { Sectors++; }
+
+		for ( DWORD sec = 0; sec<Sectors; sec++ )
+		{
+			pSource->ReadSector( iFrag->Sector + sec, &DirBytes[ ReadSize ], pMap->SecSize );
+
+			ReadSize += pMap->SecSize;
+
+			if ( ReadSize >= pMap->RootSize )
+			{
+				break;
+			}
+		}
+
+		if ( ReadSize >= pMap->RootSize )
+		{
+			iFrag = Frags.end();
+		}
+	}
+
+	Files.clear();
+	ResolvedIcons.clear();
+
+	DWORD FileID = 0;
+
+	NativeFile file;
+
+	MasterSeq = DirBytes[0];
+
+	DWORD Entries  = * (DWORD *) &DirBytes[ 0x10 ];
+	DWORD NameSize = * (DWORD *) &DirBytes[ 0x14 ];
+	DWORD DNameLen = * (DWORD *) &DirBytes[ 0x08 ];
+
+	ParentSector   = * (DWORD *) &DirBytes[ 0x18 ];
+
+	DWORD ptr = 0;
+
+	if ( BigDirName != nullptr );
+	{
+		free( BigDirName );
+	}
+
+	BigDirName = rstrndup( &DirBytes[ 0x1C ], DNameLen );
+
+	ptr = 0x1C + DNameLen + 1;
+
+	/* Everything must align on 4 byte boundaries */
+	while ( ptr % 4 ) { ptr++; }
+
+	/* Calculate start of name heap - it follows after the entries, which are helpfully an exact multiple of 4 */
+	DWORD NameHeapPtr = ptr + ( Entries * 0x1C );
+
+	for ( DWORD Entry=0; Entry<Entries; Entry++ )
+	{
+		memset( &file, 0, sizeof(file) );
+
+		DWORD ObNameLen = * (DWORD *) &DirBytes[ ptr + 0x14 ];
+		DWORD ObNamePtr = * (DWORD *) &DirBytes[ ptr + 0x18 ];
+
+		/* Note: The disk format terminates these with 0x0D, but does not include said byte in the length field */
+		rstrncpy( file.Filename, &DirBytes[ NameHeapPtr + ObNamePtr ], ObNameLen );
+
+		DWORD BigAttr = * (DWORD *) &DirBytes[ ptr + 0x10 ];
+
+		if ( BigAttr & 1 )
+			file.AttrRead = 0xFFFFFFFF;
+
+		if ( BigAttr & 2 )
+			file.AttrWrite = 0xFFFFFFFF;
+
+		if ( BigAttr & 4 )
+			file.AttrLocked	= 0xFFFFFFFF;
+
+		if ( BigAttr & 8 )
+			file.Flags |= FF_Directory;
+		
+		file.fileID   = FileID;
+		file.LoadAddr = * (DWORD *) &DirBytes[ ptr + 0x00 ];
+		file.ExecAddr = * (DWORD *) &DirBytes[ ptr + 0x04 ];
+		file.Length   = * (DWORD *) &DirBytes[ ptr + 0x08 ];
+		file.SSector  = * (DWORD *) &DirBytes[ ptr + 0x0C ];
+		file.XlatorID = NULL;
+		file.HasResolvedIcon = false;
+
+		TranslateType( &file );
+
+		file.EncodingID = ENCODING_ACORN;
+		file.FSFileType = FT_ACORNX;
+
+		Files.push_back(file);
+
+		ptr	+= 0x1C;
+
+		FileID++;
+	}
+
+	free( DirBytes );
+
+	return 0;
+}
+
 static bool ADFSSort( NativeFile &a, NativeFile &b )
 {
 	/* ADFS is rather stupid about this. A comes first where B.substr( A.length() ) == A. But case-insensitve, coz why not */
@@ -155,6 +289,16 @@ static bool ADFSSort( NativeFile &a, NativeFile &b )
 }
 
 int	ADFSEDirectory::WriteDirectory( void )
+{
+	if ( pMap->FormatVersion == 1 )
+	{
+		return WritePDirectory();
+	}
+
+	return WriteEDirectory();
+}
+
+int	ADFSEDirectory::WriteEDirectory( void )
 {
 	//	Sort directory entries
 	std::sort( Files.begin(), Files.end(), ADFSSort );
@@ -286,17 +430,6 @@ int	ADFSEDirectory::WriteDirectory( void )
 		Accumulator = v ^ ( ( Accumulator >> 13 ) | ( Accumulator << 19 ) );
 	}
 
-	/* Trailing directory tail bytes, not including check byte itself */
-
-	/* Only for big dirs!
-	for ( WORD i=0x7FC; i < 0x7FF; i++ )
-	{
-		DWORD v = DirBytes[ i ] ;
-
-		Accumulator = v ^ ( ( Accumulator >> 13 ) | ( Accumulator << 19 ) );
-	}
-	*/
-
 	DirBytes[ 0x7FF ] = ( BYTE) ( ( Accumulator & 0xFF ) ^ ( ( Accumulator & 0xFF00 ) >> 8 ) ^ ( ( Accumulator & 0xFF0000 ) >> 16 ) ^ ( ( Accumulator &0xFF000000 ) >> 24 ) );
 
 	DWORD WriteSize = 0;
@@ -314,6 +447,210 @@ int	ADFSEDirectory::WriteDirectory( void )
 			WriteSize += pMap->SecSize;
 
 			if ( WriteSize >= 0x800 )
+			{
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
+int	ADFSEDirectory::WritePDirectory( void )
+{
+	//	Sort directory entries
+	std::sort( Files.begin(), Files.end(), ADFSSort );
+
+	FileFragments Frags = pMap->GetFileFragments( DirSector );
+
+	FileFragment_iter iFrag;
+
+	/* Calculate the proposed directory size, and see if we have enough space to accomodate it. If not,
+	   ask the map for an extension. */
+	DWORD TotalSize = 0;
+
+	for ( iFrag = Frags.begin(); iFrag != Frags.end(); iFrag++ )
+	{
+		TotalSize += iFrag->Length;
+	}
+
+	while ( TotalSize % pMap->SecSize )
+	{
+		TotalSize += ( pMap->SecSize - ( TotalSize % pMap->SecSize ) );
+	}
+
+	DWORD RequiredDirSize = 0x1C; // Fixed portion of header
+
+	RequiredDirSize += rstrnlen( BigDirName, 255 ) + 1;
+
+	while ( RequiredDirSize % 4 ) { RequiredDirSize++; }
+
+	/* This will be the start of the file entries. */
+	DWORD FileTablePtr = RequiredDirSize;
+
+	/* This will be the start of the name heap */
+	DWORD NameTablePtr = FileTablePtr + ( Files.size() * 0x1C );
+	DWORD NameTableSize = 0;
+	DWORD NameTableStart = NameTablePtr;
+
+	NativeFileIterator iFile;
+
+	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
+	{
+		RequiredDirSize += 0x1C; // Fixed size part
+
+		DWORD NameLen = rstrnlen( iFile->Filename, 255 ) + 1;
+
+		RequiredDirSize += NameLen;
+
+		while ( RequiredDirSize % 4 ) { RequiredDirSize++; }
+
+		NameTableSize += NameLen;
+
+		while ( NameTableSize % 4 ) { NameTableSize++; }
+	}
+
+	/* Add on the tail, and confirm the size */
+	RequiredDirSize += 0x08;
+
+	if ( TotalSize < RequiredDirSize )
+	{
+		/* we need more! */
+		DWORD RequiredExtra = RequiredDirSize - TotalSize;
+
+		DWORD RequiredSecs  = RequiredExtra % pMap->SecSize;
+
+		if ( RequiredExtra % pMap->SecSize ) { RequiredSecs++; }
+
+		/* This will allocate the space, but we want the whole set, so discard the result, except for disc full checking */
+		TargetedFileFragments NewFrags = pMap->GetWriteFileFragments( RequiredSecs, DirSector >> 8, true );
+
+		if ( NewFrags.Frags.size() == 0 )
+		{
+			return NUTSError( 0x3B, L"Disc full" );
+		}
+
+		Frags = pMap->GetFileFragments( DirSector );
+
+		TotalSize = RequiredDirSize;
+	}
+
+	BYTE *DirBytes = (BYTE *) malloc( TotalSize );
+
+	BYTE *Tail = &DirBytes[ TotalSize - 0x08 ];
+
+	ZeroMemory( DirBytes, TotalSize );
+
+	MasterSeq = ( ( MasterSeq / 16 ) * 10 ) + ( MasterSeq % 16 );
+	MasterSeq++;
+	MasterSeq = ( ( MasterSeq / 10 ) * 16 ) + ( MasterSeq % 10 );
+
+	DirBytes[ 0x000 ] = MasterSeq;
+	Tail[      0x04 ] = MasterSeq;
+
+	BBCStringCopy( (char *) &DirBytes[ 0x1C ], (char *) BigDirName, 255 );
+
+	DirBytes[ 0x04 ] = 'S'; Tail[ 0x000 ] = 'o';
+	DirBytes[ 0x05 ] = 'B'; Tail[ 0x001 ] = 'v';
+	DirBytes[ 0x06 ] = 'P'; Tail[ 0x002 ] = 'e';
+	DirBytes[ 0x07 ] = 'r'; Tail[ 0x003 ] = 'n';
+
+	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
+	{
+		BBCStringCopy( (char *) &DirBytes[ NameTablePtr ], (char *) iFile->Filename, 10 );
+
+		DWORD Attr = 0;
+
+		/* Do this line first, as the indirect address is actually only 3 bytes, and the
+		   effective MSByte of the DWORD is the attribute byte */
+		* (DWORD *) &DirBytes[ FileTablePtr + 0x0C ] = iFile->SSector;
+
+		if ( iFile->AttrRead != 0x00000000 )
+		{
+			Attr |= 1;
+			Attr |= 16;
+		}
+
+		if ( iFile->AttrWrite != 0x00000000 )
+		{
+			Attr |= 2;
+			Attr |= 32;
+		}
+
+		if ( iFile->AttrLocked != 0x00000000 )
+		{
+			Attr |= 4;
+		}
+
+		if ( iFile->Flags & FF_Directory )
+		{
+			Attr |= 8;
+		}
+
+		DWORD NameLen = rstrnlen( iFile->Filename, 255 );
+
+		* (DWORD *) &DirBytes[ FileTablePtr + 0x00 ] = iFile->LoadAddr;
+		* (DWORD *) &DirBytes[ FileTablePtr + 0x04 ] = iFile->ExecAddr;
+		* (DWORD *) &DirBytes[ FileTablePtr + 0x08 ] = iFile->Length;
+		* (DWORD *) &DirBytes[ FileTablePtr + 0x10 ] = Attr;
+		* (DWORD *) &DirBytes[ FileTablePtr + 0x14 ] = NameLen;
+		* (DWORD *) &DirBytes[ FileTablePtr + 0x18 ] = NameTablePtr - NameTableStart;
+	
+		FileTablePtr += 0x1C;
+		NameTablePtr += NameLen + 1;
+
+		while ( NameTablePtr % 4 ) { NameTablePtr++; }
+	}
+
+	* (DWORD *) &DirBytes[ 0x18 ] = ParentSector;
+	* (DWORD *) &DirBytes[ 0x14 ] = NameTableSize;
+	* (DWORD *) &DirBytes[ 0x10 ] = Files.size();
+	* (DWORD *) &DirBytes[ 0x0C ] = TotalSize;
+	* (DWORD *) &DirBytes[ 0x08 ] = rstrnlen( BigDirName, 255 );
+	
+	DirBytes[ 0x01 ] = 0;
+	DirBytes[ 0x02 ] = 0;
+	DirBytes[ 0x03 ] = 0;
+	
+	Tail[ 0x05 ] = 0;
+	Tail[ 0x06 ] = 0;
+
+	/* Calculate check byte */
+	DWORD Accumulator = 0;
+
+	/* Directory words, up to, but not including the end-of-files marker */
+	for ( WORD i=0; i < (TotalSize - 4); i+=4 )
+	{
+		DWORD v = * (DWORD *) &DirBytes[ i ] ;
+
+		Accumulator = v ^ ( ( Accumulator >> 13 ) | ( Accumulator << 19 ) );
+	}
+
+	/* Trailing directory tail bytes, not including check byte itself */
+	for ( WORD i=TotalSize - 4; i < (TotalSize - 1); i++ )
+	{
+		DWORD v = DirBytes[ i ] ;
+
+		Accumulator = v ^ ( ( Accumulator >> 13 ) | ( Accumulator << 19 ) );
+	}
+
+	Tail[ 0x07 ] = ( BYTE) ( ( Accumulator & 0xFF ) ^ ( ( Accumulator & 0xFF00 ) >> 8 ) ^ ( ( Accumulator & 0xFF0000 ) >> 16 ) ^ ( ( Accumulator &0xFF000000 ) >> 24 ) );
+
+	DWORD WriteSize = 0;
+
+	for ( iFrag = Frags.begin(); iFrag != Frags.end(); iFrag++ )
+	{
+		DWORD Sectors = iFrag->Length / pMap->SecSize;
+
+		if ( iFrag->Length % pMap->SecSize ) { Sectors++; }
+
+		for ( DWORD sec = 0; sec<Sectors; sec++ )
+		{
+			pSource->WriteSector( iFrag->Sector + sec, &DirBytes[ WriteSize ], pMap->SecSize );
+
+			WriteSize += pMap->SecSize;
+
+			if ( WriteSize >= TotalSize )
 			{
 				break;
 			}

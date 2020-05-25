@@ -18,6 +18,7 @@
 #include "../NUTS/Defs.h"
 #include "RISCOSIcons.h"
 #include "../NUTS/IDE8Source.h"
+#include "../NUTS/OffsetDataSource.h"
 
 #include "resource.h"
 
@@ -143,7 +144,7 @@ FSDescriptor AcornFS[19] = {
 		1024, 1024U * 10U * 160U
 	},
 	{
-		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (G)",
+		/* .FriendlyName = */ L"RISC OS ADFS 3.2M (G)",
 		/* .PUID         = */ FSID_ADFS_F,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
 		0, { }, { },
@@ -163,7 +164,7 @@ FSDescriptor AcornFS[19] = {
 		/* .PUID         = */ FSID_ADFS_HN,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
 		0, { }, { },
-		0, { }, { }, { },
+		1, { L"HDF" }, { FT_MiscImage }, { FT_DiskImage },
 		256, 0
 	},
 	{
@@ -342,7 +343,26 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	case FSID_ADFS_D:
 	case FSID_ADFS_L2:
 		{
-			if ( PUID == FSID_ADFS_H8 )
+			if ( PUID == FSID_ADFS_HO )
+			{
+				/* Emulators have this silly "HDF" format that adds 0x200 bytes to the front of an otherwise untouched image.
+				   We'll do a test for this to see if we need to use a headered data source. */
+				BYTE Root[ 0x100 ];
+
+				pSource->ReadRaw( 0x200, 0x100, Root );
+
+				if ( rstrncmp( &Root[0x1], (BYTE *) "Hugo", 4 ) )
+				{
+					/* Regular image */
+					pFS = new ADFSFileSystem( pSource );
+				}
+				else
+				{
+					/* Assume its a HDF */
+					pFS = new ADFSFileSystem( new OffsetDataSource( 0x200, pSource ) );
+				}
+			}
+			else if ( PUID == FSID_ADFS_H8 )
 			{
 				IDE8Source *pIDE8 = new IDE8Source( pSource );
 
@@ -373,7 +393,29 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	case FSID_ADFS_HN:
 	case FSID_ADFS_HP:
 		{
-			pFS = new ADFSEFileSystem( pSource );
+			if ( ( PUID == FSID_ADFS_HN ) || ( PUID == FSID_ADFS_HP ) )
+			{
+				/* Emulators have this silly "HDF" format that adds 0x200 bytes to the front of an otherwise untouched image.
+				   We'll do a test for this to see if we need to use a headered data source. */
+				BYTE BootBlock[ 0x200 ];
+
+				pSource->ReadRaw( 0xDC0, 0x200, BootBlock );
+
+				if ( NewFSMap::BootBlockCheck( BootBlock ) == BootBlock[ 0x1FF ] )
+				{
+					/* Regular image */
+					pFS = new ADFSEFileSystem( pSource );
+				}
+				else
+				{
+					/* Assume its a HDF */
+					pFS = new ADFSEFileSystem( new OffsetDataSource( 0x200, pSource ) );
+				}
+			}
+			else
+			{
+				pFS = new ADFSEFileSystem( pSource );
+			}
 		}
 		break;
 

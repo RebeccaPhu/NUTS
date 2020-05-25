@@ -35,7 +35,7 @@ public:
 	DWORD GetSingleFragmentSize( DWORD FragmentID );
 	DWORD SectorForSingleFragment( DWORD FragmentID );
 
-	TargetedFileFragments GetWriteFileFragments( DWORD SecLength );
+	TargetedFileFragments GetWriteFileFragments( DWORD SecLength, DWORD ExistingFragID, bool UseExistingFragID );
 
 	void ReleaseFragment( DWORD FragmentID );
 
@@ -55,6 +55,9 @@ public:
 	BYTE  IDLen;
 	WORD  BPMB;
 	BYTE  LogBPMB;
+	BYTE  BigFlag;
+	DWORD RootSize;
+	DWORD FormatVersion;
 
 protected:
 	DataSource	*pSource;
@@ -81,9 +84,6 @@ private:
 
 	/* These fields are E+/F+/Big Hard Disc */
 	BYTE  LogShareSize;
-	BYTE  BigFlag;
-	DWORD FormatVersion;
-	DWORD RootSize;
 
 private:
 	DWORD ReadBits( BYTE *map, DWORD offset, BYTE length );
