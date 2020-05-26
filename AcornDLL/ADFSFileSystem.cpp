@@ -163,6 +163,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		/* Preset the read and write attribtues, as DFS doesn't have them */
 		DestFile.AttrRead  = 0xFFFFFFFF;
 		DestFile.AttrWrite = 0xFFFFFFFF;
+		DestFile.AttrExec  = 0x00000000;
 	}
 	else if ( pFile->FSFileType != FT_ACORNX )
 	{
@@ -170,6 +171,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		DestFile.AttrRead   = 0xFFFFFFFF;
 		DestFile.AttrWrite  = 0xFFFFFFFF;
 		DestFile.AttrLocked = 0x00000000;
+		DestFile.AttrExec   = 0x00000000;
 
 		if ( ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_L2 ) )
 		{
@@ -179,6 +181,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		{
 			DestFile.LoadAddr = 0xFFFFFFFF;
 			DestFile.ExecAddr = 0xFFFFFFFF;
+			DestFile.AttrExec = 0x00000000;
 		}
 	}
 
@@ -683,6 +686,15 @@ AttrDescriptors ADFSFileSystem::GetAttributeDescriptions( void )
 	Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
 	Attr.Name  = L"Write";
 	Attrs.push_back( Attr );
+
+	/* Execute - Not ADFS D/L2/HO */
+	if ( ( FSID != FSID_ADFS_D ) && ( FSID != FSID_ADFS_L2 ) && ( FSID != FSID_ADFS_HO ) )
+	{
+		Attr.Index = 9;
+		Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDanger;
+		Attr.Name  = L"Execute Only";
+		Attrs.push_back( Attr );
+	}
 
 	/* Load address. Hex. */
 	Attr.Index = 4;
@@ -1493,4 +1505,36 @@ FileSystem *ADFSFileSystem::FileFilesystem( DWORD FileID )
 	}
 
 	return nullptr;
+}
+
+int ADFSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
+{
+	DWORD PreType = pDirectory->Files[ FileID ].RISCTYPE;
+
+	for ( BYTE i=0; i<16; i++ )
+	{
+		pDirectory->Files[ FileID ].Attributes[ i ] = Changes->Attributes[ i ];
+	}
+
+	/* If this is a RISC OS filesystem, translate the type to the load/exec addrs */
+	if ( ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_L2 ) )
+	{
+		DWORD PostType = pDirectory->Files[ FileID ].RISCTYPE;
+
+		if ( PostType != PreType )
+		{
+			/* The type was changed, update the load/exec stuff from it */
+			InterpretImportedType(  &pDirectory->Files[ FileID ]  );
+		}
+	}
+
+	int r = pDirectory->WriteDirectory();
+	{
+		if ( r == DS_SUCCESS )
+		{
+			r =pDirectory->ReadDirectory();
+		}
+	}
+
+	return r;
 }

@@ -10,6 +10,7 @@
 #define SeqNum     Attributes[6]
 #define RISCTYPE   Attributes[7]
 #define TimeStamp  Attributes[8]
+#define AttrExec   Attributes[9]
 
 #define FSID_DFS_40    0x0DF50101
 #define FSID_DFS_80    0x0DF50102

@@ -116,6 +116,8 @@ public:
 
 	bool IncludeEmuHeader;
 
+	int SetProps( DWORD FileID, NativeFile *Changes );
+
 private:
 	TargetedFileFragments FindSpace( DWORD Length, bool ForDir );
 };

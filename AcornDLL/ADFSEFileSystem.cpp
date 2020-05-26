@@ -1528,3 +1528,31 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 	return 0;
 }
+
+int ADFSEFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
+{
+	DWORD PreType = pDirectory->Files[ FileID ].RISCTYPE;
+
+	for ( BYTE i=0; i<16; i++ )
+	{
+		pDirectory->Files[ FileID ].Attributes[ i ] = Changes->Attributes[ i ];
+	}
+
+	DWORD PostType = pDirectory->Files[ FileID ].RISCTYPE;
+
+	if ( PostType != PreType )
+	{
+		/* The type was changed, update the load/exec stuff from it */
+		InterpretImportedType(  &pDirectory->Files[ FileID ]  );
+	}
+
+	int r = pDirectory->WriteDirectory();
+	{
+		if ( r == DS_SUCCESS )
+		{
+			r =pDirectory->ReadDirectory();
+		}
+	}
+
+	return 0;
+}

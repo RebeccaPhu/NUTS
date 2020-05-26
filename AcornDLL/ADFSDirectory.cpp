@@ -113,6 +113,14 @@ int	ADFSDirectory::ReadDirectory( void ) {
 
 			if (file.Filename[3] & 128)
 				file.Flags |= FF_Directory;
+
+			if (file.Filename[4] & 128)
+			{
+				file.AttrExec   = 0xFFFFFFFF;
+				file.AttrLocked = 0x00000000;
+				file.AttrRead   = 0x00000000;
+				file.AttrWrite  = 0x00000000;
+			}
 		}
 		else
 		{
@@ -356,14 +364,21 @@ int	ADFSDirectory::WriteDirectory( void ) {
 		/* SML uses top bits of first four chars of filename. D uses an attribute byte */
 		if ( !UseDFormat )
 		{
-			if (iFile->AttrRead)
-				DirectorySector[ptr + 0] |= 0x80;
+			if ( !iFile->AttrExec )
+			{
+				if (iFile->AttrRead)
+					DirectorySector[ptr + 0] |= 0x80;
 
-			if (iFile->AttrWrite)
-				DirectorySector[ptr + 1] |= 0x80;
+				if (iFile->AttrWrite)
+					DirectorySector[ptr + 1] |= 0x80;
 
-			if (iFile->AttrLocked)
-				DirectorySector[ptr + 2] |= 0x80;
+				if (iFile->AttrLocked)
+					DirectorySector[ptr + 2] |= 0x80;
+			}
+			else
+			{
+				DirectorySector[ ptr + 4 ] |= 0x80;
+			}
 
 			if (iFile->Flags & FF_Directory)
 				DirectorySector[ptr + 3] |= 0x80;

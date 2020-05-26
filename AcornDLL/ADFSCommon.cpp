@@ -136,6 +136,11 @@ void ADFSCommon::FreeAppIcons( Directory *pDirectory )
 
 void ADFSCommon::InterpretImportedType( NativeFile *pFile )
 {
+	if ( pFile->LoadAddr & 0xFFF00000 != 0xFFF00000 )
+	{
+		return;
+	}
+
 	DWORD FT;
 
 	switch ( pFile->Type )
@@ -187,6 +192,11 @@ void ADFSCommon::InterpretImportedType( NativeFile *pFile )
 
 void ADFSCommon::SetTimeStamp( NativeFile *pFile )
 {
+	if ( pFile->LoadAddr & 0xFFF00000 != 0xFFF00000 )
+	{
+		return;
+	}
+
 	/* This timestamp converstion is a little esoteric. RISC OS uses centiseconds
 	   since 0:0:0@1/1/1900. This is *nearly* unixtime. */
 

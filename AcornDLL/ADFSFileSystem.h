@@ -132,6 +132,7 @@ public:
 	FileSystem *FileFilesystem( DWORD FileID );
 
 	int SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );
+	int SetProps( DWORD FileID, NativeFile *Changes );
 
 private:
 	ADFSDirectory *pADFSDirectory;
