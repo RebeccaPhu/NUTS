@@ -760,8 +760,8 @@ AttrDescriptors ADFSEFileSystem::GetFSAttributeDescriptions( void )
 	Attr.Type  = AttrVisible | AttrString | AttrEnabled;
 	Attr.Name  = L"Disc Title";
 
-	Attr.MaxStringLength = 16;
-	Attr.pStringVal      = rstrndup( pFSMap->DiscName, 16 );
+	Attr.MaxStringLength = 10;
+	Attr.pStringVal      = rstrndup( pFSMap->DiscName, 10 );
 
 	Attrs.push_back( Attr );
 
@@ -771,7 +771,7 @@ AttrDescriptors ADFSEFileSystem::GetFSAttributeDescriptions( void )
 	Attr.Type  = AttrVisible | AttrEnabled | AttrSelect;
 	Attr.Name  = L"Boot Option";
 
-	Attr.StartingValue  = 3; // pFSMap->BootOpt;
+	Attr.StartingValue  = pFSMap->BootOption;
 
 	AttrOption opt;
 
@@ -806,9 +806,17 @@ AttrDescriptors ADFSEFileSystem::GetFSAttributeDescriptions( void )
 
 int ADFSEFileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
 {
+	if ( PropID == 0 )
+	{
+		BBCStringCopy( (char *) pFSMap->DiscName, (char *) pNewVal, 10 );
+	}
 
+	if ( PropID == 1 )
+	{
+		pFSMap->BootOption = NewVal;
+	}
 
-	return 0;
+	return pFSMap->WriteFSMap();
 }
 
 AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )

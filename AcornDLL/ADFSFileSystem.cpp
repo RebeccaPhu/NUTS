@@ -758,8 +758,8 @@ AttrDescriptors ADFSFileSystem::GetFSAttributeDescriptions( void )
 		Attr.Type  = AttrVisible | AttrString | AttrEnabled;
 		Attr.Name  = L"Disc Title";
 
-		Attr.MaxStringLength = 16;
-		Attr.pStringVal      = rstrndup( DiscName, 16 );
+		Attr.MaxStringLength = 10;
+		Attr.pStringVal      = rstrndup( DiscName, 10 );
 
 		Attrs.push_back( Attr );
 	}
@@ -799,6 +799,33 @@ AttrDescriptors ADFSFileSystem::GetFSAttributeDescriptions( void )
 	Attrs.push_back( Attr );
 
 	return Attrs;
+}
+
+int ADFSFileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
+{
+	if ( PropID == 0 )
+	{
+		BBCStringCopy( (char *) DiscName, (char *) pNewVal, 10 );
+
+		for ( BYTE i=0; i<10; i++ )
+		{
+			if ( i & 1 )
+			{
+				pFSMap->DiscName1[ i >> 1 ] = DiscName[ i ];
+			}
+			else
+			{
+				pFSMap->DiscName0[ i >> 1 ] = DiscName[ i ];
+			}
+		}
+	}
+
+	if ( PropID == 1 )
+	{
+		pFSMap->BootOption = NewVal;
+	}
+
+	return pFSMap->WriteFSMap();
 }
 
 int ADFSFileSystem::Init(void) {

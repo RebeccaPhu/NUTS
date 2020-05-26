@@ -131,6 +131,8 @@ public:
 
 	FileSystem *FileFilesystem( DWORD FileID );
 
+	int SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );
+
 private:
 	ADFSDirectory *pADFSDirectory;
 
