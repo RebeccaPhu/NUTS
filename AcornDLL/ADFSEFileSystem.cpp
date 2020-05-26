@@ -5,6 +5,7 @@
 #include "../NUTS/NestedImageSource.h"
 #include "SpriteFile.h"
 #include "Sprite.h"
+#include "../NUTS/OffsetDataSource.h"
 
 #include "AcornDLL.h"
 #include "resource.h"
@@ -15,6 +16,28 @@
 #include <assert.h>
 #include <sstream>
 #include <iterator>
+
+int ADFSEFileSystem::Init(void) {
+	pEDirectory	= new ADFSEDirectory( pSource );
+	pDirectory = (Directory *) pEDirectory;
+
+	pFSMap  = new NewFSMap( pSource );
+
+	pEDirectory->pMap = pFSMap;
+
+	pFSMap->ReadFSMap();
+
+	pEDirectory->DirSector = pFSMap->RootLoc;
+	pEDirectory->SecSize   = pFSMap->SecSize;
+
+	CommonUseResolvedIcons = UseResolvedIcons;
+
+	pDirectory->ReadDirectory();
+
+	ResolveAppIcons<ADFSEFileSystem>( this );
+
+	return 0;
+}
 
 FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 {
@@ -191,11 +214,11 @@ int ADFSEFileSystem::ChangeDirectory( DWORD FileID )
 	rstrncat(path, (BYTE *) ".",   512 );
 	rstrncat(path, file->Filename, 512 );
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	pDirectory->ReadDirectory();
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSEFileSystem>( this );
 
 	return 0;
 }
@@ -209,11 +232,11 @@ int	ADFSEFileSystem::Parent() {
 
 	pEDirectory->DirSector = pEDirectory->ParentSector;
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	pDirectory->ReadDirectory();
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSEFileSystem>( this );
 
 	BYTE *p = rstrrchr( path, (BYTE) '.', 512 );
 
@@ -384,8 +407,10 @@ int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		DestFile.AttrWrite  = 0xFFFFFFFF;
 		DestFile.AttrLocked = 0x00000000;
 
-		// TODO: Convert FT_ enumeration to Risc OS FileType.
+		InterpretImportedType( &DestFile );
 	}
+
+	SetTimeStamp( &DestFile );
 
 	DestFile.Flags &= ( 0xFFFFFFFF ^ FF_Extension );
 
@@ -393,11 +418,11 @@ int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	pDirectory->WriteDirectory();
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSEFileSystem>( this );
 
 	return r;
 }
@@ -485,94 +510,6 @@ BYTE *ADFSEFileSystem::GetTitleString( NativeFile *pFile )
 	return ADFSPath;
 }
 
-int ADFSEFileSystem::ResolveAppIcons( void )
-{
-	if ( !UseResolvedIcons )
-	{
-		return 0;
-	}
-
-	DWORD MaskColour = GetSysColor( COLOR_WINDOW );
-
-	NativeFileIterator iFile;
-
-	for (iFile=pDirectory->Files.begin(); iFile!=pDirectory->Files.end(); iFile++)
-	{
-		if ( iFile->Flags & FF_Directory )
-		{
-			ADFSEFileSystem TempFS( *this );
-
-			TempFS.ChangeDirectory( iFile->fileID );
-
-			NativeFileIterator iSpriteFile;
-
-			NativeFile *pSpriteFile;
-
-			DWORD PrefSpriteFileId = 0xFFFFFFFF;
-
-			for ( iSpriteFile = TempFS.pDirectory->Files.begin(); iSpriteFile != TempFS.pDirectory->Files.end(); iSpriteFile++)
-			{
-				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "!Sprites" ) )
-				{
-					if ( PrefSpriteFileId == 0xFFFFFFFF )
-					{
-						PrefSpriteFileId = iSpriteFile->fileID;
-					}
-				}
-
-				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "!Sprites22" ) )
-				{
-					PrefSpriteFileId = iSpriteFile->fileID;
-				}
-			}
-
-			if ( PrefSpriteFileId != 0xFFFFFFFF )
-			{
-				pSpriteFile = &( TempFS.pDirectory->Files[ PrefSpriteFileId ] );
-
-				DataSource *pSpriteSource = TempFS.FileDataSource( pSpriteFile->fileID );
-
-				SpriteFile spriteFile( pSpriteSource );
-
-				spriteFile.Init();
-
-				NativeFileIterator iSprite;
-
-				for ( iSprite = spriteFile.pDirectory->Files.begin(); iSprite != spriteFile.pDirectory->Files.end(); iSprite++ )
-				{
-					if ( rstricmp( iSprite->Filename, iFile->Filename ) )
-					{
-						CTempFile FileObj;
-
-						spriteFile.ReadFile( iSprite->fileID, FileObj );
-
-						Sprite sprite( FileObj );
-
-						IconDef icon;
-
-						sprite.GetNaturalBitmap( &icon.bmi, &icon.pImage, MaskColour );
-
-						assert( (DWORD) icon.pImage != 0xCCCCCCCC );
-
-						icon.Aspect = sprite.SpriteAspect;
-
-						if ( sprite.Valid() )
-						{
-							pDirectory->ResolvedIcons[ iFile->fileID ] = icon;
-
-							iFile->HasResolvedIcon = true;
-						}
-					}
-				}
-
-				pSpriteSource->Release();
-			}
-		}
-	}
-
-	return 0;
-}
-
 
 int ADFSEFileSystem::ResolveAuxFileType( NativeFile *pSprite, NativeFile *pFile, SpriteFile &spriteFile )
 {
@@ -637,11 +574,13 @@ FileSystem *ADFSEFileSystem::FileFilesystem( DWORD FileID )
 
 int ADFSEFileSystem::Refresh( void )
 {
-	FreeAppIcons();
+	CommonUseResolvedIcons = UseResolvedIcons;
+
+	FreeAppIcons( pDirectory );
 
 	pDirectory->ReadDirectory();
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSEFileSystem>( this );
 
 	return 0;
 }
@@ -951,21 +890,6 @@ AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
 	return Attrs;
 }
 
-void ADFSEFileSystem::FreeAppIcons( void )
-{
-	ResolvedIcon_iter iIcon;
-
-	for ( iIcon = pDirectory->ResolvedIcons.begin(); iIcon != pDirectory->ResolvedIcons.end(); iIcon++ )
-	{
-		if ( iIcon->second.pImage != nullptr )
-		{
-			free( iIcon->second.pImage );
-		}
-	}
-
-	pDirectory->ResolvedIcons.clear();
-}
-
 TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length, bool ForDir )
 {
 	/* OK, big long explanation time.
@@ -1244,11 +1168,11 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 		rstrncat(path, Filename, 512 );
 	}
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSEFileSystem>( this );
 
 	return r;
 }
@@ -1338,114 +1262,16 @@ int ADFSEFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 		}
 	}
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 	{
 		return -1;
 	}
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSEFileSystem>( this );
 
 	return FILEOP_SUCCESS;
-}
-
-int ADFSEFileSystem::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
-{
-	rstrncpy( sidecar.Filename, pFile->Filename, 16 );
-	rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
-
-	BYTE INFData[80];
-
-	rsprintf( INFData, "$.%s %06X %06X %s\n", pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
-
-	CTempFile *pTemp = (CTempFile *) sidecar.FileObj;
-
-	pTemp->Seek( 0 );
-	pTemp->Write( INFData, rstrnlen( INFData, 80 ) );
-
-	return 0;
-}
-
-int ADFSEFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj )
-{
-	int r = 0;
-
-	if ( obj == nullptr )
-	{
-		rstrncpy( sidecar.Filename, pFile->Filename, 16 );
-		rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
-	}
-	else
-	{
-		BYTE bINFData[ 256 ];
-
-		ZeroMemory( bINFData, 256 );
-
-		obj->Seek( 0 );
-		obj->Read( bINFData, min( 256, obj->Ext() ) );
-
-		std::string INFData( (char *) bINFData );
-
-		std::istringstream iINFData( INFData );
-
-		std::vector<std::string> parts((std::istream_iterator<std::string>(iINFData)), std::istream_iterator<std::string>());
-
-		OverrideFile = *pFile;
-
-		/* Need at least 3 parts */
-		if ( parts.size() < 3 )
-		{
-			return 0;
-		}
-
-		try
-		{
-			/* Part deux is the load address. We'll use std::stoull */
-			OverrideFile.LoadAddr = std::stoul( parts[ 1 ], nullptr, 16 );
-			OverrideFile.LoadAddr &= 0xFFFFFF;
-
-			/* Part the third is the exec address. Same again. */
-			OverrideFile.ExecAddr = std::stoul( parts[ 2 ], nullptr, 16 );
-			OverrideFile.ExecAddr &= 0xFFFFFF;
-		}
-
-		catch ( std::exception &e )
-		{
-			/* eh-oh */
-			return NUTSError( 0x2E, L"Bad sidecar file" );
-		}
-
-		/* Fix the standard attrs */
-		OverrideFile.AttrRead   = 0xFFFFFFFF;
-		OverrideFile.AttrWrite  = 0xFFFFFFFF;
-		OverrideFile.AttrLocked = 0x00000000;
-
-		/* Look through the remaining parts for "L" or "Locked" */
-		for ( int i=3; i<parts.size(); i++ )
-		{
-			if ( ( parts[ i ] == "L" ) || ( parts[ i ] == "Locked" ) )
-			{
-				OverrideFile.AttrLocked = 0xFFFFFFFF;
-			}
-		}
-
-		OverrideFile.Flags = 0;
-		
-		/*  Copy the filename - but we must remove the lading directory prefix*/
-		if ( parts[ 0 ].substr( 1, 1 ) == "." )
-		{
-			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
-		}
-		else
-		{
-			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
-		}
-
-		Override = true;
-	}
-
-	return r;
 }
 
 ADFSEFileSystem *pSystem = nullptr;
@@ -1457,43 +1283,56 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case WM_INITDIALOG:
 			pSystem = (ADFSEFileSystem *) lParam;
 
-			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x000A0006 );
+			pSystem->IncludeEmuHeader;
+
+			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00200006 );
 			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00150006 );
 
-			if ( pSystem->FSID == FSID_ADFS_E )
+			switch ( pSystem->FSID )
 			{
-				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0007 );
-				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
-				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "128 bytes" );
-				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+			case FSID_ADFS_E:
+			case FSID_ADFS_EP:
+				{
+					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0007 );
+					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+					::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "128 bytes" );
+					::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
 
-				pSystem->pFSMap->LogBPMB = 7;
-				pSystem->pFSMap->BPMB    = 128;
-				pSystem->pFSMap->IDLen   = 15;
-			}
+					pSystem->pFSMap->LogBPMB = 7;
+					pSystem->pFSMap->BPMB    = 128;
+					pSystem->pFSMap->IDLen   = 15;
+				}
+				break;
 
-			if ( pSystem->FSID == FSID_ADFS_F )
-			{
-				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
-				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
-				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "64 bytes" );
-				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+			case FSID_ADFS_F:
+			case FSID_ADFS_FP:
+				{
+					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
+					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+					::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "64 bytes" );
+					::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
 
-				pSystem->pFSMap->LogBPMB = 6;
-				pSystem->pFSMap->BPMB    = 64;
-				pSystem->pFSMap->IDLen   = 15;
-			}
+					pSystem->pFSMap->LogBPMB = 6;
+					pSystem->pFSMap->BPMB    = 64;
+					pSystem->pFSMap->IDLen   = 15;
+				}
+				break;
 
-			if ( pSystem->FSID == FSID_ADFS_HN )
-			{
-				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0009 );
-				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
-				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "1024 bytes" );
-				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+			case FSID_ADFS_HN:
+			case FSID_ADFS_HP:
+				{
+					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000A );
+					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+					::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "1024 bytes" );
+					::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
 
-				pSystem->pFSMap->LogBPMB = 0x0A;
-				pSystem->pFSMap->BPMB    = 1024;
-				pSystem->pFSMap->IDLen   = 15;
+					pSystem->pFSMap->LogBPMB = 0x0A;
+					pSystem->pFSMap->BPMB    = 1024;
+					pSystem->pFSMap->IDLen   = 15;
+
+					::EnableWindow( GetDlgItem( hwndDlg, IDC_EMUHEADER ), TRUE );
+				}
+				break;
 			}
 
 			return TRUE;
@@ -1554,6 +1393,14 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					EndDialog( hwndDlg, 0 );
 				}
 			}
+
+			if ( wParam == IDC_EMUHEADER )
+			{
+				pSystem->IncludeEmuHeader = !pSystem->IncludeEmuHeader;
+
+				::SendMessage( GetDlgItem( hwndDlg, IDC_EMUHEADER ), BM_SETCHECK, (pSystem->IncludeEmuHeader)?BST_CHECKED:BST_UNCHECKED, 0 );
+			}
+
 			return FALSE;
 	}
 
@@ -1565,6 +1412,16 @@ int ADFSEFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
 	pFSMap = new NewFSMap( pSource );
 
 	DialogBoxParam( hInstance, MAKEINTRESOURCE( IDD_ADFSFORMAT ), hWnd, FormatProc, (LPARAM) this );
+
+	/* If we don't want an emu header, we must strip the offset data source that the DLL front end stuck on */
+	if ( !IncludeEmuHeader )
+	{
+		OffsetDataSource *pWrapper = reinterpret_cast<OffsetDataSource *>(pSource);
+
+		pSource->Release();
+
+		pSource = pWrapper->pSrc;
+	}
 
 	return 0;
 }
@@ -1581,7 +1438,7 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 	DWORD SecSize = 512;
 
-	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) )
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) )
 	{
 		SecSize = 1024;
 	}
@@ -1618,7 +1475,7 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 		pEDirectory->pMap = pFSMap;
 	}
 		
-	if ( ( FSID == FSID_ADFS_E ) || ( FSID==FSID_ADFS_F ) )
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID==FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID==FSID_ADFS_FP ) || ( FSID==FSID_ADFS_G ) )
 	{
 		time_t t = time(NULL);
 		struct tm *pT = localtime( &t );
@@ -1629,13 +1486,13 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 		rsprintf( Title, "%02d_%02d_%s", pT->tm_hour, pT->tm_min, days[ pT->tm_wday ] );
 
-		rstrncpy( pEDirectory->DirTitle, Title, 19 );
-		rstrncpy( pFSMap->DiscName,      Title, 10 );
+		rstrncpy( pEDirectory->DirTitle, (BYTE *) "$",   19 );
+		rstrncpy( pFSMap->DiscName,               Title, 10 );
 	}
 	else
 	{
-		rstrncpy( pEDirectory->DirTitle, (BYTE *) "ADFSDisc4", 19 );
-		rstrncpy( pFSMap->DiscName,      (BYTE *) "ADFSDisc4", 10 );
+		rstrncpy( pEDirectory->DirTitle, (BYTE *) "$",         19 );
+		rstrncpy( pFSMap->DiscName,      (BYTE *) "HardDisc4", 10 );
 	}
 
 	if ( pFSMap->WriteFSMap() != DS_SUCCESS )
@@ -1648,6 +1505,7 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 	pEDirectory->DirSector    = pFSMap->RootLoc;
 	pEDirectory->ParentSector = pEDirectory->DirSector;
 	pEDirectory->MasterSeq    = 0;
+	pEDirectory->BigDirName   = rstrndup( (BYTE *) "$", 4 );
 
 	rstrncpy( (BYTE *) pEDirectory->DirName, (BYTE *) "$", 10 );
 

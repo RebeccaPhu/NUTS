@@ -2,6 +2,7 @@
 #include "../NUTS/filesystem.h"
 #include "ADFSDirectory.h"
 #include "OldFSMap.h"
+#include "ADFSCommon.h"
 
 #include "Defs.h"
 
@@ -9,7 +10,7 @@
 
 
 class ADFSFileSystem :
-	public FileSystem
+	public FileSystem, ADFSCommon
 {
 public:
 	ADFSFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) {
@@ -130,9 +131,6 @@ public:
 
 	FileSystem *FileFilesystem( DWORD FileID );
 
-	int ExportSidecar( NativeFile *pFile, SidecarExport &sidecar );
-	int ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj );
-
 private:
 	ADFSDirectory *pADFSDirectory;
 
@@ -144,15 +142,8 @@ private:
 	DWORD ValidatedItems;
 	HWND  ValidateWnd;
 
-	NativeFile OverrideFile;
-
-	bool Override;
-
 private:
 	DWORD TranslateSector(DWORD InSector);
-
-	int ResolveAppIcons( void );
-	void FreeAppIcons( void );
 
 	int ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs );
 };

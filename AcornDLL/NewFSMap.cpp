@@ -1084,6 +1084,16 @@ BYTE NewFSMap::BootBlockCheck( BYTE *block )
 	return (BYTE) ( c & 0xFF );
 }
 
+inline void NewFSMap::IDExtend( DWORD *pID )
+{
+	DWORD MinSize = ( IDLen + 1 ) * BPMB;
+
+	if ( *pID < MinSize )
+	{
+		*pID = MinSize;
+	}
+}
+
 void NewFSMap::ConfigureDisk( DWORD FSID )
 {
 	QWORD PhysicalDiskSize = pSource->PhysicalDiskSize;
@@ -1138,11 +1148,14 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 	{
 	case FSID_ADFS_E:
 	case FSID_ADFS_F:
+	case FSID_ADFS_EP:
+	case FSID_ADFS_FP:
 		LogSecSize = 0xA;
 		SecSize    = 0x400;
 		break;
 
 	case FSID_ADFS_HN:
+	case FSID_ADFS_HP:
 		LogSecSize = 0x9;
 		SecSize    = 0x200;
 		break;
@@ -1163,27 +1176,37 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 
 	/* Fill in the other details */
 	LowSector = 0;
-	DiscSize  = (DWORD) PhysicalDiskSize & 0xFFFFFFFF;
+	DiscSize  = PhysicalDiskSize;
 	CycleID   = 0;
 
 	SecsPerTrack = 5;
 	Density      = 2;
 	BootOption   = 0;
 	Skew         = 1;
-	LogSecSize   = 0xA;
 
 	switch ( FSID )
 	{
+	case FSID_ADFS_H:
+		Density += 4;
+		SecsPerTrack += 10;
 	case FSID_ADFS_F:
+	case FSID_ADFS_FP:
 		SecsPerTrack += 5;
 		Density      += 2;
 	case FSID_ADFS_E:
+	case FSID_ADFS_EP:
 		Heads    = 2;
 		DiscType = 0;
 		break;
 
 	case FSID_ADFS_HN:
-		LogSecSize   = 0x9;
+		Heads        = 16;
+		DiscType     = 0x00040000;
+		SecsPerTrack = 0x34;
+		Density      = 0;
+		break;
+
+	case FSID_ADFS_HP:
 		Heads        = 16;
 		DiscType     = 0x00040000;
 		SecsPerTrack = 0x34;
@@ -1216,6 +1239,15 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 			ZoneMapSectors[ z ]  = ( MapAddr / SecSize ) + z;
 			UsedExtraSector[ z ] = 0;
 		}
+	}
+
+	if ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
+	{
+		RootSize = 0x1000; // This will actually be overwritten later.
+	}
+	else
+	{
+		RootSize = 0x800;
 	}
 
 	/* Now fill in the one free fragment for each zone. The middle zone is special, because it contains the root
@@ -1254,12 +1286,30 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 		{
 			Fragment r;
 
-			r.FragID     = 2;
-			r.FragOffset = f.FragOffset;
-			r.Length     = ( ( Zones * 2 ) * SecSize)  + 0x1000;
-			r.Zone       = z;
+			if ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
+			{
+				r.FragID     = 2;
+				r.FragOffset = f.FragOffset;
+				r.Length     = ( ( Zones * 2 ) * SecSize);
+				r.Zone       = z;
 
-			Fragments.push_back( r );
+				IDExtend( &r.Length );
+
+				Fragments.push_back( r );
+			}
+			else
+			{
+				r.FragID     = 2;
+				r.FragOffset = f.FragOffset;
+				r.Length     = ( ( Zones * 2 ) * SecSize)  + 0x1000;
+				r.Zone       = z;
+
+				IDExtend( &r.Length );
+
+				Fragments.push_back( r );
+
+				RootSize = r.Length;
+			}
 
 			f.FragOffset += r.Length / BPMB;
 			f.Length     -= r.Length;
@@ -1275,11 +1325,35 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 			r.Length     = max( MaxID * BPMB, 0x1000 ); // Smallest size possbile
 			r.Zone       = 0;
 
+			IDExtend( &r.Length );
+
 			Fragments.push_back( r );
 
 			f.FragOffset += r.Length / BPMB;
 			f.Length     -= r.Length;
+
 		}
+
+		if ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
+		{
+			Fragment r;
+
+			r.FragID     = 3;
+			r.FragOffset = f.FragOffset;
+			r.Length     = 0x1000;
+			r.Zone       = z;
+
+			IDExtend( &r.Length );
+
+			Fragments.push_back( r );
+
+			RootSize = r.Length;
+
+			f.FragOffset += r.Length / BPMB;
+			f.Length     -= r.Length;
+		}
+
+		IDExtend( &f.Length );
 
 		Fragments.push_back( f );
 
@@ -1287,7 +1361,18 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 	}
 
 	/* Set the root directory location, which is one sector higher because of sub-fragment usage */
-	RootLoc = 0x000200 + ( Zones * 2 ) + 1;
+	if ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
+	{
+		RootLoc = 0x000301;
+
+		FormatVersion = 0x00000001;
+	}
+	else
+	{
+		RootLoc = 0x000200 + ( Zones * 2 ) + 1;
+
+		FormatVersion = 0x00000000;
+	}
 
 	if ( ( FSID == FSID_ADFS_F ) || ( FSID = FSID_ADFS_HN ) )
 	{

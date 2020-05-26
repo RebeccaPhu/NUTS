@@ -170,6 +170,21 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		DestFile.AttrRead   = 0xFFFFFFFF;
 		DestFile.AttrWrite  = 0xFFFFFFFF;
 		DestFile.AttrLocked = 0x00000000;
+
+		if ( ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_L2 ) )
+		{
+			InterpretImportedType( &DestFile );
+		}
+		else
+		{
+			DestFile.LoadAddr = 0xFFFFFFFF;
+			DestFile.ExecAddr = 0xFFFFFFFF;
+		}
+	}
+
+	if ( ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_L2 ) )
+	{
+		SetTimeStamp( &DestFile );
 	}
 
 	DestFile.Flags &= ( 0xFFFFFFFF ^ FF_Extension );
@@ -178,11 +193,11 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	pDirectory->WriteDirectory();
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return r;
 }
@@ -201,11 +216,11 @@ int ADFSFileSystem::ChangeDirectory( DWORD FileID )
 	rstrncat(path, (BYTE *) ".", 512 );
 	rstrncat(path, file->Filename, 512 );
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return r;
 }
@@ -326,7 +341,7 @@ int	ADFSFileSystem::Parent() {
 
 	pADFSDirectory->SetSector( ParentSector );
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	int r = pDirectory->ReadDirectory();
 
@@ -337,7 +352,7 @@ int	ADFSFileSystem::Parent() {
 		*p = 0;
 	}
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return r;
 }
@@ -466,11 +481,11 @@ int	ADFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 		rstrncat(path, Filename, 512 );
 	}
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return r;
 }
@@ -786,92 +801,6 @@ AttrDescriptors ADFSFileSystem::GetFSAttributeDescriptions( void )
 	return Attrs;
 }
 
-int ADFSFileSystem::ResolveAppIcons( void )
-{
-	if ( !UseResolvedIcons )
-	{
-		return 0;
-	}
-
-	DWORD MaskColour = GetSysColor( COLOR_WINDOW );
-
-	NativeFileIterator iFile;
-
-	for (iFile=pDirectory->Files.begin(); iFile!=pDirectory->Files.end(); iFile++)
-	{
-		if ( iFile->Flags & FF_Directory )
-		{
-			ADFSFileSystem TempFS( *this );
-
-			TempFS.ChangeDirectory( iFile->fileID );
-
-			NativeFileIterator iSpriteFile;
-
-			NativeFile *pSpriteFile;
-
-			DWORD PrefSpriteFileId = 0xFFFFFFFF;
-
-			for ( iSpriteFile = TempFS.pDirectory->Files.begin(); iSpriteFile != TempFS.pDirectory->Files.end(); iSpriteFile++)
-			{
-				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "!Sprites" ) )
-				{
-					if ( PrefSpriteFileId == 0xFFFFFFFF )
-					{
-						PrefSpriteFileId = iSpriteFile->fileID;
-					}
-				}
-
-				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "!Sprites22" ) )
-				{
-					PrefSpriteFileId = iSpriteFile->fileID;
-				}
-			}
-
-			if ( PrefSpriteFileId != 0xFFFFFFFF )
-			{
-				pSpriteFile = &( TempFS.pDirectory->Files[ PrefSpriteFileId ] );
-
-				DataSource *pSpriteSource = TempFS.FileDataSource( pSpriteFile->fileID );
-
-				SpriteFile spriteFile( pSpriteSource );
-
-				spriteFile.Init();
-
-				NativeFileIterator iSprite;
-
-				for ( iSprite = spriteFile.pDirectory->Files.begin(); iSprite != spriteFile.pDirectory->Files.end(); iSprite++ )
-				{
-					if ( rstricmp( iSprite->Filename, iFile->Filename ) )
-					{
-						CTempFile FileObj;
-
-						spriteFile.ReadFile( iSprite->fileID, FileObj );
-
-						Sprite sprite( FileObj );
-
-						IconDef icon;
-
-						sprite.GetNaturalBitmap( &icon.bmi, &icon.pImage, MaskColour );
-
-						icon.Aspect = sprite.SpriteAspect;
-
-						if ( sprite.Valid() )
-						{
-							pDirectory->ResolvedIcons[ iFile->fileID ] = icon;
-
-							iFile->HasResolvedIcon = true;
-						}
-					}
-				}
-
-				pSpriteSource->Release();
-			}
-		}
-	}
-
-	return 0;
-}
-
 int ADFSFileSystem::Init(void) {
 	pADFSDirectory	= new ADFSDirectory( pSource );
 	pDirectory = (Directory *) pADFSDirectory;
@@ -898,7 +827,9 @@ int ADFSFileSystem::Init(void) {
 		return -1;
 	}
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
+
+	CommonUseResolvedIcons = UseResolvedIcons;
 
 	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 	{
@@ -934,21 +865,23 @@ int ADFSFileSystem::Init(void) {
 		}
 	}
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return 0;
 }
 
 int ADFSFileSystem::Refresh( void )
 {
-	FreeAppIcons();
+	CommonUseResolvedIcons = UseResolvedIcons;
+
+	FreeAppIcons( pDirectory );
 
 	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 	{
 		return -1;
 	}
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return 0;
 }
@@ -1221,14 +1154,14 @@ int ADFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 		}
 	}
 
-	FreeAppIcons();
+	FreeAppIcons( pDirectory );
 
 	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 	{
 		return -1;
 	}
 
-	ResolveAppIcons();
+	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return FILEOP_SUCCESS;
 }
@@ -1533,117 +1466,4 @@ FileSystem *ADFSFileSystem::FileFilesystem( DWORD FileID )
 	}
 
 	return nullptr;
-}
-
-int ADFSFileSystem::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
-{
-	rstrncpy( sidecar.Filename, pFile->Filename, 16 );
-	rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
-
-	BYTE INFData[80];
-
-	rsprintf( INFData, "$.%s %06X %06X %s\n", pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
-
-	CTempFile *pTemp = (CTempFile *) sidecar.FileObj;
-
-	pTemp->Seek( 0 );
-	pTemp->Write( INFData, rstrnlen( INFData, 80 ) );
-
-	return 0;
-}
-
-int ADFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj )
-{
-	int r = 0;
-
-	if ( obj == nullptr )
-	{
-		rstrncpy( sidecar.Filename, pFile->Filename, 16 );
-		rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
-	}
-	else
-	{
-		BYTE bINFData[ 256 ];
-
-		ZeroMemory( bINFData, 256 );
-
-		obj->Seek( 0 );
-		obj->Read( bINFData, min( 256, obj->Ext() ) );
-
-		std::string INFData( (char *) bINFData );
-
-		std::istringstream iINFData( INFData );
-
-		std::vector<std::string> parts((std::istream_iterator<std::string>(iINFData)), std::istream_iterator<std::string>());
-
-		OverrideFile = *pFile;
-
-		/* Need at least 3 parts */
-		if ( parts.size() < 3 )
-		{
-			return 0;
-		}
-
-		try
-		{
-			/* Part deux is the load address. We'll use std::stoull */
-			OverrideFile.LoadAddr = std::stoul( parts[ 1 ], nullptr, 16 );
-			OverrideFile.LoadAddr &= 0xFFFFFF;
-
-			/* Part the third is the exec address. Same again. */
-			OverrideFile.ExecAddr = std::stoul( parts[ 2 ], nullptr, 16 );
-			OverrideFile.ExecAddr &= 0xFFFFFF;
-		}
-
-		catch ( std::exception &e )
-		{
-			/* eh-oh */
-			return NUTSError( 0x2E, L"Bad sidecar file" );
-		}
-
-		/* Fix the standard attrs */
-		OverrideFile.AttrRead   = 0xFFFFFFFF;
-		OverrideFile.AttrWrite  = 0xFFFFFFFF;
-		OverrideFile.AttrLocked = 0x00000000;
-
-		/* Look through the remaining parts for "L" or "Locked" */
-		for ( int i=3; i<parts.size(); i++ )
-		{
-			if ( ( parts[ i ] == "L" ) || ( parts[ i ] == "Locked" ) )
-			{
-				OverrideFile.AttrLocked = 0xFFFFFFFF;
-			}
-		}
-
-		OverrideFile.Flags = 0;
-		
-		/*  Copy the filename - but we must remove the lading directory prefix*/
-		if ( parts[ 0 ].substr( 1, 1 ) == "." )
-		{
-			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
-		}
-		else
-		{
-			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
-		}
-
-		Override = true;
-	}
-
-	return r;
-}
-
-void ADFSFileSystem::FreeAppIcons( void )
-{
-	ResolvedIcon_iter iIcon;
-
-	for ( iIcon = pDirectory->ResolvedIcons.begin(); iIcon != pDirectory->ResolvedIcons.end(); iIcon++ )
-	{
-		if ( iIcon->second.pImage != nullptr )
-		{
-			free( iIcon->second.pImage );
-		}
-	}
-
-	pDirectory->ResolvedIcons.clear();
 }

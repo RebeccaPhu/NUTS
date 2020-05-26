@@ -145,7 +145,7 @@ FSDescriptor AcornFS[19] = {
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 3.2M (G)",
-		/* .PUID         = */ FSID_ADFS_F,
+		/* .PUID         = */ FSID_ADFS_G,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
 		0, { }, { },
 		0, { }, { }, { },
@@ -399,9 +399,9 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 				   We'll do a test for this to see if we need to use a headered data source. */
 				BYTE BootBlock[ 0x200 ];
 
-				pSource->ReadRaw( 0xDC0, 0x200, BootBlock );
+				pSource->ReadRaw( 0xC00, 0x200, BootBlock );
 
-				if ( NewFSMap::BootBlockCheck( BootBlock ) == BootBlock[ 0x1FF ] )
+				if ( ( NewFSMap::BootBlockCheck( BootBlock ) == BootBlock[ 0x1FF ] ) && ( BootBlock[ 0x1C0 ] != 0x00 ) )
 				{
 					/* Regular image */
 					pFS = new ADFSEFileSystem( pSource );

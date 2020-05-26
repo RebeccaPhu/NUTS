@@ -4,8 +4,9 @@
 #include "NewFSMap.h"
 #include "ADFSEDirectory.h"
 #include "SpriteFile.h"
+#include "ADFSCommon.h"
 
-class ADFSEFileSystem : public FileSystem
+class ADFSEFileSystem : public FileSystem, ADFSCommon
 {
 public:
 	ADFSEFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) {
@@ -70,26 +71,7 @@ public:
 
 	FSHint Offer( BYTE *Extension );
 
-	int Init(void) {
-		pEDirectory	= new ADFSEDirectory( pSource );
-		pDirectory = (Directory *) pEDirectory;
-
-		pFSMap  = new NewFSMap( pSource );
-
-		pEDirectory->pMap = pFSMap;
-
-		pFSMap->ReadFSMap();
-
-		pEDirectory->DirSector = pFSMap->RootLoc;
-		pEDirectory->SecSize   = pFSMap->SecSize;
-
-		pDirectory->ReadDirectory();
-
-		ResolveAppIcons();
-
-		return 0;
-	}
-
+	int  Init(void);
 	int  ChangeDirectory( DWORD FileID );
 	int	 Parent();
 	int  Refresh( void );
@@ -120,7 +102,6 @@ public:
 	AttrDescriptors GetAttributeDescriptions( void );
 	AttrDescriptors GetFSAttributeDescriptions( void );
 
-	int ResolveAppIcons( void );
 	int ResolveAuxFileType( NativeFile *pSprite, NativeFile *pFile, SpriteFile &spriteFile );
 
 	DWORD GetEncoding(void )
@@ -128,22 +109,14 @@ public:
 		return ENCODING_ACORN;
 	}
 
-	int ExportSidecar( NativeFile *pFile, SidecarExport &sidecar );
-	int ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj );
-
 	int SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );
 
 	int Format_Process( FormatType FT, HWND hWnd );
 	int Format_PreCheck( int FormatType, HWND hWnd );	
 
-private:
-	NativeFile OverrideFile;
-
-	bool Override;
+	bool IncludeEmuHeader;
 
 private:
-	void FreeAppIcons( void );
-
 	TargetedFileFragments FindSpace( DWORD Length, bool ForDir );
 };
 

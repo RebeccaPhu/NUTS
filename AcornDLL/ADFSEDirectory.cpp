@@ -169,6 +169,10 @@ int	ADFSEDirectory::ReadPDirectory( void ) {
 		{
 			iFrag = Frags.end();
 		}
+		else
+		{
+			iFrag++;
+		}
 	}
 
 	Files.clear();

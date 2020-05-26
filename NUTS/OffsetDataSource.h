@@ -15,9 +15,9 @@ public:
 	virtual int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 	virtual int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
+	DataSource *pSrc;
+
 private:
 	DWORD SourceOffset;
-
-	DataSource *pSrc;
 };
 

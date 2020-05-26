@@ -101,5 +101,6 @@ private:
 	void  ReadDiscRecord( BYTE *pRecord );
 	void  WriteDiscRecord( BYTE *pRecord, bool Partial );
 	void  ReorderWriteFragments( TargetedFileFragments *pFrags );
+	void  IDExtend( DWORD *pID );
 };
 

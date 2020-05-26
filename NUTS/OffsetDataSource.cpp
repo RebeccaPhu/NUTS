@@ -7,6 +7,9 @@ OffsetDataSource::OffsetDataSource( DWORD Offset, DataSource *pSource )
 	SourceOffset = Offset;
 	pSrc         = pSource;
 
+	PhysicalDiskSize = pSrc->PhysicalDiskSize;
+	LogicalDiskSize  = pSrc->LogicalDiskSize;
+
 	pSrc->Retain();
 }
 
