@@ -1,6 +1,8 @@
 #pragma once
 #include "imagedatasource.h"
 
+#include <time.h>
+
 #include "Defs.h"
 
 class NestedImageSource :
@@ -14,11 +16,24 @@ public:
 	int WriteSector(long Sector, void *pSectorBuf, long SectorSize);
 	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
+	int Observe( void );
+
 private:
 	void *pSourceFS;
 
 	std::wstring TempPath;
 
 	NativeFile SourceObject;
+
+	HANDLE hObserverThread;
+	HANDLE hTerminate;
+
+	time_t DirtyTime;
+	bool   Dirty;
+	
+	CRITICAL_SECTION StatusLock;
+
+private:
+	void CreateObserver( void );
 };
 
