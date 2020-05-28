@@ -114,6 +114,7 @@ typedef enum _FSFlags {
 	FSF_Capacity         = 0x00002000,
 	FSF_Reorderable      = 0x00004000,
 	FSF_Exports_Sidecars = 0x00008000,
+	FSF_Prohibit_Nesting = 0x00010000,
 } FSFlags;
 
 typedef struct _ProviderDesc {
@@ -337,5 +338,6 @@ typedef FSToolList::iterator FSToolIterator;
 #define WM_TEXT_PROGRESS    (WM_APP + 26)
 #define WM_EXTERNALDROP     (WM_APP + 27)
 #define WM_THREADDONE       (WM_APP + 28)
+#define WM_FILEOP_NOTICE    (WM_APP + 29)
 
 #define TUID_TEXT           0x73477347

@@ -219,3 +219,15 @@ int SpriteFile::ResolveIcons( void )
 
 	return 0;
 }
+
+int SpriteFile::Rename( DWORD FileID, BYTE *NewName )
+{
+	rstrncpy( pDirectory->Files[ FileID ].Filename, NewName, 256 );
+
+	int r = pDirectory->WriteDirectory();
+
+	pDirectory->ReadDirectory();
+
+	return r;
+}
+

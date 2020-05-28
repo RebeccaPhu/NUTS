@@ -50,6 +50,8 @@ bool    YesOnce     = false;
 bool    NoOnce      = false;
 bool    NoToAll     = false;
 bool    Paused      = false;
+bool    Hunting     = false;
+DWORD   HuntCount   = 0;
 
 static DWORD dwthreadid  = 0;
 
@@ -89,6 +91,10 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 	{
 		if ( iFile->Flags & FF_Directory )
 		{
+			HuntCount++;
+
+			::PostMessage( hFileWnd, WM_FILEOP_NOTICE, 0, (LPARAM) HuntCount );
+
 			/* Found a directory. Recurse it. */
 			FileOpStep step;
 
@@ -125,6 +131,10 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 	{
 		if ( ( ! (iFile->Flags & FF_Directory) ) || ( CurrentAction.Action == AA_DELETE ) || ( CurrentAction.Action == AA_SET_PROPS ) )
 		{
+			HuntCount++;
+
+			::PostMessage( hFileWnd, WM_FILEOP_NOTICE, 0, (LPARAM) HuntCount );
+
 			FileOpStep step;
 
 			step.Object = *iFile;
@@ -169,6 +179,10 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 
 	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
 	{
+		HuntCount++;
+
+		::PostMessage( hFileWnd, WM_FILEOP_NOTICE, 0, (LPARAM) HuntCount );
+
 		FileOpStep step;
 
 		CFileViewer *pPane = (CFileViewer *) CurrentAction.Pane;
@@ -386,6 +400,10 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 		return 0;
 	}
+
+	Hunting = false;
+
+	::PostMessage( hFileWnd, WM_FILEOP_NOTICE, 0, (LPARAM) HuntCount );
 
 	std::vector<FileOpStep>::iterator iStep;
 
@@ -916,22 +934,35 @@ void DrawFilename( HWND hWnd, NativeFile *pFile )
 		FillRect( hDC, &rect, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
 		FrameRect( hDC, &rect, (HBRUSH) GetStockObject( BLACK_BRUSH ) );
 
-		std::vector<TitleComponent> Stack = pSourcePane->GetTitleStack();
-
-		if ( CurrentAction.Action == AA_INSTALL )
+		if ( Hunting )
 		{
-			TitleComponent title;
+			BYTE HuntingText[ 64 ];
 
-			FileSystem *pFS = (FileSystem *) CurrentAction.FS;
+			rsprintf( HuntingText, "Found %d objects...", HuntCount );
+		
+			FontBitmap HuntText( FONTID_PC437, HuntingText, 63, false, false );
 
-			rstrncpy( title.String, pFS->GetTitleString( pFile ), 512 );
-			
-			title.Encoding = pFS->GetEncoding();
-			
-			Stack.push_back( title );
+			HuntText.DrawText( hDC, FNLeft, FNTop, DT_LEFT | DT_TOP );
 		}
+		else
+		{
+			std::vector<TitleComponent> Stack = pSourcePane->GetTitleStack();
 
-		DrawClippedTitleStack( &Stack, hDC, pFile );
+			if ( CurrentAction.Action == AA_INSTALL )
+			{
+				TitleComponent title;
+
+				FileSystem *pFS = (FileSystem *) CurrentAction.FS;
+
+				rstrncpy( title.String, pFS->GetTitleString( pFile ), 512 );
+			
+				title.Encoding = pFS->GetEncoding();
+			
+				Stack.push_back( title );
+			}
+
+			DrawClippedTitleStack( &Stack, hDC, pFile );
+		}
 	}
 
 	ReleaseDC( hWnd, hDC );
@@ -1053,12 +1084,39 @@ WCHAR *ExplainAttrs( void )
 	return explain;
 }
 
+void StopOps( void )
+{
+	SetEvent( hFileCancel );
+
+	if ( WaitForSingleObject( hFileThread, 500 ) == WAIT_TIMEOUT )
+	{
+		TerminateThread( hFileThread, 500 );
+	}
+
+	DeleteCriticalSection( &RedrawLock );
+
+	if ( hIconDC != NULL ) { DeleteDC( hIconDC ); }
+	if ( hNameDC != NULL ) { DeleteDC( hNameDC ); }
+
+	if ( hNameBMP != NULL ) { DeleteObject( (HGDIOBJ) hNameBMP ); }
+
+	if ( hFileThread != NULL ) { CloseHandle( hFileThread ); }
+	if ( hFileCancel != NULL ) { CloseHandle( hFileCancel ); }
+
+	hIconDC     = NULL;
+	hNameDC     = NULL;
+	hNameBMP    = NULL;
+	hFileThread = NULL;
+	hFileCancel = NULL;
+}
+
 INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	static HFONT hFont = NULL;
 	static WCHAR *title;
-	static const WCHAR *CopyTitle   = L" Copy item";
-	static const WCHAR *DeleteTitle = L" Delete item";
+	static const WCHAR *CopyTitle   = L" Copy item(s)";
+	static const WCHAR *DeleteTitle = L" Delete item(s)";
 	static const WCHAR *SetProps    = L" Set File Properties";
+	static const WCHAR *Install     = L" Install Disk(s)";
 
 	switch (uMsg) {
 		case WM_CTLCOLORSTATIC:
@@ -1089,8 +1147,11 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 				if ( Btn == IDC_FILE_CANCEL )
 				{
-					// TODO: Stop file ops
+					StopOps();
+
 					EndDialog( hwndDlg, 0 );
+
+					hFileWnd = NULL;
 				}
 
 				bool DidFileQuery = false;
@@ -1147,6 +1208,9 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			break;
 
 		case WM_INITDIALOG:
+			Hunting   = true;
+			HuntCount = 0;
+
 			InitializeCriticalSection( &RedrawLock );
 
 			hFileWnd = hwndDlg;
@@ -1157,6 +1221,11 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			}
 
 			::SendMessage( GetDlgItem( hwndDlg, IDC_FILEOP_TITLE ), WM_SETFONT, (WPARAM) hFont, 0 );
+
+			if ( CurrentAction.Action == AA_INSTALL )
+			{
+				::SendMessageW( GetDlgItem( hwndDlg, IDC_FILEOP_TITLE ), WM_SETTEXT, 0, (LPARAM) Install );
+			}
 
 			if ( CurrentAction.Action == AA_COPY )
 			{
@@ -1207,16 +1276,11 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			return FALSE;
 
 		case WM_CLOSE:
-			SetEvent( hFileCancel );
-
-			if ( WaitForSingleObject( hFileThread, 500 ) == WAIT_TIMEOUT )
-			{
-				TerminateThread( hFileThread, 500 );
-			}
+			StopOps();
 
 			EndDialog(hwndDlg,0);
 
-			DeleteCriticalSection( &RedrawLock );
+			hFileWnd = NULL;
 
 			return TRUE;
 
@@ -1229,6 +1293,18 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			SendMessage( GetDlgItem( hwndDlg, IDC_FILE_PROGRESS ), PBM_SETPOS, wParam, 0 );
 
 			return FALSE;
+
+		case WM_FILEOP_NOTICE:
+			{
+				HuntCount = (DWORD) lParam;
+
+				RECT r;
+
+				GetClientRect( hwndDlg, &r );
+
+				InvalidateRect( hwndDlg, &r, FALSE );
+			}
+			break;
 
 		case WM_FILEOP_REDRAW:
 			{

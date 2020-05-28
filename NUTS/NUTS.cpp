@@ -1211,17 +1211,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			CFileViewer *pane   = &leftPane;
 			CFileViewer *target = &rightPane;
 
+			if ( wParam == (WPARAM) rightPane.hWnd )
+			{
+				pane   = &rightPane;
+				target = &leftPane;
+			}
+
 			if ( ! (target->FS->Flags & FSF_Supports_Dirs ) )
 			{
 				MessageBox( pane->hWnd, L"The target file system does not support directories. The 'Install' function cannot be used.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
 
 				break;
-			}
-
-			if ( wParam == (WPARAM) rightPane.hWnd )
-			{
-				pane   = &rightPane;
-				target = &leftPane;
 			}
 
 			AppAction Action;

@@ -1359,6 +1359,12 @@ void CFileViewer::EndDragging() {
 
 void CFileViewer::PopulateFSMenus( HMENU hPopup )
 {
+	/* If the FS doesn't support containing images, don't populate this */
+	if ( FS->Flags & FSF_Prohibit_Nesting )
+	{
+		return;
+	}
+
 	HMENU hSubMenu = GetSubMenu(hPopup, 0);	
 
 	HMENU hProviderMenu = CreatePopupMenu();

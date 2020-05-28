@@ -54,32 +54,32 @@ public:
 	}
 
 	virtual	int	ReadFile(DWORD FileID, CTempFile &store) {
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual	int	WriteFile(NativeFile *pFile, CTempFile &store) {
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual	int	ReplaceFile(NativeFile *pFile, CTempFile &store) {
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual int ChangeDirectory( DWORD FileID ) {
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual int	Parent() {
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual int	CreateDirectory( BYTE *Filename, bool EnterAfter ) {
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual FSHint Offer( BYTE *Extension )
 	{
-		NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 
 		return FSHint( );
 	}
@@ -129,7 +129,7 @@ public:
 	}
 
 	virtual int DeleteFile( NativeFile *pFile, int FileOp ) {
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual int Init(void) {
@@ -158,7 +158,7 @@ public:
 
 	virtual int SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
 	{
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual WCHAR *Identify( DWORD FileID )
@@ -260,7 +260,7 @@ public:
 
 	virtual int RunTool( BYTE ToolNum, HWND ProgressWnd )
 	{
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	Directory	*pDirectory;
@@ -290,7 +290,7 @@ public:
 
 	virtual int CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	{
-		return NUTSError( ERROR_UNSUPPORTED, L"Operated not supported" );
+		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
 	virtual int CancelSpace( void )

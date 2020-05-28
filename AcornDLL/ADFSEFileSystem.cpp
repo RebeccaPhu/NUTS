@@ -155,6 +155,12 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 
 	pFSMap->ReadDiscRecord( &SectorBuf[ 4 ] );
 
+	if ( SecSize > 0x400 )
+	{
+		/* No ADFS disk is *that* big */
+		return hint;
+	}
+
 	CheckByte = pFSMap->ZoneCheck( SectorBuf, SecSize );
 
 	if ( CheckByte == SectorBuf[ 0 ] )
@@ -737,7 +743,10 @@ int ADFSEFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 			{
 				BlkNum = (DWORD) ( (double) Blk / BlockRatio );
 
-				assert( BlkNum < TotalBlocks );
+				if ( BlkNum >= TotalBlocks )
+				{
+					continue;
+				}
 					
 				if ( ( pBlockMap[ BlkNum ] == BlockFree ) || ( pBlockMap[ BlkNum ] == BlockUsed ) )
 				{

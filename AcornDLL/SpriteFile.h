@@ -10,7 +10,7 @@ public:
 		pSource = pDataSource;
 
 		FSID  = FSID_SPRITE;
-		Flags = FSF_Size;
+		Flags = FSF_Size | FSF_Prohibit_Nesting;
 
 		pSpriteDirectory = nullptr;
 	}
@@ -41,11 +41,6 @@ public:
 		return 0;
 	}
 
-	bool IsRoot()
-	{
-		return true;
-	}
-
 	int ReadFile(DWORD FileID, CTempFile &store);
 	int WriteFile(NativeFile *pFile, CTempFile &store);
 
@@ -70,6 +65,8 @@ public:
 
 		return 0;
 	}
+
+	int Rename( DWORD FileID, BYTE *NewName );
 
 	int  ResolveIcons( void );
 	int  FreeIcons( void );
