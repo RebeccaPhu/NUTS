@@ -1583,13 +1583,17 @@ int ADFSEFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 		InterpretNativeType(  &pDirectory->Files[ FileID ]  );
 	}
 
+	FreeAppIcons( pDirectory );
+
 	int r = pDirectory->WriteDirectory();
 	{
 		if ( r == DS_SUCCESS )
 		{
-			r =pDirectory->ReadDirectory();
+			r = pDirectory->ReadDirectory();
 		}
 	}
+
+	ResolveAppIcons<ADFSEFileSystem>( this );
 
 	return 0;
 }

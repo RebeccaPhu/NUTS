@@ -222,11 +222,79 @@ int SpriteFile::ResolveIcons( void )
 
 int SpriteFile::Rename( DWORD FileID, BYTE *NewName )
 {
+	DWORD Offset = (DWORD) pDirectory->Files[ FileID ].Attributes[ 0 ];
+
+	BYTE SpriteName[ 12 ];
+
+	/* Update our directory's copy */
 	rstrncpy( pDirectory->Files[ FileID ].Filename, NewName, 256 );
 
-	int r = pDirectory->WriteDirectory();
+	/* Update the file itself */
+	rstrncpy( SpriteName, NewName, 256 );
 
-	pDirectory->ReadDirectory();
+	pSource->WriteRaw( Offset + 4, 12, SpriteName );
+
+	/* Re-read the directory to update */
+	FreeIcons();
+
+	int r = pDirectory->ReadDirectory();
+
+	ResolveIcons();
+
+	return r;
+}
+
+AttrDescriptors SpriteFile::GetAttributeDescriptions( void )
+{
+	static std::vector<AttrDesc> Attrs;
+
+	Attrs.clear();
+
+	AttrDesc Attr;
+
+	/* Start offset. Hex, visible, disabled */
+	Attr.Index = 0;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrHex | AttrFile;
+	Attr.Name  = L"File offset";
+	Attrs.push_back( Attr );
+
+	/* Mode */
+	Attr.Index = 1;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrDec | AttrFile;
+	Attr.Name  = L"Mode";
+	Attrs.push_back( Attr );
+
+	/* Width */
+	Attr.Index = 2;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrDec | AttrFile;
+	Attr.Name  = L"Width";
+	Attrs.push_back( Attr );
+
+	/* Height */
+	Attr.Index = 3;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrDec | AttrFile;
+	Attr.Name  = L"Height";
+	Attrs.push_back( Attr );
+
+	/* BPP */
+	Attr.Index = 4;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrDec | AttrFile;
+	Attr.Name  = L"Bits per pixel";
+	Attrs.push_back( Attr );
+
+
+	return Attrs;
+}
+
+/* Simplest formatter ever */
+int SpriteFile::Format_Process( FormatType FT, HWND hWnd ) {
+	DWORD Header[ 4 ] = { 0, 20, 20, 0 };
+
+	int r = pSource->WriteRaw( 0, 16, (BYTE *) Header );
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, 100, 0);
+
+	/* No seriously, that's it. It creates a basic header that says "No sprites here". */
 
 	return r;
 }

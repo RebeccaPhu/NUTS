@@ -76,6 +76,10 @@ public:
 		return ENCODING_ACORN;
 	}
 
+	AttrDescriptors GetAttributeDescriptions( void );
+
+	int Format_Process( FormatType FT, HWND hWnd );
+
 private:
 	SpriteFileDirectory *pSpriteDirectory;
 };

@@ -1554,6 +1554,8 @@ int ADFSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 		}
 	}
 
+	FreeAppIcons( pDirectory );
+
 	int r = pDirectory->WriteDirectory();
 	{
 		if ( r == DS_SUCCESS )
@@ -1561,6 +1563,8 @@ int ADFSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 			r =pDirectory->ReadDirectory();
 		}
 	}
+
+	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return r;
 }

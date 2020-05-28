@@ -3,6 +3,7 @@
 #include "RISCOSIcons.h"
 #include "Defs.h"
 #include "../nuts/libfuncs.h"
+#include "Sprite.h"
 
 int	SpriteFileDirectory::ReadDirectory( void ) {
 
@@ -23,14 +24,14 @@ int	SpriteFileDirectory::ReadDirectory( void ) {
 
 	for ( DWORD SpriteNum = 0; SpriteNum < NumSprites; SpriteNum++ )
 	{
-		if ( ( SpriteOffset + 16 ) > MaxFile )
+		if ( ( SpriteOffset + 0x2C ) > MaxFile )
 		{
 			return 0;
 		}
 
-		BYTE SpriteHeader[16];
+		BYTE SpriteHeader[ 0x2C ];
 
-		pSource->ReadRaw( SpriteOffset, 16, SpriteHeader );
+		pSource->ReadRaw( SpriteOffset, 0x2C, SpriteHeader );
 
 		DWORD NextSprite = * (DWORD *) &SpriteHeader[ 0 ];
 
@@ -50,6 +51,16 @@ int	SpriteFileDirectory::ReadDirectory( void ) {
 		file.Filename[  13 ] = 0;
 
 		rstrncpy( file.Filename, &SpriteHeader[ 4 ], 12 );
+
+		/* Fill in some attributes. None editable, but informational to the user */
+		DWORD WidthWords = * (DWORD *) &SpriteHeader[ 0x10 ];
+		DWORD LeftBit    = * (DWORD *) &SpriteHeader[ 0x18 ];
+		DWORD RightBit   = * (DWORD *) &SpriteHeader[ 0x1C ];
+
+		file.Attributes[ 1 ] = * (DWORD *) &SpriteHeader[ 0x28 ];
+		file.Attributes[ 4 ] = Sprite::BPPs[ file.Attributes[ 1 ] ];
+		file.Attributes[ 2 ] = ( ( WidthWords * 32 ) + RightBit + 1 - LeftBit ) / file.Attributes[ 4 ];
+		file.Attributes[ 3 ] = * (DWORD *) &SpriteHeader[ 0x14 ];
 
 		Files.push_back( file );
 
