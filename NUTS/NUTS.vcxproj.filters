@@ -195,6 +195,9 @@
     <ClCompile Include="OffsetDataSource.cpp">
       <Filter>Source Files\Data Sources</Filter>
     </ClCompile>
+    <ClCompile Include="SourceFunctions.cpp">
+      <Filter>Source Files\Functions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -349,6 +352,9 @@
     </ClInclude>
     <ClInclude Include="OffsetDataSource.h">
       <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFunctions.h">
+      <Filter>Header Files\Functions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

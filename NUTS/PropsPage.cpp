@@ -1242,6 +1242,8 @@ void HandleAttributeMessage( HWND hSourceWnd, UINT uMsg, UINT v )
 					}
 
 					pControl->pComboClass->SetSelText( NumBuf );
+
+					pControl->CurrentValue = pControl->SourceAttr->Options[ SelIndex ].EquivalentValue;
 				}
 				else
 				{
@@ -1427,6 +1429,8 @@ void HandleFSAttributeMessage( HWND hSourceWnd, UINT uMsg, UINT v )
 					}
 
 					pControl->pComboClass->SetSelText( NumBuf );
+
+					pControl->CurrentValue = pControl->SourceAttr->Options[ SelIndex ].EquivalentValue;
 				}
 				else
 				{

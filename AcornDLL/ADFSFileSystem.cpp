@@ -74,6 +74,32 @@ int	ADFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	return 0;
 }
 
+int ADFSFileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
+{
+	NativeFileIterator iFile;
+
+	/* Delete the original file */
+	NativeFile theFile = pDirectory->Files[ pFile->fileID ];
+
+	DeleteFile( &theFile, FILEOP_DELETE_FILE );
+
+	/* Write the new data */
+	pFile->Length = store.Ext();
+
+	WriteFile( pFile, store );
+
+	/* Update the reference */
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( FilenameCmp( pFile, &*iFile ) )
+		{
+			*pFile = *iFile;
+		}
+	}
+
+	return 0;
+}
+
 int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 {
 	if ( Override )
@@ -1524,7 +1550,7 @@ int ADFSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 		if ( PostType != PreType )
 		{
 			/* The type was changed, update the load/exec stuff from it */
-			InterpretImportedType(  &pDirectory->Files[ FileID ]  );
+			InterpretNativeType(  &pDirectory->Files[ FileID ]  );
 		}
 	}
 

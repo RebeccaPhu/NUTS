@@ -44,6 +44,41 @@ int	AcornDFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	return 0;
 }
 
+int AcornDFSFileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
+{
+	NativeFileIterator iFile;
+
+	/* Delete the original file */
+	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
+	{
+		if ( ( rstrnicmp( pFile->Filename, iFile->Filename, 7 ) ) && ( iFile->AttrPrefix == pFile->AttrPrefix ) ) /* DFS limits files to 7 chars */
+		{
+			DeleteFile( &*iFile, FILEOP_DELETE_FILE );
+
+			break;
+		}
+	}
+
+	/* Write the new data */
+	pFile->Length = store.Ext();
+
+	WriteFile( pFile, store );
+
+	/* Update the reference */
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( ( rstrnicmp( pFile->Filename, iFile->Filename, 7 ) ) && ( iFile->AttrPrefix == pFile->AttrPrefix ) ) /* DFS limits files to 7 chars */
+		{
+			*pFile = *iFile;
+
+			break;
+		}
+	}
+
+	return 0;
+}
+
+
 int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 {
 	if ( Override )

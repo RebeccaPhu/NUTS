@@ -1202,14 +1202,14 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 	case FSID_ADFS_HN:
 		Heads        = 16;
 		DiscType     = 0x00040000;
-		SecsPerTrack = 0x34;
+		SecsPerTrack = 0x3F;
 		Density      = 0;
 		break;
 
 	case FSID_ADFS_HP:
 		Heads        = 16;
 		DiscType     = 0x00040000;
-		SecsPerTrack = 0x34;
+		SecsPerTrack = 0x3F;
 		Density      = 0;
 		break;
 	}

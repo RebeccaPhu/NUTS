@@ -109,6 +109,7 @@ protected:
 	bool CommonUseResolvedIcons;
 
 	void InterpretImportedType( NativeFile *pFile );
+	void InterpretNativeType( NativeFile *pFile );
 	void SetTimeStamp( NativeFile *pFile );
 };
 

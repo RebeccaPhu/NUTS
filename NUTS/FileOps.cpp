@@ -715,14 +715,14 @@ unsigned int __stdcall FileOpThread(void *param) {
 					if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
 					{
 						NUTSError::Report( L"Set File Properties", hFileWnd );
-
-						break;
 					}
+
+					break;
 				}
 
 				if ( !Confirm )
 				{
-					/* File exists and the user doesn't care */
+					/* User doesn't care */
 					if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
 					{
 						NUTSError::Report( L"Set File Properties", hFileWnd );

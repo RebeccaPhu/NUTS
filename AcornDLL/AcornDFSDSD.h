@@ -76,6 +76,8 @@ public:
 		return -1;
 	}
 
+	int  ReplaceFile(NativeFile *pFile, CTempFile &store);
+
 	DataSource *FileDataSource( DWORD FileID );
 
 	bool  IsRoot() { return true; }

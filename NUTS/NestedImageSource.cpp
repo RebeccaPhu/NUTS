@@ -28,3 +28,19 @@ int NestedImageSource::WriteSector(long Sector, void *pSectorBuf, long SectorSiz
 
 	return pFS->ReplaceFile( &SourceObject, FileObj );
 }
+
+int NestedImageSource::WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
+{
+	FileSystem *pFS = (FileSystem *) pSourceFS;
+
+	if ( ImageDataSource::WriteRaw( Offset, Length, pBuffer ) != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	CTempFile FileObj( TempPath.c_str() );
+
+	FileObj.Keep();
+
+	return pFS->ReplaceFile( &SourceObject, FileObj );
+}

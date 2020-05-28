@@ -118,6 +118,8 @@ public:
 
 	int SetProps( DWORD FileID, NativeFile *Changes );
 
+	int ReplaceFile(NativeFile *pFile, CTempFile &store);
+
 private:
 	TargetedFileFragments FindSpace( DWORD Length, bool ForDir );
 };

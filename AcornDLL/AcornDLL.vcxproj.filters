@@ -108,6 +108,9 @@
     <ClCompile Include="ADFSCommon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\NUTS\SourceFunctions.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AcornDFSDirectory.h">

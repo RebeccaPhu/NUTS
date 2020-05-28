@@ -190,6 +190,19 @@ void ADFSCommon::InterpretImportedType( NativeFile *pFile )
 	pFile->LoadAddr |= 0xFFF00000;
 }
 
+void ADFSCommon::InterpretNativeType( NativeFile *pFile )
+{
+	if ( pFile->LoadAddr & 0xFFF00000 != 0xFFF00000 )
+	{
+		return;
+	}
+
+	DWORD FT = pFile->RISCTYPE;
+
+	pFile->LoadAddr  = ( pFile->LoadAddr & 0x000000FF ) | ( FT << 8 );
+	pFile->LoadAddr |= 0xFFF00000;
+}
+
 void ADFSCommon::SetTimeStamp( NativeFile *pFile )
 {
 	if ( pFile->LoadAddr & 0xFFF00000 != 0xFFF00000 )

@@ -97,6 +97,7 @@
     <ClCompile Include="..\NUTS\NUTSError.cpp" />
     <ClCompile Include="..\NUTS\OffsetDataSource.cpp" />
     <ClCompile Include="..\NUTS\Preference.cpp" />
+    <ClCompile Include="..\NUTS\SourceFunctions.cpp" />
     <ClCompile Include="..\NUTS\TempFile.cpp" />
     <ClCompile Include="AcornDFSDirectory.cpp" />
     <ClCompile Include="AcornDFSDSD.cpp" />

@@ -12,6 +12,7 @@ public:
 
 public:
 	int WriteSector(long Sector, void *pSectorBuf, long SectorSize);
+	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
 private:
 	void *pSourceFS;

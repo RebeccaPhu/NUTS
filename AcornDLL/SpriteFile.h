@@ -32,6 +32,8 @@ public:
 
 		pDirectory = (Directory *) pSpriteDirectory;
 
+		FreeIcons();
+
 		pDirectory->ReadDirectory();
 
 		ResolveIcons();
@@ -45,6 +47,7 @@ public:
 	}
 
 	int ReadFile(DWORD FileID, CTempFile &store);
+	int WriteFile(NativeFile *pFile, CTempFile &store);
 
 	BYTE *DescribeFile(DWORD FileIndex);
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
@@ -69,6 +72,7 @@ public:
 	}
 
 	int  ResolveIcons( void );
+	int  FreeIcons( void );
 
 	DWORD GetEncoding( void )
 	{

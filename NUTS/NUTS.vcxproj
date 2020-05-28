@@ -113,6 +113,7 @@
     <ClCompile Include="PropsPage.cpp" />
     <ClCompile Include="RawDataSource.cpp" />
     <ClCompile Include="SCREENTranslator.cpp" />
+    <ClCompile Include="SourceFunctions.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -155,6 +156,7 @@
     <ClInclude Include="FloppyDataSource.h" />
     <ClInclude Include="FontBitmap.h" />
     <ClInclude Include="IconRatio.h" />
+    <ClInclude Include="SourceFunctions.h" />
     <ClInclude Include="ImageWizard.h" />
     <ClInclude Include="NestedImageSource.h" />
     <ClInclude Include="NUTSError.h" />

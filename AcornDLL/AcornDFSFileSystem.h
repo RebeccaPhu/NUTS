@@ -26,6 +26,7 @@ public:
 
 	int	 ReadFile(DWORD FileID, CTempFile &store);
 	int  WriteFile(NativeFile *pFile, CTempFile &store);
+	int  ReplaceFile(NativeFile *pFile, CTempFile &store);
 	int  DeleteFile( NativeFile *pFile, int FileOp );
 	int  ChangeDirectory( DWORD FileID );
 	int	 Parent();
