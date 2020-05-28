@@ -224,7 +224,7 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 		store.Read( SectorBuf, BytesToGo );
 
-		pSource->WriteSector( CSector, SectorBuf, BytesToGo );
+		pSource->WriteSector( CSector, SectorBuf, 256 );
 
 		Bytes -= BytesToGo;
 		CSector++;

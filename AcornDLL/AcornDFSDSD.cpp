@@ -40,15 +40,18 @@ DataSource *AcornDFSDSD::FileDataSource( DWORD FileID )
 
 int AcornDFSDSD::ReplaceFile(NativeFile *pFile, CTempFile &store)
 {
-	QWORD MaxDisk = pSource->PhysicalDiskSize;
+	DWORD Sectors = 2 * 80 * 10;
 
 	QWORD Offset = 0;
 
 	if ( pFile->fileID == 1 ) { Offset = 10U; }
 
-	DWORD Sectors = (DWORD) MaxDisk / 256U;
-
 	BYTE Track[ 2560 ];
+
+	store.Seek( 0 );
+
+	QWORD SourceData = store.Ext();
+	QWORD DataSoFar  = 0;
 
 	while ( 1 )
 	{
@@ -64,7 +67,9 @@ int AcornDFSDSD::ReplaceFile(NativeFile *pFile, CTempFile &store)
 
 		Offset += 20; // Interleaved tracks
 
-		if ( Offset >= Sectors )
+		DataSoFar += 10 * 256;
+
+		if ( ( Offset >= Sectors ) || ( DataSoFar >= SourceData ) )
 		{
 			break;
 		}
