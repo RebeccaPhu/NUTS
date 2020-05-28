@@ -108,6 +108,11 @@ public:
 
 	DWORD GetEncoding(void )
 	{
+		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
+		{
+			return ENCODING_RISCOS;
+		}
+
 		return ENCODING_ACORN;
 	}
 

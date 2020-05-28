@@ -172,6 +172,8 @@
     <None Include="..\jpeg.bmp" />
     <None Include="..\module.bmp" />
     <None Include="..\obey.bmp" />
+    <None Include="..\rcdata2.bin" />
+    <None Include="..\RiscOSFont.bin" />
     <None Include="..\sprite.bmp" />
     <None Include="..\text.bmp" />
     <None Include="..\util.bmp" />

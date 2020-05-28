@@ -264,5 +264,11 @@
     <None Include="compact.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\rcdata2.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\RiscOSFont.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

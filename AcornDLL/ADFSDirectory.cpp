@@ -153,7 +153,15 @@ int	ADFSDirectory::ReadDirectory( void ) {
 		file.XlatorID = NULL;
 		file.HasResolvedIcon = false;
 
-		file.EncodingID = ENCODING_ACORN;
+		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
+		{
+			file.EncodingID = ENCODING_RISCOS;
+		}
+		else
+		{
+			file.EncodingID = ENCODING_ACORN;
+		}
+
 		file.FSFileType = FT_ACORNX;
 
 		if ( file.Flags && FF_Directory )

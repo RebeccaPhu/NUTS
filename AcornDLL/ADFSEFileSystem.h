@@ -106,7 +106,7 @@ public:
 
 	DWORD GetEncoding(void )
 	{
-		return ENCODING_ACORN;
+		return ENCODING_RISCOS;
 	}
 
 	int SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );

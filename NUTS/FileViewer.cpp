@@ -340,12 +340,9 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 		case WM_COMMAND:
 			if ( (HWND) lParam == ControlButtons[ 0 ] )
 			{
-				if ( FS->pDirectory->Files.size() > 0 )
-				{
-					FSPlugins.NextFont( FS->pDirectory->Files[ 0 ].EncodingID, PaneIndex );
+				FSPlugins.NextFont( FS->GetEncoding(), PaneIndex );
 
-					Redraw();
-				}
+				Redraw();
 			}
 
 			if ( (HWND) lParam == ControlButtons[ 1 ] )

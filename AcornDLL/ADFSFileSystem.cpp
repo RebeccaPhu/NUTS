@@ -109,7 +109,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		Override = false;
 	}
 
-	if ( ( pFile->EncodingID != ENCODING_ASCII ) && ( pFile->EncodingID != ENCODING_ACORN ) )
+	if ( ( pFile->EncodingID != ENCODING_ASCII ) && ( pFile->EncodingID != ENCODING_ACORN ) && ( pFile->EncodingID != ENCODING_RISCOS )  )
 	{
 		return FILEOP_NEEDS_ASCII;
 	}

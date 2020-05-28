@@ -24,6 +24,7 @@
 
 BYTE *pAcornFont;
 BYTE *pTeletextFont;
+BYTE *pRiscOSFont;
 
 HMODULE hInstance;
 
@@ -185,10 +186,10 @@ FSDescriptor AcornFS[19] = {
 	}
 };
 
-FontDescriptor AcornFonts[2] =
+FontDescriptor AcornFonts[3] =
 	{
 		{
-		/* .FriendlyName  = */ L"Acorn",
+		/* .FriendlyName  = */ L"BBC Micro",
 		/* .PUID          = */ FONTID_ACORN,
 		/* .Flags         = */ 0,
 		/* .MinChar       = */ 32,
@@ -201,6 +202,19 @@ FontDescriptor AcornFonts[2] =
 			},
 		},
 		{
+		/* .FriendlyName  = */ L"Risc OS",
+		/* .PUID          = */ FONTID_RISCOS,
+		/* .Flags         = */ 0,
+		/* .MinChar       = */ 0,
+		/* .MaxChar       = */ 255,
+		/* .ProcessableControlCodes = */ { 21, 6, 0xFF },
+		/* .pFontData     = */ NULL,
+		/* .MatchingFSIDs = */ {
+			ENCODING_RISCOS,
+			0,
+			}
+		},
+		{
 		/* .FriendlyName  = */ L"Teletext",
 		/* .PUID          = */ FONTID_TELETEXT,
 		/* .Flags         = */ 0,
@@ -210,7 +224,7 @@ FontDescriptor AcornFonts[2] =
 		/* .pFontData     = */ NULL,
 		/* .MatchingFSIDs = */ {
 			ENCODING_ACORN,
-			0,
+			ENCODING_RISCOS,
 			}
 		}
 };
@@ -241,7 +255,7 @@ PluginDescriptor AcornDescriptor = {
 	/* .Provider = */ L"Acorn",
 	/* .PUID     = */ PLUGINID_ACORN,
 	/* .NumFS    = */ 19,
-	/* .NumFonts = */ 2,
+	/* .NumFonts = */ 3,
 	/* .BASXlats = */ 1,
 	/* .GFXXlats = */ 2,
 
@@ -261,7 +275,7 @@ ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
 		LPVOID lpAddress = LockResource(hMemory);
 
 		// Font data starts from character 32
-		pAcornFont = (BYTE *) malloc( (size_t) dwSize + ( 32 * 8 ) );
+		pAcornFont = (BYTE *) malloc( 256 * 8 );
 
 		memcpy( &pAcornFont[ 32 * 8 ], lpAddress, dwSize );
 
@@ -273,13 +287,27 @@ ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
 		lpAddress  = LockResource(hMemory);
 
 		// Font data starts from character 32
-		pTeletextFont = (BYTE *) malloc( (size_t) dwSize );
+		pTeletextFont = (BYTE *) malloc( 256 * 8 );
 
 		memcpy( &pTeletextFont[ 0 * 8   ], lpAddress, dwSize / 2 );
 		memcpy( &pTeletextFont[ 128 * 8 ], lpAddress, dwSize / 2 );
 
-		AcornFonts[0].pFontData = pAcornFont;
-		AcornFonts[1].pFontData = pTeletextFont;
+		AcornFonts[2].pFontData = pTeletextFont;
+
+		hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_RISCOS ), RT_RCDATA);
+		hMemory    = LoadResource(hInstance, hResource);
+		dwSize     = SizeofResource(hInstance, hResource);
+		lpAddress  = LockResource(hMemory);
+
+		// Font data starts from character 32
+		pRiscOSFont = (BYTE *) malloc( 256 * 8 );
+
+		BYTE *pFontSrc = ( BYTE * ) lpAddress;
+
+		ZeroMemory( pRiscOSFont, 256 * 8 );
+		memcpy( &pRiscOSFont[ 32 * 8  ], &pFontSrc[ 0 ], ( 256 - 32 ) * 8 );
+
+		AcornFonts[ 1 ].pFontData = pRiscOSFont;
 
 		AcornSCREENTranslator::pTeletextFont = pTeletextFont;
 
