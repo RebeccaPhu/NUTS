@@ -79,3 +79,11 @@ typedef struct _TargetedFileFragments
 	DWORD SectorOffset;
 	FileFragments Frags;
 } TargetedFileFragments;
+
+typedef struct _CompactionObject
+{
+	DWORD StartSector;
+	DWORD NumSectors;
+	DWORD ContainingDirSector;
+	DWORD ReferenceFileID;
+} CompactionObject;

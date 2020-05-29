@@ -31,7 +31,7 @@ public:
 		RefCount++;
 	}
 
-	void Release (void )
+	virtual void Release (void )
 	{
 		if ( RefCount > 0 )
 		{

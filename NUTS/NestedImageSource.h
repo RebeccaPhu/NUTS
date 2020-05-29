@@ -16,7 +16,14 @@ public:
 	int WriteSector(long Sector, void *pSectorBuf, long SectorSize);
 	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
-	int Observe( void );
+	void Release (void )
+	{
+		FlushNest();
+
+		DataSource::Release();
+	}
+
+	void FlushNest( void );
 
 private:
 	void *pSourceFS;
@@ -25,15 +32,8 @@ private:
 
 	NativeFile SourceObject;
 
-	HANDLE hObserverThread;
-	HANDLE hTerminate;
-
 	time_t DirtyTime;
 	bool   Dirty;
 	
-	CRITICAL_SECTION StatusLock;
-
-private:
-	void CreateObserver( void );
 };
 

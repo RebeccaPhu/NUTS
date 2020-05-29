@@ -155,5 +155,8 @@ private:
 	DWORD TranslateSector(DWORD InSector);
 
 	int ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWORD &FixedParents, DWORD &FixedSigs );
+	int CompactImage( void );
+	
+	CompactionObject FindCompactableObject( DWORD DirSector, DWORD SeekSector );
 };
 

@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "OldFSMap.h"
 
+#include "../NUTS/NUTSError.h"
 
 int	OldFSMap::GetStartSector(FreeSpace &space) {
 
@@ -27,13 +28,18 @@ int	OldFSMap::OccupySpace(FreeSpace &space) {
 			iSpace->StartSector += space.OccupiedSectors;
 			iSpace->Length      -= space.OccupiedSectors;
 
+			if ( iSpace->Length == 0 )
+			{
+				Spaces.erase( iSpace );
+			}
+
 			WriteFSMap();
 
 			return 0;
 		}
 	}
 
-	return -1;
+	return NUTSError( 0x41, L"Bad FS Map" );
 }
 
 int	OldFSMap::ClaimSpace(FreeSpace &space)
@@ -142,6 +148,23 @@ int OldFSMap::ReleaseSpace(FreeSpace &space)
 	std::vector<FreeSpace>::iterator iSpace;
 	std::vector<FreeSpace>::iterator iPoint = Spaces.begin();
 
+	if ( Spaces.size() == 0 )
+	{
+		/* Wow... full disc.. like exactly full */
+		Spaces.push_back( space );
+
+		return 0;
+	}
+
+	if ( space.StartSector < Spaces.front().StartSector )
+	{
+		/* Space before the first space */
+		Spaces.insert( Spaces.begin(), space );
+
+		return 0;
+	}
+
+	/* Space fits somewhere in the middle */
 	for (iSpace = Spaces.begin(); iSpace != Spaces.end(); iSpace++) {
 		if ( iSpace->StartSector < space.StartSector )
 		{
@@ -149,7 +172,8 @@ int OldFSMap::ReleaseSpace(FreeSpace &space)
 		}
 	}
 
-	Spaces.insert( iPoint++, space );
+	/* iSpace now points to the last space that is before ours, so insert it before the next space */
+	Spaces.insert( ++iPoint, space );
 
 	/* The vector now technically contains the free space, but if we left it this way the
 	   map would fill with little bits when they shouldn't.

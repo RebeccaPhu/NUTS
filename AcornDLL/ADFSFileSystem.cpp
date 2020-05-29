@@ -8,6 +8,8 @@
 #include "../NUTS/NUTSError.h"
 #include "resource.h"
 
+#include "AcornDLL.h"
+
 #include <time.h>
 #include <sstream>
 #include <iterator>
@@ -144,6 +146,12 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	if (pFile->Length & 0xFF)
 		SectorsRequired++;
+
+	if ( UseDFormat )
+	{
+		/* Must round this up to whole sectors */
+		while ( SectorsRequired & 3 ) { SectorsRequired++; }
+	}
 
 	FreeSpace	space;
 
@@ -1007,15 +1015,13 @@ WCHAR *ADFSFileSystem::Identify( DWORD FileID )
 
 FSToolList ADFSFileSystem::GetToolsList( void )
 {
-	HMODULE hModule  = GetModuleHandle( L"AcornDLL" );
-
 	FSToolList list;
 
 	/* Repair Icon, Large Android Icons, Aha-Soft, CC Attribution 3.0 US */
-	HBITMAP hRepair = LoadBitmap( hModule, MAKEINTRESOURCE( IDB_REPAIR ) );
+	HBITMAP hRepair = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_REPAIR ) );
 
 	/* Moving and Packing 02 Brown Icon, Moving and Packing Icon Set, My Moving Reviews, www.mymovingreviews.com/move/webmasters/moving-company-icon-sets (Linkware) */
-	HBITMAP hCompact = LoadBitmap( hModule, MAKEINTRESOURCE( IDB_COMPACT ) );
+	HBITMAP hCompact = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_COMPACT ) );
 
 	FSTool ValidateTool = { hRepair, L"Validate", L"Scan the file system and fix any errors found." };
 	FSTool CompactTool  = { hCompact, L"Compact", L"Remove gaps between file objects to create one large space at the end of the file system." };
@@ -1189,6 +1195,12 @@ int ADFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 				}
 			}
 
+			if ( UseDFormat )
+			{
+				/* Must round this up to whole sectors */
+				while ( FileSectors & 3 ) { FileSectors++; }
+			}
+
 			FreeSpace space;
 
 			space.StartSector = iFile->SSector;
@@ -1233,6 +1245,13 @@ int ADFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 
 int ADFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 {
+	if ( ToolNum == 1 )
+	{
+		ValidateWnd = ProgressWnd;
+
+		return CompactImage();
+	}
+
 	if ( ToolNum == 0 )
 	{
 		/* Validate FS */
@@ -1567,4 +1586,149 @@ int ADFSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	ResolveAppIcons<ADFSFileSystem>( this );
 
 	return r;
+}
+
+int ADFSFileSystem::CompactImage( void )
+{
+	BYTE Buffer[ 256 ];
+
+	DWORD CompactionSteps = pFSMap->Spaces.size();
+
+	if ( CompactionSteps == 1 )
+	{
+		::PostMessage( ValidateWnd, WM_FSTOOL_PROGRESS, 100, 0 );
+
+		return 0;
+	}
+
+	ADFSDirectory *pDir = new ADFSDirectory( pSource );
+
+	pDir->FSID       = FSID;
+	pDir->UseDFormat = UseDFormat;
+	pDir->UseLFormat = UseLFormat;
+
+	DWORD StepsRemaining = CompactionSteps;
+
+	while ( StepsRemaining > 1 )
+	{
+		/* Get the first free space, add on the sectors, and then find the object */
+		FreeSpace FirstSpace = pFSMap->Spaces.front();
+
+		DWORD SeekSector = FirstSpace.StartSector + FirstSpace.Length;
+
+		CompactionObject obj = FindCompactableObject( (UseDFormat)?0x04:0x02, SeekSector );
+
+		if ( obj.StartSector == 0 )
+		{
+			/* EEP! Unfound object! */
+			return NUTSError( 0x41, L"Compaction failed due to file system corruption." );
+		}
+
+		/* Copy the data 1 sector at a time from old place to new place */
+		for ( DWORD sec=0; sec<obj.NumSectors; sec++ )
+		{
+			pSource->ReadSector( TranslateSector( SeekSector + sec ), Buffer, 256 );
+			pSource->WriteSector( TranslateSector( FirstSpace.StartSector + sec ), Buffer, 256 );
+		}
+
+		/* Release the originating space */
+		FreeSpace GoneSpace;
+
+		GoneSpace.StartSector     = SeekSector;
+		GoneSpace.OccupiedSectors = obj.NumSectors;
+		GoneSpace.Length          = obj.NumSectors;
+
+		pFSMap->ReleaseSpace( GoneSpace );
+
+		/* Claim the new space */
+		FirstSpace.Length = obj.NumSectors;
+		FirstSpace.OccupiedSectors = obj.NumSectors;
+
+		pFSMap->OccupySpace( FirstSpace );
+
+		/* Update the directory */
+		pDir->DirSector  = obj.ContainingDirSector;
+
+		pDir->ReadDirectory();
+
+		pDir->Files[ obj.ReferenceFileID ].SSector = FirstSpace.StartSector;
+
+		pDir->WriteDirectory();
+
+		StepsRemaining = pFSMap->Spaces.size();
+
+		::PostMessage( ValidateWnd, WM_FSTOOL_PROGRESS, Percent( 0, 1, CompactionSteps - StepsRemaining, CompactionSteps, false ), 0 );
+	}
+
+	delete pDir;
+
+	::PostMessage( ValidateWnd, WM_FSTOOL_PROGRESS, 100, 0 );
+}
+
+CompactionObject ADFSFileSystem::FindCompactableObject( DWORD DirSector, DWORD SeekSector )
+{
+	CompactionObject obj;
+
+	obj.StartSector = 0;
+
+	ADFSDirectory *pDir = new ADFSDirectory( pSource );
+
+	pDir->FSID = FSID;
+	pDir->UseDFormat = UseDFormat;
+	pDir->UseLFormat = UseLFormat;
+	pDir->DirSector  = DirSector;
+
+	pDir->ReadDirectory();
+
+	NativeFileIterator iFile;
+
+	/* See if it is an object in this directory */
+	for ( iFile = pDir->Files.begin(); iFile != pDir->Files.end(); iFile++ )
+	{
+		if ( iFile->SSector == SeekSector )
+		{
+			/* Got it */
+			obj.StartSector         = SeekSector;
+			obj.ReferenceFileID     = iFile->fileID;
+			obj.ContainingDirSector = DirSector;
+
+			if ( iFile->Flags & FF_Directory )
+			{
+				obj.NumSectors = (UseDFormat)?0x08:0x05;
+			}
+			else
+			{
+				obj.NumSectors = iFile->Length / 256;
+
+				if ( iFile->Length % 256 ) { obj.NumSectors++; }
+
+				if ( UseDFormat )
+				{
+					while ( obj.NumSectors & 3 )
+					{
+						obj.NumSectors++;
+					}
+				}
+			}
+
+			return obj;
+		}
+	}
+
+	/* No match. Try directories */
+	for ( iFile = pDir->Files.begin(); iFile != pDir->Files.end(); iFile++ )
+	{
+		if ( iFile->Flags & FF_Directory )
+		{
+			obj = FindCompactableObject( iFile->SSector, SeekSector );
+
+			if ( obj.StartSector != 0 )
+			{
+				return obj;
+			}
+		}
+	}
+
+	/* Still no match. Abort. */
+	return obj;
 }
