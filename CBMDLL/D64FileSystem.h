@@ -17,7 +17,7 @@ public:
 		pDirectory	= ( Directory * ) pDir;
 
 		FSID  = FSID_D64;
-		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Spaces;
+		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Spaces | FSF_Reorderable;
 	}
 
 	~D64FileSystem(void) {

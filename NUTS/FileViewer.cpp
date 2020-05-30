@@ -350,14 +350,14 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 				SendMessage( ParentWnd, WM_ROOTFS, (WPARAM) this, (LPARAM) NULL );
 			}
 
+			if ( (HWND) lParam == ControlButtons[ 2 ] )
+			{
+				DoSwapFiles( 0x00 );
+			}
+
 			if ( (HWND) lParam == ControlButtons[ 3 ] )
 			{
 				DoSwapFiles( 0xFF );
-			}
-
-			if ( (HWND) lParam == ControlButtons[ 4 ] )
-			{
-				DoSwapFiles( 0x00 );
 			}
 
 			if ( ( LOWORD(wParam) >= FILESYS_MENU_BASE ) && ( LOWORD(wParam) <= FILESYS_MENU_END ) )
@@ -2103,7 +2103,7 @@ void CFileViewer::DoSwapFiles( BYTE UpDown )
 
 	MaxFile--;
 
-	if ( UpDown == 0xFF )
+	if ( UpDown == 0x00 )
 	{
 		if ( SwapFile > 0 )
 		{
@@ -2113,6 +2113,9 @@ void CFileViewer::DoSwapFiles( BYTE UpDown )
 
 				return;
 			}
+
+			FileSelections[ SwapFile ]     = false;
+			FileSelections[ SwapFile - 1 ] = true;
 		}
 	}
 	else
@@ -2125,8 +2128,13 @@ void CFileViewer::DoSwapFiles( BYTE UpDown )
 
 				return;
 			}
+
+			FileSelections[ SwapFile ]     = false;
+			FileSelections[ SwapFile + 1 ] = true;
 		}
 	}
+
+	Redraw();
 }
 
 void CFileViewer::SetSearching( bool s )
