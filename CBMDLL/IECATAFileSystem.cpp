@@ -2,6 +2,8 @@
 #include "IECATAFileSystem.h"
 #include "../nuts/FormatWizard.h"
 
+#include "CBMFunctions.h"
+
 //	Files on IEC-ATA are stored as a table of sector links. The sector entry in the descriptor is a sector
 //	containing a list of data sectors (4 bytes/32-bit LE uint) with the actual file. The last of these entries
 //	is not actually a data sector, but a pointer to the next table sector.
@@ -672,84 +674,9 @@ std::vector<AttrDesc> IECATAFileSystem::GetAttributeDescriptions( void )
 	return Attrs;
 }
 
-/* NOTE!!! This is not a proper PETSCII to ASCII conversion for a good reason:
-   This function is used to convert FILENAMEs to ASCII. Since these are targeting an FS
-   whose allowed character semantics are unknown, if this function needs to be called
-   it assumes a restrictive FS that allows letters, numbers and a limited set of symbols
-   ONLY. Hence, there's a lot of underscores.
-*/
 int IECATAFileSystem::MakeASCIIFilename( NativeFile *pFile )
 {
-	unsigned char ascii[256] = {
-		'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
-		' ', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '-', '_', '_',
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
-		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '_', '_', '_', '_',
-		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
-		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
-		'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
-		' ', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '-', '_', '_',
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
-		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '_', '_', '_', '_',
-		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
-		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
-	};
-
-	/* Technically, PETSCII 0 is a displayable character, and would resolve to 0 if poked
-	   into the text mode screen memory on a C64. But NUTS always uses it as a terminator,
-	   and if you PRINT'd a PETSCII 0 on a C64, you'd get nothing, so it works here.
-	*/
-	for ( WORD n=0; n<256; n++)
-	{
-		if ( pFile->Filename[ n ] != 0 )
-		{
-			pFile->Filename[ n ] = ascii[ pFile->Filename[ n ] ];
-		}
-	}
-
-	for ( WORD n=0; n<4; n++)
-	{
-		if ( pFile->Extension[ n ] != 0 )
-		{
-			pFile->Extension[ n ] = ascii[ pFile->Extension[ n ] ];
-		}
-	}
-
-	pFile->EncodingID = ENCODING_ASCII;
+	MakeASCII( pFile );
 
 	return 0;
-}
-
-/* This does the reverse of the above; converts ASCII filenames to PETSCII */
-void IECATAFileSystem::IncomingASCII( NativeFile *pFile )
-{
-	for ( WORD n=0; n<256; n++ )
-	{
-		if ( pFile->Filename[ n ] != 0 )
-		{
-			if ( ( pFile->Filename[ n ] >= 'a' ) && ( pFile->Filename[ n ] <= 'z' ) )
-			{
-				pFile->Filename[ n ] -= 0x20;
-			}
-
-			if ( pFile->Filename[ n ] == '\\' )
-			{
-				pFile->Filename[ n ] = '-';
-			}
-
-			if ( ( pFile->Filename[ n ] <= ' ' ) || ( pFile->Filename[ n ] >= ']' ) )
-			{
-				pFile->Filename[ n ] = '-';
-			}
-		}
-	}
-
-	/* Files not in ENCODING_PETSCII are assumed to be foreign, so should be auto-converted to PRG, etc */
-	pFile->Flags |= FF_Extension;
-
-	rstrncpy( pFile->Extension, (BYTE *) "PRG", 3 );
 }

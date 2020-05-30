@@ -1,5 +1,8 @@
 #include "StdAfx.h"
 #include "D64FileSystem.h"
+#include "CBMFunctions.h"
+
+#include "../NUTS/NUTSError.h"
 
 int	D64FileSystem::ReadFile(DWORD FileID, CTempFile &store)
 {
@@ -20,7 +23,7 @@ int	D64FileSystem::ReadFile(DWORD FileID, CTempFile &store)
 		if (sector[0] != 0) {
 			store.Write( &sector[2], 254 );
 
-			logsect	= pd->SectorForLink(sector[0], sector[1]);
+			logsect	= SectorForLink(sector[0], sector[1]);
 
 			foffset	+= 254;
 		} else {
@@ -33,9 +36,133 @@ int	D64FileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	return 0;
 }
 
-int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store, char *Filename)
+int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 {
-	return 0;
+	if ( ( pFile->EncodingID != ENCODING_PETSCII ) && ( pFile->EncodingID != ENCODING_ASCII ) )
+	{
+		return FILEOP_NEEDS_ASCII;
+	}
+
+	NativeFileIterator iFile;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( FilenameCmp( &*iFile, pFile ) )
+		{
+			return FILEOP_EXISTS;
+		}
+	}
+
+	NativeFile file = *pFile;
+
+	if ( file.FSFileType != FT_C64 )
+	{
+		file.Attributes[ 2 ] = 0x00000000;
+		file.Attributes[ 3 ] = 0xFFFFFFFF;
+
+		if ( file.Flags & FF_Extension )
+		{
+			if ( rstrnicmp( file.Extension, (BYTE *) "DEL", 3 ) )
+			{
+				file.Attributes[ 1 ] = 0;
+			}
+			else if ( rstrnicmp( file.Extension, (BYTE *) "SEQ", 3 ) )
+			{
+				file.Attributes[ 1 ] = 1;
+			}
+			else if ( rstrnicmp( file.Extension, (BYTE *) "PRG", 3 ) )
+			{
+				file.Attributes[ 1 ] = 2;
+			}
+			else if ( rstrnicmp( file.Extension, (BYTE *) "USR", 3 ) )
+			{
+				file.Attributes[ 1 ] = 3;
+			}
+			else if ( rstrnicmp( file.Extension, (BYTE *) "REL", 3 ) )
+			{
+				file.Attributes[ 1 ] = 4;
+			}
+			else
+			{
+				file.Attributes[ 1 ] = 2; // Make it a PRG
+			}
+		}
+		else
+		{
+			file.Attributes[ 1 ] = 2;
+		}
+	}
+
+	if ( file.EncodingID != ENCODING_PETSCII )
+	{
+		IncomingASCII( &file );
+	}
+
+	/* Enough disk space? */
+	DWORD RequiredSectors = file.Length / 254; // 2 bytes of link.
+
+	if ( file.Length % 254 ) { RequiredSectors++; }
+
+	/* If the file count is an exact multiple of 8, then we'll need another sector */
+	if ( ( pDirectory->Files.size() % 8 ) == 0 ) { RequiredSectors++; }
+
+	if ( pBAM->CountFreeSectors() < RequiredSectors )
+	{
+		/* Disk full! */
+		return NUTSError( 0x42, L"Disk full" );
+	}
+
+	/* Write the file. */
+	DWORD BytesToGo = file.Length;
+	BYTE  Buffer[ 256 ];
+	TSLink Loc = pBAM->GetFreeTS();
+
+	file.Attributes[ 0 ] = SectorForLink( Loc.Track, Loc.Sector );
+
+	store.Seek( 0 );
+
+	while ( BytesToGo > 0 )
+	{
+		DWORD BytesWrite = BytesToGo;
+
+		if ( BytesWrite > 254 )
+		{
+			BytesWrite = 254;
+		}
+
+		DWORD AbsSec = SectorForLink( Loc.Track, Loc.Sector );
+
+		if ( BytesToGo > 254 )
+		{
+			Loc = pBAM->GetFreeTS();
+
+			Buffer[ 0 ] = Loc.Track;
+			Buffer[ 1 ] = Loc.Sector;
+		}
+		else
+		{
+			Buffer[ 0 ] = 0;
+			Buffer[ 1 ] = (BYTE) BytesToGo & 0xFF;
+		}
+
+		store.Read( &Buffer[ 2 ], BytesWrite );
+
+		if ( pSource->WriteSector( AbsSec, Buffer, 256 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
+	
+		BytesToGo -= BytesWrite;
+	}
+
+	pDirectory->Files.push_back( file );
+
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	return pDirectory->ReadDirectory();
 }
 
 BYTE *D64FileSystem::DescribeFile(DWORD FileIndex) {
@@ -51,11 +178,10 @@ BYTE *D64FileSystem::DescribeFile(DWORD FileIndex) {
 	NativeFile	*pFile	= &pDirectory->Files[FileIndex];
 
 	rsprintf( status, "%d BYTES, %s, %s",
-		pDirectory->Files[FileIndex].Length,
-//		(pDirectory->Files[FileIndex].Locked)?"Locked":"Not Locked",
-//		(pDirectory->Files[FileIndex].Read)?"Closed":"Not Closed (Splat)"
-		"",""
-		);
+		(DWORD) pDirectory->Files[FileIndex].Length,
+		( pDirectory->Files[FileIndex].Attributes[ 2 ] )?"LOCKED":"NOT LOCKED",
+		( pDirectory->Files[FileIndex].Attributes[ 3 ] )?"CLOSED":"NOT CLOSED (SPLAT)"
+	);
 
 	return status;
 }
@@ -73,13 +199,13 @@ BYTE *D64FileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 	}
 	else 
 	{
-		rsprintf( status, "%s.%s - %d BYTES, %s, %s",
-		pDirectory->Files[FileIndex].Filename,
-		pDirectory->Files[FileIndex].Extension,
-		(DWORD) pDirectory->Files[FileIndex].Length,
-//		(pDirectory->Files[FileIndex].Locked)?"Locked":"Not Locked",
-//		(pDirectory->Files[FileIndex].Read)?"Closed":"Not Closed (Splat)"
-		"",""
+		rsprintf(
+			status, "%s.%s - %d BYTES, %s, %s",
+			pDirectory->Files[FileIndex].Filename,
+			pDirectory->Files[FileIndex].Extension,
+			(DWORD) pDirectory->Files[FileIndex].Length,
+			( pDirectory->Files[FileIndex].Attributes[ 2 ] )?"LOCKED":"NOT LOCKED",
+			( pDirectory->Files[FileIndex].Attributes[ 3 ] )?"CLOSED":"NOT CLOSED (SPLAT)"
 		);
 	}
 
@@ -115,20 +241,12 @@ BYTE *D64FileSystem::GetTitleString( NativeFile *pFile )
 	
 	if ( pFile == nullptr )
 	{
-		unsigned char	d64cache[256];
-//		unsigned char	disktitle[17];
-
-		//	Read the BAM at sector 357
-		pSource->ReadSector(357, d64cache, 256);
-
-		D64Directory *pd = (D64Directory *) pDirectory;
-
-		strncpy_s( (char *) title, 512, (char *) "D64::", 5 );
-		strncpy_s( (char *) &title[ 5 ], 512, (char *) &d64cache[0x90], 16 );
+		rsprintf( title, "D64::" );
+		rstrncat( &title[ 5 ], pBAM->DiskName, 16 );
 	}
 	else
 	{
-		sprintf_s( (char *) title, 512, "%s.%s", (char *) pFile->Filename, (char *) pFile->Extension );
+		rsprintf( title, "%s.%s", pFile->Filename, pFile->Extension );
 	}
 
 	return title;
@@ -145,7 +263,7 @@ AttrDescriptors D64FileSystem::GetAttributeDescriptions( void )
 
 	/* Start sector. Hex, visible, disabled */
 	Attr.Index = 0;
-	Attr.Type  = AttrVisible | AttrNumeric | AttrHex;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrHex | AttrFile;
 	Attr.Name  = L"Start sector";
 	Attrs.push_back( Attr );
 
@@ -200,59 +318,268 @@ AttrDescriptors D64FileSystem::GetAttributeDescriptions( void )
 
 	Attrs.push_back( Attr );
 		
+	/* REL Side-Sector */
+	Attr.Index = 4;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrHex | AttrFile;
+	Attr.Name  = L"REL Side Sector";
+	Attrs.push_back( Attr );
+
+	/* REL Length */
+	Attr.Index = 5;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrHex | AttrFile;
+	Attr.Name  = L"REL Length";
+	Attrs.push_back( Attr );
 
 	return Attrs;
 }
 
-/* NOTE!!! This is not a proper PETSCII to ASCII conversion for a good reason:
-   This function is used to convert FILENAMEs to ASCII. Since these are targeting an FS
-   whose allowed character semantics are unknown, if this function needs to be called
-   it assumes a restrictive FS that allows letters, numbers and a limited set of symbols
-   ONLY. Hence, there's a lot of underscores.
-*/
 int D64FileSystem::MakeASCIIFilename( NativeFile *pFile )
 {
-	unsigned char ascii[256] = {
-		'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
-		' ', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '-', '_', '_',
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
-		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '_', '_', '_', '_',
-		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
-		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
-		'_', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-		'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', '_', '_', '_', '_',
-		' ', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '-', '_', '_',
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '_', '_', '_', '_', '_', '_',
-		'_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
-		'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '_', '_', '_', '_',
-		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
-		'_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_', '_',
-	};
-
-	/* Technically, PETSCII 0 is a displayable character, and would resolve to 0 if poked
-	   into the text mode screen memory on a C64. But NUTS always uses it as a terminator,
-	   and if you PRINT'd a PETSCII 0 on a C64, you'd get nothing, so it works here.
-	*/
-	for ( WORD n=0; n<256; n++)
-	{
-		if ( pFile->Filename[ n ] != 0 )
-		{
-			pFile->Filename[ n ] = ascii[ pFile->Filename[ n ] ];
-		}
-	}
-
-	for ( WORD n=0; n<4; n++)
-	{
-		if ( pFile->Extension[ n ] != 0 )
-		{
-			pFile->Extension[ n ] = ascii[ pFile->Extension[ n ] ];
-		}
-	}
-
-	pFile->EncodingID = ENCODING_ASCII;
+	MakeASCII( pFile );
 
 	return 0;
 }
 
+int D64FileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
+{
+	ResetEvent( hCancelFree );
+
+	DWORD NumBlocks = 0;
+
+	static FSSpace Map;
+
+	for ( BYTE T=1; T<=35; T++ )
+	{
+		NumBlocks += spt[ T ];
+	}
+
+	Map.Capacity  = NumBlocks * 256;
+	Map.pBlockMap = pBlockMap;
+	Map.UsedBytes = Map.Capacity;
+
+	double BlockRatio = ( (double) NumBlocks / (double) TotalBlocks );
+
+	if ( BlockRatio < 1.0 ) { BlockRatio = 1.0 ; }
+	
+	memset( pBlockMap, BlockAbsent, TotalBlocks );
+	memset( pBlockMap, BlockUsed, (DWORD) ( NumBlocks / BlockRatio ) );
+
+	DWORD BlkNum;
+
+	for ( BYTE T=1; T<=35; T++ )
+	{
+		for ( BYTE S=0; S<spt[ T ]; S++ )
+		{
+			if ( WaitForSingleObject( hCancelFree, 0 ) == WAIT_OBJECT_0 )
+			{
+				return 0;
+			}
+
+			if ( pBAM->IsFreeBlock( T, S ) )
+			{
+				Map.UsedBytes -= 256;
+
+				DWORD Blk = SectorForLink( T, S );
+
+				BlkNum = (DWORD) ( (double) Blk / BlockRatio );
+
+				if ( ( BlkNum < TotalBlocks ) && ( pBlockMap[ BlkNum ] != BlockFixed ) )
+				{
+					if ( T == 18 )
+					{
+						if ( S < 2 )
+						{
+							pBlockMap[ BlkNum ] = BlockFixed;
+						}
+						else
+						{
+							pBlockMap[ BlkNum ] = BlockFree;
+						}
+					}
+					else
+					{
+						pBlockMap[ BlkNum ] = BlockFree;
+					}
+				}
+			}
+		}
+	}
+
+	SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
+
+	return 0;
+}
+
+int D64FileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
+{
+	/* Rather than the traditional method of Delete then Write Fresh, and because D64 uses
+	   allocated sectors, we'll actually just overwrite the file's existing sectors with
+	   the new data. If the file ends up shorter, we'll free the excess. If we need
+	   extra sectors, we'll grab them from the BAM.
+	*/
+	NativeFile file = *pFile;
+
+	if ( file.EncodingID != ENCODING_PETSCII )
+	{
+		IncomingASCII( &file );
+	}
+
+	NativeFileIterator iFile;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( FilenameCmp( &*iFile, &file ) )
+		{
+			/* Got it */
+			DWORD BytesToGo = store.Ext();
+
+			DWORD CurrentSectors = iFile->Length / 254;
+
+			if ( iFile->Length % 254 ) { CurrentSectors++; }
+
+			DWORD NewSectors = BytesToGo / 254;
+
+			if ( BytesToGo % 254 ) { NewSectors++; }
+
+			if ( NewSectors > CurrentSectors )
+			{
+				if ( pBAM->CountFreeSectors() < ( NewSectors - CurrentSectors ) )
+				{
+					return NUTSError( 0x42, L"Disk full" );
+				}
+			}
+
+			/* There's room. Let's do this. */
+			store.Seek( 0 );
+
+			TSLink Loc = LinkForSector( iFile->Attributes[ 0 ] );
+
+			BYTE Buffer[ 256 ];
+
+			while ( Loc.Track != 0 )
+			{
+				DWORD BytesWrite = BytesToGo;
+
+				if ( BytesWrite > 254 ) { BytesWrite = 254; }
+
+				pSource->ReadSector( SectorForLink( Loc.Track, Loc.Sector ), Buffer, 256 );
+
+				BYTE Track  = Buffer[ 0 ];
+				BYTE Sector = Buffer[ 1 ];
+
+				if ( BytesToGo > 0 )
+				{
+					store.Read( &Buffer[ 2 ], BytesWrite );
+
+					BytesToGo -= BytesWrite;
+				}
+
+				if ( ( Track == 0 ) && ( BytesToGo <= 254 ) ) 
+				{
+					/* Same number of sectors */
+					if ( BytesWrite == 0 )
+					{
+						/* Free this */
+						pBAM->ReleaseSector( Track, Sector );
+					}
+
+					Buffer[ 0 ] = 0;
+					Buffer[ 1 ] = ( BYTE ) ( BytesWrite & 0xFF );
+				}
+				else if ( ( Track == 0 ) && ( BytesToGo > 0 ) )
+				{
+					/* More sectors needed! */
+					TSLink TS = pBAM->GetFreeTS();
+
+					Buffer[ 0 ] = TS.Track;
+					Buffer[ 1 ] = TS.Sector;
+
+					Track  = TS.Track;
+					Sector = TS.Sector;
+				}
+				else if ( ( Track != 0 ) && ( BytesToGo == 0 ) )
+				{
+					/* Need to realse old sectors */
+					pBAM->ReleaseSector( Track, Sector );
+
+					Buffer[ 0 ] = 0;
+					Buffer[ 1 ] = (BYTE) ( BytesWrite & 0xFF );
+				}
+
+				pSource->WriteSector( SectorForLink( Loc.Track, Loc.Sector ), Buffer, 256 );
+
+				Loc.Track  = Track;
+				Loc.Sector = Sector;
+			}
+
+			iFile->Length = (WORD) ( store.Ext() & 0xFFFF );
+
+			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			return 0;
+		}
+	}
+
+	return 0;}
+
+int D64FileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+{
+	/* This is an easy one. Find the object and get it's sector link, then remove sectors in a chain. */
+
+	NativeFile file = *pFile;
+
+	if ( file.EncodingID != ENCODING_PETSCII )
+	{
+		IncomingASCII( &file );
+	}
+
+	NativeFileIterator iFile;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( FilenameCmp( &*iFile, &file ) )
+		{
+			/* Got it */
+			TSLink Loc = LinkForSector( iFile->Attributes[ 0 ] );
+
+			BYTE Buffer[ 256 ];
+
+			while ( Loc.Track != 0 )
+			{
+				pSource->ReadSector( SectorForLink( Loc.Track, Loc.Sector ), Buffer, 256 );
+
+				BYTE Track  = Buffer[ 0 ];
+				BYTE Sector = Buffer[ 1 ];
+
+				pBAM->ReleaseSector( Track, Sector );
+
+				Loc.Track  = Track;
+				Loc.Sector = Sector;
+			}
+
+			pDirectory->Files.erase( iFile );
+
+			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			return 0;
+		}
+	}
+
+	return 0;
+}

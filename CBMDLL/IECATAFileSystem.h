@@ -71,6 +71,4 @@ private:
 
 private:
 	int	ReleaseBlocks( NativeFile *pFile );
-
-	void IncomingASCII( NativeFile *pFile );
 };

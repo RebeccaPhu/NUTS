@@ -662,7 +662,7 @@ int ADFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 		for ( iMap = pFSMap->Spaces.begin(); iMap != pFSMap->Spaces.end(); iMap++ )
 		{
-			if ( WaitForSingleObject( hCancelFree, 10 ) == WAIT_OBJECT_0 )
+			if ( WaitForSingleObject( hCancelFree, 0 ) == WAIT_OBJECT_0 )
 			{
 				return 0;
 			}

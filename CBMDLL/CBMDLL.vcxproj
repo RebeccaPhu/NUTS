@@ -74,7 +74,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BAM.h" />
     <ClInclude Include="CBMDLL.h" />
+    <ClInclude Include="CBMFunctions.h" />
     <ClInclude Include="D64Directory.h" />
     <ClInclude Include="D64FileSystem.h" />
     <ClInclude Include="IECATADirectory.h" />
@@ -90,7 +92,9 @@
     <ClCompile Include="..\NUTS\NestedImageSource.cpp" />
     <ClCompile Include="..\NUTS\NUTSError.cpp" />
     <ClCompile Include="..\NUTS\TempFile.cpp" />
+    <ClCompile Include="BAM.cpp" />
     <ClCompile Include="CBMDLL.cpp" />
+    <ClCompile Include="CBMFunctions.cpp" />
     <ClCompile Include="D64Directory.cpp" />
     <ClCompile Include="D64FileSystem.cpp" />
     <ClCompile Include="dllmain.cpp">

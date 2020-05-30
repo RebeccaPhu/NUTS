@@ -1,6 +1,8 @@
 #pragma once
 #include "../NUTS/directory.h"
 
+#include "BAM.h"
+
 #ifndef ENCODING_PETSCII
 #define ENCODING_PETSCII 0xCC0E5C11
 #endif
@@ -26,5 +28,6 @@ public:
 
 	void Shorten( unsigned char *dptr );
 
-	int	SectorForLink(int track, int sector);
+public:
+	BAM *pBAM;
 };

@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "D64Directory.h"
+#include "CBMFunctions.h"
 #include "../nuts/libfuncs.h"
 
 int	D64Directory::ReadDirectory(void) {
@@ -52,16 +53,34 @@ int	D64Directory::ReadDirectory(void) {
 				file.XlatorID      = NULL;
 				file.HasResolvedIcon = false;
 
-				_snprintf_s( (char *) file.Extension, 4, 3, (char *) extns[ ft ] );
+				rsprintf( file.Extension, extns[ ft ] );
+
+				if ( fp[ 0x02 ] & 0x80 ) { file.Attributes[ 2 ] = 0xFFFFFFFF; } else { file.Attributes[ 2 ] = 0x00000000; }
+				if ( fp[ 0x02 ] & 0x40 ) { file.Attributes[ 3 ] = 0xFFFFFFFF; } else { file.Attributes[ 3 ] = 0x00000000; }
 
 				if ( ft >= 5 )
 				{
 					file.Flags = 0; // No extension for these types
 				}
 
-				memcpy( file.Filename, &fp[0x5], 16 );
+				if ( ft == 0x04 )
+				{
+					/* REL files. Icky. */
+					BYTE RELTrack = fp[ 0x15 ];
+					BYTE RELSect  = fp[ 0x16 ];
 
-				Shorten( file.Filename );
+					file.Attributes[ 4 ] = SectorForLink( RELTrack, RELSect );
+					file.Attributes[ 5 ] = fp[ 0x17 ];
+				}
+				else
+				{
+					file.Attributes[ 4 ] = 0;
+					file.Attributes[ 5 ] = 0;
+				}
+
+				SwapChars( &fp[ 0x05 ], 16 );
+
+				rstrncpy( file.Filename, &fp[ 0x05 ], 16 );
 
 				//	Getting the length is a fun one. The directory entry doesn't ACTUALLY give the length in
 				//	bytes of the file, only in blocks - for listing purposes - i.e. it's there so your C64
@@ -104,6 +123,86 @@ int	D64Directory::ReadDirectory(void) {
 }
 
 int	D64Directory::WriteDirectory(void) {
+	/* This will be slightly different. We start at track 18 sector 1 as usual, but we'll read the sector in to get the next sector link.
+	   If we run out before we're finished (e.g. a new file was added that requires a new sector for the directory, we'll claim one and
+	   tack it on. */
+
+	int	nt,ns;
+
+	//	Start at track 18 sector 1
+	nt	= 18;
+	ns	= 1;
+
+	DWORD CFile = 0;
+
+	BYTE Buffer[ 256 ];
+
+	while ( CFile < Files.size() ) {
+		if ( pSource->ReadSector( SectorForLink( nt, ns ), Buffer, 256 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
+				
+		ZeroMemory( &Buffer[ 2 ], 254 );
+
+		for (int f=0; f<8; f++) {
+			unsigned char *fp = &Buffer[f * 0x20];
+
+			if ( CFile >= Files.size() )
+			{
+				continue;
+			}
+
+			NativeFile *pFile = &Files[ CFile ];
+
+			fp[ 0x02 ] = pFile->Attributes[ 1 ] & 0x7;
+
+			if ( pFile->Attributes[ 2 ] ) { fp[ 0x02 ] |= 0x40; }
+			if ( pFile->Attributes[ 3 ] ) { fp[ 0x02 ] |= 0x80; }
+
+			TSLink Loc = LinkForSector( pFile->Attributes[ 0 ] );
+
+			fp[ 0x03 ] = Loc.Track;
+			fp[ 0x04 ] = Loc.Sector;
+
+			Loc = LinkForSector( pFile->Attributes[ 4 ] );
+
+			fp[ 0x15 ] = Loc.Track;
+			fp[ 0x16 ] = Loc.Sector;
+			fp[ 0x17 ] = (BYTE) pFile->Attributes[ 5 ];
+
+			rstrncpy( &fp[ 0x05 ], pFile->Filename, 16 );
+
+			SwapChars( &fp[ 0x05 ], 16 );
+
+			WORD Sectors = pFile->Length / 254;
+
+			if ( pFile->Length % 254 ) { Sectors++; }
+
+			fp[ 0x1E ] = (BYTE) Sectors & 0xFF;
+			fp[ 0x1F ] = (BYTE) ( Sectors >> 8 );
+
+			CFile++;
+		}
+
+		if ( ( CFile < Files.size() ) && ( Buffer[ 0 ] == 0 ) )
+		{
+			/* need another sector */
+			TSLink NextLoc = pBAM->GetFreeTS();
+
+			Buffer[ 0 ] = NextLoc.Track;
+			Buffer[ 1 ] = NextLoc.Sector;
+		}
+
+		if ( pSource->WriteSector( SectorForLink( nt, ns ), Buffer, 256 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
+
+		nt = Buffer[ 0 ];
+		ns = Buffer[ 1 ];
+	}
+
 	return 0;
 }
 
@@ -123,30 +222,3 @@ void D64Directory::Shorten( unsigned char *dptr ) {
 	}
 }
 
-int	D64Directory::SectorForLink(int track, int sector) {
-	int	sect	= 0;
-
-	//	1541 disks have a variable tracks per sector count, so you have to add from the start to work
-	//	out the logical sector from a track and sector pair, which is what is used in the sector links in the
-	//	disk itself.
-
-	int	tps[41] = {
-		0,		//	Track 0 doesn't exist (it's used as a "no more" marker)
-		21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,		//	Tracks 1  - 17
-		19, 19, 19, 19, 19, 19, 19,												//	Tracks 18 - 24
-		18, 18, 18, 18, 18, 18,													//	Tracks 25 - 30
-		17, 17, 17, 17, 17, /* 40-track disks from here */ 17, 17, 17, 17, 17	//	Tracks 30 - 40
-	};
-
-	if (track == 1)
-		return sector;	//	No track multiples for track 1.
-
-	//	Add the tps for each track up to, but not including, the target track.
-	for (int t=1; t < track; t++)
-		sect	+= tps[t];
-
-	//	Add on the offset
-	sect	+= sector;
-
-	return sect;
-}
