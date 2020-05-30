@@ -35,6 +35,7 @@ public:
 	TSLink GetFreeTS( void );
 	DWORD  CountFreeSectors( void );
 	void   ReleaseSector( BYTE Track, BYTE Sector );
+	void   OccupySector( BYTE Track, BYTE Sector );
 	bool   IsFreeBlock( BYTE Track, BYTE Sector );
 	int    WriteBAM( void );
 

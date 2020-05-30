@@ -102,6 +102,24 @@ void BAM::ReleaseSector( BYTE Track, BYTE Sector )
 	BAMData[ Track ][ TB + 1] |= 1 << Bb;
 }
 
+void BAM::OccupySector( BYTE Track, BYTE Sector )
+{
+	if ( Track > 35 )
+	{
+		return;
+	}
+
+	if ( Sector > spt[ Track ] )
+	{
+		return;
+	}
+
+	BYTE TB = Sector / 8;
+	BYTE Bb = Sector % 8;
+
+	BAMData[ Track ][ TB + 1] &= 0xFF ^ ( 1 << Bb );
+}
+
 int BAM::WriteBAM( void )
 {
 	BYTE Buffer[ 256 ];

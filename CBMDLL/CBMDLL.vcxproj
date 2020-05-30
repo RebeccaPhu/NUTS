@@ -117,6 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="c64.bin" />
+    <None Include="repair.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1059,16 +1059,21 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 		for ( DWORD Sector=0; Sector < Sectors; Sector++ )
 		{
+			if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+			{
+				return 0;
+			}
+
 			if ( pSource->WriteSector( Sector, SectorBuf, 256 ) != DS_SUCCESS )
 			{
 				return -1;
 			}
 
-			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 1, 4, Sector, Sectors, false ), (LPARAM) EraseMsg );
+			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 0, 3, Sector, Sectors, false ), (LPARAM) EraseMsg );
 		}
 	}
 
-	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 4, 0, 1, false ), (LPARAM) MapMsg );
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 1, 3, 0, 1, false ), (LPARAM) MapMsg );
 
 	if( pFSMap == nullptr )
 	{
@@ -1095,7 +1100,7 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 		return -1;
 	}
 
-	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 4, 0, 1, false ), (LPARAM) RootMsg );
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 3, 0, 1, false ), (LPARAM) RootMsg );
 
 	if ( pDirectory == nullptr )
 	{
@@ -1157,7 +1162,7 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 		if ( pSource->WriteSector( 1, &SectorBuf[ 0x100 ], 256 ) != DS_SUCCESS ) { return -1; }
 	}
 
-	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 4, 1, 1, true ), (LPARAM) DoneMsg );
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 1, 1, true ), (LPARAM) DoneMsg );
 
 	return 0;
 }
@@ -1590,6 +1595,10 @@ int ADFSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 
 int ADFSFileSystem::CompactImage( void )
 {
+	::SendMessage( ValidateWnd, WM_FSTOOL_SETDESC, 0, (LPARAM) L"This tool will move occupied sections of the disk up together to create one free space." );
+	::SendMessage( ValidateWnd, WM_FSTOOL_PROGLIMIT, 0, 100 );
+	::SendMessage( ValidateWnd, WM_FSTOOL_PROGRESS, Percent( 0, 1, 0, 1, false), 0 );
+
 	BYTE Buffer[ 256 ];
 
 	DWORD CompactionSteps = pFSMap->Spaces.size();
@@ -1611,6 +1620,11 @@ int ADFSFileSystem::CompactImage( void )
 
 	while ( StepsRemaining > 1 )
 	{
+		if ( WaitForSingleObject( hToolEvent, 0 ) == WAIT_OBJECT_0 )
+		{
+			return 0;
+		}
+
 		/* Get the first free space, add on the sectors, and then find the object */
 		FreeSpace FirstSpace = pFSMap->Spaces.front();
 
@@ -1670,6 +1684,11 @@ CompactionObject ADFSFileSystem::FindCompactableObject( DWORD DirSector, DWORD S
 	CompactionObject obj;
 
 	obj.StartSector = 0;
+
+	if ( WaitForSingleObject( hToolEvent, 0 ) == WAIT_OBJECT_0 )
+	{
+		return obj;
+	}
 
 	ADFSDirectory *pDir = new ADFSDirectory( pSource );
 

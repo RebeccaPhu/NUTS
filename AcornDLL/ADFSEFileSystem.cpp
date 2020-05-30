@@ -1499,6 +1499,11 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 		for ( DWORD Sector=0; Sector < Sectors; Sector++ )
 		{
+			if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+			{
+				return 0;
+			}
+
 			if ( pSource->WriteSector( Sector, SectorBuf, SecSize ) != DS_SUCCESS )
 			{
 				return -1;

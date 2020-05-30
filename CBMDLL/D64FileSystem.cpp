@@ -3,6 +3,9 @@
 #include "CBMFunctions.h"
 
 #include "../NUTS/NUTSError.h"
+#include "resource.h"
+
+#include "CBMDLL.h"
 
 int	D64FileSystem::ReadFile(DWORD FileID, CTempFile &store)
 {
@@ -385,20 +388,16 @@ int D64FileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 				if ( ( BlkNum < TotalBlocks ) && ( pBlockMap[ BlkNum ] != BlockFixed ) )
 				{
-					if ( T == 18 )
+					pBlockMap[ BlkNum ] = BlockFree;
+				}
+			}
+			else
+			{
+				if ( T == 18 )
+				{
+					if ( S < 2 )
 					{
-						if ( S < 2 )
-						{
-							pBlockMap[ BlkNum ] = BlockFixed;
-						}
-						else
-						{
-							pBlockMap[ BlkNum ] = BlockFree;
-						}
-					}
-					else
-					{
-						pBlockMap[ BlkNum ] = BlockFree;
+						pBlockMap[ BlkNum ] = BlockFixed;
 					}
 				}
 			}
@@ -580,6 +579,274 @@ int D64FileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 			return 0;
 		}
 	}
+
+	return 0;
+}
+
+AttrDescriptors D64FileSystem::GetFSAttributeDescriptions( void )
+{
+	static std::vector<AttrDesc> Attrs;
+
+	Attrs.clear();
+
+	AttrDesc Attr;
+
+	/* Disc Title */
+	Attr.Index = 0;
+	Attr.Type  = AttrVisible | AttrString | AttrEnabled;
+	Attr.Name  = L"Disk Name";
+
+	Attr.MaxStringLength = 16;
+	Attr.pStringVal      = rstrndup( pBAM->DiskName, 16 );
+
+	Attrs.push_back( Attr );
+
+	/* Disc ID */
+	Attr.Index = 1;
+	Attr.Type  = AttrVisible | AttrString | AttrEnabled;
+	Attr.Name  = L"Disk ID";
+
+	Attr.MaxStringLength = 2;
+	Attr.pStringVal      = rstrndup( pBAM->DiskName, 2 );
+
+	Attrs.push_back( Attr );
+
+	/* Boot Option */
+	Attr.Index = 1;
+	Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex;
+	Attr.Name  = L"DOS Version";
+
+	Attr.StartingValue = pBAM->DosVer;
+
+	Attrs.push_back( Attr );
+
+	/* Boot Option */
+	Attr.Index = 3;
+	Attr.Type  = AttrVisible | AttrEnabled | AttrString;
+	Attr.Name  = L"DOS Type";
+
+	Attr.MaxStringLength = 2;
+	Attr.pStringVal = rstrndup( pBAM->DOSID, 2 );
+
+	Attrs.push_back( Attr );
+
+	return Attrs;
+}
+
+int D64FileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
+{
+	switch ( PropID )
+	{
+	case 0:
+		rstrncpy( pBAM->DiskName, pNewVal, 16 );
+		break;
+
+	case 1:
+		rstrncpy( pBAM->DiskID, pNewVal, 2 );
+		break;
+
+	case 2:
+		pBAM->DosVer = (BYTE) ( NewVal & 0xFF );
+		break;
+
+	case 3:
+		rstrncpy( pBAM->DOSID, pNewVal, 2 );
+		break;
+	}
+
+	return pBAM->WriteBAM();
+}
+
+int D64FileSystem::Format_Process( FormatType FT, HWND hWnd )
+{
+	static WCHAR * const InitMsg  = L"Initialising";
+	static WCHAR * const EraseMsg = L"Erasing";
+	static WCHAR * const MapMsg   = L"Creating BAM";
+	static WCHAR * const RootMsg  = L"Creating Root Directory";
+	static WCHAR * const DoneMsg  = L"Complete";
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, 0, (LPARAM) InitMsg );
+
+	DWORD Sectors = pSource->PhysicalDiskSize / (DWORD) 256;
+
+	BYTE Buffer[ 256 ];
+
+	if ( FT == FormatType_Full )
+	{
+		ZeroMemory( Buffer, 256 );
+
+		WORD Secs = 0;
+
+		for ( BYTE T=1; T<=35; T++ )
+		{
+			Secs += spt[ T ];
+		}
+
+		WORD DoneSecs = 0;
+
+		for ( BYTE T=1; T<=35; T++ )
+		{
+			for ( DWORD S=0; S < spt[ T ]; S++ )
+			{
+				if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+				{
+					return 0;
+				}
+
+				if ( pSource->WriteSector( SectorForLink( T, S ), Buffer, 256 ) != DS_SUCCESS )
+				{
+					return -1;
+				}
+
+				PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 0, 3, DoneSecs, Secs, false ), (LPARAM) EraseMsg );
+			}
+		}
+	}
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 1, 3, 0, 1, false ), (LPARAM) MapMsg );
+
+	/* This clears out the BAM */
+	for ( BYTE T=1; T<=35; T++ )
+	{
+		for ( DWORD S=0; S < spt[ T ]; S++ )
+		{
+			pBAM->ReleaseSector( T, S );
+		}
+	}
+
+	/* Set some defaults for the other parts in the BAM */
+	rstrncpy( pBAM->DiskName, (BYTE *) "Blank", 16 );
+	rstrncpy( pBAM->DiskID, (BYTE *) "01", 2 );
+	rstrncpy( pBAM->DOSID, (BYTE *) "2A", 2 );
+	
+	pBAM->DosVer = 0x41;
+
+	/* Occupy the sector for the blank directory and the BAM itself */
+	pBAM->OccupySector( 18, 0 );
+	pBAM->OccupySector( 18, 1 );
+
+	if ( pBAM->WriteBAM() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 4, 0, 1, false ), (LPARAM) RootMsg );
+
+	ZeroMemory( Buffer, 256 );
+
+	pSource->WriteSector( SectorForLink( 18, 1 ), Buffer, 256 );
+
+	pDirectory->Files.clear();
+	
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+	{
+		return -1;
+	}
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 4, 1, 1, true ), (LPARAM) DoneMsg );
+
+	return 0;
+}
+
+FSToolList D64FileSystem::GetToolsList( void )
+{
+	FSToolList Tools;
+
+	FSTool tool;
+
+	tool.ToolName = L"Validate Block Allocation Map";
+	tool.ToolDesc = L"Wipes the Block Allocation Map and refills it from actual occupied sectors on the disk.";
+	tool.ToolIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_REPAIR ) );
+
+	Tools.push_back( tool );
+
+	return Tools;
+}
+
+int D64FileSystem::MarkChain( TSLink Loc )
+{
+	BYTE Buffer[ 256 ];
+
+	TSLink ThisSec = Loc;
+
+	while ( 1 )
+	{
+		if ( pSource->ReadSector( SectorForLink( ThisSec.Track, ThisSec.Sector ), Buffer, 256 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
+
+		if ( Buffer[ 0 ] == 0 )
+		{
+			if ( pBAM->WriteBAM() != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			return 0;
+		}
+
+		pBAM->OccupySector( ThisSec.Track, ThisSec.Sector );
+
+		ThisSec.Track  = Buffer[ 0 ];
+		ThisSec.Sector = Buffer[ 1 ];
+	}
+
+	return -1;
+}
+
+int D64FileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
+{
+	/* This is actually quite easy. We'll wipe the BAM, then go through each file and
+	   traverse its sector chain, ticking off the occupied sectors as we go.
+
+	   We'll start with 18/0 (BAM) and 18/1 (Directory). We'll also have to traverse
+	   the directory sector chain too.
+	*/
+	
+	::SendMessage( ProgressWnd, WM_FSTOOL_SETDESC, 0, (LPARAM) L"This tool will wipe the existing Block Allocation Map, and examine the sectors occupied by files, filling in the Map to resconstruct it." );
+	::SendMessage( ProgressWnd, WM_FSTOOL_PROGLIMIT, 0, 100 );
+	::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 0, 0, 0, 1, false), 0 );
+
+	for ( BYTE T=1; T<=35; T++ )
+	{
+		for ( BYTE S=0; S<spt[ T ]; S++ )
+		{
+			pBAM->ReleaseSector( T, S );
+		}
+	}
+
+	DWORD MaxSteps = pDirectory->Files.size() + 1;
+
+	pBAM->OccupySector( 18, 0 );
+
+	TSLink Loc = { 18, 1 };
+	
+	MarkChain( Loc );
+
+	NativeFileIterator iFile;
+
+	DWORD Step = 1;
+
+	::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 0, 1, Step, MaxSteps, false), 0 );
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( WaitForSingleObject( hToolEvent, 0 ) == WAIT_OBJECT_0 )
+		{
+			return 0;
+		}
+
+		TSLink FileLoc = LinkForSector( iFile->Attributes[ 0 ] );
+
+		MarkChain( FileLoc );
+
+		Step++;
+
+		::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 0, 1, Step, MaxSteps, false), 0 );
+	}
+
+	::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, 100, 0 );
 
 	return 0;
 }

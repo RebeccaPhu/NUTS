@@ -105,5 +105,8 @@
     <None Include="c64.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="repair.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

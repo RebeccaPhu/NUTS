@@ -9,11 +9,8 @@ class D64FileSystem :
 public:
 	D64FileSystem(DataSource *pDataSource) : FileSystem(pDataSource) {
 		pBAM        = new BAM( pDataSource );
-
-		D64Directory *pDir = new D64Directory( pDataSource );
-
-		pDir->pBAM = pBAM;
-
+		pDir        = new D64Directory( pDataSource );
+		pDir->pBAM  = pBAM;
 		pDirectory	= ( Directory * ) pDir;
 
 		FSID  = FSID_D64;
@@ -38,7 +35,12 @@ public:
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *GetTitleString( NativeFile *pFile );
 
-	AttrDescriptors D64FileSystem::GetAttributeDescriptions( void );
+	AttrDescriptors GetAttributeDescriptions( void );
+	AttrDescriptors GetFSAttributeDescriptions( void );
+
+	int  SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );
+
+	int  Format_Process( FormatType FT, HWND hWnd );
 
 	DWORD GetEncoding(void )
 	{
@@ -53,6 +55,13 @@ public:
 	int ReplaceFile(NativeFile *pFile, CTempFile &store);
 	int DeleteFile( NativeFile *pFile, int FileOp );
 
+	FSToolList GetToolsList( void );
+	int RunTool( BYTE ToolNum, HWND ProgressWnd );
+
 private:
 	BAM *pBAM;
+
+	D64Directory *pDir;
+
+	int MarkChain( TSLink Loc );
 };
