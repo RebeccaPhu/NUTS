@@ -433,11 +433,6 @@ int TAPFileSystem::RewriteTAPFile( DWORD SpecialID, DWORD SwapID, BYTE *pName, i
 
 		NativeFile file = *iFile;
 
-		if ( Reason == REASON_RENAME )
-		{
-			rstrncpy( iFile->Filename, pName, 10 );
-		}
-
 		if ( Reason == REASON_SWAP )
 		{
 			if ( iFile->fileID == SpecialID )
@@ -464,6 +459,11 @@ int TAPFileSystem::RewriteTAPFile( DWORD SpecialID, DWORD SwapID, BYTE *pName, i
 			ReadFile( iFile->fileID, OldFile );
 
 			file = pDirectory->Files[ iFile->fileID ];
+		}
+
+		if ( ( Reason == REASON_RENAME ) && ( iFile->fileID == SpecialID ) )
+		{
+			rstrncpy( file.Filename, pName, 10 );
 		}
 
 		int Copied = WriteAtStore( &file, OldFile, &Rewritten, Pos );

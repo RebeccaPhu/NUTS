@@ -56,6 +56,8 @@ int TAPDirectory::ReadDirectory(void)
 
 			NativeFile File;
 
+			ZeroMemory( &File, sizeof( File ) );
+
 			rstrncpy( File.Filename, &HeaderBlock[ 4 ], 10 );
 
 			File.Filename[10] = 0x20;
