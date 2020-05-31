@@ -590,3 +590,13 @@ int TAPFileSystem::SwapFile( DWORD FileID1, DWORD FileID2 )
 {
 	return RewriteTAPFile( FileID1, FileID2, nullptr, REASON_SWAP );
 }
+
+int TAPFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
+{
+	if ( pDirectory->Files.size() > FileID )
+	{
+		pDirectory->Files[ FileID ] = *Changes;
+	}
+
+	return RewriteTAPFile( FileID, 0, nullptr, REASON_PROPS );
+}

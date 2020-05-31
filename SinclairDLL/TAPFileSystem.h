@@ -7,6 +7,7 @@
 #define REASON_DELETE 0
 #define REASON_RENAME 1
 #define REASON_SWAP   2
+#define REASON_PROPS  3
 
 class TAPFileSystem :
 	public FileSystem
@@ -43,6 +44,7 @@ public:
 	AttrDescriptors GetAttributeDescriptions( void );
 
 	int SwapFile( DWORD FileID1, DWORD FileID2 );
+	int SetProps( DWORD FileID, NativeFile *Changes );
 
 private:
 	BYTE TAPSum( BYTE *Blk, DWORD Bytes );
