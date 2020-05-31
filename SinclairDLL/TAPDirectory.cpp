@@ -135,30 +135,27 @@ int TAPDirectory::ReadDirectory(void)
 		{
 			NativeFile File;
 
+			bool IsOrphan = true;
+
 			/* Data block - Could be the last header's gaff */
-			if ( Files.size() == 0 )
+			if ( Files.size() != 0 )
 			{
-				File = Files.back();
+				if ( Files.back().Length == 0xFFFFFFFF )
+				{
+					File = Files.back();
 
-				File.Length          = * (WORD *) &ShortHeader[ 0 ];
-				File.Attributes[ 0 ] = TAPOffset;
+					File.Length          = * (WORD *) &ShortHeader[ 0 ];
+					File.Attributes[ 0 ] = TAPOffset;
 				
-				File.Length -= 2;
+					File.Length -= 2;
 
-				Files[ File.fileID ] = File;
+					Files[ File.fileID ] = File;
+
+					IsOrphan = false;
+				}
 			}
-			else if ( Files.back().Length == 0xFFFFFFFF )
-			{
-				File = Files.back();
-
-				File.Length          = * (WORD *) &ShortHeader[ 0 ];
-				File.Attributes[ 0 ] = TAPOffset;
-
-				File.Length -= 2;
-
-				Files[ File.fileID ] = File;
-			}
-			else
+			
+			if ( IsOrphan )
 			{
 				File.Flags = 0;
 				File.Attributes[ 0 ] = TAPOffset;

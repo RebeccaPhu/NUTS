@@ -16,6 +16,8 @@ public:
 	int WriteSector(long Sector, void *pSectorBuf, long SectorSize);
 	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
+	int Truncate( QWORD Length );
+
 	void Release (void )
 	{
 		FlushNest();

@@ -65,3 +65,16 @@ int NestedImageSource::WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 
 	return 0;
 }
+
+int NestedImageSource::Truncate( QWORD Length )
+{
+	ImageDataSource::Truncate( Length );
+
+	FlushNest();
+
+	DirtyTime = time( NULL );
+	Dirty     = true;
+
+	return 0;
+}
+

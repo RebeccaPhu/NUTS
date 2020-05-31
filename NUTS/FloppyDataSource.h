@@ -39,5 +39,10 @@ public:
 	int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
+	virtual int Truncate( QWORD Length )
+	{
+		return 0;
+	}
+
 	std::wstring( ImageSource );
 };

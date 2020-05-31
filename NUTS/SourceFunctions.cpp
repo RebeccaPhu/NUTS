@@ -29,6 +29,8 @@ int ReplaceSourceContent( DataSource *pSource, CTempFile &FileObj )
 	}
 
 	pSource->PhysicalDiskSize = FileObj.Ext();
+
+	pSource->Truncate( FileObj.Ext() );
 	
 	return 0;
 }

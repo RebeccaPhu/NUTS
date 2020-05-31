@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "SinclairDefs.h"
 #include "TAPFileSystem.h"
-
+#include "../NUTS/SourceFunctions.h"
 
 TAPFileSystem::TAPFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) 
 {
@@ -9,7 +9,7 @@ TAPFileSystem::TAPFileSystem(DataSource *pDataSource) : FileSystem(pDataSource)
 
 	FSID = FSID_SPECTRUM_TAP;
 
-	Flags = FSF_Size | FSF_Supports_Spaces | FSF_Reorderable;
+	Flags = FSF_Size | FSF_Supports_Spaces | FSF_Reorderable | FSF_Prohibit_Nesting;
 
 	pDirectory = nullptr;
 }
@@ -248,13 +248,238 @@ int TAPFileSystem::ReadFile(DWORD FileID, CTempFile &store) {
 	store.Seek( 0 );
 	store.Write( pBuffer, (DWORD) pDirectory->Files[ FileID ].Length );
 
+	free( pBuffer );
+
 	return 0;
 }
 
-int	TAPFileSystem::WriteFile(NativeFile *pFile, CTempFile &store) {
-	return -1;
+inline BYTE TAPFileSystem::TAPSum( BYTE *Blk, DWORD Bytes )
+{
+	BYTE x = 0;
+
+	for ( DWORD i=0; i<Bytes; i++) 
+	{
+		x ^= Blk[ i ];
+	}
+
+	return x;
 }
 
+int	TAPFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
+{
+	if ( ( pFile->EncodingID != ENCODING_ASCII ) && ( pFile->EncodingID != ENCODING_SINCLAIR ) )
+	{
+		return FILEOP_NEEDS_ASCII;
+	}
+
+	DWORD FileEnd = 0;
+
+	if ( pDirectory->Files.size() > 0 )
+	{
+		FileEnd = pDirectory->Files.back().Attributes[ 0 ] + 3 + pDirectory->Files.back().Length + 1;
+	}
+
+	return WriteAtStore( pFile, store, nullptr, FileEnd );
+}
+
+int	TAPFileSystem::WriteAtStore(NativeFile *pFile, CTempFile &store, CTempFile *output, DWORD Offset)
+{
+	DWORD FilePos = Offset;
+
+	BYTE Header[ 21 ] = { 0x13, 0x00, 0x00 };
+
+	ZeroMemory( &Header[ 0x03 ], 18 );
+
+	memset( &Header[ 0x04 ], 0x20, 10 );
+	rstrncpy( &Header[ 0x04 ], pFile->Filename, 10 );
+
+	for ( BYTE i=0x04; i<0x0E; i++ )
+	{
+		if ( Header[ i ] == 0 ) { Header[ i ] = 0x20; }
+	}
+
+	* (WORD *) &Header[ 14 ] = pFile->Length;
+
+	if ( pFile->FSFileType == FT_SINCLAIR )
+	{
+		Header[ 0x03 ] = (BYTE) pFile->Attributes[ 2 ];
+
+		if ( pFile->Attributes[ 2 ] != 0xFFFFFFFF )
+		{
+			switch ( pFile->Attributes[ 2 ] )
+			{
+				case 0:
+					* (WORD *) &Header[ 16 ] = pFile->Attributes[ 3 ];
+					* (WORD *) &Header[ 18 ] = pFile->Attributes[ 4 ];
+
+					break;
+
+				case 1:
+				case 2:
+					Header[17] = pFile->Attributes[ 5 ];
+
+					break;
+
+				case 3:
+					* (WORD *) &Header[ 16 ] = pFile->Attributes[ 1 ];
+					* (WORD *) &Header[ 18 ] = 32768;
+
+					break;
+			}
+
+			Header[ 20 ] = TAPSum( &Header[ 2 ], 18 );
+
+			if ( output != nullptr )
+			{
+				output->Seek( FilePos );
+				output->Write( Header, 21 );
+			}
+			else
+			{
+				pSource->WriteRaw( FilePos, 21, Header );
+			}
+
+			FilePos += 21;
+		}
+	}
+	else
+	{
+		/* Pretend it's bytes at 0x4000 */
+		Header[ 0x03 ] = 3;
+
+		* (WORD *) &Header[ 16 ] = 0x4000;
+		* (WORD *) &Header[ 18 ] = 32768;
+
+		Header[ 20 ] = TAPSum( &Header[ 2 ], 18 );
+
+		if ( output != nullptr )
+		{
+			output->Seek( FilePos );
+			output->Write( Header, 21 );
+		}
+		else
+		{
+			pSource->WriteRaw( FilePos, 21, Header );
+		}
+
+		FilePos += 21;
+	}
+
+	/* Now the file content itself */
+	DWORD Sz = store.Ext();
+
+	BYTE *pData = (BYTE *) malloc( Sz + 3);
+
+	* (WORD *) &pData[ 0x00 ] = Sz + 2;
+
+	pData[ 0x02 ] = 0xFF;
+
+	store.Seek( 0 );
+	store.Read( &pData[ 0x03 ], Sz );
+
+	BYTE x = TAPSum( &pData[ 2 ], Sz + 1 );
+
+	if ( output != nullptr )
+	{
+		output->Seek( FilePos );
+		output->Write( pData, Sz + 3 );
+	}
+	else
+	{
+		pSource->WriteRaw( FilePos, Sz + 3, pData );
+	}
+
+	FilePos += Sz + 3;
+
+	if ( output != nullptr )
+	{
+		output->Seek( FilePos );
+		output->Write( &x, 1 );
+	}
+	else
+	{
+		pSource->WriteRaw( FilePos, 1, &x );
+	}
+
+	FilePos++;
+
+	free( pData );
+
+	/* No need to add to the directory, just re-read it */
+
+	if ( output != nullptr )
+	{
+		return FilePos - Offset;
+	}
+
+	return pDirectory->ReadDirectory();
+}
+
+int TAPFileSystem::RewriteTAPFile( DWORD SpecialID, DWORD SwapID, BYTE *pName, int Reason )
+{
+	CTempFile Rewritten;
+	CTempFile OldFile;
+
+	NativeFileIterator iFile;
+
+	DWORD Pos = 0;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( ( Reason == REASON_DELETE ) && ( iFile->fileID == SpecialID ) )
+		{
+			continue;
+		}
+
+		NativeFile file = *iFile;
+
+		if ( Reason == REASON_RENAME )
+		{
+			rstrncpy( iFile->Filename, pName, 10 );
+		}
+
+		if ( Reason == REASON_SWAP )
+		{
+			if ( iFile->fileID == SpecialID )
+			{
+				ReadFile( SwapID, OldFile );
+
+				file = pDirectory->Files[ SwapID ];
+			}
+			else if ( iFile->fileID == SwapID )
+			{
+				ReadFile( SpecialID, OldFile );
+
+				file = pDirectory->Files[ SpecialID ];
+			}
+			else
+			{
+				ReadFile( iFile->fileID, OldFile );
+
+				file = pDirectory->Files[ iFile->fileID ];
+			}
+		}
+		else
+		{
+			ReadFile( iFile->fileID, OldFile );
+
+			file = pDirectory->Files[ iFile->fileID ];
+		}
+
+		int Copied = WriteAtStore( &file, OldFile, &Rewritten, Pos );
+
+		if ( Copied < 0 )
+		{
+			return -1;
+		}
+
+		Pos += Copied;
+	}
+
+	ReplaceSourceContent( pSource, Rewritten );
+
+	return pDirectory->ReadDirectory();
+}
 
 AttrDescriptors TAPFileSystem::GetAttributeDescriptions( void )
 {
@@ -299,7 +524,7 @@ AttrDescriptors TAPFileSystem::GetAttributeDescriptions( void )
 	Attr.Options.push_back( opt );
 
 	opt.Dangerous       = true;
-	opt.EquivalentValue = 0xFFFFFF;
+	opt.EquivalentValue = 0xFFFFFFFF;
 	opt.Name            = L"Orphaned Block";
 
 	Attr.Options.push_back( opt );
@@ -331,4 +556,37 @@ AttrDescriptors TAPFileSystem::GetAttributeDescriptions( void )
 	Attrs.push_back( Attr );
 
 	return Attrs;
+}
+
+int TAPFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+{
+	/* Note: FileOp is only ever FILEOP_DELETE because we don't complain if the filename already
+	   exists. */
+
+	NativeFileIterator iFile;
+
+	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( iFile->Attributes[ 0 ] == pFile->Attributes[ 0 ] )
+		{
+			return RewriteTAPFile( iFile->fileID, 0, nullptr, REASON_DELETE );
+		}
+	}
+
+	return 0;
+}
+
+int TAPFileSystem::Rename( DWORD FileID, BYTE *NewName )
+{
+	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == 0xFFFFFFFF )
+	{
+		return NUTSError( 0x45, L"The file selected is an Orphaned Block, and does not have a filename, thus it cannot be renamed. To assign a name to this block, use the properties page to change the block to a full file, then try again." );
+	}
+
+	return RewriteTAPFile( FileID, 0, NewName, REASON_RENAME );
+}
+
+int TAPFileSystem::SwapFile( DWORD FileID1, DWORD FileID2 )
+{
+	return RewriteTAPFile( FileID1, FileID2, nullptr, REASON_SWAP );
 }

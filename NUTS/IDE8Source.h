@@ -33,5 +33,10 @@ public:
 		return pSource->GetLocation();
 	}
 
+	virtual int Truncate( QWORD Length )
+	{
+		return 0;
+	}
+
 	DataSource	*pSource;
 };

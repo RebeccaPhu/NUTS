@@ -42,3 +42,8 @@ int OffsetDataSource::WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 {
 	return pSrc->WriteRaw( Offset + SourceOffset, Length, pBuffer );
 }
+
+int OffsetDataSource::Truncate( QWORD Length )
+{
+	return pSrc->Truncate( SourceOffset + Length );
+}
