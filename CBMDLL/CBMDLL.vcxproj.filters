@@ -16,6 +16,9 @@
     <Filter Include="Source Files\Imported Source">
       <UniqueIdentifier>{e2374f58-d20e-47fd-bb2a-a4b673d7771f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\OpenCBM">
+      <UniqueIdentifier>{0bac9b62-e57a-4a48-ae87-e8bd8f8cdcf0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -46,6 +49,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CBMFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opencbm-plugin.h">
+      <Filter>Header Files\OpenCBM</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenCBMSource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opencbm.h">
+      <Filter>Header Files\OpenCBM</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenCBMPlugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -95,6 +110,12 @@
     <ClCompile Include="CBMFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OpenCBMSource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenCBMPlugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CBMDLL.rc">
@@ -106,6 +127,15 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="repair.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="serialport.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="opencbm.bmp">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

@@ -262,6 +262,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 	hMainWnd	= hWnd;
 
+	FSPlugins.LoadPlugins();
+
 	leftPane.FS  = new RootFileSystem(); 
 	rightPane.FS = new RootFileSystem(); 
 
@@ -272,8 +274,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	ReCalculateTitleStack( &rightFS, &rightTitles, &rightPane );
 
 	ShowWindow(hWnd, nCmdShow);
-
-	FSPlugins.LoadPlugins();
 
 	UpdateWindow(hWnd);
 

@@ -74,11 +74,13 @@ PluginDescriptor AmigaDescriptor = {
 	/* .NumFonts = */ 2,
 	/* .BASXlats = */ 0,
 	/* .GFXXlats = */ 0,
+	/* .NumHooks = */ 0,
 
 	/* .FSDescriptors  = */ AmigaFS,
 	/* .FontDescriptor = */ AmigaFonts,
 	/* .BASXlators     = */ nullptr,
-	/* .GFXXlats       = */ nullptr
+	/* .GFXXlats       = */ nullptr,
+	/* .RootHooks      = */ nullptr
 };
 
 AMIGADLL_API PluginDescriptor *GetPluginDescriptor(void)

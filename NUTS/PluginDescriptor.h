@@ -44,6 +44,14 @@ typedef struct _GraphicTranslator {
 	DWORD Flags;
 } GraphicTranslator;
 
+typedef struct _RootHook
+{
+	std::wstring FriendlyName;
+	DWORD        HookFSID;
+	HBITMAP      HookIcon;
+	BYTE         HookData[ 32 ];
+} RootHook;
+
 typedef struct _PluginDescriptor {
 	std::wstring Provider;
 	DWORD PUID;
@@ -51,11 +59,13 @@ typedef struct _PluginDescriptor {
 	WORD  NumFonts;
 	WORD  NumTextXlators;
 	WORD  NumGraphicXlators;
+	WORD  NumRootHooks;
 
 	FSDescriptor      *FSDescriptors;
 	FontDescriptor    *FontDescriptors;
 	TextTranslator    *TextXlators;
 	GraphicTranslator *GraphicXlators;
+	RootHook          *RootHooks;
 } PluginDescriptor;
 
 #endif

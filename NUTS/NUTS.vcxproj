@@ -104,6 +104,7 @@
     <ClCompile Include="FontBitmap.cpp" />
     <ClCompile Include="IconRatio.cpp" />
     <ClCompile Include="ImageWizard.cpp" />
+    <ClCompile Include="MemorySource.cpp" />
     <ClCompile Include="NestedImageSource.cpp" />
     <ClCompile Include="NUTSError.cpp" />
     <ClCompile Include="OffsetDataSource.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="FloppyDataSource.h" />
     <ClInclude Include="FontBitmap.h" />
     <ClInclude Include="IconRatio.h" />
+    <ClInclude Include="MemorySource.h" />
     <ClInclude Include="SourceFunctions.h" />
     <ClInclude Include="ImageWizard.h" />
     <ClInclude Include="NestedImageSource.h" />

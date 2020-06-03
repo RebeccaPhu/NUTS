@@ -6,6 +6,8 @@
 
 #include "D64FileSystem.h"
 #include "IECATAFileSystem.h"
+#include "OpenCBMSource.h"
+#include "OpenCBMPlugin.h"
 
 #include "resource.h"
 
@@ -14,6 +16,7 @@
 #define FONTID_PETSCII1 0x0000CBC1
 #define FONTID_PETSCII2 0x0000CBC2
 #define PLUGINID_CBM    0x0000CBC0
+#define FSID_OPENCBM    0x0000CBC3
 
 BYTE *pPETSCII = nullptr;
 
@@ -70,6 +73,33 @@ FontDescriptor CBMFonts[2] = {
 	}
 };
 
+RootHook RootHooks[ 4 ] = {
+	{
+		L"OpenCBM/8",
+		FSID_OPENCBM,
+		NULL,
+		{ 8 }
+	},
+	{
+		L"OpenCBM/9",
+		FSID_OPENCBM,
+		NULL,
+		{ 9 }
+	},
+	{
+		L"OpenCBM/10",
+		FSID_OPENCBM,
+		NULL,
+		{ 10 }
+	},
+	{
+		L"OpenCBM/11",
+		FSID_OPENCBM,
+		NULL,
+		{ 11 }
+	}
+};
+
 PluginDescriptor CBMDescriptor = {
 	/* .Provider = */ L"CBM",
 	/* .PUID     = */ PLUGINID_CBM,
@@ -77,15 +107,22 @@ PluginDescriptor CBMDescriptor = {
 	/* .NumFonts = */ 2,
 	/* .BASXlats = */ 0,
 	/* .GFXXlats = */ 0,
+	/* .HumHooks = */ 4,
 
 	/* .FSDescriptors  = */ CBMFS,
 	/* .FontDescriptor = */ CBMFonts,
 	/* .BASXlators     = */ nullptr,
-	/* .GFXXlats       = */ nullptr
+	/* .GFXXlats       = */ nullptr,
+	/* .RootHooks      = */ RootHooks
 };
 
 CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 {
+	if ( !OpenCBMLoaded )
+	{
+		LoadOpenCBM( );
+	}
+
 	if ( pPETSCII == nullptr )
 	{
 		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_C64 ), RT_RCDATA);
@@ -122,15 +159,24 @@ CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 					&CBMFonts[c].pFontData[ shifts[s][2] * 8 ],
 					&pPETSCII[ ( 0x800 * c ) + ( shifts[s][0] * 8 ) ],
 					shifts[s][1] * 8
-					);
+				);
 
 				s++;
 			}
 		}
 	}
 
+	CBMDescriptor.RootHooks[ 0 ].HookIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
+	CBMDescriptor.RootHooks[ 1 ].HookIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
+	CBMDescriptor.RootHooks[ 2 ].HookIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
+	CBMDescriptor.RootHooks[ 3 ].HookIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
+
 	return &CBMDescriptor;
 }
+
+/* Hook Icon Creds */
+/* Serial Port: Port Icon, FatCow Hosting Icons, FatCow, CC Attribution 3.0 United States */
+
 
 CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
@@ -143,6 +189,20 @@ CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	{
 	case FSID_D64:
 		pFS = (void *) new D64FileSystem( pSource );
+		break;
+
+	case FSID_OPENCBM:
+		{
+			BYTE DriveNum = 0;
+
+			pSource->ReadRaw( 0, 1, &DriveNum );
+
+			OpenCBMSource *pOpenCBMSource = new OpenCBMSource( DriveNum );
+
+			pFS = (void *) new D64FileSystem( pOpenCBMSource );
+
+			pOpenCBMSource->Release();
+		}
 		break;
 
 	case FSID_IECATA:

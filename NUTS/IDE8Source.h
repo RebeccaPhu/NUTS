@@ -20,8 +20,6 @@ public:
 		{
 			pSource->Release();
 		}
-
-		delete pSource;
 	}
 
 	virtual int ReadSector(long Sector, void *pSectorBuf, long SectorSize);

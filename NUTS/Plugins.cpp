@@ -355,6 +355,27 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource, bool Initialise )
 			}
 		}
 
+		if ( D->NumRootHooks > 0 )
+		{
+			for ( i=0; i<D->NumRootHooks; i++ )
+			{
+				if ( D->RootHooks[ i ].HookFSID == FSID )
+				{
+					FileSystem *pFS = iter->CreatorFunc( FSID, pSource );
+
+					if ( Initialise )
+					{
+						if ( pFS->Init() != NUTS_SUCCESS )
+						{
+							NUTSError::Report( L"Initialise File System", NULL );
+						}
+					}
+
+					return pFS;
+				}
+			}
+		}
+
 		iter++;
 	}
 
@@ -588,4 +609,27 @@ void *CPlugins::LoadTextTranslator( DWORD TUID )
 	}
 
 	return nullptr;
+}
+
+RootHookList CPlugins::GetRootHooks()
+{
+	RootHookList Hooks;
+
+	PluginList::iterator iter = Plugins.begin();
+
+	while ( iter != Plugins.end() )
+	{
+		PluginDescriptor *D = iter->DescriptorFunc();
+
+		BYTE i;
+
+		for ( i=0; i<D->NumRootHooks; i++ )
+		{
+			Hooks.push_back( D->RootHooks[ i ] );
+		}
+
+		iter++;
+	}
+
+	return Hooks;
 }

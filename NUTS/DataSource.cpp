@@ -6,6 +6,8 @@ extern DataSourceCollector *pCollector;
 
 DataSource::DataSource(void)
 {
+	InitializeCriticalSection(&RefLock);
+
 	pCollector->RegisterDataSource( this );
 
 	RefCount = 1;
@@ -13,5 +15,5 @@ DataSource::DataSource(void)
 
 DataSource::~DataSource(void)
 {
-	RefCount--;
+	DeleteCriticalSection(&RefLock);
 }

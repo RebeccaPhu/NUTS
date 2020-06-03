@@ -30,7 +30,10 @@ int	D64Directory::ReadDirectory(void) {
 	char extns[8][4] = { "DEL", "SEQ", "PRG", "USR", "REL", "", "", "" };
 
 	while (nt != 0) {
-		pSource->ReadSector(SectorForLink(nt, ns), d64cache, 256);
+		if ( pSource->ReadSector(SectorForLink(nt, ns), d64cache, 256) != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		nt	= d64cache[0];
 		ns	= d64cache[1];
@@ -90,31 +93,40 @@ int	D64Directory::ReadDirectory(void) {
 				//	the trail. If the link gives a non-zero track, add 254 to the length and follow to the next sector.
 				//	Otherwise, the sector part gives the bytes consumed in the last sector, and the job is done.
 
-				file.Length	= 0;
+				/* If we're using a REAL 1541 drive then this will make getting the directory PAINFULLY slow. So
+				   use an approximation from the sector count, and then be more specific later. */
 
-				int	lt	= fp[0x3];
-				int	ls	= fp[0x4];
+				file.Length	= * (WORD *) &fp[ 0x1E ];
 
-				unsigned char	filecache[256];
+				/* This gives an approx calculation as a starting point */
+				file.Length *= 254;
 
-				while (1) {
-					pSource->ReadSector(SectorForLink(lt, ls), filecache, 256);
+				if ( !NoLengthChase )
+				{
+					int	lt	= fp[0x3];
+					int	ls	= fp[0x4];
 
-					lt	= filecache[0];
-					ls	= filecache[1];
+					unsigned char	filecache[256];
 
-					if (lt == 0) {
-						file.Length	+= filecache[1];
+					while (1) {
+						pSource->ReadSector(SectorForLink(lt, ls), filecache, 256);
 
-						break;
-					} else {
-						file.Length	+= 254;
+						lt	= filecache[0];
+						ls	= filecache[1];
+
+						if (lt == 0) {
+							file.Length	+= filecache[1];
+
+							break;
+						} else {
+							file.Length	+= 254;
+						}
 					}
+
+					file.EncodingID = ENCODING_PETSCII;
+
+					Files.push_back(file);
 				}
-
-				file.EncodingID = ENCODING_PETSCII;
-
-				Files.push_back(file);
 			}
 		}
 	}

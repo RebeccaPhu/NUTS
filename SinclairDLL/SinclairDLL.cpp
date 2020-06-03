@@ -72,11 +72,13 @@ PluginDescriptor SinclairDescriptor = {
 	/* .NumFonts = */ 1,
 	/* .BASXlats = */ 1,
 	/* .GFXXlats = */ 1,
+	/* .NumHooks = */ 0,
 
 	/* .FSDescriptors  = */ SinclairFS,
 	/* .FontDescriptor = */ SinclairFonts,
 	/* .BASICXlators   = */ SpectrumBASIC,
-	/* .GFXXlators     = */ SpectrumGFX
+	/* .GFXXlators     = */ SpectrumGFX,
+	/* .RootHooks      = */ nullptr
 };
 
 SINCLAIRDLL_API PluginDescriptor *GetPluginDescriptor(void)

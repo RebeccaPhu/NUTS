@@ -19,6 +19,7 @@ public:
 
 	~D64FileSystem(void) {
 		delete pDirectory;
+		delete pBAM;
 	}
 
 	virtual int Init(void) {

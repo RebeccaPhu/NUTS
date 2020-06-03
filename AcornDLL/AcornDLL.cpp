@@ -258,11 +258,13 @@ PluginDescriptor AcornDescriptor = {
 	/* .NumFonts = */ 3,
 	/* .BASXlats = */ 1,
 	/* .GFXXlats = */ 2,
+	/* .NumHooks = */ 0,
 
 	/* .FSDescriptors  = */ AcornFS,
 	/* .FontDescriptor = */ AcornFonts,
 	/* .BASICXlators   = */ BBCBASICTXT,
-	/* .GFXXlators     = */ AcornGFX
+	/* .GFXXlators     = */ AcornGFX,
+	/* .RootHooks      = */ nullptr
 };
 
 ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
@@ -387,7 +389,11 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 				else
 				{
 					/* Assume its a HDF */
-					pFS = new ADFSFileSystem( new OffsetDataSource( 0x200, pSource ) );
+					DataSource *pOffset = new OffsetDataSource( 0x200, pSource );
+
+					pFS = new ADFSFileSystem( pOffset );
+
+					pOffset->Release();
 				}
 			}
 			else if ( PUID == FSID_ADFS_H8 )
@@ -397,6 +403,8 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 				ADFSFileSystem *pADFS = new ADFSFileSystem( pIDE8 );
 
 				pFS = pADFS;
+
+				pIDE8->Release();
 			}
 			else
 			{
@@ -437,7 +445,11 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 				else
 				{
 					/* Assume its a HDF */
-					pFS = new ADFSEFileSystem( new OffsetDataSource( 0x200, pSource ) );
+					DataSource *pOffset = new OffsetDataSource( 0x200, pSource );
+
+					pFS = new ADFSEFileSystem( pOffset );
+
+					pOffset->Release();
 				}
 			}
 			else

@@ -198,6 +198,9 @@
     <ClCompile Include="SourceFunctions.cpp">
       <Filter>Source Files\Functions</Filter>
     </ClCompile>
+    <ClCompile Include="MemorySource.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -355,6 +358,9 @@
     </ClInclude>
     <ClInclude Include="SourceFunctions.h">
       <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="MemorySource.h">
+      <Filter>Header Files\Data Sources</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

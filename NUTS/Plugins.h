@@ -36,11 +36,13 @@ typedef struct _FSMenu {
 } FSMenu;
 
 typedef std::vector<Plugin> PluginList;
+typedef std::vector<RootHook> RootHookList;
 
 typedef std::vector<TextTranslator>     TextTranslatorList;
 typedef std::vector<GraphicTranslator>  GraphicTranslatorList;
 typedef TextTranslatorList::iterator    TextTranslatorIterator;
 typedef GraphicTranslatorList::iterator GraphicTranslatorIterator;
+typedef RootHookList::iterator          RootHookIterator;
 
 class CPlugins
 {
@@ -68,6 +70,7 @@ public:
 	FormatList GetFormats( DWORD PUID );
 	TextTranslatorList GetTextTranslators( DWORD PUID );
 	GraphicTranslatorList GetGraphicTranslators( DWORD PUID );
+	RootHookList GetRootHooks();
 
 	std::vector<DWORD> FontListForEncoding( DWORD Encoding );
 

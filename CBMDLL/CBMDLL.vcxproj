@@ -81,6 +81,10 @@
     <ClInclude Include="D64FileSystem.h" />
     <ClInclude Include="IECATADirectory.h" />
     <ClInclude Include="IECATAFileSystem.h" />
+    <ClInclude Include="opencbm-plugin.h" />
+    <ClInclude Include="opencbm.h" />
+    <ClInclude Include="OpenCBMPlugin.h" />
+    <ClInclude Include="OpenCBMSource.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -107,6 +111,8 @@
     </ClCompile>
     <ClCompile Include="IECATADirectory.cpp" />
     <ClCompile Include="IECATAFileSystem.cpp" />
+    <ClCompile Include="OpenCBMPlugin.cpp" />
+    <ClCompile Include="OpenCBMSource.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -116,8 +122,11 @@
     <ResourceCompile Include="CBMDLL.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="bitmap1.bmp" />
     <None Include="c64.bin" />
+    <None Include="opencbm.bmp" />
     <None Include="repair.bmp" />
+    <None Include="serialport.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

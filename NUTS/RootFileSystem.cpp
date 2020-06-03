@@ -3,6 +3,7 @@
 #include "ImageDataSource.h"
 #include "RawDataSource.h"
 #include "FloppyDataSource.h"
+#include "MemorySource.h"
 #include "WindowsFileSystem.h"
 #include "libfuncs.h"
 
@@ -130,6 +131,26 @@ FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )
 		}
 
 		return pWFS;
+	}
+
+	if ( pDirectory->Files[ FileID ].Icon == FT_Arbitrary )
+	{
+		RootHook hook = pRootDirectory->HookPairs[ FileID ];
+
+		DataSource *pSource = new MemorySource( hook.HookData, 32 );
+
+		FileSystem *newFS = FSPlugins.LoadFS( hook.HookFSID, pSource, false );
+
+		newFS->EnterIndex       = 0xFFFFFFFF;
+		newFS->pParentFS        = this;
+		newFS->UseResolvedIcons = UseResolvedIcons;
+		newFS->hMainWindow      = hMainWindow;
+		newFS->hPaneWindow      = hPaneWindow;
+		newFS->IsRaw            = false;
+
+		pSource->Release();
+
+		return newFS;
 	}
 
 	bool IsRaw = IsRawFS( UString( (char *) pDirectory->Files[ FileID ].Filename ) );

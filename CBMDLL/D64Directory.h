@@ -18,6 +18,7 @@ class D64Directory :
 {
 public:
 	D64Directory(DataSource *pDataSource) : Directory(pDataSource) {
+		NoLengthChase = false;
 	}
 
 	~D64Directory(void) {
@@ -30,4 +31,6 @@ public:
 
 public:
 	BAM *pBAM;
+
+	bool NoLengthChase;
 };

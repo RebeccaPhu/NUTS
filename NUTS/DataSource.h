@@ -30,14 +30,20 @@ public:
 public:
 	void Retain( void )
 	{
+		EnterCriticalSection(&RefLock);
 		RefCount++;
+		LeaveCriticalSection(&RefLock);
 	}
 
 	virtual void Release (void )
 	{
+		EnterCriticalSection(&RefLock);
 		if ( RefCount > 0 )
 		{
 			RefCount--;
 		}
+		LeaveCriticalSection(&RefLock);
 	}
+private:
+	CRITICAL_SECTION RefLock;
 };

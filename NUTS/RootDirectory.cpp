@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "RootDirectory.h"
 #include "libfuncs.h"
+#include "Plugins.h"
 
 #include <ShlObj.h>
 
@@ -15,6 +16,17 @@ FolderPair RootDirectory::Folders[] = {
 };
 
 int	RootDirectory::ReadDirectory(void) {
+
+	NativeFileIterator iFile;
+
+	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
+	{
+		if ( iFile->HasResolvedIcon )
+		{
+			free( ResolvedIcons[ iFile->fileID ].pImage );
+		}
+	}
+
 	TCHAR dirString[4096];
 
 	GetLogicalDriveStrings(4096, dirString);
@@ -27,6 +39,7 @@ int	RootDirectory::ReadDirectory(void) {
 
 	Files.clear();
 	ResolvedIcons.clear();
+	HookPairs.clear();
 
 	while (1) {
 		if (!*p)
@@ -102,6 +115,37 @@ int	RootDirectory::ReadDirectory(void) {
 		fIndex++;
 	}
 
+	/* Add root hooks */
+	RootHookList hooks = FSPlugins.GetRootHooks();
+
+	RootHookIterator iHook;
+
+	for ( iHook = hooks.begin(); iHook != hooks.end(); iHook++ )
+	{
+		NativeFile file;
+
+		file.Attributes[ 0 ] = fIndex;
+		file.EncodingID      = ENCODING_ASCII;
+		file.fileID          = FileID;
+		file.Flags           = 0;
+		file.FSFileType      = NULL;
+		file.HasResolvedIcon = false;
+		file.Icon            = FT_Arbitrary;
+		file.Type            = FT_MiscImage;
+		file.Length          = 0;
+		file.XlatorID        = NULL;
+
+		rstrncpy( file.Filename, (BYTE *) AString( (WCHAR *) iHook->FriendlyName.c_str() ), 32 );
+
+		TranslateIconToResolved( &file, iHook->HookIcon );
+
+		HookPairs[ FileID ] = *iHook;
+
+		Files.push_back( file );
+
+		FileID++;
+	}
+
 	return 0;
 }
 
@@ -109,3 +153,59 @@ int	RootDirectory::WriteDirectory(void) {
 	return 0;
 }
 
+
+void RootDirectory::TranslateIconToResolved( NativeFile *pFile, HBITMAP hBitmap )
+{
+	BITMAP bmp;
+
+	if ( !GetObject( hBitmap, sizeof(BITMAP), (LPSTR) &bmp ) )
+	{
+		return;
+	}
+
+	IconDef icon;
+
+	/* If the bit depth is less than 24, give up on it */
+	if ( bmp.bmBitsPixel < 24 )
+	{
+		return;
+	}
+
+	icon.bmi.biBitCount     = bmp.bmBitsPixel;
+	icon.bmi.biClrImportant = 0;
+	icon.bmi.biClrUsed      = 0;
+	icon.bmi.biCompression  = BI_RGB;
+	icon.bmi.biHeight       = bmp.bmHeight;
+	icon.bmi.biPlanes       = bmp.bmPlanes;
+	icon.bmi.biSize         = sizeof(BITMAPINFOHEADER);
+	icon.bmi.biWidth        = bmp.bmWidth;
+	icon.bmi.biSizeImage    = bmp.bmHeight * bmp.bmWidthBytes;
+
+	icon.pImage = malloc( bmp.bmHeight * bmp.bmWidthBytes );
+
+	if ( bmp.bmBits != nullptr )
+	{
+		memcpy( icon.pImage, bmp.bmBits, bmp.bmHeight * bmp.bmWidthBytes );
+	}
+	else
+	{
+		// Windows. Sigh.
+		HDC hDC = GetDC( 0 );
+
+		// WINDOWS. SIGH I SAY.
+		BITMAPINFO bmi;
+
+		bmi.bmiHeader = icon.bmi;
+
+		GetDIBits( hDC, hBitmap, 0, bmp.bmHeight, icon.pImage, &bmi, DIB_RGB_COLORS );
+
+		ReleaseDC( 0, hDC );
+	}
+
+	// This makes the icon look square.
+	icon.Aspect = AspectRatio( 34, 28 );
+
+	ResolvedIcons[ pFile->fileID ] = icon;
+
+	pFile->HasResolvedIcon = true;
+}
