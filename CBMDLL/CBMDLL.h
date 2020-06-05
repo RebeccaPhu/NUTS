@@ -16,6 +16,7 @@
 
 extern "C" CBMDLL_API PluginDescriptor *GetPluginDescriptor(void);
 extern "C" CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource );
+extern "C" CBMDLL_API int PerformGlobalCommand( HWND hWnd, DWORD CmdIndex );
 
 extern "C" CBMDLL_API DataSourceCollector *pExternCollector;
 

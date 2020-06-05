@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "D64FileSystem.h"
 #include "CBMFunctions.h"
+#include "OpenCBMPlugin.h"
 
 #include "../NUTS/NUTSError.h"
 #include "resource.h"
@@ -36,6 +37,8 @@ int	D64FileSystem::ReadFile(DWORD FileID, CTempFile &store)
 		}
 	}
 
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 	return 0;
 }
 
@@ -60,8 +63,8 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	if ( file.FSFileType != FT_C64 )
 	{
-		file.Attributes[ 2 ] = 0x00000000;
-		file.Attributes[ 3 ] = 0xFFFFFFFF;
+		file.Attributes[ 2 ] = 0xFFFFFFFF;
+		file.Attributes[ 3 ] = 0x00000000;
 
 		if ( file.Flags & FF_Extension )
 		{
@@ -152,6 +155,8 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 		if ( pSource->WriteSector( AbsSec, Buffer, 256 ) != DS_SUCCESS )
 		{
+			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 			return -1;
 		}
 	
@@ -165,7 +170,11 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		return -1;
 	}
 
-	return pDirectory->ReadDirectory();
+	int r = pDirectory->ReadDirectory();
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
+	return r;
 }
 
 BYTE *D64FileSystem::DescribeFile(DWORD FileIndex) {
@@ -245,7 +254,13 @@ BYTE *D64FileSystem::GetTitleString( NativeFile *pFile )
 	if ( pFile == nullptr )
 	{
 		rsprintf( title, "D64::" );
-		rstrncat( &title[ 5 ], pBAM->DiskName, 16 );
+
+		if ( Drive != 0 )
+		{
+			rsprintf( title, "OPENCBM/%d::", Drive );
+		}
+
+		rstrncat( &title[ 5 ], pBAM->DiskName, 32 );
 	}
 	else
 	{
@@ -515,11 +530,15 @@ int D64FileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 
 			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
 			{
+				if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 				return -1;
 			}
 
 			if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 			{
+				if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 				return -1;
 			}
 
@@ -527,7 +546,10 @@ int D64FileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 		}
 	}
 
-	return 0;}
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
+	return 0;
+}
 
 int D64FileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 {
@@ -568,17 +590,25 @@ int D64FileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 
 			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
 			{
+				if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 				return -1;
 			}
 
 			if ( pDirectory->ReadDirectory() != DS_SUCCESS )
 			{
+				if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 				return -1;
 			}
+
+			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 			return 0;
 		}
 	}
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	return 0;
 }
@@ -654,7 +684,11 @@ int D64FileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
 		break;
 	}
 
-	return pBAM->WriteBAM();
+	int r = pBAM->WriteBAM();
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
+	return r;
 }
 
 int D64FileSystem::Format_Process( FormatType FT, HWND hWnd )
@@ -727,6 +761,8 @@ int D64FileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 	if ( pBAM->WriteBAM() != DS_SUCCESS )
 	{
+		if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 		return -1;
 	}
 
@@ -740,10 +776,14 @@ int D64FileSystem::Format_Process( FormatType FT, HWND hWnd )
 	
 	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
 	{
+		if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 		return -1;
 	}
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 4, 1, 1, true ), (LPARAM) DoneMsg );
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	return 0;
 }
@@ -780,8 +820,12 @@ int D64FileSystem::MarkChain( TSLink Loc )
 		{
 			if ( pBAM->WriteBAM() != DS_SUCCESS )
 			{
+				if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 				return -1;
 			}
+
+			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 			return 0;
 		}
@@ -791,6 +835,8 @@ int D64FileSystem::MarkChain( TSLink Loc )
 		ThisSec.Track  = Buffer[ 0 ];
 		ThisSec.Sector = Buffer[ 1 ];
 	}
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	return -1;
 }
@@ -834,6 +880,8 @@ int D64FileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 	{
 		if ( WaitForSingleObject( hToolEvent, 0 ) == WAIT_OBJECT_0 )
 		{
+			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 			return 0;
 		}
 
@@ -847,6 +895,8 @@ int D64FileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 	}
 
 	::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, 100, 0 );
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	return 0;
 }

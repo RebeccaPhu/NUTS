@@ -15,6 +15,9 @@ public:
 
 		FSID  = FSID_D64;
 		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Spaces | FSF_Reorderable;
+		Drive = 0;
+
+		IsOpenCBM = false;
 	}
 
 	~D64FileSystem(void) {
@@ -59,10 +62,13 @@ public:
 	FSToolList GetToolsList( void );
 	int RunTool( BYTE ToolNum, HWND ProgressWnd );
 
-private:
-	BAM *pBAM;
-
+public:
 	D64Directory *pDir;
+	DWORD        Drive;
+	bool         IsOpenCBM;
+	BAM          *pBAM;
+
+private:
 
 	int MarkChain( TSLink Loc );
 };

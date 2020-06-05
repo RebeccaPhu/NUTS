@@ -12,6 +12,9 @@
 #include "resource.h"
 
 #include "../NUTS/Defs.h"
+#include "../NUTS/Preference.h"
+
+#include <ShlObj.h>
 
 #define FONTID_PETSCII1 0x0000CBC1
 #define FONTID_PETSCII2 0x0000CBC2
@@ -73,32 +76,7 @@ FontDescriptor CBMFonts[2] = {
 	}
 };
 
-RootHook RootHooks[ 4 ] = {
-	{
-		L"OpenCBM/8",
-		FSID_OPENCBM,
-		NULL,
-		{ 8 }
-	},
-	{
-		L"OpenCBM/9",
-		FSID_OPENCBM,
-		NULL,
-		{ 9 }
-	},
-	{
-		L"OpenCBM/10",
-		FSID_OPENCBM,
-		NULL,
-		{ 10 }
-	},
-	{
-		L"OpenCBM/11",
-		FSID_OPENCBM,
-		NULL,
-		{ 11 }
-	}
-};
+RootHook RootHooks[ 4 ];
 
 PluginDescriptor CBMDescriptor = {
 	/* .Provider = */ L"CBM",
@@ -107,13 +85,15 @@ PluginDescriptor CBMDescriptor = {
 	/* .NumFonts = */ 2,
 	/* .BASXlats = */ 0,
 	/* .GFXXlats = */ 0,
-	/* .HumHooks = */ 4,
+	/* .HumHooks = */ 0,
+	/* .Commands = */ 1,
 
 	/* .FSDescriptors  = */ CBMFS,
 	/* .FontDescriptor = */ CBMFonts,
 	/* .BASXlators     = */ nullptr,
 	/* .GFXXlats       = */ nullptr,
-	/* .RootHooks      = */ RootHooks
+	/* .RootHooks      = */ RootHooks,
+	/* .Commands       = */ { L"Set OpenCBM Path" }
 };
 
 CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
@@ -166,10 +146,27 @@ CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 		}
 	}
 
-	CBMDescriptor.RootHooks[ 0 ].HookIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
-	CBMDescriptor.RootHooks[ 1 ].HookIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
-	CBMDescriptor.RootHooks[ 2 ].HookIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
-	CBMDescriptor.RootHooks[ 3 ].HookIcon = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
+	BYTE HookID = 0;
+
+	CBMDescriptor.NumRootHooks = 0;
+
+	if ( OpenCBMLoaded )
+	{
+		for ( BYTE device=8; device<16; device++ )
+		{
+			if ( CBMDeviceBits & ( 1 << device ) )
+			{
+				CBMDescriptor.RootHooks[ HookID ].FriendlyName  = L"OpenCBM/" + std::to_wstring( (long double) device );
+				CBMDescriptor.RootHooks[ HookID ].HookFSID      = FSID_OPENCBM;
+				CBMDescriptor.RootHooks[ HookID ].HookIcon      = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
+				CBMDescriptor.RootHooks[ HookID ].HookData[ 0 ] = device;
+
+				HookID++;
+
+				CBMDescriptor.NumRootHooks++;
+			}
+		}
+	}
 
 	return &CBMDescriptor;
 }
@@ -199,9 +196,20 @@ CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 
 			OpenCBMSource *pOpenCBMSource = new OpenCBMSource( DriveNum );
 
-			pFS = (void *) new D64FileSystem( pOpenCBMSource );
+			D64FileSystem *newFS = new D64FileSystem( pOpenCBMSource );
+
+			newFS->pDir->NoLengthChase = true;
+			newFS->Drive               = DriveNum;
+			newFS->pBAM->Drive         = DriveNum;
+			newFS->pDir->Drive         = DriveNum;
+			newFS->IsOpenCBM           = true;
+			newFS->pBAM->IsOpenCBM     = true;
+			newFS->pDir->IsOpenCBM     = true;
+
+			pFS = (void *) newFS;
 
 			pOpenCBMSource->Release();
+
 		}
 		break;
 
@@ -211,4 +219,35 @@ CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	};
 
 	return pFS;
+}
+
+CBMDLL_API int PerformGlobalCommand( HWND hWnd, DWORD CmdIndex )
+{
+	WCHAR Path[ MAX_PATH + 1 ] = { 0 };
+
+	BROWSEINFO bi;
+
+	bi.hwndOwner      = hWnd;
+	bi.pidlRoot       = NULL;
+	bi.pszDisplayName = Path;
+	bi.lpszTitle      = L"Select location of OpenCBM plugin (opencbm.dll)";
+	bi.ulFlags        = BIF_RETURNONLYFSDIRS | BIF_EDITBOX | BIF_NONEWFOLDERBUTTON;
+	bi.lpfn           = NULL;
+	bi.lParam         = NULL;
+	bi.iImage         = 0;
+
+	ITEMIDLIST *pPIDL = SHBrowseForFolder( &bi );
+
+	if ( pPIDL != NULL )
+	{
+		SHGetPathFromIDList( pPIDL, Path );
+
+		Preference( L"OpenCBMPath" ) = std::wstring( Path );
+
+		LoadOpenCBM();
+
+		CoTaskMemFree( pPIDL ); 
+	}
+
+	return (int) GC_ResultRootRefresh;
 }

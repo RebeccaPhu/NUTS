@@ -60,12 +60,14 @@ typedef struct _PluginDescriptor {
 	WORD  NumTextXlators;
 	WORD  NumGraphicXlators;
 	WORD  NumRootHooks;
+	WORD  NumGlobalCommands;
 
 	FSDescriptor      *FSDescriptors;
 	FontDescriptor    *FontDescriptors;
 	TextTranslator    *TextXlators;
 	GraphicTranslator *GraphicXlators;
 	RootHook          *RootHooks;
+	std::wstring      GlobalCommand[ 8 ];
 } PluginDescriptor;
 
 #endif

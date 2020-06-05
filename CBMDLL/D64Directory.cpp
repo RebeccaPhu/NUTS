@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "D64Directory.h"
 #include "CBMFunctions.h"
+#include "OpenCBMPlugin.h"
 #include "../nuts/libfuncs.h"
 
 int	D64Directory::ReadDirectory(void) {
@@ -122,14 +123,16 @@ int	D64Directory::ReadDirectory(void) {
 							file.Length	+= 254;
 						}
 					}
-
-					file.EncodingID = ENCODING_PETSCII;
-
-					Files.push_back(file);
 				}
+
+				file.EncodingID = ENCODING_PETSCII;
+
+				Files.push_back(file);
 			}
 		}
 	}
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	return 0;
 }
@@ -148,6 +151,8 @@ int	D64Directory::WriteDirectory(void) {
 	DWORD CFile = 0;
 
 	BYTE Buffer[ 256 ];
+
+	bool SectorsGrabbed = false;
 
 	while ( CFile < Files.size() ) {
 		if ( pSource->ReadSector( SectorForLink( nt, ns ), Buffer, 256 ) != DS_SUCCESS )
@@ -204,16 +209,39 @@ int	D64Directory::WriteDirectory(void) {
 
 			Buffer[ 0 ] = NextLoc.Track;
 			Buffer[ 1 ] = NextLoc.Sector;
+
+			SectorsGrabbed = true;
+		}
+
+		if ( CFile >= Files.size() )
+		{
+			Buffer[ 0 ] = 0;
+			Buffer[ 1 ] = 0;
 		}
 
 		if ( pSource->WriteSector( SectorForLink( nt, ns ), Buffer, 256 ) != DS_SUCCESS )
 		{
+			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
 			return -1;
 		}
 
 		nt = Buffer[ 0 ];
 		ns = Buffer[ 1 ];
 	}
+
+	/* IF we grabbed sectors to extend the directory, we'll need to write the BAM back */
+	if ( SectorsGrabbed )
+	{
+		if ( pBAM->WriteBAM() != DS_SUCCESS )
+		{
+			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
+
+			return -1;
+		}
+	}
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	return 0;
 }

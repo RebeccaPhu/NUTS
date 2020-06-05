@@ -7,11 +7,14 @@
 OpenCBMSource::OpenCBMSource( DWORD DriveNum )
 {
 	Drive = DriveNum;
+
+	OpenCBM_OpenDrive( Drive );
 }
 
 
 OpenCBMSource::~OpenCBMSource(void)
 {
+	OpenCBM_CloseDrive( Drive );
 }
 
 int OpenCBMSource::ReadSector(long Sector, void *pSectorBuf, long SectorSize)
@@ -23,7 +26,7 @@ int OpenCBMSource::ReadSector(long Sector, void *pSectorBuf, long SectorSize)
 		return NUTSError( 0x93, L"OpenCBM not found" );
 	}
 
-	return NUTSError( 0x92, L"Working on it" );
+	return OpenCBM_ReadBlock( Drive, TS, (BYTE *) pSectorBuf );
 }
 
 int OpenCBMSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize)
@@ -35,7 +38,7 @@ int OpenCBMSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize)
 		return NUTSError( 0x93, L"OpenCBM not found" );
 	}
 
-	return NUTSError( 0x92, L"Working on it" );
+	return OpenCBM_WriteBlock( Drive, TS, (BYTE *) pSectorBuf );
 }
 
 int OpenCBMSource::ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )

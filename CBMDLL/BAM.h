@@ -23,6 +23,9 @@ public:
 		DOSID[ 0 ]   = '2';
 		DOSID[ 1 ]   = 'A';
 		DosVer       = 'A';
+
+		IsOpenCBM    = false;
+		Drive        = 0;
 	}
 
 	~BAM(void)
@@ -45,6 +48,8 @@ public:
 	BYTE DOSID[ 2 ];
 
 	BYTE DosVer;
+	bool IsOpenCBM;
+	BYTE Drive;
 
 private:
 	DataSource *pSource;

@@ -259,12 +259,14 @@ PluginDescriptor AcornDescriptor = {
 	/* .BASXlats = */ 1,
 	/* .GFXXlats = */ 2,
 	/* .NumHooks = */ 0,
+	/* .Commands = */ 0,
 
 	/* .FSDescriptors  = */ AcornFS,
 	/* .FontDescriptor = */ AcornFonts,
 	/* .BASICXlators   = */ BBCBASICTXT,
 	/* .GFXXlators     = */ AcornGFX,
-	/* .RootHooks      = */ nullptr
+	/* .RootHooks      = */ nullptr,
+	/* .Commands       = */ { }
 };
 
 ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)

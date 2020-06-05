@@ -17,12 +17,14 @@
 typedef PluginDescriptor *(*fnGetPluginDescriptor)(void);
 typedef FileSystem *(*fnCreateFS)( DWORD, DataSource * );
 typedef void *(*fnCreateTranslator)( DWORD );
+typedef int (*fnPerformGlobalCommand)( HWND, DWORD );
 
 typedef struct _Plugin {
 	HMODULE Handle;
-	fnGetPluginDescriptor DescriptorFunc;
-	fnCreateFS            CreatorFunc;
-	fnCreateTranslator    XlatCreatorFunc;
+	fnGetPluginDescriptor  DescriptorFunc;
+	fnCreateFS             CreatorFunc;
+	fnCreateTranslator     XlatCreatorFunc;
+	fnPerformGlobalCommand PerformGlobalCommand;
 } Plugin;
 
 typedef struct _FormatMenu {
@@ -71,8 +73,11 @@ public:
 	TextTranslatorList GetTextTranslators( DWORD PUID );
 	GraphicTranslatorList GetGraphicTranslators( DWORD PUID );
 	RootHookList GetRootHooks();
+	GlobalCommandSet GetGlobalCommands();
 
 	std::vector<DWORD> FontListForEncoding( DWORD Encoding );
+
+	int PerformGlobalCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex );
 
 private:
 	std::vector<PluginDescriptor> PluginDescriptors;

@@ -80,10 +80,11 @@ void CPlugins::LoadPlugin( char *plugin )
 	{
 		Plugin plugin;
 
-		plugin.Handle          = hModule;
-		plugin.DescriptorFunc  = (fnGetPluginDescriptor) GetProcAddress( hModule, "GetPluginDescriptor" );
-		plugin.CreatorFunc     = (fnCreateFS)            GetProcAddress( hModule, "CreateFS" );
-		plugin.XlatCreatorFunc = (fnCreateTranslator)    GetProcAddress( hModule, "CreateTranslator" );
+		plugin.Handle               = hModule;
+		plugin.DescriptorFunc       = (fnGetPluginDescriptor)  GetProcAddress( hModule, "GetPluginDescriptor" );
+		plugin.CreatorFunc          = (fnCreateFS)             GetProcAddress( hModule, "CreateFS" );
+		plugin.XlatCreatorFunc      = (fnCreateTranslator)     GetProcAddress( hModule, "CreateTranslator" );
+		plugin.PerformGlobalCommand = (fnPerformGlobalCommand) GetProcAddress( hModule, "PerformGlobalCommand" );
 
 		DataSourceCollector **ppCollector = (DataSourceCollector **) GetProcAddress( hModule, "pExternCollector" );
 
@@ -632,4 +633,53 @@ RootHookList CPlugins::GetRootHooks()
 	}
 
 	return Hooks;
+}
+
+GlobalCommandSet CPlugins::GetGlobalCommands()
+{
+	GlobalCommandSet Commands;
+
+	PluginList::iterator iter = Plugins.begin();
+
+	while ( iter != Plugins.end() )
+	{
+		PluginDescriptor *D = iter->DescriptorFunc();
+
+		BYTE i;
+
+		for ( i=0; i<D->NumGlobalCommands; i++ )
+		{
+			GlobalCommand g;
+
+			g.PUID     = D->PUID;
+			g.Text     = D->GlobalCommand[ i ];
+			g.CmdIndex = i;
+
+			Commands.push_back( g );
+		}
+
+		iter++;
+	}
+
+	return Commands;
+}
+
+int CPlugins::PerformGlobalCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex )
+{
+	PluginList::iterator iter = Plugins.begin();
+
+	while ( iter != Plugins.end() )
+	{
+		PluginDescriptor *D = iter->DescriptorFunc();
+
+		if ( D->PUID == PUID )
+		{
+			if ( iter->PerformGlobalCommand != nullptr )
+			{
+				return iter->PerformGlobalCommand( hWnd, CmdIndex );
+			}
+		}
+
+		iter++;
+	}
 }

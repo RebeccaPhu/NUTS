@@ -19,7 +19,7 @@ typedef enum _FileType {
 	FT_Spool     =  5, // Text that can be spooled as if typed ( e.g. Acorn *SPOOL file)
 	FT_Text      =  6, // Plain text. 'Nuff said.
 	FT_BASIC     =  7, // Some kind of BASIC program. Doesn't imply whose.
-	FT_Data      =  8, // Arbitrary data, as distinct from Code, BASIC, SCript or SPool.
+	FT_Data      =  8, // Arbitrary data, as distinct from Code, BASIC, SCript or Spool.
 	FT_Graphic   =  9, // Graphical data in some way.
 	FT_Sound     = 10, // Audio data in some way.
 	FT_Pref      = 11, // Some kind of settings file
@@ -293,6 +293,20 @@ typedef struct _SidecarImport {
 
 typedef std::vector<FSTool> FSToolList;
 typedef FSToolList::iterator FSToolIterator;
+
+typedef struct _GlobaCommand {
+	DWORD PUID;
+	DWORD CmdIndex;
+	std::wstring Text;
+} GlobalCommand;
+
+typedef enum _GlobalCommandResult {
+	GC_ResultNone        = 0,
+	GC_ResultRefresh     = 1,
+	GC_ResultRootRefresh = 2,
+} GlobalCommandResult;
+
+typedef std::vector<GlobalCommand> GlobalCommandSet;
 
 #define FILEOP_SUCCESS      0
 #define FILEOP_NEEDS_ASCII  1

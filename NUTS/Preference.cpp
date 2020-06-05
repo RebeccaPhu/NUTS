@@ -65,7 +65,7 @@ Preference::operator std::wstring ()
 		return SDefValue;
 	}
 
-	return L"";
+	return std::wstring( v );
 }
 
 Preference::operator bool ()
@@ -91,11 +91,9 @@ Preference::operator bool ()
 
 Preference& Preference::operator=(const std::wstring &v )
 {
-	DWORD t  = REG_DWORD;
-
 	HKEY hRoot = GetRegistryKey();
 
-	RegSetValueEx( hRoot, KeyName.c_str(), NULL, REG_DWORD, (BYTE *) v.c_str(), v.length() );
+	RegSetValueEx( hRoot, KeyName.c_str(), NULL, REG_SZ, (BYTE *) v.c_str(), v.length() * sizeof( WCHAR ) );
 
 	return *this;
 }

@@ -53,7 +53,7 @@ TSLink LinkForSector( DWORD Sector )
 
 	while ( Track <= 35 )
 	{
-		if ( Sector > spt[ Track ] )
+		if ( Sector >= spt[ Track ] )
 		{
 			Sector -= spt[ Track ];
 		}

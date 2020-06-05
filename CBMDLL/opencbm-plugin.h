@@ -50,6 +50,7 @@ typedef const char * CBMAPIDECL opencbm_plugin_get_driver_name_t(const char * co
  \return
 */
 typedef int CBMAPIDECL opencbm_plugin_driver_open_t(CBM_FILE *HandleDevice, const char * const Port);
+typedef int CBMAPIDECL opencbm_plugin_driver_open_ex_t(CBM_FILE *f, char * adapter);
 
 /*! \brief @@@@@ \todo document
 
@@ -103,7 +104,9 @@ typedef int CBMAPIDECL opencbm_plugin_raw_read_t(CBM_FILE HandleDevice, void *Bu
 
  \return
 */
-typedef int CBMAPIDECL opencbm_plugin_open_t(CBM_FILE HandleDevice, unsigned char DeviceAddress, unsigned char SecondaryAddress);
+typedef int CBMAPIDECL opencbm_plugin_open_t(CBM_FILE f, unsigned char dev, unsigned char secadr, const void *fname, size_t len);
+//typedef int CBMAPIDECL opencbm_plugin_open_t(CBM_FILE HandleDevice, unsigned char DeviceAddress, unsigned char SecondaryAddress);
+
 
 /*! \brief @@@@@ \todo document
 
@@ -342,6 +345,9 @@ typedef int CBMAPIDECL opencbm_plugin_tap_download_config_t(CBM_FILE HandleDevic
 typedef int CBMAPIDECL opencbm_plugin_tap_upload_config_t(CBM_FILE HandleDevice, unsigned char *Buffer, unsigned int Length, int *Status, int *BytesWritten);
 typedef int CBMAPIDECL opencbm_plugin_tap_break_t(CBM_FILE HandleDevice);
 
+typedef int CBMAPIDECL opencbm_plugin_exec_command_t(CBM_FILE f, unsigned char dev, const void *cmd, size_t len);
+typedef int CBMAPIDECL opencbm_plugin_identify_t(CBM_FILE f, unsigned char drv, enum cbm_device_type_e *t, const char **type_str);
+
 /*! \brief read a block of data from the OpenCBM backend with protocol serial-1
 
  \param HandleDevice  
@@ -531,6 +537,9 @@ typedef int CBMAPIDECL opencbm_plugin_iec_dbg_read_t(CBM_FILE HandleDevice);
 */
 typedef int CBMAPIDECL opencbm_plugin_iec_dbg_write_t(CBM_FILE HandleDevice, unsigned char Value);
 
+typedef int CBMAPIDECL opencbm_plugin_device_status_t(CBM_FILE f, unsigned char dev, void *buf, size_t bufsize);
+
+typedef int CBMAPIDECL opencbm_plugin_reset_t(CBM_FILE f);
 
 /*! \brief holds all callbacks of the plugin
 

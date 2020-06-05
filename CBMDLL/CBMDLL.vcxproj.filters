@@ -116,6 +116,9 @@
     <ClCompile Include="OpenCBMPlugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\NUTS\Preference.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CBMDLL.rc">

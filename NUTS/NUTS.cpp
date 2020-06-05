@@ -70,6 +70,8 @@ HANDLE rightThread = NULL;
 HWND   FocusPane   = NULL;
 HWND   DragSource  = NULL;
 
+std::map< DWORD, GlobalCommand> GlobalCommandMap;
+
 typedef struct _EnterVars
 {
 	CFileViewer *pane;
@@ -203,6 +205,45 @@ void ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleCom
 	pPane->SetTitleStack( *pTitleStack );
 }
 
+void ConfigureExtrasMenu( void )
+{
+	HMENU hMenuBar = GetMenu( hMainWnd );
+
+	/* Windows is a bit silly here. Unless you create a menu for the menu item, Windows assumes it is a command in itself.
+	   So create a submenu here */
+
+	HMENU hExtraMenu = CreatePopupMenu();
+
+	MENUITEMINFO mii = { 0 };
+	mii.cbSize = sizeof( MENUITEMINFO );
+	mii.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU ;
+	mii.wID = 42999;
+	mii.hSubMenu = hExtraMenu;
+	mii.dwTypeData = _T( "Extras" );
+
+	InsertMenuItem( hMenuBar, (UINT) 2, TRUE, &mii );
+
+	/* Now add the items */
+	GlobalCommandSet menus = FSPlugins.GetGlobalCommands();
+	GlobalCommandSet::iterator iter;
+
+	if ( menus.size() == 0 )
+	{
+		AppendMenu( hExtraMenu, MF_STRING, (UINT) EXTRA_MENU_BASE, L"None available" );
+
+		EnableMenuItem( hExtraMenu, 0, MF_DISABLED | MF_BYPOSITION );
+	}
+
+	UINT index = EXTRA_MENU_BASE;
+
+	for (iter = menus.begin(); iter != menus.end(); iter++ )
+	{
+		AppendMenu( hExtraMenu, MF_STRING, (UINT) index, iter->Text.c_str() );
+
+		GlobalCommandMap[ index ] = *iter;
+	}
+}
+
 void SetUpBaseMappings( void )
 {
 	ExtReg.RegisterExtension( L"BIN", FT_Binary,  FT_Binary  );
@@ -263,6 +304,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	hMainWnd	= hWnd;
 
 	FSPlugins.LoadPlugins();
+
+	ConfigureExtrasMenu();
 
 	leftPane.FS  = new RootFileSystem(); 
 	rightPane.FS = new RootFileSystem(); 
@@ -993,6 +1036,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		wmId    = LOWORD(wParam);
 		wmEvent = HIWORD(wParam);
 		// Parse the menu selections:
+
+		if ( ( wmId >= EXTRA_MENU_BASE ) && ( wmId <= EXTRA_MENU_END ) )
+		{
+			if ( GlobalCommandMap.find( wmId ) != GlobalCommandMap.end() )
+			{
+				GlobalCommandResult r = (GlobalCommandResult) FSPlugins.PerformGlobalCommand( hMainWnd, GlobalCommandMap[ wmId ].PUID, GlobalCommandMap[ wmId ].CmdIndex );
+
+				if ( r == GC_ResultRefresh )
+				{
+					PostMessage( leftPane.hWnd, WM_COMMAND, IDM_REFRESH, 0 );
+					PostMessage( rightPane.hWnd, WM_COMMAND, IDM_REFRESH, 0 );
+				}
+
+				if ( r == GC_ResultRootRefresh )
+				{
+					if ( leftPane.FS->FSID == FS_Root )
+					{
+						PostMessage( leftPane.hWnd, WM_COMMAND, IDM_REFRESH, 0 );
+					}
+
+					if ( rightPane.FS->FSID == FS_Root )
+					{
+						PostMessage( rightPane.hWnd, WM_COMMAND, IDM_REFRESH, 0 );
+					}
+				}
+			}
+
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+
 		switch (wmId)
 		{
 		case IDM_ABOUT:

@@ -3,6 +3,7 @@
 
 #include "CBMFunctions.h"
 #include "../NUTS/libfuncs.h"
+#include "OpenCBMPlugin.h"
 
 int BAM::ReadBAM( void )
 {
@@ -12,6 +13,8 @@ int BAM::ReadBAM( void )
 	{
 		return -1;
 	}
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	SwapChars( &Buffer[ 0x90 ], 16 );
 
@@ -158,6 +161,8 @@ int BAM::WriteBAM( void )
 	{
 		return -1;
 	}
+
+	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	return 0;
 }
