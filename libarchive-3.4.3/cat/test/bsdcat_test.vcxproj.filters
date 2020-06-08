@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\test_utils\test_utils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test_utils\test_main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_0.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_empty_gz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_empty_lz4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_empty_xz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_empty_zstd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_error.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_error_mixed.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_expand_Z.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_expand_bz2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_expand_gz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_expand_lz4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_expand_mixed.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_expand_plain.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_expand_xz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_expand_zstd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_help.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_stdin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_version.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{DA162585-7A9A-3278-925E-BF7FAB4EBAF7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4B3BC458-DAA3-3106-8DA0-F767E9DE0476}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

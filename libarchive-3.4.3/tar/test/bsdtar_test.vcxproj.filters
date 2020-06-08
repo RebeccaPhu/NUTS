@@ -1,0 +1,222 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\test_utils\test_utils.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\test_utils\test_main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_0.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_basic.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_copy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_empty_mtree.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_Z.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_bz2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_grz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_gz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_lrz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_lz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_lz4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_lzma.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_lzo.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_xz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_extract_tar_zstd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_format_newc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_help.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_leading_slash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_missing_file.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_C_upper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_C_mtree.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_H_upper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_L_upper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_O_upper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_T_upper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_U_upper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_X_upper.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_a.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_acls.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_b.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_b64encode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_exclude.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_exclude_vcs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_fflags.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_gid_gname.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_grzip.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_j.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_k.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_keep_newer_files.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_lrzip.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_lz4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_lzma.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_lzop.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_n.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_newer_than.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_nodump.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_older_than.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_passphrase.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_q.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_r.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_s.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_safe_writes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_uid_uname.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_uuencode.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_xattrs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_xz.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_z.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_option_zstd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_patterns.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_print_longpath.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_stdio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_strip_components.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_symlink_dir.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_version.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="test_windows.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{DA162585-7A9A-3278-925E-BF7FAB4EBAF7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4B3BC458-DAA3-3106-8DA0-F767E9DE0476}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

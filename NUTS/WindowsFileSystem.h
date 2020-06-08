@@ -26,6 +26,7 @@ public:
 	}
 
 	DataSource *FileDataSource( DWORD FileID );
+	FileSystem *FileFilesystem( DWORD FileID );
 
 	BYTE *GetTitleString( NativeFile *pFile = nullptr );
 

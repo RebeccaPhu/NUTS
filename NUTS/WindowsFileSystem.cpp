@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "WindowsFileSystem.h"
 #include "ImageDataSource.h"
+#include "ZIPFile.h"
 
 WindowsFileSystem::WindowsFileSystem( std::wstring rootDrive ) : FileSystem(NULL) {
 	pWindowsDirectory	= new WindowsDirectory(rootDrive);
@@ -193,6 +194,27 @@ DataSource *WindowsFileSystem::FileDataSource( DWORD FileID )
 	FilePath += pWindowsDirectory->WindowsFiles[ FileID ];
 
 	return new ImageDataSource( FilePath );
+}
+
+FileSystem *WindowsFileSystem::FileFilesystem( DWORD FileID )
+{
+	if ( FileID > pDirectory->Files.size() )
+	{
+		return nullptr;
+	}
+
+	if ( rstrnicmp( pDirectory->Files[ FileID ].Extension, (BYTE *) "ZIP", 3 ) )
+	{
+		DataSource *pSource = FileDataSource( FileID );
+
+		FileSystem *pFS = new ZIPFile( pSource );
+
+		pSource->Release();
+
+		return pFS;
+	}
+
+	return nullptr;
 }
 
 BYTE *WindowsFileSystem::GetTitleString( NativeFile *pFile )

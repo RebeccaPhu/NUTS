@@ -1,5 +1,6 @@
 #pragma once
 #include "datasource.h"
+#include "libfuncs.h"
 
 #include <stdio.h>
 #include <winioctl.h>
@@ -42,6 +43,11 @@ public:
 	virtual int Truncate( QWORD Length );
 
 	std::wstring( ImageSource );
+
+	virtual char *GetLocation()
+	{
+		return AString( (WCHAR *) ImageSource.c_str() );
+	}
 
 private:
 	void UpdateSize( void );

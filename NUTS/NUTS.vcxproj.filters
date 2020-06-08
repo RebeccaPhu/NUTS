@@ -201,6 +201,12 @@
     <ClCompile Include="MemorySource.cpp">
       <Filter>Source Files\Data Sources</Filter>
     </ClCompile>
+    <ClCompile Include="ZIPFile.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="ZIPDirectory.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -361,6 +367,12 @@
     </ClInclude>
     <ClInclude Include="MemorySource.h">
       <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="ZIPFile.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="ZIPDirectory.h">
+      <Filter>Header Files\File Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,0 +1,602 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|Win32">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|Win32">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9BEE2E2B-E71D-3E55-821E-F2B6F01A8F14}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <Platform>Win32</Platform>
+    <ProjectName>libarchive_test</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">E:\NUTS\libarchive-3.4.3\bin\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">libarchive_test.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">libarchive_test</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">E:\NUTS\libarchive-3.4.3\bin\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">libarchive_test.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">libarchive_test</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">E:\NUTS\libarchive-3.4.3\bin\MinSizeRel\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">libarchive_test.dir\MinSizeRel\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">libarchive_test</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">E:\NUTS\libarchive-3.4.3\bin\RelWithDebInfo\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">libarchive_test.dir\RelWithDebInfo\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">libarchive_test</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /w14062 /w14254 /w14295 /w14296 /w14389 /w14505 /w14514 /w14702 /w14706</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <CompileAs>CompileAsC</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LIBARCHIVE_STATIC;LIST_H;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;LIBARCHIVE_STATIC;LIST_H;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\Debug\archive_static.lib;Bcrypt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/NUTS/libarchive-3.4.3/libarchive/test/Debug/libarchive_test.lib</ImportLibrary>
+      <ProgramDataBaseFile>E:/NUTS/libarchive-3.4.3/bin/Debug/libarchive_test.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;LIBARCHIVE_STATIC;LIST_H;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;LIBARCHIVE_STATIC;LIST_H;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\Release\archive_static.lib;Bcrypt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/NUTS/libarchive-3.4.3/libarchive/test/Release/libarchive_test.lib</ImportLibrary>
+      <ProgramDataBaseFile>E:/NUTS/libarchive-3.4.3/bin/Release/libarchive_test.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MinSpace</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;LIBARCHIVE_STATIC;LIST_H;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;LIBARCHIVE_STATIC;LIST_H;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\MinSizeRel\archive_static.lib;Bcrypt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/NUTS/libarchive-3.4.3/libarchive/test/MinSizeRel/libarchive_test.lib</ImportLibrary>
+      <ProgramDataBaseFile>E:/NUTS/libarchive-3.4.3/bin/MinSizeRel/libarchive_test.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <CompileAs>CompileAsC</CompileAs>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;LIBARCHIVE_STATIC;LIST_H;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;LIBARCHIVE_STATIC;LIST_H;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>E:\NUTS\libarchive-3.4.3\libarchive;E:\NUTS\libarchive-3.4.3;E:\NUTS\libarchive-3.4.3\libarchive\test;E:\NUTS\libarchive-3.4.3\test_utils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\RelWithDebInfo\archive_static.lib;Bcrypt.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:X86</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>E:/NUTS/libarchive-3.4.3/libarchive/test/RelWithDebInfo/libarchive_test.lib</ImportLibrary>
+      <ProgramDataBaseFile>E:/NUTS/libarchive-3.4.3/bin/RelWithDebInfo/libarchive_test.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="CMakeLists.txt">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Custom Rule E:/NUTS/libarchive-3.4.3/libarchive/test/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/NUTS/libarchive-3.4.3 -BE:/NUTS/libarchive-3.4.3 --check-stamp-file E:/NUTS/libarchive-3.4.3/libarchive/test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">E:\NUTS\libarchive-3.4.3\libarchive\test\list.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">E:\NUTS\libarchive-3.4.3\libarchive\test\CMakeFiles\generate.stamp</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Custom Rule E:/NUTS/libarchive-3.4.3/libarchive/test/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/NUTS/libarchive-3.4.3 -BE:/NUTS/libarchive-3.4.3 --check-stamp-file E:/NUTS/libarchive-3.4.3/libarchive/test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">E:\NUTS\libarchive-3.4.3\libarchive\test\list.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">E:\NUTS\libarchive-3.4.3\libarchive\test\CMakeFiles\generate.stamp</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">Building Custom Rule E:/NUTS/libarchive-3.4.3/libarchive/test/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/NUTS/libarchive-3.4.3 -BE:/NUTS/libarchive-3.4.3 --check-stamp-file E:/NUTS/libarchive-3.4.3/libarchive/test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">E:\NUTS\libarchive-3.4.3\libarchive\test\list.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">E:\NUTS\libarchive-3.4.3\libarchive\test\CMakeFiles\generate.stamp</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">Building Custom Rule E:/NUTS/libarchive-3.4.3/libarchive/test/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/NUTS/libarchive-3.4.3 -BE:/NUTS/libarchive-3.4.3 --check-stamp-file E:/NUTS/libarchive-3.4.3/libarchive/test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">E:\NUTS\libarchive-3.4.3\libarchive\test\list.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">E:\NUTS\libarchive-3.4.3\libarchive\test\CMakeFiles\generate.stamp</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\test_utils\test_utils.c" />
+    <ClCompile Include="..\..\test_utils\test_main.c" />
+    <ClCompile Include="read_open_memory.c" />
+    <ClInclude Include="test.h" />
+    <ClCompile Include="test_acl_nfs4.c" />
+    <ClCompile Include="test_acl_pax.c" />
+    <ClCompile Include="test_acl_platform_nfs4.c" />
+    <ClCompile Include="test_acl_platform_posix1e.c" />
+    <ClCompile Include="test_acl_posix1e.c" />
+    <ClCompile Include="test_acl_text.c" />
+    <ClCompile Include="test_archive_api_feature.c" />
+    <ClCompile Include="test_archive_clear_error.c" />
+    <ClCompile Include="test_archive_cmdline.c" />
+    <ClCompile Include="test_archive_digest.c" />
+    <ClCompile Include="test_archive_getdate.c" />
+    <ClCompile Include="test_archive_match_owner.c" />
+    <ClCompile Include="test_archive_match_path.c" />
+    <ClCompile Include="test_archive_match_time.c" />
+    <ClCompile Include="test_archive_pathmatch.c" />
+    <ClCompile Include="test_archive_read_add_passphrase.c" />
+    <ClCompile Include="test_archive_read_close_twice.c" />
+    <ClCompile Include="test_archive_read_close_twice_open_fd.c" />
+    <ClCompile Include="test_archive_read_close_twice_open_filename.c" />
+    <ClCompile Include="test_archive_read_multiple_data_objects.c" />
+    <ClCompile Include="test_archive_read_next_header_empty.c" />
+    <ClCompile Include="test_archive_read_next_header_raw.c" />
+    <ClCompile Include="test_archive_read_open2.c" />
+    <ClCompile Include="test_archive_read_set_filter_option.c" />
+    <ClCompile Include="test_archive_read_set_format_option.c" />
+    <ClCompile Include="test_archive_read_set_option.c" />
+    <ClCompile Include="test_archive_read_set_options.c" />
+    <ClCompile Include="test_archive_read_support.c" />
+    <ClCompile Include="test_archive_set_error.c" />
+    <ClCompile Include="test_archive_string.c" />
+    <ClCompile Include="test_archive_string_conversion.c" />
+    <ClCompile Include="test_archive_write_add_filter_by_name.c" />
+    <ClCompile Include="test_archive_write_set_filter_option.c" />
+    <ClCompile Include="test_archive_write_set_format_by_name.c" />
+    <ClCompile Include="test_archive_write_set_format_filter_by_ext.c" />
+    <ClCompile Include="test_archive_write_set_format_option.c" />
+    <ClCompile Include="test_archive_write_set_option.c" />
+    <ClCompile Include="test_archive_write_set_options.c" />
+    <ClCompile Include="test_archive_write_set_passphrase.c" />
+    <ClCompile Include="test_bad_fd.c" />
+    <ClCompile Include="test_compat_bzip2.c" />
+    <ClCompile Include="test_compat_cpio.c" />
+    <ClCompile Include="test_compat_gtar.c" />
+    <ClCompile Include="test_compat_gzip.c" />
+    <ClCompile Include="test_compat_lz4.c" />
+    <ClCompile Include="test_compat_lzip.c" />
+    <ClCompile Include="test_compat_lzma.c" />
+    <ClCompile Include="test_compat_lzop.c" />
+    <ClCompile Include="test_compat_mac.c" />
+    <ClCompile Include="test_compat_perl_archive_tar.c" />
+    <ClCompile Include="test_compat_plexus_archiver_tar.c" />
+    <ClCompile Include="test_compat_solaris_pax_sparse.c" />
+    <ClCompile Include="test_compat_solaris_tar_acl.c" />
+    <ClCompile Include="test_compat_star_acl.c" />
+    <ClCompile Include="test_compat_tar_hardlink.c" />
+    <ClCompile Include="test_compat_uudecode.c" />
+    <ClCompile Include="test_compat_uudecode_large.c" />
+    <ClCompile Include="test_compat_xz.c" />
+    <ClCompile Include="test_compat_zip.c" />
+    <ClCompile Include="test_compat_zstd.c" />
+    <ClCompile Include="test_empty_write.c" />
+    <ClCompile Include="test_entry.c" />
+    <ClCompile Include="test_entry_strmode.c" />
+    <ClCompile Include="test_extattr_freebsd.c" />
+    <ClCompile Include="test_filter_count.c" />
+    <ClCompile Include="test_fuzz.c" />
+    <ClCompile Include="test_gnutar_filename_encoding.c" />
+    <ClCompile Include="test_link_resolver.c" />
+    <ClCompile Include="test_open_failure.c" />
+    <ClCompile Include="test_open_fd.c" />
+    <ClCompile Include="test_open_file.c" />
+    <ClCompile Include="test_open_filename.c" />
+    <ClCompile Include="test_pax_filename_encoding.c" />
+    <ClCompile Include="test_pax_xattr_header.c" />
+    <ClCompile Include="test_read_data_large.c" />
+    <ClCompile Include="test_read_disk.c" />
+    <ClCompile Include="test_read_disk_directory_traversals.c" />
+    <ClCompile Include="test_read_disk_entry_from_file.c" />
+    <ClCompile Include="test_read_extract.c" />
+    <ClCompile Include="test_read_file_nonexistent.c" />
+    <ClCompile Include="test_read_filter_compress.c" />
+    <ClCompile Include="test_read_filter_grzip.c" />
+    <ClCompile Include="test_read_filter_lrzip.c" />
+    <ClCompile Include="test_read_filter_lzop.c" />
+    <ClCompile Include="test_read_filter_lzop_multiple_parts.c" />
+    <ClCompile Include="test_read_filter_program.c" />
+    <ClCompile Include="test_read_filter_program_signature.c" />
+    <ClCompile Include="test_read_filter_uudecode.c" />
+    <ClCompile Include="test_read_format_7zip.c" />
+    <ClCompile Include="test_read_format_7zip_encryption_data.c" />
+    <ClCompile Include="test_read_format_7zip_encryption_header.c" />
+    <ClCompile Include="test_read_format_7zip_encryption_partially.c" />
+    <ClCompile Include="test_read_format_7zip_malformed.c" />
+    <ClCompile Include="test_read_format_7zip_packinfo_digests.c" />
+    <ClCompile Include="test_read_format_ar.c" />
+    <ClCompile Include="test_read_format_cab.c" />
+    <ClCompile Include="test_read_format_cab_filename.c" />
+    <ClCompile Include="test_read_format_cpio_afio.c" />
+    <ClCompile Include="test_read_format_cpio_bin.c" />
+    <ClCompile Include="test_read_format_cpio_bin_Z.c" />
+    <ClCompile Include="test_read_format_cpio_bin_be.c" />
+    <ClCompile Include="test_read_format_cpio_bin_bz2.c" />
+    <ClCompile Include="test_read_format_cpio_bin_gz.c" />
+    <ClCompile Include="test_read_format_cpio_bin_le.c" />
+    <ClCompile Include="test_read_format_cpio_bin_lzip.c" />
+    <ClCompile Include="test_read_format_cpio_bin_lzma.c" />
+    <ClCompile Include="test_read_format_cpio_bin_xz.c" />
+    <ClCompile Include="test_read_format_cpio_filename.c" />
+    <ClCompile Include="test_read_format_cpio_odc.c" />
+    <ClCompile Include="test_read_format_cpio_svr4_bzip2_rpm.c" />
+    <ClCompile Include="test_read_format_cpio_svr4_gzip.c" />
+    <ClCompile Include="test_read_format_cpio_svr4_gzip_rpm.c" />
+    <ClCompile Include="test_read_format_cpio_svr4c_Z.c" />
+    <ClCompile Include="test_read_format_empty.c" />
+    <ClCompile Include="test_read_format_gtar_filename.c" />
+    <ClCompile Include="test_read_format_gtar_gz.c" />
+    <ClCompile Include="test_read_format_gtar_lzma.c" />
+    <ClCompile Include="test_read_format_gtar_sparse.c" />
+    <ClCompile Include="test_read_format_gtar_sparse_skip_entry.c" />
+    <ClCompile Include="test_read_format_iso_Z.c" />
+    <ClCompile Include="test_read_format_iso_multi_extent.c" />
+    <ClCompile Include="test_read_format_iso_xorriso.c" />
+    <ClCompile Include="test_read_format_isojoliet_bz2.c" />
+    <ClCompile Include="test_read_format_isojoliet_long.c" />
+    <ClCompile Include="test_read_format_isojoliet_rr.c" />
+    <ClCompile Include="test_read_format_isojoliet_versioned.c" />
+    <ClCompile Include="test_read_format_isorr_bz2.c" />
+    <ClCompile Include="test_read_format_isorr_ce.c" />
+    <ClCompile Include="test_read_format_isorr_new_bz2.c" />
+    <ClCompile Include="test_read_format_isorr_rr_moved.c" />
+    <ClCompile Include="test_read_format_isozisofs_bz2.c" />
+    <ClCompile Include="test_read_format_lha.c" />
+    <ClCompile Include="test_read_format_lha_bugfix_0.c" />
+    <ClCompile Include="test_read_format_lha_filename.c" />
+    <ClCompile Include="test_read_format_lha_filename_utf16.c" />
+    <ClCompile Include="test_read_format_mtree.c" />
+    <ClCompile Include="test_read_format_mtree_crash747.c" />
+    <ClCompile Include="test_read_format_pax_bz2.c" />
+    <ClCompile Include="test_read_format_rar.c" />
+    <ClCompile Include="test_read_format_rar_encryption_data.c" />
+    <ClCompile Include="test_read_format_rar_encryption_header.c" />
+    <ClCompile Include="test_read_format_rar_encryption_partially.c" />
+    <ClCompile Include="test_read_format_rar_invalid1.c" />
+    <ClCompile Include="test_read_format_rar5.c" />
+    <ClCompile Include="test_read_format_raw.c" />
+    <ClCompile Include="test_read_format_tar.c" />
+    <ClCompile Include="test_read_format_tar_concatenated.c" />
+    <ClCompile Include="test_read_format_tar_empty_filename.c" />
+    <ClCompile Include="test_read_format_tar_empty_with_gnulabel.c" />
+    <ClCompile Include="test_read_format_tar_empty_pax.c" />
+    <ClCompile Include="test_read_format_tar_filename.c" />
+    <ClCompile Include="test_read_format_tbz.c" />
+    <ClCompile Include="test_read_format_tgz.c" />
+    <ClCompile Include="test_read_format_tlz.c" />
+    <ClCompile Include="test_read_format_txz.c" />
+    <ClCompile Include="test_read_format_tz.c" />
+    <ClCompile Include="test_read_format_ustar_filename.c" />
+    <ClCompile Include="test_read_format_warc.c" />
+    <ClCompile Include="test_read_format_xar.c" />
+    <ClCompile Include="test_read_format_zip.c" />
+    <ClCompile Include="test_read_format_zip_7075_utf8_paths.c" />
+    <ClCompile Include="test_read_format_zip_comment_stored.c" />
+    <ClCompile Include="test_read_format_zip_encryption_data.c" />
+    <ClCompile Include="test_read_format_zip_encryption_header.c" />
+    <ClCompile Include="test_read_format_zip_encryption_partially.c" />
+    <ClCompile Include="test_read_format_zip_extra_padding.c" />
+    <ClCompile Include="test_read_format_zip_filename.c" />
+    <ClCompile Include="test_read_format_zip_high_compression.c" />
+    <ClCompile Include="test_read_format_zip_jar.c" />
+    <ClCompile Include="test_read_format_zip_mac_metadata.c" />
+    <ClCompile Include="test_read_format_zip_malformed.c" />
+    <ClCompile Include="test_read_format_zip_msdos.c" />
+    <ClCompile Include="test_read_format_zip_nested.c" />
+    <ClCompile Include="test_read_format_zip_nofiletype.c" />
+    <ClCompile Include="test_read_format_zip_padded.c" />
+    <ClCompile Include="test_read_format_zip_sfx.c" />
+    <ClCompile Include="test_read_format_zip_traditional_encryption_data.c" />
+    <ClCompile Include="test_read_format_zip_winzip_aes.c" />
+    <ClCompile Include="test_read_format_zip_winzip_aes_large.c" />
+    <ClCompile Include="test_read_format_zip_zip64.c" />
+    <ClCompile Include="test_read_format_zip_with_invalid_traditional_eocd.c" />
+    <ClCompile Include="test_read_large.c" />
+    <ClCompile Include="test_read_pax_xattr_rht_security_selinux.c" />
+    <ClCompile Include="test_read_pax_xattr_schily.c" />
+    <ClCompile Include="test_read_pax_truncated.c" />
+    <ClCompile Include="test_read_position.c" />
+    <ClCompile Include="test_read_set_format.c" />
+    <ClCompile Include="test_read_too_many_filters.c" />
+    <ClCompile Include="test_read_truncated.c" />
+    <ClCompile Include="test_read_truncated_filter.c" />
+    <ClCompile Include="test_sparse_basic.c" />
+    <ClCompile Include="test_tar_filenames.c" />
+    <ClCompile Include="test_tar_large.c" />
+    <ClCompile Include="test_ustar_filename_encoding.c" />
+    <ClCompile Include="test_ustar_filenames.c" />
+    <ClCompile Include="test_warn_missing_hardlink_target.c" />
+    <ClCompile Include="test_write_disk.c" />
+    <ClCompile Include="test_write_disk_appledouble.c" />
+    <ClCompile Include="test_write_disk_failures.c" />
+    <ClCompile Include="test_write_disk_hardlink.c" />
+    <ClCompile Include="test_write_disk_hfs_compression.c" />
+    <ClCompile Include="test_write_disk_lookup.c" />
+    <ClCompile Include="test_write_disk_mac_metadata.c" />
+    <ClCompile Include="test_write_disk_no_hfs_compression.c" />
+    <ClCompile Include="test_write_disk_perms.c" />
+    <ClCompile Include="test_write_disk_secure.c" />
+    <ClCompile Include="test_write_disk_secure744.c" />
+    <ClCompile Include="test_write_disk_secure745.c" />
+    <ClCompile Include="test_write_disk_secure746.c" />
+    <ClCompile Include="test_write_disk_sparse.c" />
+    <ClCompile Include="test_write_disk_symlink.c" />
+    <ClCompile Include="test_write_disk_times.c" />
+    <ClCompile Include="test_write_filter_b64encode.c" />
+    <ClCompile Include="test_write_filter_bzip2.c" />
+    <ClCompile Include="test_write_filter_compress.c" />
+    <ClCompile Include="test_write_filter_gzip.c" />
+    <ClCompile Include="test_write_filter_gzip_timestamp.c" />
+    <ClCompile Include="test_write_filter_lrzip.c" />
+    <ClCompile Include="test_write_filter_lz4.c" />
+    <ClCompile Include="test_write_filter_lzip.c" />
+    <ClCompile Include="test_write_filter_lzma.c" />
+    <ClCompile Include="test_write_filter_lzop.c" />
+    <ClCompile Include="test_write_filter_program.c" />
+    <ClCompile Include="test_write_filter_uuencode.c" />
+    <ClCompile Include="test_write_filter_xz.c" />
+    <ClCompile Include="test_write_filter_zstd.c" />
+    <ClCompile Include="test_write_format_7zip.c" />
+    <ClCompile Include="test_write_format_7zip_empty.c" />
+    <ClCompile Include="test_write_format_7zip_large.c" />
+    <ClCompile Include="test_write_format_ar.c" />
+    <ClCompile Include="test_write_format_cpio.c" />
+    <ClCompile Include="test_write_format_cpio_empty.c" />
+    <ClCompile Include="test_write_format_cpio_newc.c" />
+    <ClCompile Include="test_write_format_cpio_odc.c" />
+    <ClCompile Include="test_write_format_gnutar.c" />
+    <ClCompile Include="test_write_format_gnutar_filenames.c" />
+    <ClCompile Include="test_write_format_iso9660.c" />
+    <ClCompile Include="test_write_format_iso9660_boot.c" />
+    <ClCompile Include="test_write_format_iso9660_empty.c" />
+    <ClCompile Include="test_write_format_iso9660_filename.c" />
+    <ClCompile Include="test_write_format_iso9660_zisofs.c" />
+    <ClCompile Include="test_write_format_mtree.c" />
+    <ClCompile Include="test_write_format_mtree_absolute_path.c" />
+    <ClCompile Include="test_write_format_mtree_classic.c" />
+    <ClCompile Include="test_write_format_mtree_classic_indent.c" />
+    <ClCompile Include="test_write_format_mtree_fflags.c" />
+    <ClCompile Include="test_write_format_mtree_no_separator.c" />
+    <ClCompile Include="test_write_format_mtree_quoted_filename.c" />
+    <ClCompile Include="test_write_format_pax.c" />
+    <ClCompile Include="test_write_format_raw.c" />
+    <ClCompile Include="test_write_format_raw_b64.c" />
+    <ClCompile Include="test_write_format_shar_empty.c" />
+    <ClCompile Include="test_write_format_tar.c" />
+    <ClCompile Include="test_write_format_tar_empty.c" />
+    <ClCompile Include="test_write_format_tar_sparse.c" />
+    <ClCompile Include="test_write_format_tar_ustar.c" />
+    <ClCompile Include="test_write_format_tar_v7tar.c" />
+    <ClCompile Include="test_write_format_warc.c" />
+    <ClCompile Include="test_write_format_warc_empty.c" />
+    <ClCompile Include="test_write_format_xar.c" />
+    <ClCompile Include="test_write_format_xar_empty.c" />
+    <ClCompile Include="test_write_format_zip.c" />
+    <ClCompile Include="test_write_format_zip_compression_store.c" />
+    <ClCompile Include="test_write_format_zip_empty.c" />
+    <ClCompile Include="test_write_format_zip_empty_zip64.c" />
+    <ClCompile Include="test_write_format_zip_file.c" />
+    <ClCompile Include="test_write_format_zip_file_zip64.c" />
+    <ClCompile Include="test_write_format_zip_large.c" />
+    <ClCompile Include="test_write_format_zip_zip64.c" />
+    <ClCompile Include="test_write_open_memory.c" />
+    <ClCompile Include="test_write_read_format_zip.c" />
+    <ClCompile Include="test_xattr_platform.c" />
+    <ClCompile Include="test_zip_filename_encoding.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="E:\NUTS\libarchive-3.4.3\ZERO_CHECK.vcxproj">
+      <Project>{359BEC5F-9E3D-3C9D-8A70-49C47F04896B}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="E:\NUTS\libarchive-3.4.3\libarchive\archive_static.vcxproj">
+      <Project>{778F702C-01A5-3643-9CA3-554202E321ED}</Project>
+      <Name>archive_static</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

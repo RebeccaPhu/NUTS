@@ -6,6 +6,7 @@
 #define ENCODING_ASCII 0x000A5C11
 #define FT_WINDOWS     0x80000000
 #define FT_ROOT        0x00000000
+#define FT_ZIP         0xC0000000
 
 typedef unsigned long long QWORD;
 

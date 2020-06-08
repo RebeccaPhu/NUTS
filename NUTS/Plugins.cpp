@@ -88,6 +88,10 @@ void CPlugins::LoadPlugin( char *plugin )
 
 		DataSourceCollector **ppCollector = (DataSourceCollector **) GetProcAddress( hModule, "pExternCollector" );
 
+		if ( pCollector == nullptr ) { FreeLibrary( hModule ); return; }
+
+		if ( plugin.DescriptorFunc == nullptr ) { FreeLibrary( hModule ); return; }
+
 		*ppCollector = pCollector;
 
 		Plugins.push_back( plugin );

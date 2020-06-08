@@ -246,19 +246,20 @@ void ConfigureExtrasMenu( void )
 
 void SetUpBaseMappings( void )
 {
-	ExtReg.RegisterExtension( L"BIN", FT_Binary,  FT_Binary  );
-	ExtReg.RegisterExtension( L"BAT", FT_Script,  FT_Script  );
-	ExtReg.RegisterExtension( L"EXE", FT_App,     FT_App     );
-	ExtReg.RegisterExtension( L"DAT", FT_Data,    FT_Data    );
-	ExtReg.RegisterExtension( L"BMP", FT_Graphic, FT_Graphic );
-	ExtReg.RegisterExtension( L"JPG", FT_Graphic, FT_Graphic );
-	ExtReg.RegisterExtension( L"PNG", FT_Graphic, FT_Graphic );
-	ExtReg.RegisterExtension( L"GIF", FT_Graphic, FT_Graphic );
-	ExtReg.RegisterExtension( L"WAV", FT_Sound,   FT_Sound   );
-	ExtReg.RegisterExtension( L"MP3", FT_Sound,   FT_Sound   );
-	ExtReg.RegisterExtension( L"VOC", FT_Sound,   FT_Sound   );
-	ExtReg.RegisterExtension( L"INI", FT_Pref,    FT_Pref    );
-	ExtReg.RegisterExtension( L"TXT", FT_Text,    FT_Text    );
+	ExtReg.RegisterExtension( L"BIN", FT_Binary,    FT_Binary  );
+	ExtReg.RegisterExtension( L"BAT", FT_Script,    FT_Script  );
+	ExtReg.RegisterExtension( L"EXE", FT_App,       FT_App     );
+	ExtReg.RegisterExtension( L"DAT", FT_Data,      FT_Data    );
+	ExtReg.RegisterExtension( L"BMP", FT_Graphic,   FT_Graphic );
+	ExtReg.RegisterExtension( L"JPG", FT_Graphic,   FT_Graphic );
+	ExtReg.RegisterExtension( L"PNG", FT_Graphic,   FT_Graphic );
+	ExtReg.RegisterExtension( L"GIF", FT_Graphic,   FT_Graphic );
+	ExtReg.RegisterExtension( L"WAV", FT_Sound,     FT_Sound   );
+	ExtReg.RegisterExtension( L"MP3", FT_Sound,     FT_Sound   );
+	ExtReg.RegisterExtension( L"VOC", FT_Sound,     FT_Sound   );
+	ExtReg.RegisterExtension( L"INI", FT_Pref,      FT_Pref    );
+	ExtReg.RegisterExtension( L"TXT", FT_Text,      FT_Text    );
+	ExtReg.RegisterExtension( L"ZIP", FT_MiscImage, FT_Data    );
 }
 
 //
