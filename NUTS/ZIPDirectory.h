@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef LIBARCHIVE_STATIC
+#define LIBARCHIVE_STATIC
+#endif
+
 #include "Directory.h"
 #include "DataSource.h"
 

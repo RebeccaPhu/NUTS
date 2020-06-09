@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef LIBARCHIVE_STATIC
+#define LIBARCHIVE_STATIC
+#endif
+
 #include "FileSystem.h"
 #include "DataSource.h"
 
@@ -28,6 +32,8 @@ public:
 	BYTE *GetTitleString( NativeFile *pFile = nullptr );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *DescribeFile( DWORD FileIndex );
+
+	int ReadFile(DWORD FileID, CTempFile &store);
 
 private:
 	ZIPDirectory *pDir;

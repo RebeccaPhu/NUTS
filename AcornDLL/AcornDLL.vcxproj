@@ -176,6 +176,7 @@
     <ClCompile Include="AcornSCREENTranslator.cpp" />
     <ClCompile Include="ADFSCommon.cpp" />
     <ClCompile Include="ADFSDirectory.cpp" />
+    <ClCompile Include="ADFSDirectoryCommon.cpp" />
     <ClCompile Include="ADFSEDirectory.cpp" />
     <ClCompile Include="ADFSEFileSystem.cpp" />
     <ClCompile Include="ADFSFileSystem.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="AcornSCREENTranslator.h" />
     <ClInclude Include="ADFSCommon.h" />
     <ClInclude Include="ADFSDirectory.h" />
+    <ClInclude Include="ADFSDirectoryCommon.h" />
     <ClInclude Include="ADFSEDirectory.h" />
     <ClInclude Include="ADFSEFileSystem.h" />
     <ClInclude Include="ADFSFileSystem.h" />

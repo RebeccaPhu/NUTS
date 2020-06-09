@@ -11,6 +11,7 @@
 #include "TAPFileSystem.h"
 #include "SpectrumSCREENTranslator.h"
 #include "SpectrumBASICTranslator.h"
+#include "../NUTS/NUTSError.h"
 
 BYTE *pSinclairFont;
 BYTE *pTeletextFont;
@@ -18,6 +19,7 @@ BYTE *pTeletextFont;
 HMODULE hInstance;
 
 SINCLAIRDLL_API DataSourceCollector *pExternCollector;
+SINCLAIRDLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
 FSDescriptor SinclairFS[6] = {
@@ -85,6 +87,10 @@ PluginDescriptor SinclairDescriptor = {
 
 SINCLAIRDLL_API PluginDescriptor *GetPluginDescriptor(void)
 {
+	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
+	pCollector   = pExternCollector;
+	pGlobalError = pExternError;
+
 	if ( pSinclairFont == nullptr )
 	{
 		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_SINCLAIRFONT ), RT_RCDATA);
@@ -105,9 +111,6 @@ SINCLAIRDLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 SINCLAIRDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
-	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
-	pCollector = pExternCollector;
-
 	void *pFS = NULL;
 
 	switch ( PUID )

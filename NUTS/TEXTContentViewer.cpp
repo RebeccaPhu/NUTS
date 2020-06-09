@@ -244,11 +244,11 @@ void CTEXTContentViewer::Translate( void )
 
 		FileObj.Keep();
 
-		NUTSError::Code = NUTS_SUCCESS;
+		pGlobalError->GlobalCode = NUTS_SUCCESS;
 
 		pXlator->TranslateText( FileObj, &opts );
 
-		if ( NUTSError::Code != NUTS_SUCCESS )
+		if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
 		{
 			NUTSError::Report( L"Read File", hWnd );
 		}

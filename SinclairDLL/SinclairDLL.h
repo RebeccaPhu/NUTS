@@ -13,11 +13,13 @@
 #include "../NUTS/PluginDescriptor.h"
 #include "../NUTS/DataSource.h"
 #include "../NUTS/DataSourceCollector.h"
+#include "../NUTS/NUTSError.h"
 
 extern "C" SINCLAIRDLL_API PluginDescriptor *GetPluginDescriptor(void);
 extern "C" SINCLAIRDLL_API void *CreateFS( DWORD PUID, DataSource *pSource );
 extern "C" SINCLAIRDLL_API void *CreateTranslator( DWORD TUID );
 
 extern "C" SINCLAIRDLL_API DataSourceCollector *pExternCollector;
+extern "C" SINCLAIRDLL_API NUTSError *pExternError;
 
 extern HMODULE hInstance;

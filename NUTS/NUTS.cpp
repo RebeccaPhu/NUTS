@@ -15,6 +15,7 @@
 #include "EncodingStatusBar.h"
 #include "Preference.h"
 #include "DataSourceCollector.h"
+#include "NUTSError.h"
 
 #include <winioctl.h>
 #include <process.h>
@@ -89,6 +90,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
+	pGlobalError = new NUTSError( 0, L"" );
+
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -281,8 +284,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	icc.dwSize = sizeof(icc);
 	icc.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&icc);
-
-	LoadLibrary(L"riched20.dll");
 
 	BitmapCache.LoadBitmaps();
 
@@ -502,7 +503,7 @@ unsigned int __stdcall DoEnterThread(void *param)
 	}
 	else
 	{
-		NUTSError::Code = NUTS_SUCCESS;
+		pGlobalError->GlobalCode = NUTS_SUCCESS;
 
 		DataSource *pSource = pCurrentFS->FileDataSource( pVars->EnterIndex );
 
@@ -537,7 +538,7 @@ unsigned int __stdcall DoEnterThread(void *param)
 			}
 			else
 			{
-				if ( NUTSError::Code != NUTS_SUCCESS )
+				if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
 				{
 					NUTSError::Report( L"Load Data Source", hMainWnd );
 				}
@@ -558,6 +559,20 @@ unsigned int __stdcall DoEnterThread(void *param)
 
 				return NUTSError( 0x00000022, L"Unrecognised file system" );
 			}
+		}
+		else
+		{
+
+			if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
+			if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+
+			pVars->pane->SetSearching( false );
+
+			delete pVars;
+
+			NUTSError::Report( L"Load Data Source", hMainWnd );
+
+			return 0;
 		}
 	}
 
@@ -687,7 +702,7 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 
 	if ( pSource == nullptr )
 	{
-		if ( NUTSError::Code == 0 )
+		if ( pGlobalError->GlobalCode == 0 )
 		{
 			MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
 		}
@@ -725,7 +740,7 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 
 	pVars->pane->SetSearching( true );
 
-	NUTSError::Code = NUTS_SUCCESS;
+	pGlobalError->GlobalCode = NUTS_SUCCESS;
 
 	if ( pVars->FSID != FS_Null )
 	{
@@ -767,7 +782,7 @@ unsigned int __stdcall DoEnterAsThread( void *param )
 		}
 		else
 		{
-			if ( NUTSError::Code != NUTS_SUCCESS )
+			if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
 			{
 				NUTSError::Report( L"Load Data Source", hMainWnd );
 			}
@@ -1407,7 +1422,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		{
 			OutputDebugStringW( L"Last error: " );
-			OutputDebugStringW( NUTSError::String.c_str() );
+			OutputDebugStringW( pGlobalError->GlobalString.c_str() );
 			OutputDebugStringW( L"\n" );
 		}
 		return 0;

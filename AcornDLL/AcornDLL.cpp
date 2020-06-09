@@ -19,6 +19,8 @@
 #include "RISCOSIcons.h"
 #include "../NUTS/IDE8Source.h"
 #include "../NUTS/OffsetDataSource.h"
+#include "ADFSDirectoryCommon.h"
+#include "../NUTS/NUTSError.h"
 
 #include "resource.h"
 
@@ -29,6 +31,7 @@ BYTE *pRiscOSFont;
 HMODULE hInstance;
 
 ACORNDLL_API DataSourceCollector *pExternCollector;
+ACORNDLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
 FSDescriptor AcornFS[19] = {
@@ -271,6 +274,10 @@ PluginDescriptor AcornDescriptor = {
 
 ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
 {
+	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
+	pCollector   = pExternCollector;
+	pGlobalError = pExternError;
+
 	if ( pAcornFont == nullptr )
 	{
 		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_ACORN ), RT_RCDATA);
@@ -349,9 +356,6 @@ void SetRISCOSIcons( void )
 
 ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
-	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
-	pCollector = pExternCollector;
-
 	FileSystem *pFS = nullptr;
 
 	SetRISCOSIcons();
@@ -503,4 +507,63 @@ ACORNDLL_API void *CreateTranslator( DWORD TUID )
 	}
 
 	return pXlator;
+}
+
+ACORNDLL_API bool TranslateZIPContent( void *pFile, void *pExtra )
+{
+	SetRISCOSIcons();
+
+	/* Translate the extra data in the ZIP (max 64 bytes) if it is present */
+
+	NativeFile *File = (NativeFile *) pFile;
+	BYTE *pData      = (BYTE *) pExtra;
+
+	WORD Offset = 0;
+
+	while ( Offset < 60 ) // Need at least 4 bytes
+	{
+		WORD ExID = * (WORD *) &pData[ Offset + 0 ];
+		WORD ExLn = * (WORD *) &pData[ Offset + 2 ];
+
+		Offset += 4;
+
+		if ( Offset + ExLn > 64 ) { ExLn = 64 - Offset; }
+
+		/* Need at least 16 bytes */
+		if ( ExLn < 16 )
+		{
+			break;
+		}
+
+		if ( ExID == 0x4341 ) /* Got it - "AC" */
+		{
+			/* Extract the attributes - we are interested in load addr, exec addr and attribute DWORD.
+			   Not sure what the 1st DWORD is - seems to always be "ARC0" */
+
+			if ( rstrnicmp( &pData[ Offset ], (BYTE *) "ARC0", 4 ) )
+			{
+				/* Load + Exec - which are actually forming Timestamp and File type */
+				File->LoadAddr = * (DWORD *) &pData[ Offset + 4 ];
+				File->ExecAddr = * (DWORD *) &pData[ Offset + 8 ];
+
+				/* Attribute DWORD - Only the first 6 bits are used */
+				DWORD Attrs = * (DWORD *) &pData[ Offset + 12 ];
+
+				if ( ( Attrs & 1 ) | ( Attrs & 16 ) ) { File->AttrRead   = 0xFFFFFFFF; } else { File->AttrRead   = 0x00000000; }
+				if ( ( Attrs & 2 ) | ( Attrs & 32 ) ) { File->AttrWrite  = 0xFFFFFFFF; } else { File->AttrWrite  = 0x00000000; }
+				if   ( Attrs & 4 )                    { File->AttrLocked = 0xFFFFFFFF; } else { File->AttrLocked = 0x00000000; }
+
+				/* Give it icons too */
+				ADFSDirectoryCommon adir;
+
+				adir.TranslateType( File );
+
+				/* Change the type for copying purposes */
+				File->FSFileType = FT_ACORNX;
+				File->EncodingID = ENCODING_RISCOS;
+
+				return true;
+			}
+		}
+	}
 }

@@ -13,11 +13,13 @@
 #include "../NUTS/PluginDescriptor.h"
 #include "../NUTS/DataSource.h"
 #include "../NUTS/DataSourceCollector.h"
+#include "../NUTS/NUTSError.h"
 
 extern "C" CBMDLL_API PluginDescriptor *GetPluginDescriptor(void);
 extern "C" CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource );
 extern "C" CBMDLL_API int PerformGlobalCommand( HWND hWnd, DWORD CmdIndex );
 
 extern "C" CBMDLL_API DataSourceCollector *pExternCollector;
+extern "C" CBMDLL_API NUTSError *pExternError;
 
 extern HMODULE hInstance;

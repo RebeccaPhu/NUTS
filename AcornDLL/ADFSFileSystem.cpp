@@ -1677,6 +1677,8 @@ int ADFSFileSystem::CompactImage( void )
 	delete pDir;
 
 	::PostMessage( ValidateWnd, WM_FSTOOL_PROGRESS, 100, 0 );
+
+	return 0;
 }
 
 CompactionObject ADFSFileSystem::FindCompactableObject( DWORD DirSector, DWORD SeekSector )

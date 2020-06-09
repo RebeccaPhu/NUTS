@@ -308,7 +308,7 @@ void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreC
 			NUTSError::Report( L"Create Sidecar File", hFileWnd );
 
 			/* This is not the end of the world, but might be annoying */
-			NUTSError::Code = 0;
+			pGlobalError->GlobalCode = 0;
 		}
 	}
 
@@ -383,7 +383,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 	FSChangeLock = true;
 
-	NUTSError::Code = 0;
+	pGlobalError->GlobalCode = 0;
 
 	if ( CurrentAction.Action == AA_INSTALL )
 	{
@@ -394,7 +394,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 		CreateOpSteps( CurrentAction.Selection );
 	}
 
-	if ( NUTSError::Code != 0 )
+	if ( pGlobalError->GlobalCode != 0 )
 	{
 		NUTSError::Report( L"File Operation Setup", hFileWnd );
 
@@ -409,7 +409,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 	for ( iStep = OpSteps.begin(); iStep != OpSteps.end(); iStep++ )
 	{
-		if ( NUTSError::Code != 0 )
+		if ( pGlobalError->GlobalCode != 0 )
 		{
 			break;
 		}
@@ -629,7 +629,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 					return 0;
 				}
 
-				if ( NUTSError::Code != NUTS_SUCCESS )
+				if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
 				{
 					NUTSError::Report( L"File Write (Target)", hFileWnd );
 

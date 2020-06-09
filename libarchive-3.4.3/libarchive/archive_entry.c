@@ -1615,6 +1615,12 @@ _archive_entry_acl_text_l(struct archive_entry *entry, int flags,
 	return (0);
 }
 
+/* Added for NUTS - returns a pointer to the 64-byte ExtraData field */
+const unsigned char *archive_entry_extra_data(struct archive_entry *entry)
+{
+	return entry->ExtraData;
+}
+
 /*
  * Following code is modified from UC Berkeley sources, and
  * is subject to the following copyright notice.

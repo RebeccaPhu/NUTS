@@ -8,6 +8,7 @@
 #include "../NUTS/PluginDescriptor.h"
 #include "../NUTS/Defs.h"
 #include "../NUTS/DataSource.h"
+#include "../NUTS/NUTSError.h"
 #include "Defs.h"
 #include "resource.h"
 
@@ -17,6 +18,7 @@ BYTE *pTopaz1 = nullptr;
 BYTE *pTopaz2 = nullptr;
 
 AMIGADLL_API DataSourceCollector *pExternCollector;
+AMIGADLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
 FSDescriptor AmigaFS[2] = {
@@ -87,6 +89,10 @@ PluginDescriptor AmigaDescriptor = {
 
 AMIGADLL_API PluginDescriptor *GetPluginDescriptor(void)
 {
+	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
+	pCollector   = pExternCollector;
+	pGlobalError = pExternError;
+
 	if ( pTopaz1 == nullptr )
 	{
 		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_TOPAZ1 ), RT_RCDATA);
@@ -121,9 +127,6 @@ AMIGADLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 AMIGADLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
-	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
-	pCollector = pExternCollector;
-
 	void *pFS = NULL;
 
 	switch ( PUID )

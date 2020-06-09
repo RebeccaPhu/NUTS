@@ -620,6 +620,9 @@ __LA_DECL int	archive_entry_sparse_reset(struct archive_entry *);
 __LA_DECL int	archive_entry_sparse_next(struct archive_entry *,
 	    la_int64_t * /* offset */, la_int64_t * /* length */);
 
+/* Added for NUTS - Returns a pointer to the extra data field */
+__LA_DECL const unsigned char *archive_entry_extra_data(struct archive_entry *entry);
+
 /*
  * Utility to match up hardlinks.
  *

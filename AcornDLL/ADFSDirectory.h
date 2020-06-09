@@ -1,10 +1,11 @@
 #pragma once
+#include "ADFSDirectoryCommon.h"
 #include "../NUTS/directory.h"
 
 #include "Defs.h"
 
 class ADFSDirectory :
-	public Directory
+	public Directory, public ADFSDirectoryCommon
 {
 public:
 	ADFSDirectory::ADFSDirectory(DataSource *pDataSource) : Directory(pDataSource) {
@@ -61,7 +62,6 @@ public:
 
 private:
 	DWORD TranslateSector(DWORD InSector);
-	void TranslateType( NativeFile *file );
 
 	DWORD SecSize;
 };

@@ -38,6 +38,8 @@
 #ifndef ARCHIVE_PLATFORM_H_INCLUDED
 #define	ARCHIVE_PLATFORM_H_INCLUDED
 
+#define HAVE_ZLIB_H 1
+
 /* archive.h and archive_entry.h require this. */
 #define	__LIBARCHIVE_BUILD 1
 

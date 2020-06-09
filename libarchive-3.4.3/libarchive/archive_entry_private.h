@@ -179,6 +179,9 @@ struct archive_entry {
 
 	/* Symlink type support */
 	int ae_symlink_type;
+
+	/* Extra field data added for NUTS */
+	unsigned char ExtraData[ 64 ];
 };
 
 #endif /* ARCHIVE_ENTRY_PRIVATE_H_INCLUDED */

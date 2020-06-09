@@ -111,6 +111,9 @@
     <ClCompile Include="..\NUTS\SourceFunctions.cpp">
       <Filter>Source Files\Imported Source</Filter>
     </ClCompile>
+    <ClCompile Include="ADFSDirectoryCommon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AcornDFSDirectory.h">
@@ -180,6 +183,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ADFSCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ADFSDirectoryCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

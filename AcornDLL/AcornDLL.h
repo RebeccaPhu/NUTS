@@ -13,11 +13,14 @@
 #include "../NUTS/PluginDescriptor.h"
 #include "../NUTS/DataSource.h"
 #include "../NUTS/DataSourceCollector.h"
+#include "../NUTS/NUTSError.h"
 
 extern "C" ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void);
 extern "C" ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource );
 extern "C" ACORNDLL_API void *CreateTranslator( DWORD TUID );
+extern "C" ACORNDLL_API bool TranslateZIPContent( void *pFile, void *pExtra );
 
 extern "C" ACORNDLL_API DataSourceCollector *pExternCollector;
+extern "C" ACORNDLL_API NUTSError *pExternError;
 
 extern HMODULE hInstance;

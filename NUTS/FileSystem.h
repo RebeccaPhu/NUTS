@@ -53,11 +53,11 @@ public:
 		if ( pSource != nullptr ) { pSource->Release(); }
 	}
 
-	virtual	int	ReadFile(DWORD FileID, CTempFile &store) {
+	virtual int ReadFile(DWORD FileID, CTempFile &store) {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
-	virtual	int	WriteFile(NativeFile *pFile, CTempFile &store) {
+	virtual int WriteFile(NativeFile *pFile, CTempFile &store) {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 

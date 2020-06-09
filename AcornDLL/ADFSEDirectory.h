@@ -1,10 +1,11 @@
 #pragma once
 
+#include "ADFSDirectoryCommon.h"
 #include "../nuts/directory.h"
 #include "NewFSMap.h"
 #include "Defs.h"
 
-class ADFSEDirectory : public Directory
+class ADFSEDirectory : public Directory, public ADFSDirectoryCommon
 {
 
 public:

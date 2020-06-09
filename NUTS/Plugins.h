@@ -18,6 +18,7 @@ typedef PluginDescriptor *(*fnGetPluginDescriptor)(void);
 typedef FileSystem *(*fnCreateFS)( DWORD, DataSource * );
 typedef void *(*fnCreateTranslator)( DWORD );
 typedef int (*fnPerformGlobalCommand)( HWND, DWORD );
+typedef bool (*fnZIPTranslate)( void *, void * );
 
 typedef struct _Plugin {
 	HMODULE Handle;
@@ -25,6 +26,7 @@ typedef struct _Plugin {
 	fnCreateFS             CreatorFunc;
 	fnCreateTranslator     XlatCreatorFunc;
 	fnPerformGlobalCommand PerformGlobalCommand;
+	fnZIPTranslate         TranslateZIPContent;
 } Plugin;
 
 typedef struct _FormatMenu {
@@ -78,6 +80,8 @@ public:
 	std::vector<DWORD> FontListForEncoding( DWORD Encoding );
 
 	int PerformGlobalCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex );
+
+	bool TranslateZIPContent( NativeFile *pFile, BYTE *pExtra );
 
 private:
 	std::vector<PluginDescriptor> PluginDescriptors;

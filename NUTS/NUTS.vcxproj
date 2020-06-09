@@ -74,8 +74,8 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedManifest>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedManifest>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive64\include</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)\..\libarchive64\lib</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\Debug\</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -109,7 +109,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive.lib</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
     </Link>
@@ -213,6 +213,7 @@
     <ClCompile Include="SCREENContentViewer.cpp" />
     <ClCompile Include="ZIPDirectory.cpp" />
     <ClCompile Include="ZIPFile.cpp" />
+    <ClCompile Include="ZIPFuncs.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutBox.h" />
@@ -270,6 +271,7 @@
     <ClInclude Include="PluginDescriptor.h" />
     <ClInclude Include="ZIPDirectory.h" />
     <ClInclude Include="ZIPFile.h" />
+    <ClInclude Include="ZipFuncs.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\acorn.bmp" />

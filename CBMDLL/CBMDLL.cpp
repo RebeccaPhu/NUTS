@@ -13,6 +13,7 @@
 
 #include "../NUTS/Defs.h"
 #include "../NUTS/Preference.h"
+#include "../NUTS/NUTSError.h"
 
 #include <ShlObj.h>
 
@@ -26,6 +27,7 @@ BYTE *pPETSCII = nullptr;
 HMODULE hInstance;
 
 CBMDLL_API DataSourceCollector *pExternCollector;
+CBMDLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
 FSDescriptor CBMFS[2] = {
@@ -98,6 +100,10 @@ PluginDescriptor CBMDescriptor = {
 
 CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 {
+	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
+	pCollector   = pExternCollector;
+	pGlobalError = pExternError;
+
 	if ( !OpenCBMLoaded )
 	{
 		LoadOpenCBM( );
@@ -177,9 +183,6 @@ CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
-	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
-	pCollector = pExternCollector;
-
 	void *pFS = NULL;
 
 	switch ( PUID )

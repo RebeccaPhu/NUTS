@@ -207,6 +207,9 @@
     <ClCompile Include="ZIPDirectory.cpp">
       <Filter>Source Files\File Systems</Filter>
     </ClCompile>
+    <ClCompile Include="ZIPFuncs.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -372,6 +375,9 @@
       <Filter>Header Files\File Systems</Filter>
     </ClInclude>
     <ClInclude Include="ZIPDirectory.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="ZipFuncs.h">
       <Filter>Header Files\File Systems</Filter>
     </ClInclude>
   </ItemGroup>

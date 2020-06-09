@@ -552,11 +552,11 @@ int CSCREENContentViewer::Translate( void ) {
 		opts.pPhysicalPalette = &PhysicalPalette;
 		opts.pPhysicalColours = &PhysicalColours;
 
-		NUTSError::Code = NUTS_SUCCESS;
+		pGlobalError->GlobalCode = NUTS_SUCCESS;
 
 		pXlator->TranslateGraphics( opts, FileObj );
 
-		if ( NUTSError::Code != NUTS_SUCCESS )
+		if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
 		{
 			NUTSError::Report( L"Read File", hWnd );
 		}
@@ -564,11 +564,11 @@ int CSCREENContentViewer::Translate( void ) {
 		opts.pGraphics  = (void **) &pixels2;
 		opts.FlashPhase = true;
 
-		NUTSError::Code = NUTS_SUCCESS;
+		pGlobalError->GlobalCode = NUTS_SUCCESS;
 
 		pXlator->TranslateGraphics( opts, FileObj );
 
-		if ( NUTSError::Code != NUTS_SUCCESS )
+		if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
 		{
 			NUTSError::Report( L"Read File", hWnd );
 		}

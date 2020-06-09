@@ -2,14 +2,15 @@
 
 #include <string>
 
+class NUTSError;
+
+extern NUTSError *pGlobalError;
+
 class NUTSError
 {
 public:
 	NUTSError( DWORD ErrorCode, std::wstring ErrorString )
 	{
-		NUTSError::Code   = ErrorCode;
-		NUTSError::String = ErrorString;
-
 		/* These are used in the cast operator to import the details */
 		IntCode   = ErrorCode;
 		IntString = ErrorString;
@@ -19,10 +20,10 @@ public:
 
 	operator int()
 	{
-		NUTSError::Code   = IntCode;
-		NUTSError::String = IntString;
+		pGlobalError->GlobalCode   = IntCode;
+		pGlobalError->GlobalString = IntString;
 
-		if ( NUTSError::Code == 0 )
+		if ( IntCode == 0 )
 		{
 			return 0;
 		}
@@ -34,15 +35,15 @@ public:
 	{
 		std::wstring err =
 			Operation + std::wstring( L" failed:\n\n") +
-			std::wstring( L"Error " ) + std::to_wstring( (unsigned long long) NUTSError::Code ) + std::wstring( L"\n\n" ) +
-			NUTSError::String;
+			std::wstring( L"Error " ) + std::to_wstring( (unsigned long long) pGlobalError->GlobalCode ) + std::wstring( L"\n\n" ) +
+			pGlobalError->GlobalString;
 
 		MessageBoxW( hWnd, err.c_str(), L"NUTS", MB_ICONERROR | MB_OK );
 	}
 
 public:
-	static DWORD Code;
-	static std::wstring String;
+	DWORD GlobalCode;
+	std::wstring GlobalString;
 
 private:
 	std::wstring IntString;

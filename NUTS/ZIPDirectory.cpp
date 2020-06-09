@@ -3,14 +3,22 @@
 #include "ZIPDirectory.h"
 #include "NUTSError.h"
 #include "Defs.h"
+#include "Plugins.h"
 
 #include "libfuncs.h"
 
+#ifndef LIBARCHIVE_STATIC
+#define LIBARCHIVE_STATIC
+#endif
+
 #include "archive.h"
 #include "archive_entry.h"
+#include "ZipFuncs.h"
 
 int ZIPDirectory::ReadDirectory(void)
 {
+	Files.clear();
+
 	struct archive *a;
 	struct archive_entry *entry;
 
@@ -27,7 +35,7 @@ int ZIPDirectory::ReadDirectory(void)
 
 	if ( r != ARCHIVE_OK )
 	{
-		return NUTSError( 0xA0, L"ZIP Error" );
+		return NUTSError( 0xA0, ZIPError( a ) );
 	}
 
 	while ( ( r = archive_read_next_header( a, &entry ) ) == ARCHIVE_OK )
@@ -47,6 +55,10 @@ int ZIPDirectory::ReadDirectory(void)
 
 		rstrncpy( file.Filename, (BYTE *) archive_entry_pathname( entry ), 255 );
 
+		BYTE *pExtra = (BYTE *) archive_entry_extra_data( entry );
+
+		FSPlugins.TranslateZIPContent( &file, pExtra );
+
 		Files.push_back( file );
 
 		FileID++;
@@ -58,7 +70,7 @@ int ZIPDirectory::ReadDirectory(void)
 
 	if ( r != ARCHIVE_OK )
 	{
-		return NUTSError( 0xA0, L"ZIP Error" );
+		return NUTSError( 0xA0, ZIPError( a ) );
 	}
 
 	return 0;

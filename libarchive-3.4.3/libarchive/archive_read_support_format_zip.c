@@ -506,17 +506,30 @@ process_extra(struct archive_read *a, struct archive_entry *entry,
 		return ARCHIVE_OK;
 	}
 
+	/* Copy the extra data to the entry so that NUTS can interpret it */
+	memset( (void *) archive_entry_extra_data(entry), 0, max( extra_length, 64 ) );
+	memcpy( (void *) archive_entry_extra_data(entry), (void *) p, max( extra_length, 64 ) );
+
 	while (offset <= extra_length - 4) {
 		unsigned short headerid = archive_le16dec(p + offset);
 		unsigned short datasize = archive_le16dec(p + offset + 2);
 
 		offset += 4;
 		if (offset + datasize > extra_length) {
+			/* NUTS disables this check because Archimedes ZIP files have been seen in the wild
+			   specificying more extra day than will logically fit in the local directory entry.
+
+			   Just truncate the lengths instead. */
+
+			/*
 			archive_set_error(&a->archive,
 			    ARCHIVE_ERRNO_FILE_FORMAT, "Extra data overflow: "
 			    "Need %d bytes but only found %d bytes",
 			    (int)datasize, (int)(extra_length - offset));
 			return ARCHIVE_FAILED;
+			*/
+
+			datasize = extra_length - 4;
 		}
 #ifdef DEBUG
 		fprintf(stderr, "Header id 0x%04x, length %d\n",

@@ -85,6 +85,7 @@ void CPlugins::LoadPlugin( char *plugin )
 		plugin.CreatorFunc          = (fnCreateFS)             GetProcAddress( hModule, "CreateFS" );
 		plugin.XlatCreatorFunc      = (fnCreateTranslator)     GetProcAddress( hModule, "CreateTranslator" );
 		plugin.PerformGlobalCommand = (fnPerformGlobalCommand) GetProcAddress( hModule, "PerformGlobalCommand" );
+		plugin.TranslateZIPContent  = (fnZIPTranslate)         GetProcAddress( hModule, "TranslateZIPContent" );
 
 		DataSourceCollector **ppCollector = (DataSourceCollector **) GetProcAddress( hModule, "pExternCollector" );
 
@@ -686,4 +687,26 @@ int CPlugins::PerformGlobalCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex )
 
 		iter++;
 	}
+}
+
+bool CPlugins::TranslateZIPContent( NativeFile *pFile, BYTE *pExtra )
+{
+	PluginList::iterator iter = Plugins.begin();
+
+	while ( iter != Plugins.end() )
+	{
+		PluginDescriptor *D = iter->DescriptorFunc();
+
+		if ( iter->TranslateZIPContent != nullptr )
+		{
+			if ( iter->TranslateZIPContent( pFile, pExtra ) )
+			{
+				return true;
+			}
+		}
+
+		iter++;
+	}
+
+	return false;
 }
