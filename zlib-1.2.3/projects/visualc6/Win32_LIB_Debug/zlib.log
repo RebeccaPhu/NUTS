@@ -1,9 +1,0 @@
-﻿Build started 09/06/2020 14:09:10.
-     1>Project "E:\NUTS\zlib-1.2.3\projects\visualc6\zlib.vcxproj" on node 2 (clean target(s)).
-     1>_PrepareForClean:
-         Deleting file ".\Win32_LIB_Debug\zlib.lastbuildstate".
-     1>Done Building Project "E:\NUTS\zlib-1.2.3\projects\visualc6\zlib.vcxproj" (clean target(s)).
-
-Build succeeded.
-
-Time Elapsed 00:00:00.01
