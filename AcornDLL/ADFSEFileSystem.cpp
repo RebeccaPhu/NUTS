@@ -1328,7 +1328,7 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		case WM_INITDIALOG:
 			pSystem = (ADFSEFileSystem *) lParam;
 
-			pSystem->IncludeEmuHeader;
+			pSystem->IncludeEmuHeader = false;
 
 			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00200006 );
 			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00150006 );
@@ -1463,9 +1463,17 @@ int ADFSEFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
 	{
 		OffsetDataSource *pWrapper = reinterpret_cast<OffsetDataSource *>(pSource);
 
-		pSource->Release();
-
 		pSource = pWrapper->pSrc;
+
+		pSource->Retain();
+		pWrapper->Release();
+
+		if ( pEDirectory != nullptr )
+		{
+			pEDirectory->ReplaceSource( pSource );
+		}
+
+		pFSMap->pSource = pSource;
 	}
 
 	return 0;

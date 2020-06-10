@@ -25,6 +25,7 @@ int ZIPDirectory::ReadDirectory(void)
 	int r;
 
 	DWORD FileID = 0;
+	DWORD SeqID  = 0;
 
 	a = archive_read_new();
 
@@ -38,30 +39,79 @@ int ZIPDirectory::ReadDirectory(void)
 		return NUTSError( 0xA0, ZIPError( a ) );
 	}
 
+	WORD l = rstrnlen( cpath, 255 );
+
 	while ( ( r = archive_read_next_header( a, &entry ) ) == ARCHIVE_OK )
 	{
-		NativeFile file;
+		BYTE *fname = (BYTE *) archive_entry_pathname( entry );
 
-		file.EncodingID = ENCODING_ASCII;
-		file.fileID     = FileID;
-		file.Flags      = 0;
-		file.FSFileType = FT_ZIP;
-		file.Icon       = FT_Arbitrary;
-		file.Length     = archive_entry_size( entry );
-		file.Type       = FT_Arbitrary;
-		file.XlatorID   = 0;
+		BYTE *pDir = ZIPSubPath( cpath, fname );
 
-		file.HasResolvedIcon= false;
+		if ( pDir != nullptr )
+		{
+			NativeFileIterator iFile;
 
-		rstrncpy( file.Filename, (BYTE *) archive_entry_pathname( entry ), 255 );
+			bool HaveThatDir = false;
 
-		BYTE *pExtra = (BYTE *) archive_entry_extra_data( entry );
+			for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
+			{
+				if ( rstrnicmp( iFile->Filename, pDir, 255 ) )
+				{
+					HaveThatDir = true;
+				}
+			}
+				
+			if ( !HaveThatDir )
+			{
+				NativeFile file;
 
-		FSPlugins.TranslateZIPContent( &file, pExtra );
+				file.EncodingID = ENCODING_ASCII;
+				file.fileID     = FileID;
+				file.FSFileType = FT_ZIP;
+				file.Icon       = FT_Directory;
+				file.Type       = FT_Directory;
+				file.Flags      = FF_Directory;
+				file.Length     = 0;
+				file.XlatorID   = 0;
 
-		Files.push_back( file );
+				rstrncpy( file.Filename, pDir, 255 );
 
-		FileID++;
+				Files.push_back( file );
+
+				FileID++;
+			}
+		}
+
+		if ( IsCPath( cpath, fname ) )
+		{
+			NativeFile file;
+
+			file.EncodingID = ENCODING_ASCII;
+			file.fileID     = FileID;
+			file.Flags      = 0;
+			file.FSFileType = FT_ZIP;
+
+			file.Icon       = FT_Arbitrary;
+			file.Length     = archive_entry_size( entry );
+			file.Type       = FT_Arbitrary;
+			file.XlatorID   = 0;
+
+			file.HasResolvedIcon= false;
+
+			rstrncpy( file.Filename, ZIPSubName( cpath, fname ), 255 );
+
+			BYTE *pExtra = (BYTE *) archive_entry_extra_data( entry );
+
+			FSPlugins.TranslateZIPContent( &file, pExtra );
+
+			file.Attributes[ 0 ] = SeqID;
+
+			Files.push_back( file );
+
+			FileID++;
+		}
+
+		SeqID++;
 
 		archive_read_data_skip( a );
 	}

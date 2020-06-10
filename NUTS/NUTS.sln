@@ -3,6 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NUTS", "NUTS.vcxproj", "{D0670178-BE3B-4B70-A3B8-3861B10B04C6}"
 	ProjectSection(ProjectDependencies) = postProject
+		{C2BA9F23-E697-29DC-3D5A-8A787920F081} = {C2BA9F23-E697-29DC-3D5A-8A787920F081}
 		{778F702C-01A5-3643-9CA3-554202E321ED} = {778F702C-01A5-3643-9CA3-554202E321ED}
 	EndProjectSection
 EndProject
@@ -15,6 +16,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AmigaDLL", "..\AmigaDLL\AmigaDLL.vcxproj", "{E3FA5BC5-B08E-457B-AED9-8CC639519496}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "archive_static", "..\libarchive-3.4.3\libarchive\archive_static.vcxproj", "{778F702C-01A5-3643-9CA3-554202E321ED}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C2BA9F23-E697-29DC-3D5A-8A787920F081} = {C2BA9F23-E697-29DC-3D5A-8A787920F081}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\zlib-1.2.3\projects\visualc6\zlib.vcxproj", "{C2BA9F23-E697-29DC-3D5A-8A787920F081}"
 EndProject

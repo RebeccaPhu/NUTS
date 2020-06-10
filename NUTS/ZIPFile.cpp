@@ -14,7 +14,11 @@ BYTE *ZIPFile::GetTitleString( NativeFile *pFile )
 {
 	static BYTE Title[ 384 ];
 
-	rsprintf( Title, "ZIP::%s", cpath );
+	rsprintf( Title, "ZIP::/%s", cpath );
+
+	WORD l = rstrnlen( Title, 384 );
+
+	Title[ l - 1 ] = 0;
 
 	if ( pFile != nullptr )
 	{
@@ -67,6 +71,7 @@ int ZIPFile::ReadFile(DWORD FileID, CTempFile &store)
 	int r;
 
 	DWORD fileID = 0;
+	DWORD SeqID  = pDirectory->Files[ FileID ].Attributes[ 0 ];
 
 	a = archive_read_new();
 
@@ -83,7 +88,7 @@ int ZIPFile::ReadFile(DWORD FileID, CTempFile &store)
 
 	while ( ( r = archive_read_next_header( a, &entry ) ) == ARCHIVE_OK )
 	{
-		if ( FileID == fileID )
+		if ( fileID == SeqID )
 		{
 			store.Seek( 0 );
 
@@ -127,4 +132,51 @@ int ZIPFile::ReadFile(DWORD FileID, CTempFile &store)
 	}
 
 	return 0;
+}
+
+int ZIPFile::ChangeDirectory( DWORD FileID )
+{
+	rstrncat( cpath, pDirectory->Files[ FileID ].Filename, 255 );
+	rstrncat( cpath, (BYTE *) "/", 255 );
+
+	rstrncpy( pDir->cpath, cpath, 255 );
+
+	return pDirectory->ReadDirectory();
+}
+
+int ZIPFile::Parent()
+{
+	BYTE *p = rstrrchr( cpath, '/', 255 );
+
+	if ( p != nullptr )
+	{
+		*p = 0;
+	}
+
+	p = rstrrchr( cpath, '/', 255 );
+
+	if ( p == nullptr )
+	{
+		cpath[ 0 ] = 0;
+	}
+	else
+	{
+		p++;
+
+		*p = 0;
+	}
+
+	rstrncpy( pDir->cpath, cpath, 255 );
+
+	return pDirectory->ReadDirectory();
+}
+
+bool ZIPFile::IsRoot()
+{
+	if ( cpath[ 0 ] == 0 )
+	{
+		return true;
+	}
+
+	return false;
 }

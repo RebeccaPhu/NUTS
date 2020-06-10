@@ -1274,9 +1274,9 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 		f.FragOffset = BitsOffset;
 		f.Zone       = z;
 
-		BitsOffset += ( ( SecSize - Offset ) * 8 ) - ZoneSpare;
+		BitsOffset += ( ( SecSize - Offset ) * 8 ) - ( ZoneSpare - 32 );
 
-		DWORD ThisLen = ( ( SecSize - Offset ) * 8 ) - ZoneSpare - 32;
+		DWORD ThisLen = ( ( SecSize - Offset ) * 8 ) - ( ZoneSpare - 32 );
 
 		if ( ThisLen > BitsLeft ) { ThisLen = BitsLeft; }
 
@@ -1334,23 +1334,26 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 
 		}
 
-		if ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
+		if ( z == ( Zones / 2 ) )
 		{
-			Fragment r;
+			if ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
+			{
+				Fragment r;
 
-			r.FragID     = 3;
-			r.FragOffset = f.FragOffset;
-			r.Length     = 0x1000;
-			r.Zone       = z;
+				r.FragID     = 3;
+				r.FragOffset = f.FragOffset;
+				r.Length     = 0x1000;
+				r.Zone       = z;
 
-			IDExtend( &r.Length );
+				IDExtend( &r.Length );
 
-			Fragments.push_back( r );
+				Fragments.push_back( r );
 
-			RootSize = r.Length;
+				RootSize = r.Length;
 
-			f.FragOffset += r.Length / BPMB;
-			f.Length     -= r.Length;
+				f.FragOffset += r.Length / BPMB;
+				f.Length     -= r.Length;
+			}
 		}
 
 		IDExtend( &f.Length );

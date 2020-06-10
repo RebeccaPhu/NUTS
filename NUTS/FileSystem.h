@@ -69,7 +69,7 @@ public:
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
-	virtual int	Parent() {
+	virtual int Parent() {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 

@@ -41,6 +41,11 @@ public:
 
 	DWORD SecSize;
 
+	void ReplaceSource( DataSource *pSrc )
+	{
+		pSource = pSrc;
+	}
+
 private:
 	void TranslateType( NativeFile *file );
 };
