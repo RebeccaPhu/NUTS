@@ -54,6 +54,8 @@
 #define IDD_THANKS                      136
 #define IDD_LICENSE                     137
 #define IDB_FLOPPYDISC                  139
+#define IDB_BITMAP2                     140
+#define IDB_ARCHIVE                     140
 #define IDB_CDROM                       158
 #define IDB_PROGRAM                     159
 #define IDB_SCRIPT                      159
@@ -690,7 +692,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        139
+#define _APS_NEXT_RESOURCE_VALUE        141
 #define _APS_NEXT_COMMAND_VALUE         40065
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101

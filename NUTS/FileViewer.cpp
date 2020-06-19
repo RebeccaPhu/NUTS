@@ -1862,7 +1862,7 @@ void CFileViewer::DoTEXTContentViewer( DWORD PrefTUID )
 			pTXViewer = new CTEXTContentViewer( FileObj, PrefTUID );
 		}
 
-		pTXViewer->FSEncodingID = FS->GetEncoding();
+		pTXViewer->FSEncodingID = iter->EncodingID;
 
 		GetWindowRect(ParentWnd, &rect);
 
@@ -1910,7 +1910,7 @@ void CFileViewer::DoContentViewer( void )
 
 			pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
 
-			pTXViewer->FSEncodingID = FS->GetEncoding();
+			pTXViewer->FSEncodingID = iter->EncodingID;
 
 			pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
 
@@ -1925,7 +1925,7 @@ void CFileViewer::DoContentViewer( void )
 
 				pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
 
-				pTXViewer->FSEncodingID = FS->GetEncoding();
+				pTXViewer->FSEncodingID = iter->EncodingID;
 
 				pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
 

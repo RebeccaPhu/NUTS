@@ -52,6 +52,12 @@
     <Filter Include="Source Files\Translators">
       <UniqueIdentifier>{4bc50b01-bd2f-4bdb-b3ec-5f272873ed1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\File Systems\ZIP">
+      <UniqueIdentifier>{43394664-318c-4f4f-b904-e8ee391c847c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\File Systems\ZIP">
+      <UniqueIdentifier>{e9d53fc7-1ca7-42fd-b010-381bb9d32e73}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -201,14 +207,17 @@
     <ClCompile Include="MemorySource.cpp">
       <Filter>Source Files\Data Sources</Filter>
     </ClCompile>
-    <ClCompile Include="ZIPFile.cpp">
-      <Filter>Source Files\File Systems</Filter>
-    </ClCompile>
     <ClCompile Include="ZIPDirectory.cpp">
-      <Filter>Source Files\File Systems</Filter>
+      <Filter>Source Files\File Systems\ZIP</Filter>
     </ClCompile>
     <ClCompile Include="ZIPFuncs.cpp">
-      <Filter>Source Files\File Systems</Filter>
+      <Filter>Source Files\File Systems\ZIP</Filter>
+    </ClCompile>
+    <ClCompile Include="ZIPFile.cpp">
+      <Filter>Source Files\File Systems\ZIP</Filter>
+    </ClCompile>
+    <ClCompile Include="ZIPCommon.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -371,14 +380,17 @@
     <ClInclude Include="MemorySource.h">
       <Filter>Header Files\Data Sources</Filter>
     </ClInclude>
-    <ClInclude Include="ZIPFile.h">
-      <Filter>Header Files\File Systems</Filter>
-    </ClInclude>
     <ClInclude Include="ZIPDirectory.h">
-      <Filter>Header Files\File Systems</Filter>
+      <Filter>Header Files\File Systems\ZIP</Filter>
     </ClInclude>
     <ClInclude Include="ZipFuncs.h">
-      <Filter>Header Files\File Systems</Filter>
+      <Filter>Header Files\File Systems\ZIP</Filter>
+    </ClInclude>
+    <ClInclude Include="ZIPFile.h">
+      <Filter>Header Files\File Systems\ZIP</Filter>
+    </ClInclude>
+    <ClInclude Include="ZIPCommon.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -543,6 +555,9 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\avi1.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\archive.bmp">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

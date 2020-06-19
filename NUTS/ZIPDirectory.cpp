@@ -4,6 +4,7 @@
 #include "NUTSError.h"
 #include "Defs.h"
 #include "Plugins.h"
+#include "ExtensionRegistry.h"
 
 #include "libfuncs.h"
 
@@ -11,6 +12,7 @@
 #define LIBARCHIVE_STATIC
 #endif
 
+#include "zip.h"
 #include "archive.h"
 #include "archive_entry.h"
 #include "ZipFuncs.h"
@@ -19,31 +21,31 @@ int ZIPDirectory::ReadDirectory(void)
 {
 	Files.clear();
 
-	struct archive *a;
-	struct archive_entry *entry;
+	zip_error_t ze;
+
+	zip_error_init( &ze );
 
 	int r;
 
 	DWORD FileID = 0;
 	DWORD SeqID  = 0;
 
-	a = archive_read_new();
+	zip_source_t *z = zip_source_function_create( (zip_source_callback) _NUTSZipCallback, (ZIPCommon *) this, &ze );
 
-	archive_read_support_filter_all( a );
-	archive_read_support_format_all( a );
+	zip_t *za = zip_open_from_source( z, 0, &ze );
 
-	r = archive_read_open_filename (a, pSource->GetLocation(), 10240 );
-
-	if ( r != ARCHIVE_OK )
+	if ( za == NULL )
 	{
-		return NUTSError( 0xA0, ZIPError( a ) );
+		return NUTSError( 0xA0, UString( (char *) zip_error_strerror( &ze ) ) );
 	}
+
+	DWORD NumEntries = zip_get_num_entries( za, NULL );
 
 	WORD l = rstrnlen( cpath, 255 );
 
-	while ( ( r = archive_read_next_header( a, &entry ) ) == ARCHIVE_OK )
+	while ( SeqID < NumEntries )
 	{
-		BYTE *fname = (BYTE *) archive_entry_pathname( entry );
+		BYTE *fname = (BYTE *) zip_get_name( za, SeqID, NULL );
 
 		BYTE *pDir = ZIPSubPath( cpath, fname );
 
@@ -61,7 +63,9 @@ int ZIPDirectory::ReadDirectory(void)
 				}
 			}
 				
-			if ( !HaveThatDir )
+			WORD fl = rstrnlen( fname, 255 ) - 1;
+
+			if ( ( fname[ fl ] == '/' ) && ( !HaveThatDir ) )
 			{
 				NativeFile file;
 
@@ -76,6 +80,8 @@ int ZIPDirectory::ReadDirectory(void)
 
 				rstrncpy( file.Filename, pDir, 255 );
 
+				file.Attributes[ 0 ] = SeqID;
+
 				Files.push_back( file );
 
 				FileID++;
@@ -84,6 +90,10 @@ int ZIPDirectory::ReadDirectory(void)
 
 		if ( IsCPath( cpath, fname ) )
 		{
+			zip_stat_t zs;
+			zip_stat_init( &zs );
+			zip_stat_index( za, SeqID, NULL, &zs );
+
 			NativeFile file;
 
 			file.EncodingID = ENCODING_ASCII;
@@ -92,7 +102,7 @@ int ZIPDirectory::ReadDirectory(void)
 			file.FSFileType = FT_ZIP;
 
 			file.Icon       = FT_Arbitrary;
-			file.Length     = archive_entry_size( entry );
+			file.Length     = zs.size;
 			file.Type       = FT_Arbitrary;
 			file.XlatorID   = 0;
 
@@ -100,11 +110,45 @@ int ZIPDirectory::ReadDirectory(void)
 
 			rstrncpy( file.Filename, ZIPSubName( cpath, fname ), 255 );
 
-			BYTE *pExtra = (BYTE *) archive_entry_extra_data( entry );
+			zip_flags_t attrSource = ZIP_FL_LOCAL;
 
-			FSPlugins.TranslateZIPContent( &file, pExtra );
+			DWORD NumFields = zip_file_extra_fields_count( za, SeqID, attrSource );
+
+			if ( NumFields == 0xFFFFFFFF )
+			{
+				attrSource = ZIP_FL_CENTRAL;
+
+				NumFields = zip_file_extra_fields_count( za, SeqID, attrSource );
+			}
+
+			bool DidTranslate = false;
+
+			if ( NumFields != 0xFFFFFFFF )
+			{
+				for ( DWORD f = 0; f < NumFields; f++ )
+				{
+					BYTE field[64];
+
+					ZeroMemory( field, 64 );
+
+					zip_uint16_t fl;
+
+					BYTE *srcField = (BYTE *) zip_file_extra_field_get( za, SeqID, f, (zip_uint16_t *) field, &fl, attrSource );
+
+					memcpy( &field[4], srcField, min( 60, fl ) );
+
+					* (WORD *) &field[2] = fl;
+
+					DidTranslate = FSPlugins.TranslateZIPContent( &file, field );
+				}
+			}
 
 			file.Attributes[ 0 ] = SeqID;
+
+			if ( !DidTranslate )
+			{
+				TranslateFileType( &file );
+			}
 
 			Files.push_back( file );
 
@@ -113,15 +157,22 @@ int ZIPDirectory::ReadDirectory(void)
 
 		SeqID++;
 
-		archive_read_data_skip( a );
+//		archive_read_data_skip( a );
 	}
 
-	r = archive_read_free( a );
+	zip_error_fini( &ze );
+	zip_source_close( z );
+	zip_source_free( z );
 
+
+///	r = archive_read_free( a );
+
+	/*
 	if ( r != ARCHIVE_OK )
 	{
 		return NUTSError( 0xA0, ZIPError( a ) );
 	}
+	*/
 
 	return 0;
 }
@@ -131,3 +182,40 @@ int ZIPDirectory::WriteDirectory(void)
 	return 0;
 }
 
+void ZIPDirectory::TranslateFileType(NativeFile *file) {
+	if ( file->Flags & FF_Directory )
+	{
+		file->Type = FT_Directory;
+		file->Icon = FT_Directory;
+
+		return;
+	}
+
+	BYTE *pDot = rstrrchr( file->Filename, '.', 255 );
+
+	if ( pDot != nullptr )
+	{
+		rstrncpy( file->Extension, pDot + 1, 3 );
+
+		*pDot = 0;
+
+		file->Flags |= FF_Extension;
+	}
+
+	if ( ! ( file->Flags & FF_Extension ) )
+	{
+		file->Type = FT_Arbitrary;
+		file->Icon = FT_Arbitrary;
+
+		return;
+	}
+
+	std::wstring ThisExt = std::wstring( (WCHAR *) UString( (char *) file->Extension ) );
+
+	ExtDef Desc = ExtReg.GetTypes( ThisExt );
+
+	file->Type = Desc.Type;
+	file->Icon = Desc.Icon;
+
+	if ( file->Type == FT_Text ) { file->XlatorID = TUID_TEXT; }
+}

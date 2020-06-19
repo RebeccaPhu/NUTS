@@ -36,7 +36,7 @@ void WindowsDirectory::TranslateFileType(NativeFile *file) {
 	file->Type = Desc.Type;
 	file->Icon = Desc.Icon;
 
-	if ( file->Type == FT_Text ) { file->XlatorID == TUID_TEXT; }
+	if ( file->Type == FT_Text ) { file->XlatorID = TUID_TEXT; }
 }
 
 int	WindowsDirectory::ReadDirectory(void) {

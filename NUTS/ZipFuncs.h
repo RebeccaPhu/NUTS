@@ -1,6 +1,7 @@
 #pragma once
 
 #include "archive.h"
+#include "zip.h"
 
 WCHAR *ZIPError( archive *a );
 bool IsCPath( BYTE *path, BYTE *name );

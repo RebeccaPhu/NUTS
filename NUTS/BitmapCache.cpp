@@ -27,6 +27,7 @@ IDB_HARDDISC:   "Hard Disk Icon", Influens Icons, Mat-u, CC Attribution-NonComme
 IDB_SCRIPT:     "File Script Icon", Junior Icons, Treetog ArtWork, Free for personal use
 IDB_TEXT:       "Text Icon", Crystal Office Icon Set, MediaJon (www.iconshots.com), Linkware
 IDB_TAPEIMAGE:  "Cassette Graphite Icon", Cassette Icons, iTweek, Free for personal use.
+IDB_ARCHIVE:    "Light Brown, ZIP, Archive", Cats Icons 2, McDo Design, Free for non-commerical use.
 */
 
 void CBitmapCache::LoadBitmaps() {
@@ -51,6 +52,7 @@ void CBitmapCache::LoadBitmaps() {
 		{ FT_HardDisc,  IDB_HARDDISC   },
 		{ FT_Floppy,    IDB_FLOPPYDISC },
 		{ FT_Directory, IDB_FOLDER     },
+		{ FT_Archive,   IDB_ARCHIVE    },
 		{ FT_None,      NULL },
 	};
 

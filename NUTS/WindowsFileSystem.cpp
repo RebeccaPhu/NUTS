@@ -196,27 +196,6 @@ DataSource *WindowsFileSystem::FileDataSource( DWORD FileID )
 	return new ImageDataSource( FilePath );
 }
 
-FileSystem *WindowsFileSystem::FileFilesystem( DWORD FileID )
-{
-	if ( FileID > pDirectory->Files.size() )
-	{
-		return nullptr;
-	}
-
-	if ( rstrnicmp( pDirectory->Files[ FileID ].Extension, (BYTE *) "ZIP", 3 ) )
-	{
-		DataSource *pSource = FileDataSource( FileID );
-
-		FileSystem *pFS = new ZIPFile( pSource );
-
-		pSource->Release();
-
-		return pFS;
-	}
-
-	return nullptr;
-}
-
 BYTE *WindowsFileSystem::GetTitleString( NativeFile *pFile )
 {
 	static BYTE Title[ 512 ];

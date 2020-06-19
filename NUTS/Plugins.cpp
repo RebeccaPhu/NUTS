@@ -11,6 +11,8 @@
 #include "ExtensionRegistry.h"
 #include "DataSourceCollector.h"
 
+#include "ZIPFile.h"
+
 #include <string>
 
 extern DataSourceCollector *pCollector;
@@ -178,12 +180,31 @@ ProviderList CPlugins::GetProviders( void )
 		Providers.push_back( Provider );
 	}
 
+	ProviderDesc Provider;
+
+	Provider.Provider = L"PKWare";
+	Provider.PUID     = PUID_ZIP;
+
+	Providers.push_back( Provider );
+
 	return Providers;
 }
 
 FormatList CPlugins::GetFormats( DWORD PUID )
 {
 	FormatList Formats;
+
+	if ( PUID == PUID_ZIP )
+	{
+		FormatDesc Format;
+
+		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
+		Format.FUID   = PUID_ZIP;
+		Format.Format = L"ZIP File";
+		Formats.push_back( Format );
+
+		return Formats;
+	}
 
 	PluginList::iterator iPlugin;
 
@@ -293,6 +314,26 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 		iter++;
 	}
 
+	FSHint hint = { 0, 0 };
+
+	hint.FSID = FSID_ZIP;
+
+	BYTE Buf[ 4 ];
+
+	pSource->ReadRaw( 0, 4, Buf );
+
+	if ( rstrncmp( Buf, (BYTE *) "PK", 2 ) )
+	{
+		hint.Confidence += 20;
+	}
+
+	if ( ( pFile->Flags & FF_Extension ) && ( rstrncmp( pFile->Extension, (BYTE *) "ZIP", 3 ) ) )
+	{
+		hint.Confidence += 10;
+	}
+
+	hints.push_back( hint );
+
 	return hints;
 }
 
@@ -335,6 +376,18 @@ FSHints CPlugins::FindFS( NativeFile *pImage )
 
 FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource, bool Initialise )
 {
+	if ( FSID == FSID_ZIP )
+	{
+		FileSystem *pFS = new ZIPFile( pSource );
+
+		if ( Initialise )
+		{
+			pFS->Init();
+		}
+
+		return pFS;
+	}
+
 	PluginList::iterator iter = Plugins.begin();
 
 	while ( iter != Plugins.end() )
@@ -390,6 +443,11 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource, bool Initialise )
 
 std::wstring CPlugins::FSName( DWORD FSID )
 {
+	if( FSID == FSID_ZIP )
+	{
+		return L"ZIP File";
+	}
+
 	std::wstring name = L"Unknwon File System";
 
 	PluginList::iterator iter = Plugins.begin();
@@ -550,6 +608,16 @@ std::vector<FSMenu> CPlugins::GetFSMenu()
 
 		menus.push_back( menu );
 	}
+
+	FSMenu menu;
+	FormatMenu format;
+
+	menu.Provider = L"PKWare";
+	format.FS     = L"ZIP File";
+	format.ID     = FSID_ZIP;
+
+	menu.FS.push_back( format );
+	menus.push_back( menu );
 
 	return menus;
 }

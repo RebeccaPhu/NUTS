@@ -6,10 +6,11 @@
 
 #include "Directory.h"
 #include "DataSource.h"
+#include "ZIPCommon.h"
 
 #include "libfuncs.h"
 
-class ZIPDirectory : public Directory
+class ZIPDirectory : public Directory, ZIPCommon
 {
 public:
 	ZIPDirectory( DataSource *pSrc ) : Directory( pSrc )
@@ -28,4 +29,12 @@ public:
 	int WriteDirectory(void);
 
 	BYTE cpath[ 256 ];
+
+	DataSource *GetSource()
+	{
+		return pSource;
+	}
+
+private:
+	void TranslateFileType(NativeFile *file);
 };

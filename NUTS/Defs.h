@@ -7,6 +7,8 @@
 #define FT_WINDOWS     0x80000000
 #define FT_ROOT        0x00000000
 #define FT_ZIP         0xC0000000
+#define PUID_ZIP       0x021D021D
+#define FSID_ZIP       0x021D021D
 
 typedef unsigned long long QWORD;
 
@@ -32,6 +34,7 @@ typedef enum _FileType {
 	FT_HardDisc  = 17, // Hard Drive
 	FT_Floppy    = 18, // Floppy Drive
 	FT_Directory = 19, // Directory (J, R, Hartley)
+	FT_Archive   = 20, // Archive (ZIP, LHA, etc)
 } FileType;
 
 typedef struct _NativeFile {

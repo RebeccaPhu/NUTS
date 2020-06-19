@@ -60,8 +60,6 @@ CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, DWORD TUID )
 
 	FileObj.Keep();
 
-	FSEncodingID = ENCODING_ASCII;
-
 	pTextBuffer = nullptr;
 
 	Translating      = true;

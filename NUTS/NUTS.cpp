@@ -262,7 +262,8 @@ void SetUpBaseMappings( void )
 	ExtReg.RegisterExtension( L"VOC", FT_Sound,     FT_Sound   );
 	ExtReg.RegisterExtension( L"INI", FT_Pref,      FT_Pref    );
 	ExtReg.RegisterExtension( L"TXT", FT_Text,      FT_Text    );
-	ExtReg.RegisterExtension( L"ZIP", FT_MiscImage, FT_Data    );
+	ExtReg.RegisterExtension( L"ZIP", FT_Archive,   FT_Archive );
+	ExtReg.RegisterExtension( L"LHA", FT_Archive,   FT_Archive );
 }
 
 //
@@ -463,7 +464,9 @@ unsigned int __stdcall DoEnterThread(void *param)
 		return 0;
 	}
 
-	if ( pCurrentFS->pDirectory->Files[pVars->EnterIndex].Type != FT_MiscImage )
+	if (
+		( pCurrentFS->pDirectory->Files[pVars->EnterIndex].Type != FT_MiscImage ) &&
+		( pCurrentFS->pDirectory->Files[pVars->EnterIndex].Type != FT_Archive ) )
 	{
 		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
 		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }

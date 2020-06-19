@@ -325,6 +325,7 @@ IDI_NEWDIR              ICON                    "..\\newdir.ico"
 IDB_WIZ_MARK            BITMAP                  "..\\bmp00001.bmp"
 IDB_WIZBANNER           BITMAP                  "..\\WizBanner.bmp"
 IDB_TAPEIMAGE           BITMAP                  "..\\TapeImage.bmp"
+IDB_ARCHIVE             BITMAP                  "..\\archive.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //

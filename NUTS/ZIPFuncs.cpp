@@ -8,15 +8,16 @@
 #endif
 
 #include "archive.h"
+#include "zip.h"
 
 /* Converts a libarchive error to a static error string for use with NUTSError */
 WCHAR *ZIPError( archive *a )
 {
 	static WCHAR Error[ 256 ];
 
-	WCHAR *pErr = UString( (char *) archive_error_string( a ) );
+//	WCHAR *pErr = UString( (char *) archive_error_string( a ) );
 
-	wcscpy_s( Error, pErr );
+	wcscpy_s( Error, L"moo" ); // pErr );
 
 	return Error;
 }
@@ -41,6 +42,12 @@ bool IsCPath( BYTE *path, BYTE *name )
 	}
 
 	WORD l = rstrnlen( path, 255 );
+
+	/* This ends in a slash, it's the path itself */
+	if ( p == ( rstrnlen( name, 255 ) - 1 ) )
+	{
+		return false;
+	}
 
 	if ( ( p == 0xFFFF ) && ( l == 0 ) )
 	{
