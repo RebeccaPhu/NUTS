@@ -90,12 +90,14 @@ void CPlugins::LoadPlugin( char *plugin )
 		plugin.TranslateZIPContent  = (fnZIPTranslate)         GetProcAddress( hModule, "TranslateZIPContent" );
 
 		DataSourceCollector **ppCollector = (DataSourceCollector **) GetProcAddress( hModule, "pExternCollector" );
+		NUTSError **ppError               = (NUTSError **)           GetProcAddress( hModule, "pExternError" );
 
 		if ( pCollector == nullptr ) { FreeLibrary( hModule ); return; }
 
 		if ( plugin.DescriptorFunc == nullptr ) { FreeLibrary( hModule ); return; }
 
 		*ppCollector = pCollector;
+		*ppError     = pGlobalError;
 
 		Plugins.push_back( plugin );
 
