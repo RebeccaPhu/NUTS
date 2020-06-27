@@ -10,6 +10,7 @@
 #include "BitmapCache.h"
 #include "ExtensionRegistry.h"
 #include "DataSourceCollector.h"
+#include "DSKDataSource.h"
 
 #include "ZIPFile.h"
 
@@ -292,7 +293,7 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 
 		for ( i=0; i<D->NumFS; i++ )
 		{
-			FileSystem *pFS = iter->CreatorFunc( D->FSDescriptors[i].PUID, pSource );
+			FileSystem *pFS = LoadFS( D->FSDescriptors[i].PUID, pSource, false );
 
 			FSHint hint = { 0, 0 };
 
@@ -402,6 +403,17 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource, bool Initialise )
 		{
 			if ( D->FSDescriptors[i].PUID == FSID )
 			{
+				/* Need a DSK? */
+				DSKDataSource *pDSK = nullptr;
+
+				if ( D->FSDescriptors[i].Flags & FSF_Uses_DSK )
+				{
+					/* Need a DSK, so create a source and wrap it around */
+					pDSK = new DSKDataSource( pSource );
+					
+					pSource = pDSK;
+				}
+
 				FileSystem *pFS = iter->CreatorFunc( FSID, pSource );
 
 				if ( Initialise )
@@ -410,6 +422,12 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource, bool Initialise )
 					{
 						NUTSError::Report( L"Initialise File System", NULL );
 					}
+				}
+
+				if ( pDSK != nullptr )
+				{
+					/* FS has ownership of this now */
+					pDSK->Release();
 				}
 
 				return pFS;
@@ -450,7 +468,7 @@ std::wstring CPlugins::FSName( DWORD FSID )
 		return L"ZIP File";
 	}
 
-	std::wstring name = L"Unknwon File System";
+	std::wstring name = L"Unknown File System";
 
 	PluginList::iterator iter = Plugins.begin();
 
@@ -757,6 +775,8 @@ int CPlugins::PerformGlobalCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex )
 
 		iter++;
 	}
+
+	return NUTSError( 0x70, L"Declared command not recognised - this is a software bug." );
 }
 
 bool CPlugins::TranslateZIPContent( NativeFile *pFile, BYTE *pExtra )

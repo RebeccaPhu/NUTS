@@ -266,12 +266,12 @@ void IECATADirectory::ReleaseBlock( std::vector<DWORD> *pBlocks ) {
 
 	int		CSector;
 
-	pSource->ReadSector(0, LinkTable, 512);
+	pSource->ReadSector(0, (BYTE *) LinkTable, 512);
 
 	//	Free blocks list pointed to by first 4 bytes.
 	CSector	= LinkTable[0];
 
-	pSource->ReadSector(CSector, LinkTable, 512);
+	pSource->ReadSector(CSector, (BYTE *)LinkTable, 512);
 
 	while (1) {
 		for (int i=0; i<127; i++) {
@@ -285,7 +285,7 @@ void IECATADirectory::ReleaseBlock( std::vector<DWORD> *pBlocks ) {
 
 				if ( pBlocks->size() == 0 )
 				{
-					pSource->WriteSector(CSector, LinkTable, 512);
+					pSource->WriteSector(CSector, (BYTE *) LinkTable, 512);
 
 					return;
 				}
@@ -301,13 +301,13 @@ void IECATADirectory::ReleaseBlock( std::vector<DWORD> *pBlocks ) {
 
 			LinkTable[127]	= NewSector;
 
-			pSource->WriteSector(CSector, LinkTable, 512);
+			pSource->WriteSector(CSector, (BYTE *) LinkTable, 512);
 
 			memset(LinkTable, 0, 512);
 		} else {
 			CSector	= LinkTable[127];
 
-			pSource->ReadSector(CSector, LinkTable, 512);
+			pSource->ReadSector(CSector, (BYTE *) LinkTable, 512);
 		}
 	}
 }

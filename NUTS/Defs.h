@@ -119,6 +119,7 @@ typedef enum _FSFlags {
 	FSF_Reorderable      = 0x00004000,
 	FSF_Exports_Sidecars = 0x00008000,
 	FSF_Prohibit_Nesting = 0x00010000,
+	FSF_Uses_DSK         = 0x00020000,
 } FSFlags;
 
 typedef struct _ProviderDesc {
@@ -311,6 +312,56 @@ typedef enum _GlobalCommandResult {
 } GlobalCommandResult;
 
 typedef std::vector<GlobalCommand> GlobalCommandSet;
+
+/* Physical disk definitions */
+typedef struct _DiskShape {
+	DWORD Tracks;
+	WORD  Sectors;
+	WORD  Heads;
+	WORD  TrackInterleave;
+	WORD  LowestSector;
+} DiskShape;
+
+typedef struct _TrackSection {
+	BYTE  Value;
+	BYTE  Repeats;
+} TrackSection;
+
+typedef struct _SectorDefinition {
+	TrackSection GAP2;
+	TrackSection GAP2PLL;
+	TrackSection GAP2SYNC;
+	BYTE         IAM;
+	BYTE         Track;
+	BYTE         Side;
+	BYTE         SectorID;
+	BYTE         SectorLength;
+	BYTE         IDCRC;
+	TrackSection GAP3;
+	TrackSection GAP3PLL;
+	TrackSection GAP3SYNC;
+	BYTE         DAM;
+	BYTE         Data[1024];
+	BYTE         DATACRC;
+	TrackSection GAP4;
+} SectorDefinition;
+
+typedef enum _DiskDensity {
+	SingleDensity = 1,
+	DoubleDensity = 2,
+	QuadDesnity   = 3,
+	OctalDensity  = 4,
+} DiskDensity;
+
+typedef struct _TrackDefinition {
+	DiskDensity  Density;
+
+	TrackSection GAP1;
+
+	std::vector<SectorDefinition> Sectors;
+
+	BYTE         GAP5;
+} TrackDefinition;
 
 #define FILEOP_SUCCESS      0
 #define FILEOP_NEEDS_ASCII  1

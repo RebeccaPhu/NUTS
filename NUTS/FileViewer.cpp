@@ -778,6 +778,8 @@ void CFileViewer::DrawBasicLayout() {
 	{
 		FontBitmap TitleString( FONTID_PC437, (BYTE *) "Loading...", (BYTE) ( ( rect.right - rect.left ) / 8 ), false, false );
 
+		TitleString.SetButtonColor( GetRValue( BColour ), GetGValue( BColour ), GetBValue( BColour ) );
+
 		TitleString.SetGrayed( !HasFocus );
 
 		TitleString.DrawText( viewDC, 6, 4, DT_TOP | DT_LEFT );
@@ -807,7 +809,10 @@ void CFileViewer::DrawBasicLayout() {
 
 	for ( iStack = TitleStack.begin(); iStack != TitleStack.end(); iStack++ )
 	{
-		FontBitmap TitleString( FSPlugins.FindFont( iStack->Encoding, PaneIndex ), iStack->String, (BYTE) ( ( rect.right - rect.left ) / 8 ), false, false );
+		WORD l  = rstrnlen( iStack->String, 255 );
+		WORD ml = (BYTE) ( ( rect.right - rect.left ) / 8 );
+
+		FontBitmap TitleString( FSPlugins.FindFont( iStack->Encoding, PaneIndex ), iStack->String, (BYTE) l, false, false );
 
 		TitleString.SetButtonColor( GetRValue( BColour ), GetGValue( BColour ), GetBValue( BColour ) );
 

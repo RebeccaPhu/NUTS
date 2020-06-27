@@ -73,7 +73,7 @@ public:
 
 	DWORD GetEncoding( void )
 	{
-		return ENCODING_ACORN;
+		return ENCODING_RISCOS;
 	}
 
 	AttrDescriptors GetAttributeDescriptions( void );

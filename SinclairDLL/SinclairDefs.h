@@ -7,5 +7,6 @@
 #define BASIC_SPECTRUM    0x5A3C7A22
 
 #define FSID_SPECTRUM_TAP 0x5A3C7AE0
+#define FSID_DOS3         0x5A3C7AE1
 
 #define FT_SINCLAIR       0x5A3C7AD0

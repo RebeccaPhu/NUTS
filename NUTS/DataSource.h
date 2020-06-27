@@ -9,26 +9,26 @@ public:
 	DataSource(void);
 	virtual ~DataSource(void);
 
-	virtual	int	ReadSector(long Sector, void *pSectorBuf, long SectorSize) = 0;
-	virtual	int	WriteSector(long Sector, void *pSectorBuf, long SectorSize) = 0;
+	virtual	int	ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) = 0;
+	virtual	int	WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) = 0;
 
 	virtual int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer ) = 0;
 	virtual int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer ) = 0;
 
 	virtual int Truncate( QWORD Length ) = 0;
 
-	virtual char *GetLocation()
-	{
-		return "";
-	}
+	/* Physical routines. Most sources ignore these */
+	virtual WORD GetSectorID( WORD Track, WORD Head, WORD Sector ) { return 0x00; }
+	virtual WORD GetSectorID( DWORD Sector ) { return 0x00; }
+	virtual int  SeekTrack( WORD Track ) { return 0; }
+	virtual int  WriteTrack( TrackDefinition track ) { return 0; }
 
 	__int64	PhysicalDiskSize;
-	__int64	LogicalDiskSize;
 
 	int RefCount;
 
 public:
-	void Retain( void )
+	virtual void Retain( void )
 	{
 		EnterCriticalSection(&RefLock);
 		RefCount++;

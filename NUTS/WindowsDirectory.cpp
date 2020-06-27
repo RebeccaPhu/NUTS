@@ -96,7 +96,7 @@ int	WindowsDirectory::ReadDirectory(void) {
 			}
 		}
 
-		strncpy_s( (char *) file.Filename, 33, AString( (WCHAR *) Filename.c_str() ), 32 ); 
+		rstrncpy( file.Filename, (BYTE *) AString( (WCHAR *) Filename.c_str() ), 255 );
 
 		file.Length	    = fdata.nFileSizeLow;
 		file.EncodingID = ENCODING_ASCII;

@@ -160,8 +160,11 @@
     <ClCompile Include="AboutBox.cpp" />
     <ClCompile Include="AppAction.cpp" />
     <ClCompile Include="BlockMap.cpp" />
+    <ClCompile Include="CPM.cpp" />
+    <ClCompile Include="CPMDirectory.cpp" />
     <ClCompile Include="DataSourceCollector.cpp" />
     <ClCompile Include="DropSite.cpp" />
+    <ClCompile Include="DSKDataSource.cpp" />
     <ClCompile Include="EncodingClipboard.cpp" />
     <ClCompile Include="EncodingComboBox.cpp" />
     <ClCompile Include="EncodingEdit.cpp" />
@@ -220,8 +223,12 @@
     <ClInclude Include="AboutBox.h" />
     <ClInclude Include="AppAction.h" />
     <ClInclude Include="BlockMap.h" />
+    <ClInclude Include="CPM.h" />
+    <ClInclude Include="CPMBlockMap.h" />
+    <ClInclude Include="CPMDirectory.h" />
     <ClInclude Include="DataSourceCollector.h" />
     <ClInclude Include="DropSite.h" />
+    <ClInclude Include="DSKDataSource.h" />
     <ClInclude Include="EncodingClipboard.h" />
     <ClInclude Include="EncodingComboBox.h" />
     <ClInclude Include="EncodingEdit.h" />

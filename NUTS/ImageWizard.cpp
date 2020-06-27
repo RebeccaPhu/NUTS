@@ -360,7 +360,7 @@ unsigned int __stdcall CreationThread(void *param)
 		file.Flags        = 0;
 		file.FSFileType   = 0;
 		file.Icon         = FT_MiscImage;
-		file.Length       = Length;
+		file.Length       = NewImage.Ext();
 		file.Type         = FT_MiscImage;
 
 		BYTE *pF = pFilename->GetText();

@@ -217,7 +217,16 @@
       <Filter>Source Files\File Systems\ZIP</Filter>
     </ClCompile>
     <ClCompile Include="ZIPCommon.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\File Systems\ZIP</Filter>
+    </ClCompile>
+    <ClCompile Include="DSKDataSource.cpp">
+      <Filter>Source Files\Data Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="CPM.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="CPMDirectory.cpp">
+      <Filter>Source Files\File Systems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -390,7 +399,19 @@
       <Filter>Header Files\File Systems\ZIP</Filter>
     </ClInclude>
     <ClInclude Include="ZIPCommon.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\File Systems\ZIP</Filter>
+    </ClInclude>
+    <ClInclude Include="DSKDataSource.h">
+      <Filter>Header Files\Data Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="CPM.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="CPMDirectory.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="CPMBlockMap.h">
+      <Filter>Header Files\File Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

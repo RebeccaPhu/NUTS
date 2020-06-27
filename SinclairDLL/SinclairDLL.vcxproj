@@ -141,6 +141,8 @@
     <None Include="SinclairFont.bin" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DOS3Directory.h" />
+    <ClInclude Include="DOS3FileSystem.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SinclairDefs.h" />
     <ClInclude Include="SinclairDLL.h" />
@@ -152,6 +154,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\NUTS\CPM.cpp" />
+    <ClCompile Include="..\NUTS\CPMDirectory.cpp" />
     <ClCompile Include="..\NUTS\DataSource.cpp" />
     <ClCompile Include="..\NUTS\ImageDataSource.cpp" />
     <ClCompile Include="..\NUTS\libfuncs.cpp" />
@@ -173,6 +177,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="DOS3Directory.cpp" />
+    <ClCompile Include="DOS3FileSystem.cpp" />
     <ClCompile Include="SinclairDLL.cpp" />
     <ClCompile Include="SpectrumBASICTranslator.cpp" />
     <ClCompile Include="SpectrumSCREENTranslator.cpp" />

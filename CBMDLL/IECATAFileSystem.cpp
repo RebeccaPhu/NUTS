@@ -119,7 +119,7 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 
 			LinkTable[127]	= NewLink;
 
-			pSource->WriteSector(SectorLink, LinkTable, 512);
+			pSource->WriteSector(SectorLink, (BYTE *) LinkTable, 512);
 
 			SectorLink	= NewLink;
 
@@ -140,7 +140,7 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 		DataPtr			+= DataToWrite;
 	}
 
-	pSource->WriteSector(SectorLink, LinkTable, 512);
+	pSource->WriteSector(SectorLink, (BYTE *) LinkTable, 512);
 
 	//	Step 2.	Create an entry in the Files list, and write the directory back.
 	if ( pFile->FSFileType != FT_C64 )

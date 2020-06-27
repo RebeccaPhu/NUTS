@@ -36,7 +36,7 @@ void NestedImageSource::FlushNest( void )
 	}
 }
 
-int NestedImageSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize)
+int NestedImageSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	if ( ImageDataSource::WriteSector( Sector, pSectorBuf, SectorSize ) != DS_SUCCESS )
 	{

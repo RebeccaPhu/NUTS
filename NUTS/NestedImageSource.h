@@ -13,7 +13,7 @@ public:
 	~NestedImageSource(void);
 
 public:
-	int WriteSector(long Sector, void *pSectorBuf, long SectorSize);
+	int WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
 	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
 	int Truncate( QWORD Length );

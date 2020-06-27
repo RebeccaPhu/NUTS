@@ -54,6 +54,12 @@
     <ClInclude Include="SpectrumBASICTranslator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DOS3Directory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DOS3FileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -96,6 +102,18 @@
       <Filter>Source Files\Imported Source</Filter>
     </ClCompile>
     <ClCompile Include="..\NUTS\SourceFunctions.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DOS3Directory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DOS3FileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\CPM.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\CPMDirectory.cpp">
       <Filter>Source Files\Imported Source</Filter>
     </ClCompile>
   </ItemGroup>

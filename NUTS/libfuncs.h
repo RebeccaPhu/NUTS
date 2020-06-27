@@ -34,3 +34,22 @@ WORD BEWORD( BYTE *p );
 
 DWORD dwDiff( DWORD a, DWORD b );
 
+class AutoBuffer
+{
+public:
+	AutoBuffer( DWORD sz )
+	{
+		intp = malloc( sz );
+	}
+
+	~AutoBuffer()
+	{
+		free( intp );
+	}
+
+	operator BYTE *() { return (BYTE *) intp; }
+	operator void *() { return (BYTE *) intp; }
+
+private:
+	void *intp;
+};

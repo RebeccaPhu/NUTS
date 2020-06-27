@@ -2,7 +2,7 @@
 #include "IDE8Source.h"
 #include <malloc.h>
 
-int	IDE8Source::ReadSector(long Sector, void *pSectorBuf, long SectorSize) {
+int	IDE8Source::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
 	BYTE *pWideBuffer = (BYTE *) malloc(SectorSize * 2);
 
 	if ( pSource->ReadSector(Sector, pWideBuffer, SectorSize * 2) != DS_SUCCESS ) {
@@ -20,7 +20,7 @@ int	IDE8Source::ReadSector(long Sector, void *pSectorBuf, long SectorSize) {
 	return 0;
 }
 
-int	IDE8Source::WriteSector(long Sector, void *pSectorBuf, long SectorSize) {
+int	IDE8Source::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
 	BYTE *pWideBuffer = (BYTE *) malloc(SectorSize * 2);
 	BYTE *pSect       = (BYTE *) pSectorBuf;
 	

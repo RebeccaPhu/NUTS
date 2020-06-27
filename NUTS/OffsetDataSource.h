@@ -9,8 +9,8 @@ public:
 	~OffsetDataSource(void);
 
 public:
-	virtual	int	ReadSector(long Sector, void *pSectorBuf, long SectorSize);
-	virtual	int	WriteSector(long Sector, void *pSectorBuf, long SectorSize);
+	virtual	int	ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
+	virtual	int	WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
 
 	virtual int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 	virtual int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );

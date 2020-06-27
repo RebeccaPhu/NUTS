@@ -9,6 +9,7 @@
 #include "resource.h"
 
 #include "TAPFileSystem.h"
+#include "DOS3FileSystem.h"
 #include "SpectrumSCREENTranslator.h"
 #include "SpectrumBASICTranslator.h"
 #include "../NUTS/NUTSError.h"
@@ -22,15 +23,23 @@ SINCLAIRDLL_API DataSourceCollector *pExternCollector;
 SINCLAIRDLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
-FSDescriptor SinclairFS[6] = {
+FSDescriptor SinclairFS[2] = {
 	{
-		/* .FriendlyName = */ L"ZX Spectrum TAP Image",
+		/* .FriendlyName = */ L"ZX Spectrum TAP Tape Image",
 		/* .PUID         = */ FSID_SPECTRUM_TAP,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_DynamicSize,
 		0, { }, { },
 		1, { L"TAP" }, { FT_MiscImage }, { FT_TapeImage },
 		0
 	},
+	{
+		/* .FriendlyName = */ L"ZX Spectrum +3DOS",
+		/* .PUID         = */ FSID_DOS3,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Uses_DSK,
+		0, { }, { },
+		1, { L"DSK" }, { FT_MiscImage }, { FT_DiskImage },
+		0
+	}
 };
 
 FontDescriptor SinclairFonts[2] =
@@ -70,7 +79,7 @@ GraphicTranslator SpectrumGFX[] = {
 PluginDescriptor SinclairDescriptor = {
 	/* .Provider = */ L"Sinclair",
 	/* .PUID     = */ PLUGINID_SINCLAIR,
-	/* .NumFS    = */ 1,
+	/* .NumFS    = */ 2,
 	/* .NumFonts = */ 1,
 	/* .BASXlats = */ 1,
 	/* .GFXXlats = */ 1,
@@ -117,6 +126,9 @@ SINCLAIRDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	{
 	case FSID_SPECTRUM_TAP:
 		pFS = (void *) new TAPFileSystem( pSource );
+		break;
+	case FSID_DOS3:
+		pFS = (void *) new DOS3FileSystem( pSource );
 		break;
 	};
 

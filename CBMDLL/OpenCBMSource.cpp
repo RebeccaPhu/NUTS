@@ -17,7 +17,7 @@ OpenCBMSource::~OpenCBMSource(void)
 	OpenCBM_CloseDrive( Drive );
 }
 
-int OpenCBMSource::ReadSector(long Sector, void *pSectorBuf, long SectorSize)
+int OpenCBMSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	TSLink TS = LinkForSector( Sector );
 
@@ -29,7 +29,7 @@ int OpenCBMSource::ReadSector(long Sector, void *pSectorBuf, long SectorSize)
 	return OpenCBM_ReadBlock( Drive, TS, (BYTE *) pSectorBuf );
 }
 
-int OpenCBMSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize)
+int OpenCBMSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	TSLink TS = LinkForSector( Sector );
 

@@ -5,7 +5,7 @@
 
 #include <assert.h>
 
-int	ImageDataSource::ReadSector(long Sector, void *pSectorBuf, long SectorSize) {
+int	ImageDataSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
 	FILE	*fFile;
 
 	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
@@ -70,7 +70,7 @@ int ImageDataSource::WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 	return 0;
 }
 
-int	ImageDataSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize) {
+int	ImageDataSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
 	FILE	*fFile;
 
 	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
@@ -138,8 +138,6 @@ void ImageDataSource::UpdateSize( void )
 		fseek(f, 0, SEEK_END);
 
 		PhysicalDiskSize	= _ftelli64(f);
-
-		LogicalDiskSize		= PhysicalDiskSize;
 
 		fclose(f);
 	}

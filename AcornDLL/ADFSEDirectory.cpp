@@ -561,7 +561,7 @@ int	ADFSEDirectory::WritePDirectory( void )
 
 	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
 	{
-		BBCStringCopy( (char *) &DirBytes[ NameTablePtr ], (char *) iFile->Filename, 10 );
+		BBCStringCopy( (char *) &DirBytes[ NameTablePtr ], (char *) iFile->Filename, 255 );
 
 		DWORD Attr = 0;
 

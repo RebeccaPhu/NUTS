@@ -37,7 +37,7 @@ int	SpriteFileDirectory::ReadDirectory( void ) {
 
 		NativeFile file;
 
-		file.EncodingID = ENCODING_ACORN;
+		file.EncodingID = ENCODING_RISCOS;
 		file.fileID     = SpriteNum;
 		file.FSFileType = FT_SPRITE;
 		file.XlatorID   = GRAPHIC_SPRITE;
@@ -56,9 +56,12 @@ int	SpriteFileDirectory::ReadDirectory( void ) {
 		DWORD WidthWords = * (DWORD *) &SpriteHeader[ 0x10 ];
 		DWORD LeftBit    = * (DWORD *) &SpriteHeader[ 0x18 ];
 		DWORD RightBit   = * (DWORD *) &SpriteHeader[ 0x1C ];
+		DWORD Mode       = * (DWORD *) &SpriteHeader[ 0x28 ];
 
-		file.Attributes[ 1 ] = * (DWORD *) &SpriteHeader[ 0x28 ];
-		file.Attributes[ 4 ] = Sprite::BPPs[ file.Attributes[ 1 ] ];
+		if ( Mode > 53 ) { Mode = 0; }
+
+		file.Attributes[ 1 ] = Mode;
+		file.Attributes[ 4 ] = Sprite::BPPs[ Mode ];
 		file.Attributes[ 2 ] = ( ( WidthWords * 32 ) + RightBit + 1 - LeftBit ) / file.Attributes[ 4 ];
 		file.Attributes[ 3 ] = * (DWORD *) &SpriteHeader[ 0x14 ];
 

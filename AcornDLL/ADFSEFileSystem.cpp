@@ -356,7 +356,7 @@ int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile ++ )
 	{
-		if ( rstrnicmp( pFile->Filename, iFile->Filename, 10 ) )
+		if ( rstrnicmp( pFile->Filename, iFile->Filename, 255 ) )
 		{
 			return FILEOP_EXISTS;
 		}
@@ -1183,7 +1183,14 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 
 	NativeFile	DirEnt;
 
-	rstrncpy( DirEnt.Filename, Filename, 10 ); DirEnt.Filename[ 10 ] = 0;
+	if ( pFSMap->FormatVersion == 0x00000001 )
+	{
+		rstrncpy( DirEnt.Filename, Filename, 255 );
+	}
+	else
+	{
+		rstrncpy( DirEnt.Filename, Filename, 10 ); DirEnt.Filename[ 10 ] = 0;
+	}
 
 	DirEnt.ExecAddr   = 0;
 	DirEnt.LoadAddr   = 0;

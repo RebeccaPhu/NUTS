@@ -1,0 +1,7 @@
+#pragma once
+
+#define PLUGINID_AMSTRAD 0xA4576AD0
+#define FSID_AMSDOS      0xA4576AD1
+#define FILE_AMSTRAD     0xA4576AD2
+#define ENCODING_CPC     0xA4576AD3
+#define FONTID_CPC       0xA4576AD4

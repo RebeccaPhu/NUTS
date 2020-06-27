@@ -5,7 +5,7 @@
 
 #include <assert.h>
 
-int	RawDataSource::ReadSector(long Sector, void *pSectorBuf, long SectorSize) {
+int	RawDataSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
 
 	FILE	*fFile;
 
@@ -65,7 +65,7 @@ int RawDataSource::WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 	return 0;
 }
 
-int	RawDataSource::WriteSector(long Sector, void *pSectorBuf, long SectorSize) {
+int	RawDataSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
 	FILE	*fFile;
 
 	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );

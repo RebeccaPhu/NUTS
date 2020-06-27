@@ -1896,6 +1896,10 @@ int PropsPage_Handler( AppAction Action )
 		{
 			psp[0].pszTitle = (LPWSTR) L"File Size";
 		}
+		else
+		{
+			psp[0].pszTitle = (LPWSTR) L"Properties"; // ?
+		}
 	}
 	else
 	{
