@@ -5,3 +5,4 @@
 #define FILE_AMSTRAD     0xA4576AD2
 #define ENCODING_CPC     0xA4576AD3
 #define FONTID_CPC       0xA4576AD4
+#define TUID_LOCO        0xA4576AD5

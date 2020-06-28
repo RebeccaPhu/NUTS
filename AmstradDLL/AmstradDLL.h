@@ -17,6 +17,7 @@
 
 extern "C" AMSTRADDLL_API PluginDescriptor *GetPluginDescriptor(void);
 extern "C" AMSTRADDLL_API void *CreateFS( DWORD PUID, DataSource *pSource );
+extern "C" AMSTRADDLL_API void *CreateTranslator( DWORD TUID );
 
 extern "C" AMSTRADDLL_API DataSourceCollector *pExternCollector;
 extern "C" AMSTRADDLL_API NUTSError *pExternError;

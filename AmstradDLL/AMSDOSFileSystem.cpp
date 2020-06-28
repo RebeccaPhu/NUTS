@@ -33,7 +33,7 @@ bool AMSDOSFileSystem::IncludeHeader( BYTE *pHeader )
 {
 	WORD sum = 0;
 
-	for ( BYTE i=0; i<0x66; i++ )
+	for ( BYTE i=0; i<66; i++ )
 	{
 		sum += pHeader[ i ];
 	}

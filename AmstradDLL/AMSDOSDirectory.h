@@ -24,5 +24,7 @@ public:
 	{
 		return CPMDirectory::WriteDirectory();
 	}
+
+	void ExtraReadDirectory( NativeFile *pFile );
 };
 

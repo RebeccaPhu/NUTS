@@ -688,7 +688,7 @@ void *CPlugins::LoadTextTranslator( DWORD TUID )
 
 			BYTE i;
 
-			for ( i=0; i<D->NumGraphicXlators; i++ )
+			for ( i=0; i<D->NumTextXlators; i++ )
 			{
 				if ( D->TextXlators[i].TUID == TUID )
 				{

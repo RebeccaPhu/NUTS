@@ -12,6 +12,7 @@
 #include "resource.h"
 
 #include "AMSDOSFileSystem.h"
+#include "LocomotiveBASICTranslator.h"
 
 HMODULE hInstance;
 
@@ -48,19 +49,27 @@ FontDescriptor AmstradFonts[1] = {
 	}
 };
 
+TextTranslator LocoBASIC[] = {
+	{
+		L"Amstrad/Locomotive BASIC",
+		TUID_LOCO,
+		0
+	}
+};
+
 PluginDescriptor AmstradDescriptor = {
 	/* .Provider = */ L"Amstrad",
 	/* .PUID     = */ PLUGINID_AMSTRAD,
 	/* .NumFS    = */ 1,
 	/* .NumFonts = */ 1,
-	/* .BASXlats = */ 0,
+	/* .BASXlats = */ 1,
 	/* .GFXXlats = */ 0,
 	/* .NumHooks = */ 0,
 	/* .Commands = */ 0,
 
 	/* .FSDescriptors  = */ AmstradFS,
 	/* .FontDescriptor = */ AmstradFonts,
-	/* .BASXlators     = */ nullptr,
+	/* .BASXlators     = */ LocoBASIC,
 	/* .GFXXlats       = */ nullptr,
 	/* .RootHooks      = */ nullptr,
 	/* .Commands       = */ { },
@@ -103,4 +112,16 @@ AMSTRADDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	}
 
 	return pFS;
+}
+
+AMSTRADDLL_API void *CreateTranslator( DWORD TUID )
+{
+	void *pXlator = nullptr;
+
+	if ( TUID == TUID_LOCO )
+	{
+		pXlator = (TEXTTranslator *) new LocomotiveBASICTranslator();
+	}
+
+	return pXlator;
 }
