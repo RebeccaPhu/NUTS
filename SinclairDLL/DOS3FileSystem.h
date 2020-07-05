@@ -16,5 +16,16 @@ public:
 	bool IncludeHeader( BYTE *pHeader );
 
 	FSHint Offer( BYTE *Extension );
+
+	std::vector<AttrDesc> GetAttributeDescriptions( void );
+
+	bool GetCPMHeader( NativeFile *pFile, BYTE *pHeader );
+	int  SetProps( DWORD FileID, NativeFile *Changes );
+
+	int  Format_Process( FormatType FT, HWND hWnd );
+
+	int EnhanceFileData( NativeFile *pFile );
+
+	void CPMPreWriteCheck( NativeFile *pFile );
 };
 

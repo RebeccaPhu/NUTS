@@ -11,6 +11,8 @@ DataSource::DataSource(void)
 	pCollector->RegisterDataSource( this );
 
 	RefCount = 1;
+
+	Flags    = 0;
 }
 
 DataSource::~DataSource(void)

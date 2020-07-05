@@ -377,6 +377,11 @@ public:
 		return 0;
 	}
 
+	virtual int EnhanceFileData( NativeFile *pFile )
+	{
+		return 0;
+	}
+
 	DWORD FSID;
 	DWORD EnterIndex;
 	bool  IsRaw;

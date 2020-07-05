@@ -1845,6 +1845,14 @@ int PropsPage_Handler( AppAction Action )
 		IsMultiProps = true;
 	}
 
+	/* Do any enhancement required */
+	NativeFileIterator iFile;
+
+	for ( iFile = Action.Selection.begin(); iFile != Action.Selection.end(); iFile++ )
+	{
+		pHostFS->EnhanceFileData( &*iFile );
+	}
+
 	hSpaceThread = NULL;
 	hBlocksWnd   = NULL;
 	hSpaceWnd    = NULL;

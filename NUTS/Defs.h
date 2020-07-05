@@ -120,7 +120,14 @@ typedef enum _FSFlags {
 	FSF_Exports_Sidecars = 0x00008000,
 	FSF_Prohibit_Nesting = 0x00010000,
 	FSF_Uses_DSK         = 0x00020000,
+	FSF_No_Quick_Format  = 0x00040000,
 } FSFlags;
+
+typedef enum _DSFlags {
+	DS_RawDevice         = 0x00000001,
+	DS_FloppyDisk        = 0x00000002,
+	DS_SlowAccess        = 0x00000004,
+} DSFlags;
 
 typedef struct _ProviderDesc {
 	std::wstring Provider;
@@ -320,6 +327,7 @@ typedef struct _DiskShape {
 	WORD  Heads;
 	WORD  TrackInterleave;
 	WORD  LowestSector;
+	WORD  SectorSize;
 } DiskShape;
 
 typedef struct _TrackSection {

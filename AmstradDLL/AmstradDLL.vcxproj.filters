@@ -25,6 +25,7 @@
     <None Include="cpc.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="cpccpm.sys" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -94,6 +95,9 @@
     </ClCompile>
     <ClCompile Include="LocomotiveBASICTranslator.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\Preference.cpp">
+      <Filter>Source Files\Imported Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -20,5 +20,14 @@ public:
 	bool IncludeHeader( BYTE *pHeader );
 
 	FSHint Offer( BYTE *Extension );
+
+	int Format_Process( FormatType FT, HWND hWnd );
+
+	std::vector<AttrDesc> GetAttributeDescriptions( void );
+	int SetProps( DWORD FileID, NativeFile *Changes );
+
+	int EnhanceFileData( NativeFile *pFile );
+
+	bool GetCPMHeader( NativeFile *pFile, BYTE *pHeader );
 };
 

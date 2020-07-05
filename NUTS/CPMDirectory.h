@@ -5,9 +5,11 @@
 
 typedef enum _CPMFlags
 {
-	CF_UseHeaders = 0x00000001,
-	CF_Force8bit  = 0x00000002,
-	CF_Force16bit = 0x00000004,
+	CF_UseHeaders     = 0x00000001,
+	CF_Force8bit      = 0x00000002,
+	CF_Force16bit     = 0x00000004,
+	CF_SystemOptional = 0x00000008, 
+	CF_VolumeLabels   = 0x00000010,
 } CPMFlags;
 
 typedef struct _CPMDPB
@@ -57,11 +59,13 @@ public:
 
 public:
 	DWORD       DirSector;
+	BYTE        DiskLabel[ 12 ];
 
 private:
 	CPMBlockMap *pBlockMap;
 
 	CPMDPB      dpb;
 
+	
 };
 

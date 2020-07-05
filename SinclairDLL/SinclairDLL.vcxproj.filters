@@ -116,6 +116,9 @@
     <ClCompile Include="..\NUTS\CPMDirectory.cpp">
       <Filter>Source Files\Imported Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\NUTS\Preference.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SinclairDLL.rc">

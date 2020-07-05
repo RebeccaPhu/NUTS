@@ -18,14 +18,18 @@ public:
 	virtual int Truncate( QWORD Length ) = 0;
 
 	/* Physical routines. Most sources ignore these */
+	virtual void StartFormat( DiskShape &shape ) { };
 	virtual WORD GetSectorID( WORD Track, WORD Head, WORD Sector ) { return 0x00; }
 	virtual WORD GetSectorID( DWORD Sector ) { return 0x00; }
 	virtual int  SeekTrack( WORD Track ) { return 0; }
 	virtual int  WriteTrack( TrackDefinition track ) { return 0; }
+	virtual void EndFormat( void ) { };
 
 	__int64	PhysicalDiskSize;
 
 	int RefCount;
+
+	DWORD Flags;
 
 public:
 	virtual void Retain( void )

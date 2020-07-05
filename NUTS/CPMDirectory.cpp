@@ -36,9 +36,9 @@ void ImportCPMDirectoryEntry( NativeFile *pFile, BYTE *pEntry )
 		}
 	}
 
-	if ( pEntry[ 0x09 ] & 0x80 ) { pFile->Attributes[ 1 ] = 0xFFFFFFFF; } else { pFile->Attributes[ 1 ] = 0x00000000; }
-	if ( pEntry[ 0x0A ] & 0x80 ) { pFile->Attributes[ 2 ] = 0xFFFFFFFF; } else { pFile->Attributes[ 2 ] = 0x00000000; }
-	if ( pEntry[ 0x0B ] & 0x80 ) { pFile->Attributes[ 3 ] = 0xFFFFFFFF; } else { pFile->Attributes[ 3 ] = 0x00000000; }
+	if ( pEntry[ 0x09 ] & 0x80 ) { pFile->Attributes[ 2 ] = 0xFFFFFFFF; } else { pFile->Attributes[ 2 ] = 0x00000000; }
+	if ( pEntry[ 0x0A ] & 0x80 ) { pFile->Attributes[ 3 ] = 0xFFFFFFFF; } else { pFile->Attributes[ 3 ] = 0x00000000; }
+	if ( pEntry[ 0x0B ] & 0x80 ) { pFile->Attributes[ 4 ] = 0xFFFFFFFF; } else { pFile->Attributes[ 4 ] = 0x00000000; }
 }
 
 void ExportCPMDirectoryEntry( NativeFile *pFile, BYTE *pEntry )
@@ -64,9 +64,9 @@ void ExportCPMDirectoryEntry( NativeFile *pFile, BYTE *pEntry )
 		}
 	}
 
-	if ( pFile->Attributes[ 1 ] ) { pEntry[ 0x09 ] |= 0x80; } else { pEntry[ 0x09 ] &= 0x7F; }
-	if ( pFile->Attributes[ 2 ] ) { pEntry[ 0x0A ] |= 0x80; } else { pEntry[ 0x0A ] &= 0x7F; }
-	if ( pFile->Attributes[ 3 ] ) { pEntry[ 0x0B ] |= 0x80; } else { pEntry[ 0x0B ] &= 0x7F; }
+	if ( pFile->Attributes[ 2 ] ) { pEntry[ 0x09 ] |= 0x80; } else { pEntry[ 0x09 ] &= 0x7F; }
+	if ( pFile->Attributes[ 3 ] ) { pEntry[ 0x0A ] |= 0x80; } else { pEntry[ 0x0A ] &= 0x7F; }
+	if ( pFile->Attributes[ 4 ] ) { pEntry[ 0x0B ] |= 0x80; } else { pEntry[ 0x0B ] &= 0x7F; }
 }
 
 bool CPMDirectoryEntryCMP( BYTE *pEntry1, BYTE *pEntry2 )
@@ -102,6 +102,8 @@ int CPMDirectory::ReadDirectory(void)
 {
 	Files.clear();
 	ResolvedIcons.clear();
+
+	DiskLabel[ 0 ] = 0;
 
 	pBlockMap->InitialiseMap( pSource->PhysicalDiskSize / 1024 );
 
@@ -142,9 +144,13 @@ int CPMDirectory::ReadDirectory(void)
 				}
 			}
 
+			WORD ThisExtent = ( pEntry[ 0x0E ] << 8 ) + pEntry[ 0x0C ];
+
 			if ( !Exists )
 			{
 				NativeFile file;
+
+				ZeroMemory( &file, sizeof( file ) );
 
 				file.EncodingID = dpb.Encoding;
 				file.fileID     = FileID;
@@ -167,6 +173,11 @@ int CPMDirectory::ReadDirectory(void)
 
 				file.Attributes[ 0 ] = Offset; // For now. This may get updated.
 
+				if ( ThisExtent == 0 )
+				{
+					file.Attributes[ 1 ] = pEntry[ 0x10 ];
+				}
+
 				if ( rstrncmp( file.Extension, (BYTE *) "BAS", 3 ) ) { file.Type = FT_BASIC;  file.Icon = FT_BASIC;  }
 				if ( rstrncmp( file.Extension, (BYTE *) "BIN", 3 ) ) { file.Type = FT_Binary; file.Icon = FT_Binary; }
 				if ( rstrncmp( file.Extension, (BYTE *) "TXT", 3 ) ) { file.Type = FT_Text;   file.Icon = FT_Text; file.XlatorID = TUID_TEXT; }
@@ -185,6 +196,11 @@ int CPMDirectory::ReadDirectory(void)
 				pFile->Length += ( pEntry[ 0x0F ] * 0x80 ) + pEntry[ 0x0D ];
 
 				if ( pEntry[ 0x0D ] == 0 ) { pFile->Length += 128; }
+
+				if ( ThisExtent == 0 )
+				{
+					pFile->Attributes[ 1 ] = pEntry[ 0x10 ];
+				}
 			}
 
 			/* Marks the blocks as in use */
@@ -200,6 +216,11 @@ int CPMDirectory::ReadDirectory(void)
 			{
 				pBlockMap->SetBlock( pEntry[ 0x10 + i ] );
 			}
+		}
+		else if ( pEntry[ 0 ] == 32 ) 
+		{
+			/* Disk label */
+			rstrncpy( DiskLabel, &pEntry[ 1 ], 11 );
 		}
 
 		Offset += 32;

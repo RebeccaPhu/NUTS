@@ -26,7 +26,7 @@ FSDescriptor AmstradFS[1] = {
 	{
 		/* .FriendlyName = */ L"Amstrad AMSDOS",
 		/* .PUID         = */ FSID_AMSDOS,
-		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors | FSF_Uses_DSK,
+		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_FixedSize | FSF_UseSectors | FSF_Uses_DSK | FSF_No_Quick_Format,
 		0, { }, { },
 		1, { L"DSK" }, { FT_MiscImage }, { FT_DiskImage },
 		512, 40 * 9 * 512

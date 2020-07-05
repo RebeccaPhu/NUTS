@@ -134,6 +134,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="cpc.bin" />
+    <None Include="cpccpm.sys" />
     <None Include="rcdata1.bin" />
     <None Include="ReadMe.txt" />
   </ItemGroup>
@@ -155,6 +156,7 @@
     <ClCompile Include="..\NUTS\libfuncs.cpp" />
     <ClCompile Include="..\NUTS\NestedImageSource.cpp" />
     <ClCompile Include="..\NUTS\NUTSError.cpp" />
+    <ClCompile Include="..\NUTS\Preference.cpp" />
     <ClCompile Include="..\NUTS\TempFile.cpp" />
     <ClCompile Include="AMSDOSDirectory.cpp" />
     <ClCompile Include="AMSDOSFileSystem.cpp" />

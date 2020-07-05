@@ -10,3 +10,4 @@
 #define FSID_DOS3         0x5A3C7AE1
 
 #define FT_SINCLAIR       0x5A3C7AD0
+#define FT_SINCLAIR_DOS   0x5A3C7AD1

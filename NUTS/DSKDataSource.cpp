@@ -183,6 +183,8 @@ static bool SecSort( DSK_SectorInfo &a, DSK_SectorInfo &b )
 
 DWORD DSKDataSource::OffsetForSector( DWORD Sector )
 {
+	if ( !ValidDisk ) { return 0; }
+
 	std::map<WORD, DSK_TrackInfo>::iterator iTrack;
 
 	iTrack = DiskData.Tracks.begin();
@@ -230,6 +232,8 @@ DWORD DSKDataSource::OffsetForSector( DWORD Sector )
 
 DWORD DSKDataSource::OffsetForOffset( DWORD Offset )
 {
+	if ( !ValidDisk ) { return 0; }
+
 	std::map<WORD, DSK_TrackInfo>::iterator iTrack;
 
 	iTrack = DiskData.Tracks.begin();
@@ -295,6 +299,8 @@ DWORD DSKDataSource::OffsetForOffset( DWORD Offset )
 
 WORD DSKDataSource::GetSectorID( WORD Track, WORD Head, WORD Sector )
 {
+	if ( !ValidDisk ) { return 0xFFFF; }
+
 	WORD TrackID = ( Track << 8 ) | Head;
 
 	std::map<WORD, DSK_TrackInfo>::iterator iTrack;
@@ -365,4 +371,132 @@ WORD DSKDataSource::GetSectorID( DWORD Sector )
 	}
 
 	return 0xFFFF;
+}
+
+void DSKDataSource::StartFormat( DiskShape &shape )
+{
+	BYTE DSKHeader[ 256 ];
+
+	ZeroMemory( DSKHeader, 256 );
+
+	/* A sector size of 0 implies an extended format (sector size determined at each track) */
+	if ( shape.SectorSize == 0 )
+	{
+		rsprintf( &DSKHeader[ 0x00 ], "EXTENDED CPC DSK File\r\nDisk-Info\r\n" );
+
+		Extended = true;
+	}
+	else
+	{
+		rsprintf( &DSKHeader[ 0x00 ], "MV - CPCEMU Disk-File\r\nDisk-Info\r\n" );
+
+		Extended = false;
+	}
+
+	rsprintf( &DSKHeader[ 0x22 ], "NUTS" );
+
+	DSKHeader[ 0x30 ] = shape.Tracks;
+	DSKHeader[ 0x31 ] = shape.Heads;
+
+	if ( !Extended )
+	{
+		* (WORD *) &DSKHeader[ 0x32 ] = ( shape.Sectors * shape.SectorSize ) + 0x100;
+	}
+	else
+	{
+		* (WORD *) &DSKHeader[ 0x32 ] = 0;
+	}
+
+	FormatPointer    = 0x100;
+	TrackDataPointer = 0x34;
+
+	pSource->WriteRaw( 0, 256, DSKHeader );
+}
+
+int DSKDataSource::WriteTrack( TrackDefinition track )
+{
+	BYTE TrackHeader[ 256 ];
+
+	ZeroMemory( TrackHeader, 256 );
+
+	rsprintf( TrackHeader, "Track-Info\r\n" );
+
+	if ( track.Sectors.size() > 0 )
+	{
+		TrackHeader[ 0x10 ] = track.Sectors[ 0 ].Track;
+		TrackHeader[ 0x11 ] = track.Sectors[ 0 ].Side;
+		TrackHeader[ 0x14 ] = track.Sectors[ 0 ].SectorLength;
+		TrackHeader[ 0x16 ] = track.Sectors[ 0 ].GAP3PLL.Repeats;
+		TrackHeader[ 0x17 ] = track.Sectors[ 0 ].Data[ 0 ];
+	}
+	else
+	{
+		TrackHeader[ 0x10 ] = 0;
+		TrackHeader[ 0x11 ] = 0;
+		TrackHeader[ 0x14 ] = 0x01;
+		TrackHeader[ 0x16 ] = 12;
+		TrackHeader[ 0x17 ] = 0xE5;
+	}
+
+	TrackHeader[ 0x15 ] = track.Sectors.size();
+
+	DWORD TrackInfoPointer  = FormatPointer;
+	BYTE *SectorInfoPointer = &TrackHeader[ 0x18 ];
+
+	FormatPointer += 0x100;
+
+	BYTE Sector[ 256 ];
+
+	DWORD TrackLength = 0;
+
+	std::vector<SectorDefinition>::iterator iSector;
+
+	WORD LengthTable[ 4 ] = { 0x80, 0x100, 0x200, 0x400 };
+
+	for ( iSector = track.Sectors.begin(); iSector != track.Sectors.end(); iSector++ )
+	{
+		WORD SectorSize = LengthTable[ min( iSector->SectorLength, 3 ) ];
+
+		pSource->WriteRaw( FormatPointer, SectorSize, iSector->Data );
+
+		FormatPointer += SectorSize;
+		TrackLength   += SectorSize;
+
+		SectorInfoPointer[ 0x00 ] = iSector->Track;
+		SectorInfoPointer[ 0x01 ] = iSector->Side;
+		SectorInfoPointer[ 0x02 ] = iSector->SectorID;
+		SectorInfoPointer[ 0x03 ] = min( iSector->SectorLength, 3 );
+		SectorInfoPointer[ 0x04 ] = 0;
+		SectorInfoPointer[ 0x05 ] = 0;
+
+		if ( Extended )
+		{
+			* (WORD *) SectorInfoPointer[ 0x06 ] = SectorSize;
+		}
+		else
+		{
+			SectorInfoPointer[ 0x06 ] = 0;
+			SectorInfoPointer[ 0x07 ] = 0;
+		}
+
+		SectorInfoPointer += 8;
+	}
+
+	/* Update the track block */
+	pSource->WriteRaw( TrackInfoPointer, 256, TrackHeader );
+
+	/* Update the disk info block, if extended format */
+
+	if ( Extended )
+	{
+		pSource->ReadRaw( 0, 256, Sector );
+
+		* (WORD *) &Sector[ TrackDataPointer ] = TrackLength + 0x100;
+
+		TrackDataPointer += 2;
+
+		pSource->WriteRaw( 0, 256, Sector );
+	}
+
+	return 0;
 }

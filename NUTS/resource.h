@@ -54,7 +54,6 @@
 #define IDD_THANKS                      136
 #define IDD_LICENSE                     137
 #define IDB_FLOPPYDISC                  139
-#define IDB_BITMAP2                     140
 #define IDB_ARCHIVE                     140
 #define IDB_CDROM                       158
 #define IDB_PROGRAM                     159
@@ -290,6 +289,8 @@
 #define IDM_SIDECAR_PATHS               40062
 #define ID_EXTRAS                       40063
 #define ID_EXTRAS_FLEM                  40064
+#define ID_OPTIONS_SLOWFILEENHANCEMENT  40065
+#define IDM_SLOWENHANCE                 40066
 #define IDM_VIEW_BBCSCREEN              41001
 #define IDM_VIEW_ZXSSCREEN              41002
 #define IDM_VIEW_BBCBASIC               42001
@@ -693,7 +694,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        141
-#define _APS_NEXT_COMMAND_VALUE         40065
+#define _APS_NEXT_COMMAND_VALUE         40067
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

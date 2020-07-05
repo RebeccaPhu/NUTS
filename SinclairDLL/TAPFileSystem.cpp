@@ -342,6 +342,48 @@ int	TAPFileSystem::WriteAtStore(NativeFile *pFile, CTempFile &store, CTempFile *
 			FilePos += 21;
 		}
 	}
+	else if ( pFile->FSFileType == FT_SINCLAIR_DOS )
+	{
+		Header[ 0x03 ] = (BYTE) pFile->Attributes[ 6 ];
+
+		if ( pFile->Attributes[ 6 ] != 0xFFFFFFFF )
+		{
+			switch ( pFile->Attributes[ 6 ] )
+			{
+				case 0:
+					* (WORD *) &Header[ 16 ] = pFile->Attributes[ 7 ];
+					* (WORD *) &Header[ 18 ] = pFile->Attributes[ 8 ];
+
+					break;
+
+				case 1:
+				case 2:
+					Header[17] = pFile->Attributes[ 5 ];
+
+					break;
+
+				case 3:
+					* (WORD *) &Header[ 16 ] = pFile->Attributes[ 5 ];
+					* (WORD *) &Header[ 18 ] = 32768;
+
+					break;
+			}
+
+			Header[ 20 ] = TAPSum( &Header[ 2 ], 18 );
+
+			if ( output != nullptr )
+			{
+				output->Seek( FilePos );
+				output->Write( Header, 21 );
+			}
+			else
+			{
+				pSource->WriteRaw( FilePos, 21, Header );
+			}
+
+			FilePos += 21;
+		}
+	}
 	else
 	{
 		/* Pretend it's bytes at 0x4000 */

@@ -60,6 +60,8 @@ public:
 		pSource->Retain();
 
 		ReadDiskData();
+
+		Flags = 0;
 	}
 
 	~DSKDataSource(void)
@@ -79,6 +81,22 @@ public:
 	WORD GetSectorID( WORD Track, WORD Head, WORD Sector );
 	WORD GetSectorID( DWORD Sector );
 
+	void StartFormat( DiskShape &shape );
+
+	void EndFormat( void )
+	{
+		ReadDiskData();
+	}
+
+	int  SeekTrack( WORD Track )
+	{
+		TrackDataPointer = 0x34 + ( Track * sizeof( WORD ) );
+
+		return 0;
+	}
+
+	int  WriteTrack( TrackDefinition track );
+
 private:
 	DataSource *pSource;
 
@@ -92,5 +110,8 @@ private:
 
 	bool ValidDisk;
 	bool Extended;
+
+	DWORD FormatPointer;
+	DWORD TrackDataPointer;
 };
 

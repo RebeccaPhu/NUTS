@@ -2,6 +2,8 @@
 
 #include "CPM.h"
 
+#include "../NUTS/Preference.h"
+
 #include "libfuncs.h"
 
 
@@ -141,6 +143,16 @@ int CPMFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	   extent 0) and keep going until we run out of extents.
 	*/
 
+	/* If the source is slow (e.g. actual floppy disk) and the user elected to disable slow
+	   file enhancement, then we should enhance the file here.
+	*/
+	bool SlowEnhance = (bool) Preference( L"SlowEnhance", false );
+
+	if ( ( pSource->Flags & DS_SlowAccess ) && ( !SlowEnhance ) && ( dpb.Flags & CF_UseHeaders ) )
+	{
+		pDir->ExtraReadDirectory( &pDirectory->Files[ FileID ] );
+	}
+
 	DWORD SectorOffset = 0;
 
 	if ( SystemDisk )
@@ -163,13 +175,15 @@ int CPMFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 	bool DoneHeader = false;
 
+	DWORD FileSize = pDirectory->Files[ FileID ].Length;
+
 	while ( !FileDone )
 	{
 		bool DidExtent = false;
 
 		Offset = 0;
 
-		while ( Offset <= 0x800 )
+		while ( Offset <= ( dpb.DirSecs * dpb.SecSize ) )
 		{
 			BYTE *pEntry = &Directory[ Offset ];
 
@@ -194,25 +208,44 @@ int CPMFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 				   block in the middle of our sectors */
 				while ( KBlocks > 0 )
 				{
-					DWORD ThisK = min( dpb.ExtentSize, KBlocks );
+					WORD ExtentID = pEntry[ BlkNum ];
 
-					if ( ReadRawBySectors( SectorOffset + ( dpb.ExtentSize * pEntry[ BlkNum ] ), ThisK, DataBuffer ) != DS_SUCCESS )
+					if ( dpb.Flags & CF_Force16bit )
 					{
-						return NUTSError( 0xB1, L"DSK Error" );
+						ExtentID += ( (WORD) pEntry[ BlkNum + 1 ] * 256 );
+
+						BlkNum++;
 					}
 
-					if ( ( !DoneHeader ) && ( dpb.HeaderSize > 0 ) )
+					DWORD ThisK = min( dpb.ExtentSize, KBlocks );
+
+					if ( ReadRawBySectors( SectorOffset + ( dpb.ExtentSize * ExtentID ), ThisK, DataBuffer ) != DS_SUCCESS )
+					{
+						return -1;
+					}
+
+					if ( ( !DoneHeader ) && ( dpb.HeaderSize > 0 ) && ( dpb.Flags & CF_UseHeaders ) )
 					{
 						if ( IncludeHeader( DataBuffer ) )
 						{
 							store.Write( DataBuffer, dpb.HeaderSize );
+
+							FileSize -= dpb.HeaderSize;
+						}
+						else
+						{
+							ParseCPMHeader( &pDirectory->Files[ FileID ], DataBuffer );
 						}
 
-						store.Write( &DataBuffer[ dpb.HeaderSize ], ThisK - dpb.HeaderSize );
+						store.Write( &DataBuffer[ dpb.HeaderSize ], min( ThisK - dpb.HeaderSize, FileSize ) );
+
+						FileSize -= min( ThisK - dpb.HeaderSize, FileSize );
 					}
 					else
 					{
-						store.Write( DataBuffer, ThisK );
+						store.Write( DataBuffer, min( ThisK, FileSize ) );
+
+						FileSize -= min( ThisK, FileSize );
 					}
 
 					DoneHeader = true;
@@ -276,6 +309,8 @@ int CPMFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	pFile = &file;
 
+	CPMPreWriteCheck( &file );
+
 	/* Because of the TOTALLY screwy way that CP/M directories work, we can't simply write the
 	   data blobs, throw a directory entry in pDirectory->Files and then hope for the best with
 	   WriteDirectory(). We'll actually have to reconstruct the directory ourselves here.
@@ -288,8 +323,12 @@ int CPMFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	   We'll need the filename in disk format (rather than SZ format) to fill in the extents.
 	*/
 
+	AutoBuffer Header( dpb.HeaderSize );
+
+	bool WillWriteHeader = GetCPMHeader( &file, Header );
+
 	/* Enough space for this? */
-	DWORD FullSize     = ( pFile->Length + dpb.HeaderSize );
+	DWORD FullSize     = ( pFile->Length + ( (WillWriteHeader)?dpb.HeaderSize:0 ) );
 	DWORD NeededBlocks = FullSize / dpb.ExtentSize;
 
 	if ( FullSize % dpb.ExtentSize ) { NeededBlocks++; }
@@ -343,7 +382,7 @@ int CPMFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 			   is 2K in size, and no block may be used more than once, it is impossible for the
 			   directory to contain no free slots. */
 
-			while ( DOffset < 0x800 )
+			while ( DOffset < ( dpb.DirSecs * dpb.SecSize ) )
 			{
 				pEntry = &Directory[ DOffset ];
 
@@ -354,7 +393,7 @@ int CPMFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 					continue;
 				}
 
-				DOffset = 0x800;
+				DOffset = dpb.DirSecs * dpb.SecSize;
 
 				DWORD SlotBytes = min( 16384, BytesToGo );
 
@@ -376,7 +415,7 @@ int CPMFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 				/* if ( SlotBytes % 0x80 ) { Records++; } */
 
-				if ( ( SlotBytes % 0x80 ) == 0 ) { Records--; }
+				if ( ( SlotBytes % 0x80 ) != 0 ) { Records--; }
 
 				/* Undo that if the file is 0-byte */
 				if ( pFile->Length == 0 ) { Records = 0; }
@@ -403,11 +442,20 @@ int CPMFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 			pMap->SetBlock( Block );
 
+			pEntry[ 0x10 + ExtentSlot ] = (BYTE) ( Block & 0xFF );
+
+			if ( dpb.Flags & CF_Force16bit )
+			{
+				pEntry[ ExtentSlot + 1 ] = (BYTE) ( ( Block & 0xFF00 ) >> 8 );
+
+				ExtentSlot++;
+			}
+
 			pEntry[ 0x10 + ExtentSlot ] = (BYTE) Block;
 
-			if ( ( !DoneHeader ) && ( dpb.HeaderSize > 0 ) )
+			if ( ( !DoneHeader ) && ( dpb.HeaderSize > 0 ) && ( WillWriteHeader ) )
 			{
-				GetCPMHeader( pFile, SectorBuf );
+				memcpy( SectorBuf, Header, dpb.HeaderSize );
 
 				store.Read( &SectorBuf[ dpb.HeaderSize ], dpb.ExtentSize - dpb.HeaderSize );
 			}
@@ -450,6 +498,11 @@ int CPMFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	/* Need to account for system tracks */
 	DWORD st = (DWORD) dpb.SysTracks * (DWORD) dpb.SecsPerTrack;
 
+	if ( !SystemDisk )
+	{
+		st = 0;
+	}
+
 	DWORD NumBlocks = pSource->PhysicalDiskSize / dpb.SecSize;
 
 	Map.Capacity  = NumBlocks * dpb.SecSize;
@@ -473,7 +526,7 @@ int CPMFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	DWORD Offset = 0;
 
-	while ( Offset < 0x800 )
+	while ( Offset < ( dpb.SecSize * dpb.DirSecs ) )
 	{
 		if ( WaitForSingleObject( hCancelFree, 0 ) == WAIT_OBJECT_0 )
 		{
@@ -524,7 +577,7 @@ int CPMFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	/* Directory is immovable */
 	for ( BYTE i=0; i<dpb.DirSecs; i++ )
 	{
-		DWORD BlkNum = (DWORD) ( (double) i / BlockRatio );
+		DWORD BlkNum = (DWORD) ( (double) ( st + i ) / BlockRatio );
 
 		Map.pBlockMap[ BlkNum ] = BlockFixed;
 
@@ -532,19 +585,22 @@ int CPMFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	}
 
 	/* System Tracks (if any) are immovable */
-	for ( BYTE t=0; t<dpb.SysTracks; t++ )
+	if ( SystemDisk )
 	{
-		for ( BYTE i=0; i<dpb.SecsPerTrack; i++ )
+		for ( BYTE t=0; t<dpb.SysTracks; t++ )
 		{
-			DWORD si = (DWORD) t * (DWORD) dpb.SecsPerTrack;
+			for ( BYTE i=0; i<dpb.SecsPerTrack; i++ )
+			{
+				DWORD si = (DWORD) t * (DWORD) dpb.SecsPerTrack;
 
-			si      += (DWORD) i;
+				si      += (DWORD) i;
 
-			DWORD BlkNum = (DWORD) ( (double) i / BlockRatio );
+				DWORD BlkNum = (DWORD) ( (double) si / BlockRatio );
 
-			Map.pBlockMap[ BlkNum ] = BlockFixed;
+				Map.pBlockMap[ BlkNum ] = BlockFixed;
 
-			Map.UsedBytes += dpb.SecSize;
+				Map.UsedBytes += dpb.SecSize;
+			}
 		}
 	}
 
@@ -563,24 +619,30 @@ std::vector<AttrDesc> CPMFileSystem::GetAttributeDescriptions( void )
 
 	/* Extent 0 offset, the offset into the directory containing the entry for logical extent 0. Hex, visible, disabled */
 	Attr.Index = 0;
-	Attr.Type  = AttrVisible | AttrNumeric | AttrHex;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrHex | AttrFile;
 	Attr.Name  = L"Extent 0 Offset";
 	Attrs.push_back( Attr );
 
-	/* Read Only */
+	/* File start block */
 	Attr.Index = 1;
+	Attr.Type  = AttrVisible | AttrNumeric | AttrHex | AttrFile;
+	Attr.Name  = L"Start block";
+	Attrs.push_back( Attr );
+
+	/* Read Only */
+	Attr.Index = 2;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile;
 	Attr.Name  = L"Read Only";
 	Attrs.push_back( Attr );
 
 	/* System File */
-	Attr.Index = 2;
+	Attr.Index = 3;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile;
 	Attr.Name  = L"System File";
 	Attrs.push_back( Attr );
 
 	/* Archived File */
-	Attr.Index = 3;
+	Attr.Index = 4;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile;
 	Attr.Name  = L"Archived File";
 	Attrs.push_back( Attr );
@@ -594,7 +656,7 @@ int CPMFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 
 	NativeFile *pFile = &pDirectory->Files[ FileID ];
 
-	for ( BYTE i=1; i<4; i++ ) { pFile->Attributes[ i ] = Changes->Attributes[ i ]; }
+	for ( BYTE i=2; i<=4; i++ ) { pFile->Attributes[ i ] = Changes->Attributes[ i ]; }
 
 	ExportCPMDirectoryEntry( pFile, Entry );
 
@@ -604,7 +666,7 @@ int CPMFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 
 	DWORD Offset = 0;
 
-	while ( Offset < 0x800 )
+	while ( Offset < ( dpb.DirSecs * dpb.SecSize ) )
 	{
 		if ( CPMDirectoryEntryCMP( &Directory[ Offset ], Entry ) )
 		{
@@ -638,7 +700,7 @@ int CPMFileSystem::Rename( DWORD FileID, BYTE *NewName )
 
 	DWORD Offset = 0;
 
-	while ( Offset < 0x800 )
+	while ( Offset < ( dpb.DirSecs * dpb.SecSize ) )
 	{
 		if ( CPMDirectoryEntryCMP( &Directory[ Offset ], Entry ) )
 		{
@@ -665,7 +727,7 @@ int CPMFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 
 	DWORD Offset = 0;
 
-	while ( Offset < 0x800 )
+	while ( Offset < ( dpb.DirSecs * dpb.SecSize ) )
 	{
 		if ( CPMDirectoryEntryCMP( &Directory[ Offset ], Entry ) )
 		{
@@ -693,4 +755,96 @@ int	CPMFileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 	WriteFile( &file, store );
 
 	return pDirectory->ReadDirectory();
+}
+
+int CPMFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
+{
+	SystemDisk = false;
+
+	if ( dpb.Flags & CF_SystemOptional )
+	{
+		if ( MessageBox( hWnd,
+			L"This file system can create a System Disk wich contains tracks that may be bootable, instead of the usual unbootable Data Disk. "
+			L"Do you want to create a System Disk instead of a Data Disk?",
+			L"NUTS Formatter", MB_ICONQUESTION | MB_YESNO ) == IDYES )
+		{
+
+			SystemDisk = true;
+		}
+	}
+
+	return 0;
+}
+
+std::vector<AttrDesc> CPMFileSystem::GetFSAttributeDescriptions( void )
+{
+	static std::vector<AttrDesc> Attrs;
+	
+	Attrs.clear();
+
+	AttrDesc Attr;
+
+	/* Disc Title */
+	Attr.Index = 0;
+	Attr.Type  = AttrVisible | AttrBool;
+	Attr.Name  = L"System Disk";
+
+	Attr.StartingValue = (SystemDisk)?0xFFFFFFFF:0x00000000;
+
+	Attrs.push_back( Attr );
+
+	if ( dpb.Flags & CF_VolumeLabels )
+	{
+		Attr.Index = 1;
+		Attr.Type  = AttrVisible | AttrEnabled | AttrString;
+		Attr.Name  = L"Volume label";
+
+		Attr.MaxStringLength = 11;
+		Attr.pStringVal      = rstrndup( (BYTE *) "", 11 );
+
+		Attrs.push_back( Attr );
+	}
+
+	return Attrs;
+}
+
+int CPMFileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
+{
+	AutoBuffer Dir( dpb.DirSecs * dpb.SecSize );
+
+	pDir->LoadDirectory( Dir );
+
+	DWORD Offset = 0;
+
+	bool DoneLabel = false;
+
+	while ( Offset < ( dpb.DirSecs * dpb.SecSize ) )
+	{
+		BYTE *pEntry = &Dir[ Offset ];
+
+		if ( pEntry[ 0 ] < 32 )
+		{
+			Offset += 32;
+
+			continue;
+		}
+
+		if ( ( pEntry[ 0 ] == 32 ) || ( pEntry[ 0 ] == 0xE5 ) )
+		{
+			if ( !DoneLabel )
+			{
+				rstrncpy( &pEntry[ 1 ], pDir->DiskLabel, 11 );
+
+				pEntry[ 0 ] = 32;
+
+				DoneLabel = true;
+			}
+			else
+			{
+				pEntry[ 0 ] = 0xE5;
+			}
+		}
+	}
+
+	return 0;
 }
