@@ -107,7 +107,9 @@ int	D64Directory::ReadDirectory(void) {
 					int	lt	= fp[0x3];
 					int	ls	= fp[0x4];
 
-					unsigned char	filecache[256];
+					unsigned char filecache[256];
+
+					file.Length = 0;
 
 					while (1) {
 						pSource->ReadSector(SectorForLink(lt, ls), filecache, 256);
@@ -154,7 +156,7 @@ int	D64Directory::WriteDirectory(void) {
 
 	bool SectorsGrabbed = false;
 
-	while ( CFile < Files.size() ) {
+	while ( CFile <= Files.size() ) {
 		if ( pSource->ReadSector( SectorForLink( nt, ns ), Buffer, 256 ) != DS_SUCCESS )
 		{
 			return -1;
@@ -216,7 +218,7 @@ int	D64Directory::WriteDirectory(void) {
 		if ( CFile >= Files.size() )
 		{
 			Buffer[ 0 ] = 0;
-			Buffer[ 1 ] = 0;
+			Buffer[ 1 ] = 0xFF;
 		}
 
 		if ( pSource->WriteSector( SectorForLink( nt, ns ), Buffer, 256 ) != DS_SUCCESS )
@@ -228,6 +230,11 @@ int	D64Directory::WriteDirectory(void) {
 
 		nt = Buffer[ 0 ];
 		ns = Buffer[ 1 ];
+
+		if ( CFile >= Files.size() )
+		{
+			break;
+		}
 	}
 
 	/* IF we grabbed sectors to extend the directory, we'll need to write the BAM back */

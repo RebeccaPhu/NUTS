@@ -107,10 +107,7 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 	outfile.Attributes[ 0 ] = SectorLink;
 
 	while (DataRemaining) {
-		if (DataRemaining > 512)
-			DataToWrite	= 512;
-		else
-			DataToWrite	= DataRemaining;
+		DataToWrite = min( 512, DataRemaining) ; 
 
 		int	Sector	= ((IECATADirectory *) pDirectory)->GetFreeBlock();
 
@@ -128,9 +125,9 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 			memset(LinkTable, 0, 512);
 		}
 
-		LinkTable[LinkPtr]	= Sector;
-
 		store.Read( &Data, DataToWrite );
+
+		LinkTable[LinkPtr]	= Sector;
 
 		pSource->WriteSector(Sector, Data, 512);
 
@@ -143,14 +140,18 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 	pSource->WriteSector(SectorLink, (BYTE *) LinkTable, 512);
 
 	//	Step 2.	Create an entry in the Files list, and write the directory back.
-	if ( pFile->FSFileType != FT_C64 )
+	if ( pFile->FSFileType == FT_CBM_TAPE )
+	{
+		outfile.AttrClosed = 0xFFFFFFFF;
+		outfile.AttrLocked = 0x00000000;
+		outfile.AttrType   = pFile->Attributes[ 3 ];
+	}
+	else if ( pFile->FSFileType != FT_C64 )
 	{
 		/* Foreign file. Make this a PRG. */
 		outfile.AttrClosed = 0xFFFFFFFF;
 		outfile.AttrLocked = 0;
 		outfile.AttrType   = 2; // PRG
-		outfile.Type       = FT_Binary;
-		outfile.Icon       = FT_Binary;
 
 		/* Check the extension if it has one, it might be a recognised type */
 		if ( pFile->Flags & FF_Extension )
@@ -679,4 +680,13 @@ int IECATAFileSystem::MakeASCIIFilename( NativeFile *pFile )
 	MakeASCII( pFile );
 
 	return 0;
+}
+
+WCHAR *IECATAFileSystem::Identify( DWORD FileID )
+{
+	NativeFile *pFile = &pDirectory->Files[ FileID ];
+
+	const WCHAR *ftypes[6] = { L"Deleted File Entry", L"Sequential Access File", L"Program", L"User File", L"Relative Access File", L"State Snapshot" };
+
+	return (WCHAR *) ftypes[ pFile->Attributes[ 1 ] ];
 }

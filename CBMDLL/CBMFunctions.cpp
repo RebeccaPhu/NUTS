@@ -86,6 +86,39 @@ void SwapChars( BYTE *pString, WORD Len )
 	}
 }
 
+void TToString( BYTE *pString, WORD Len )
+{
+	pString[ Len ] = 0;
+
+	for ( WORD i=(Len - 1 ); i>0; i-- )
+	{
+		if ( pString[ i ] == 0x20 )
+		{
+			pString[ i ] = 0x00;
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+void TFromString( BYTE *pString, WORD Len )
+{
+	for ( WORD i=(Len - 1 ); i>0; i-- )
+	{
+		if ( pString[ i ] == 0x00 )
+		{
+			pString[ i ] = 0x20;
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+
+
 /* NOTE!!! This is not a proper PETSCII to ASCII conversion for a good reason:
    This function is used to convert FILENAMEs to ASCII. Since these are targeting an FS
    whose allowed character semantics are unknown, if this function needs to be called

@@ -38,6 +38,7 @@ public:
 	BYTE *DescribeFile( DWORD FileIndex );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *GetTitleString( NativeFile *pFile );
+	WCHAR *Identify( DWORD FileID );
 
 	int ChangeDirectory(NativeFile *pFile);
 	int Parent();

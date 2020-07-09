@@ -1,0 +1,16 @@
+#pragma once
+
+#define ENCODING_PETSCII 0xCC0E5C11
+
+#define FSID_D64         0xCC000D64
+#define FSID_T64         0xCC000164
+
+#define FT_C64           0xCC00F17E
+#define FT_CBM_TAPE      0xCC00F17F
+
+#define FONTID_PETSCII1 0x0000CBC1
+#define FONTID_PETSCII2 0x0000CBC2
+#define PLUGINID_CBM    0x0000CBC0
+#define FSID_OPENCBM    0x0000CBC3
+#define FSID_IECATA     0x001ECA7A
+

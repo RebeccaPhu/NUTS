@@ -3,15 +3,7 @@
 
 #include "BAM.h"
 
-#ifndef ENCODING_PETSCII
-#define ENCODING_PETSCII 0xCC0E5C11
-#endif
-
-#define FSID_D64         0xCC000D64
-
-#ifndef FT_C64
-#define FT_C64 0xCC00F17E
-#endif
+#include "CBMDefs.h"
 
 class D64Directory :
 	public Directory

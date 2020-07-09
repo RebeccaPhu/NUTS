@@ -605,17 +605,7 @@ int TAPFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 	/* Note: FileOp is only ever FILEOP_DELETE because we don't complain if the filename already
 	   exists. */
 
-	NativeFileIterator iFile;
-
-	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
-	{
-		if ( iFile->Attributes[ 0 ] == pFile->Attributes[ 0 ] )
-		{
-			return RewriteTAPFile( iFile->fileID, 0, nullptr, REASON_DELETE );
-		}
-	}
-
-	return 0;
+	return RewriteTAPFile( pFile->fileID, 0, nullptr, REASON_DELETE );
 }
 
 int TAPFileSystem::Rename( DWORD FileID, BYTE *NewName )

@@ -138,6 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BAM.h" />
+    <ClInclude Include="CBMDefs.h" />
     <ClInclude Include="CBMDLL.h" />
     <ClInclude Include="CBMFunctions.h" />
     <ClInclude Include="D64Directory.h" />
@@ -150,6 +151,8 @@
     <ClInclude Include="OpenCBMSource.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="T64Directory.h" />
+    <ClInclude Include="T64FileSystem.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -159,6 +162,7 @@
     <ClCompile Include="..\NUTS\NestedImageSource.cpp" />
     <ClCompile Include="..\NUTS\NUTSError.cpp" />
     <ClCompile Include="..\NUTS\Preference.cpp" />
+    <ClCompile Include="..\NUTS\SourceFunctions.cpp" />
     <ClCompile Include="..\NUTS\TempFile.cpp" />
     <ClCompile Include="BAM.cpp" />
     <ClCompile Include="CBMDLL.cpp" />
@@ -189,6 +193,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="T64Directory.cpp" />
+    <ClCompile Include="T64FileSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CBMDLL.rc" />

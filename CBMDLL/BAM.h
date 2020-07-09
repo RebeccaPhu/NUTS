@@ -26,6 +26,8 @@ public:
 
 		IsOpenCBM    = false;
 		Drive        = 0;
+
+		ZeroMemory( BAMData, sizeof( BAMData ) );
 	}
 
 	~BAM(void)

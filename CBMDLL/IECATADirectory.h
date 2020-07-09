@@ -1,15 +1,7 @@
 #pragma once
 #include "../NUTS/directory.h"
 
-#ifndef FT_C64
-#define FT_C64 0xCC00F17E
-#endif
-
-#define FSID_IECATA      0x001ECA7A
-
-#ifndef ENCODING_PETSCII
-#define ENCODING_PETSCII 0xCC0E5C11
-#endif
+#include "CBMDefs.h"
 
 #define AttrLocked Attributes[1]
 #define AttrClosed Attributes[2]

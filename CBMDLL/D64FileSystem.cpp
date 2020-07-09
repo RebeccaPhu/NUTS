@@ -61,7 +61,14 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	NativeFile file = *pFile;
 
-	if ( file.FSFileType != FT_C64 )
+	if ( file.FSFileType == FT_CBM_TAPE )
+	{
+		file.Attributes[ 2 ] = 0x00000000;
+		file.Attributes[ 3 ] = 0xFFFFFFFF;
+
+		file.Attributes[ 1 ] = pFile->Attributes[ 3 ];
+	}
+	else if ( file.FSFileType != FT_C64 )
 	{
 		file.Attributes[ 2 ] = 0xFFFFFFFF;
 		file.Attributes[ 3 ] = 0x00000000;
@@ -127,14 +134,11 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	store.Seek( 0 );
 
+	bool FirstBlock = true;
+
 	while ( BytesToGo > 0 )
 	{
-		DWORD BytesWrite = BytesToGo;
-
-		if ( BytesWrite > 254 )
-		{
-			BytesWrite = 254;
-		}
+		DWORD BytesWrite = min( 254, BytesToGo );
 
 		DWORD AbsSec = SectorForLink( Loc.Track, Loc.Sector );
 
@@ -152,6 +156,8 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		}
 
 		store.Read( &Buffer[ 2 ], BytesWrite );
+
+		FirstBlock = false;
 
 		if ( pSource->WriteSector( AbsSec, Buffer, 256 ) != DS_SUCCESS )
 		{
@@ -412,6 +418,10 @@ int D64FileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 				{
 					if ( S < 2 )
 					{
+						DWORD Blk = SectorForLink( T, S );
+
+						BlkNum = (DWORD) ( (double) Blk / BlockRatio );
+
 						pBlockMap[ BlkNum ] = BlockFixed;
 					}
 				}
@@ -899,4 +909,13 @@ int D64FileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
 	return 0;
+}
+
+WCHAR *D64FileSystem::Identify( DWORD FileID )
+{
+	NativeFile *pFile = &pDirectory->Files[ FileID ];
+
+	const WCHAR *ftypes[6] = { L"Deleted File Entry", L"Sequential Access File", L"Program", L"User File", L"Relative Access File", L"State Snapshot" };
+
+	return (WCHAR *) ftypes[ pFile->Attributes[ 1 ] ];
 }

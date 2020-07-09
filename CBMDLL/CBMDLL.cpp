@@ -5,6 +5,7 @@
 #include "CBMDLL.h"
 
 #include "D64FileSystem.h"
+#include "T64FileSystem.h"
 #include "IECATAFileSystem.h"
 #include "OpenCBMSource.h"
 #include "OpenCBMPlugin.h"
@@ -17,10 +18,7 @@
 
 #include <ShlObj.h>
 
-#define FONTID_PETSCII1 0x0000CBC1
-#define FONTID_PETSCII2 0x0000CBC2
-#define PLUGINID_CBM    0x0000CBC0
-#define FSID_OPENCBM    0x0000CBC3
+#include "CBMDefs.h"
 
 BYTE *pPETSCII = nullptr;
 
@@ -30,14 +28,22 @@ CBMDLL_API DataSourceCollector *pExternCollector;
 CBMDLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
-FSDescriptor CBMFS[2] = {
+FSDescriptor CBMFS[3] = {
 	{
-		/* .FriendlyName = */ L"D64 Commore Disk Image",
+		/* .FriendlyName = */ L"D64 Commodore Disk Image",
 		/* .PUID         = */ FSID_D64,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces,
 		0, { }, { },
 		1, { L"D64" }, { FT_MiscImage }, { FT_DiskImage },
 		256, 1700
+	},
+	{
+		/* .FriendlyName = */ L"T64 Commodore Tape Image",
+		/* .PUID         = */ FSID_T64,
+		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_DynamicSize | FSF_Reorderable | FSF_Prohibit_Nesting,
+		0, { }, { },
+		1, { L"T64" }, { FT_MiscImage }, { FT_TapeImage },
+		0, 0
 	},
 	{
 		/* .FriendlyName = */ L"IEC-ATA Hard Disk",
@@ -83,7 +89,7 @@ RootHook RootHooks[ 4 ];
 PluginDescriptor CBMDescriptor = {
 	/* .Provider = */ L"CBM",
 	/* .PUID     = */ PLUGINID_CBM,
-	/* .NumFS    = */ 2,
+	/* .NumFS    = */ 3,
 	/* .NumFonts = */ 2,
 	/* .BASXlats = */ 0,
 	/* .GFXXlats = */ 0,
@@ -189,6 +195,10 @@ CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	{
 	case FSID_D64:
 		pFS = (void *) new D64FileSystem( pSource );
+		break;
+
+	case FSID_T64:
+		pFS = (void *) new T64FileSystem( pSource );
 		break;
 
 	case FSID_OPENCBM:
