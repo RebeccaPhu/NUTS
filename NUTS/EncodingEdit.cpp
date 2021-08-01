@@ -50,7 +50,7 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 		L"Encoding Edit Control",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 
-		x, y, w, 24,
+		x, y, (FontChanger)?(w-24):w, 24,
 
 		hParent, NULL, hInst, NULL
 	);
@@ -63,14 +63,15 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 			0,
 			L"BUTTON",
 			L"",
-			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON | BS_ICON,
+			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON | BS_ICON | WS_TABSTOP,
 
-			w - 24, 0, 24, 24,
+			x + (w - 24), y, 24, 24,
+//			w - 24, 0, 24, 24,
 
-			hWnd, NULL, hInst, NULL
+			hParent, NULL, hInst, NULL
 		);
 	
-		hIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_FONTSWITCH));
+		hIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_SMFS));
 
 		SendMessage( hChanger, BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hIcon );
 	}
@@ -111,6 +112,10 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 	Changes       = false;
 	AllowNegative = false;
 	AllowedChars  = textInputAny;
+	hArea         = NULL;
+	hAreaOld      = NULL;
+	hAreaCanvas   = NULL;
+	FontChanged   = true;
 
 	if ( CW % 8 ) { DChars++; }
 
@@ -120,25 +125,30 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 	brsh.lbStyle = BS_SOLID;
 
 	hDisBrush = CreateBrushIndirect( &brsh );
+
+	pBuddyControl = false;
+	AllowSpaces   = true;
 }
 
 
 EncodingEdit::~EncodingEdit(void)
 {
-	if ( hChanger )
+	if ( hAreaOld )
 	{
-		DestroyWindow( hChanger );
+		SelectObject( hArea, hAreaOld );
 	}
 
-	if ( hWnd )
+	NixObject( hAreaCanvas );
+
+	if ( hArea )
 	{
-		DestroyWindow( hWnd );
+		DeleteDC( hArea );
 	}
 
-	if ( hDisBrush )
-	{
-		DeleteObject( (HGDIOBJ) hDisBrush );
-	}
+	NixObject( hDisBrush );
+
+	NixWindow( hChanger );
+	NixWindow( hWnd );
 }
 
 LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
@@ -174,14 +184,26 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 	case WM_SETFOCUS:
 		HasFocus = true;
 
-		Invalidate();
+		{
+			Select   = true;
+			SCursor  = 0;
+			Cursor   = Length;
+
+			Invalidate();
+
+			CharMap::SetFocusWindow( hWnd );
+		}
 
 		break;
 
 	case WM_KILLFOCUS:
 		HasFocus = false;
 
-		Invalidate();
+		{
+			Select   = false;
+
+			Invalidate();
+		}
 
 		break;
 
@@ -347,6 +369,11 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 				WORD ascii = 0;
 				const int len = ToAscii(virtualKey, keyboardScanCode, keyboardState, &ascii, 0);
 
+				if ( ( ascii == 0x0020 ) && ( !AllowSpaces ) )
+				{
+					ascii = 0x0000;
+				}
+
 				if ( ( ascii & 0xFF ) == 22 /* CTRL+V */ )
 				{
 					::PostMessage( hWnd, WM_COMMAND, IDM_EE_PASTE, 0 );
@@ -367,57 +394,7 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 				}
 				else if ( ascii != 0x0000 )
 				{
-					if ( ( Select ) && ( !Disabled ) )
-					{
-						BYTE LC, RC;
-
-						if ( Cursor < SCursor ) { LC = Cursor; RC = SCursor; } else { LC = SCursor; RC = Cursor; }
-
-						for ( int i = RC; i<Length; i++ )
-						{
-							if ( ( ( LC + ( i - RC ) ) <= MaxLen ) && ( i <= MaxLen ) )
-							{
-								EditText[ LC + ( i - RC ) ] = EditText[ i ];
-							}
-						}
-
-						Length -= ( RC - LC );
-						Cursor = LC;						
-
-						Changes = true;
-					}
-
-					Select = false;
-
-					if ( !Disabled )
-					{
-						if ( Length == 0 ) 
-						{
-							EditText[ 0 ] = (BYTE) ( ascii & 0xFF );
-
-							Length++;
-							Cursor++;
-
-							Changes = true;
-						}
-						else if ( Length < MaxLen )
-						{
-							for ( int i=Length; i>Cursor; i-- )
-							{
-								if ( i <= MaxLen )
-								{
-									EditText[ i ] = EditText[ i - 1 ];
-								}
-							}
-
-							EditText[ Cursor ] = (BYTE) ( ascii & 0xFF );
-
-							Length++;
-							Cursor++;
-
-							Changes = true;
-						}
-					}
+					ProcessASCII( ascii );
 				}
 			}
 
@@ -435,6 +412,14 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 		}
 		
 		return 0;
+
+	case WM_CHARMAPCHAR:
+		{
+			WORD ascii = LOWORD( wParam );
+
+			ProcessASCII( ascii );
+		}
+		break;
 
 	case WM_KEYUP:
 		{
@@ -529,18 +514,39 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 		}
 		break;
 
+	case WM_FONTCHANGER:
+		{
+			FontNum++;
+
+			FontChanged = true;
+
+			Invalidate();
+		}
+		break;
+
 	case WM_COMMAND:
-		if ( lParam == (LPARAM) hChanger )
+		if ( ( hChanger != NULL) && ( lParam == (LPARAM) hChanger ) )
 		{
 			FontNum++;
 
 			Invalidate();
+
+			FontChanged = true;
+
+			if ( pBuddyControl != nullptr )
+			{
+				SendMessage( pBuddyControl->hWnd, WM_FONTCHANGER, 0, 0 );
+			}
 
 			break;
 		}
 
 		switch ( LOWORD(wParam) )
 		{
+		case ID_EDITMENU_CHARACTERMAP:
+			OpenCharacterMap();
+			break;
+
 		case IDM_EE_CUT:
 		case IDM_EE_COPY:
 			{
@@ -699,6 +705,61 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
 
+void EncodingEdit::ProcessASCII( WORD ascii )
+{
+	if ( ( Select ) && ( !Disabled ) )
+	{
+		BYTE LC, RC;
+
+		if ( Cursor < SCursor ) { LC = Cursor; RC = SCursor; } else { LC = SCursor; RC = Cursor; }
+
+		for ( int i = RC; i<Length; i++ )
+		{
+			if ( ( ( LC + ( i - RC ) ) <= MaxLen ) && ( i <= MaxLen ) )
+			{
+				EditText[ LC + ( i - RC ) ] = EditText[ i ];
+			}
+		}
+
+		Length -= ( RC - LC );
+		Cursor = LC;						
+
+		Changes = true;
+	}
+
+	Select = false;
+
+	if ( !Disabled )
+	{
+		if ( Length == 0 ) 
+		{
+			EditText[ 0 ] = (BYTE) ( ascii & 0xFF );
+
+			Length++;
+			Cursor++;
+
+			Changes = true;
+		}
+		else if ( Length < MaxLen )
+		{
+			for ( int i=Length; i>Cursor; i-- )
+			{
+				if ( i <= MaxLen )
+				{
+					EditText[ i ] = EditText[ i - 1 ];
+				}
+			}
+
+			EditText[ Cursor ] = (BYTE) ( ascii & 0xFF );
+
+			Length++;
+			Cursor++;
+
+			Changes = true;
+		}
+	}
+}
+
 void EncodingEdit::Invalidate( void )
 {
 	/* Validate the characters are what we accept */
@@ -807,18 +868,20 @@ void EncodingEdit::PaintControl( void )
 
 	GetClientRect( hWnd, &rc );
 
-	if ( hChanger )
+	if ( hArea == NULL )
 	{
-		rc.right -= 24;
+		hArea       = CreateCompatibleDC( hDC );
+		hAreaCanvas = CreateCompatibleBitmap( hDC, rc.right - rc.left, rc.bottom - rc.top );
+		hAreaOld    = SelectObject( hArea, hAreaCanvas );
 	}
 
 	if ( ( Disabled ) && ( !SoftDisable ) )
 	{
-		FillRect( hDC, &rc, hDisBrush );
+		FillRect( hArea, &rc, hDisBrush );
 	}
 	else
 	{
-		FillRect( hDC, &rc, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
+		FillRect( hArea, &rc, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
 	}
 
 	BYTE LC, RC;
@@ -832,6 +895,15 @@ void EncodingEdit::PaintControl( void )
 		FontNum = 0;
 	}
 
+	CurrentFontID = FontSelection[ FontNum ];
+
+	if ( ( FontChanged ) && ( CharMap::TheCharMap != nullptr ) )
+	{
+		CharMap::TheCharMap->SetFont( CurrentFontID );
+
+		FontChanged = false;
+	}
+
 	FontBitmap txt( FontSelection[ FontNum ], EditText, Length, false, false );
 
 	if ( ( Disabled ) && ( !SoftDisable ) )
@@ -839,24 +911,26 @@ void EncodingEdit::PaintControl( void )
 		txt.SetButtonColor( 0xCC, 0xCC, 0xCC );
 	}
 
-	txt.DrawText( hDC, 4 - ( SChar * 8 ), 4, DT_LEFT | DT_TOP );
+	txt.DrawText( hArea, 4 - ( SChar * 8 ), 4, DT_LEFT | DT_TOP );
 
 	if ( Select )
 	{
 		FontBitmap seltxt( FontSelection[ FontNum ], &EditText[ LC ], RC - LC, false, true );
 
-		seltxt.DrawText( hDC, ( 4 - ( SChar * 8 ) ) + LC * 8, 4, DT_LEFT | DT_TOP );
+		seltxt.DrawText( hArea, ( 4 - ( SChar * 8 ) ) + LC * 8, 4, DT_LEFT | DT_TOP );
 	}
 
 	if ( ( Blink ) && ( HasFocus ) )
 	{
-		SelectObject( hDC, GetStockObject( BLACK_PEN ) );
+		SelectObject( hArea, GetStockObject( BLACK_PEN ) );
 
-		MoveToEx( hDC, ( 4 - ( SChar * 8 ) ) + Cursor * 8, 4, NULL );
-		LineTo( hDC, ( 4 - ( SChar * 8 ) ) + Cursor * 8, 20 );
+		MoveToEx( hArea, ( 4 - ( SChar * 8 ) ) + Cursor * 8, 4, NULL );
+		LineTo( hArea, ( 4 - ( SChar * 8 ) ) + Cursor * 8, 20 );
 	}
 
-	DrawEdge( hDC, &rc, EDGE_SUNKEN, BF_RECT );
+	DrawEdge( hArea, &rc, EDGE_SUNKEN, BF_RECT );
+
+	BitBlt( hDC, 0, 0, rc.right - rc.left, rc.bottom - rc.top, hArea, 0, 0, SRCCOPY );
 
 	ReleaseDC( hWnd, hDC );
 }
@@ -961,4 +1035,14 @@ void EncodingEdit::SelectAll( void )
 void EncodingEdit::SetFocus( void )
 {
 	::SetFocus( hWnd );
+}
+
+void EncodingEdit::SetBuddy( EncodingEdit *pBuddy )
+{
+	pBuddyControl = pBuddy;
+}
+
+void EncodingEdit::OpenCharacterMap( void )
+{
+	CharMap::OpenTheMap( hWnd, CurrentFontID );
 }

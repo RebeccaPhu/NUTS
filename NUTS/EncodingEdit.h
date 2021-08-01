@@ -3,6 +3,8 @@
 #include "stdafx.h"
 #include "Defs.h"
 
+#include "CharMap.h"
+
 #include <map>
 
 class EncodingEdit
@@ -31,6 +33,7 @@ public:
 	bool  SoftDisable;
 	BYTE  MaxLen;
 	bool  AllowNegative;
+	bool  AllowSpaces;
 
 	InputType AllowedChars;
 
@@ -44,6 +47,8 @@ public:
 	long GetDecText( void );
 	void SelectAll( void );
 	void SetFocus( void );
+
+	void SetBuddy( EncodingEdit *pBuddy );
 
 private:
 	HWND  hChanger;
@@ -66,14 +71,24 @@ private:
 	bool  Select;
 	bool  Changes;
 	WORD  MouseXS;
+	bool  FontChanged;
 
 	std::vector<DWORD> FontSelection;
 	WORD               FontNum;
 
-	HBRUSH hDisBrush;
+	HBRUSH  hDisBrush;
+	HDC     hArea;
+	HGDIOBJ hAreaOld;
+	HBITMAP hAreaCanvas;
+
+	EncodingEdit *pBuddyControl;
+	DWORD   CurrentFontID;
 
 private:
 	void PaintControl( void );
 	void Invalidate( void );
+	void ProcessASCII( WORD ascii );
+
+	void OpenCharacterMap();
 };
 
