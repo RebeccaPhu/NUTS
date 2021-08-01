@@ -13,6 +13,10 @@ WindowsFileSystem::WindowsFileSystem( std::wstring rootDrive ) : FileSystem(NULL
 	folderPath = rootDrive;
 
 	FSID = FS_Windows;
+
+	TopicIcon = FT_Windows;
+
+	Flags = FSF_Uses_Extensions | FSF_Supports_Dirs;
 }
 
 WindowsFileSystem::~WindowsFileSystem(void) {
@@ -172,7 +176,7 @@ int	WindowsFileSystem::Parent() {
 	return 0;
 }
 
-int	WindowsFileSystem::CreateDirectory(BYTE *Filename, bool EnterAfter) {
+int	WindowsFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 
 	return 0;
 }

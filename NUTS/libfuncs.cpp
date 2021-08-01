@@ -237,9 +237,54 @@ BYTE *rstrncpy( BYTE *target, BYTE *src, WORD limit )
 	return target;
 }
 
-inline BYTE *rstrcpy( BYTE *target, BYTE *src )
+BYTE *rstrnecpy( BYTE *target, BYTE *src, WORD limit, BYTE *exclus )
 {
-	rstrncpy( target, src, 0xFFFF );
+	WORD c = 0;
+
+	while ( 1 )
+	{
+		if ( c == limit )
+		{
+			*target = 0;
+
+			return target;
+		}
+
+		if ( *src == 0 )
+		{
+			*target = 0;
+
+			return target;
+		}
+
+		BYTE *pChk = exclus;
+
+		while ( *pChk != 0 )
+		{
+			if ( *src == *pChk )
+			{
+				break;
+			}
+			else
+			{
+				pChk++;
+			}
+		}
+
+		if ( *pChk == 0 )
+		{
+			*target = *src;
+
+			target++;
+		}
+
+		src++;
+		c++;
+	}
+
+	*target = 0;
+
+	return target;
 }
 
 WORD rstrnlen( BYTE *src, WORD limit )

@@ -78,7 +78,7 @@ int ZIPDirectory::ReadDirectory(void)
 				file.Length     = 0;
 				file.XlatorID   = 0;
 
-				rstrncpy( file.Filename, pDir, 255 );
+				file.Filename = BYTEString( pDir );
 
 				file.Attributes[ 0 ] = SeqID;
 
@@ -108,7 +108,7 @@ int ZIPDirectory::ReadDirectory(void)
 
 			file.HasResolvedIcon= false;
 
-			rstrncpy( file.Filename, ZIPSubName( cpath, fname ), 255 );
+			file.Filename = BYTEString( ZIPSubName( cpath, fname ) );
 
 			zip_flags_t attrSource = ZIP_FL_LOCAL;
 

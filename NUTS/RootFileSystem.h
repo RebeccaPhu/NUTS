@@ -14,6 +14,8 @@ public:
 		pDirectory->ReadDirectory();
 
 		FSID = FS_Root;
+
+		TopicIcon = FT_System;
 	}
 
 	~RootFileSystem(void) {

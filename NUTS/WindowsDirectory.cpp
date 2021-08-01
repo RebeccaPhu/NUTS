@@ -81,7 +81,7 @@ int	WindowsDirectory::ReadDirectory(void) {
 					
 					std::wstring extn = Filename.substr( dp + 1 );
 
-					strncpy_s( (char *) file.Extension, 4, AString( (WCHAR *) extn.c_str() ), 3 );
+					file.Extension = BYTEString( (BYTE*) AString( (WCHAR *) extn.c_str() ), 3 );
 
 					Filename = Filename.substr( 0, dp );
 
@@ -96,7 +96,7 @@ int	WindowsDirectory::ReadDirectory(void) {
 			}
 		}
 
-		rstrncpy( file.Filename, (BYTE *) AString( (WCHAR *) Filename.c_str() ), 255 );
+		file.Filename = BYTEString( (BYTE *) AString( (WCHAR *) Filename.c_str() ) );
 
 		file.Length	    = fdata.nFileSizeLow;
 		file.EncodingID = ENCODING_ASCII;

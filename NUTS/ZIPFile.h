@@ -17,18 +17,22 @@ public:
 	{
 		pSource = pSrc;
 
-		pDir = new ZIPDirectory( pSrc );
+		pZDir = new ZIPDirectory( pSrc );
 
-		pDirectory = (Directory *) pDir;
+		pDirectory = (Directory *) pZDir;
 
 		rstrncpy( cpath, (BYTE *) "", 2 );
 
-		Flags = FSF_Supports_Dirs | FSF_Creates_Image | FSF_ArbitrarySize | FSF_DynamicSize;
+		Flags = FSF_Supports_Dirs | FSF_Creates_Image | FSF_ArbitrarySize | FSF_DynamicSize | FSF_Uses_Extensions;
+
+		FSID = FSID_ZIP;
+
+		TopicIcon = FT_Archive;
 	}
 
 	~ZIPFile( void )
 	{
-		delete pDir;
+		delete pZDir;
 	}
 
 public:
@@ -38,13 +42,13 @@ public:
 
 	int  ReadFile(DWORD FileID, CTempFile &store);
 	int  WriteFile(NativeFile *pFile, CTempFile &store);
-	int  DeleteFile( NativeFile *pFile, int FileOp );
-	int  Rename( DWORD FileID, BYTE *NewName );
+	int  DeleteFile( DWORD FileID );
+	int  Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 
 	int  ReplaceFile(NativeFile *pFile, CTempFile &store);
 
 	int  ChangeDirectory( DWORD FileID );
-	int	 CreateDirectory( BYTE *Filename, bool EnterAfter );
+	int	 CreateDirectory( NativeFile *pDir, DWORD CreateFlags );
 	int  Parent();
 	bool IsRoot();
 
@@ -54,7 +58,7 @@ public:
 	}
 
 private:
-	ZIPDirectory *pDir;
+	ZIPDirectory *pZDir;
 
 	BYTE cpath[ 256 ];
 };

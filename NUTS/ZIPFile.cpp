@@ -55,7 +55,7 @@ BYTE *ZIPFile::GetStatusString( int FileIndex, int SelectedItems )
 	}
 	else
 	{
-		rsprintf( Status, "%s, %d bytes", pDirectory->Files[ FileIndex ].Filename, pDirectory->Files[ FileIndex ].Length );
+		rsprintf( Status, "%s, %d bytes", (BYTE *) pDirectory->Files[ FileIndex ].Filename, pDirectory->Files[ FileIndex ].Length );
 	}
 
 	return Status;
@@ -137,7 +137,7 @@ int ZIPFile::ChangeDirectory( DWORD FileID )
 	rstrncat( cpath, pDirectory->Files[ FileID ].Filename, 255 );
 	rstrncat( cpath, (BYTE *) "/", 255 );
 
-	rstrncpy( pDir->cpath, cpath, 255 );
+	rstrncpy( pZDir->cpath, cpath, 255 );
 
 	return pDirectory->ReadDirectory();
 }
@@ -164,7 +164,7 @@ int ZIPFile::Parent()
 		*p = 0;
 	}
 
-	rstrncpy( pDir->cpath, cpath, 255 );
+	rstrncpy( pZDir->cpath, cpath, 255 );
 
 	return pDirectory->ReadDirectory();
 }
@@ -259,38 +259,14 @@ int ZIPFile::WriteFile(NativeFile *pFile, CTempFile &store)
 	return pDirectory->ReadDirectory();
 }
 
-int ZIPFile::DeleteFile( NativeFile *pFile, int FileOp )
+int ZIPFile::DeleteFile( DWORD FileID )
 {
 	DWORD SeqID = 0xFFFFFFFF;
 
-	if ( FileOp == FILEOP_COPY_FILE )
-	{
-		if ( pFile->EncodingID != ENCODING_ASCII )
-		{
-			/* ONLY ASCII accepted */
-			return FILEOP_NEEDS_ASCII;
-		}
-	}
-
 	/* Existence check */
-	NativeFileIterator iFile;
+	NativeFile *pFile = &pDirectory->Files[ FileID ];
 
-	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
-	{
-		if ( FilenameCmp( &*iFile, pFile ) )
-		{
-			SeqID = iFile->Attributes[ 0 ];
-
-			pFile = &*iFile;
-
-			break;
-		}
-	}
-
-	if ( iFile == pDirectory->Files.end() )
-	{
-		return 0;
-	}
+	SeqID = pFile->Attributes[ 0 ];
 
 	zip_error_t ze;
 
@@ -313,14 +289,14 @@ int ZIPFile::DeleteFile( NativeFile *pFile, int FileOp )
 	return pDirectory->ReadDirectory();
 }
 
-int	ZIPFile::CreateDirectory( BYTE *Filename, bool EnterAfter )
+int	ZIPFile::CreateDirectory( NativeFile *pDir, DWORD CreateFlags )
 {
 	/* Existence check */
 	NativeFileIterator iFile;
 
 	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
 	{
-		if ( rstrnicmp( iFile->Filename, Filename, 255 ) )
+		if ( rstrnicmp( iFile->Filename, pDir->Filename, 255 ) )
 		{
 			return FILEOP_EXISTS;
 		}
@@ -342,25 +318,25 @@ int	ZIPFile::CreateDirectory( BYTE *Filename, bool EnterAfter )
 	}
 
 	rstrncpy( fname, cpath, MAX_PATH );
-	rstrncat( fname, Filename, MAX_PATH );
+	rstrncat( fname, pDir->Filename, MAX_PATH );
 
 	zip_uint64_t zfi = zip_dir_add( za, (char *) fname, ZIP_FL_ENC_CP437 );
 
 	zip_error_fini( &ze );
 	zip_close( za );
 
-	if ( EnterAfter )
+	if ( CreateFlags & CDF_ENTER_AFTER )
 	{
-		rstrncat( cpath, Filename, 255 );
+		rstrncat( cpath, pDir->Filename, 255 );
 		rstrncat( cpath, (BYTE *) "/", 255 );
 
-		rstrncpy( pDir->cpath, cpath, 255 );
+		rstrncpy( pZDir->cpath, cpath, 255 );
 	}
 
 	return pDirectory->ReadDirectory();
 }
 
-int ZIPFile::Rename( DWORD FileID, BYTE *NewName )
+int ZIPFile::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  )
 {
 	NativeFile *pFile = &pDirectory->Files[ FileID ];
 

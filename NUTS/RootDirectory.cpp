@@ -59,10 +59,10 @@ int	RootDirectory::ReadDirectory(void) {
 
 		NativeFile	file;
 
-		strncpy_s( (char *) file.Filename, 32, AString( dirEnt ) , 17 );
+		file.Filename = BYTEString( (BYTE*) AString( dirEnt ) , 17 );
 
 		file.fileID     = FileID++;
-		file.Flags      = 0U;
+		file.Flags      = FF_NotRenameable;
 		file.FSFileType = FT_ROOT;
 		file.EncodingID = ENCODING_ASCII;
 		file.XlatorID   = NULL;
@@ -97,7 +97,7 @@ int	RootDirectory::ReadDirectory(void) {
 			file.Attributes[ 0 ] = fIndex;
 			file.EncodingID      = ENCODING_ASCII;
 			file.fileID          = FileID;
-			file.Flags           = 0;
+			file.Flags           = FF_NotRenameable;
 			file.FSFileType      = NULL;
 			file.HasResolvedIcon = false;
 			file.Icon            = FT_Directory;
@@ -105,7 +105,7 @@ int	RootDirectory::ReadDirectory(void) {
 			file.Length          = 0;
 			file.XlatorID        = NULL;
 
-			rstrncpy( file.Filename, (BYTE *) AString( (WCHAR *) Folders[ fIndex ].FolderName.c_str() ), 32 );
+			file.Filename = BYTEString( (BYTE *) AString( (WCHAR *) Folders[ fIndex ].FolderName.c_str() ), 32 );
 
 			Files.push_back( file );
 
@@ -127,7 +127,7 @@ int	RootDirectory::ReadDirectory(void) {
 		file.Attributes[ 0 ] = fIndex;
 		file.EncodingID      = ENCODING_ASCII;
 		file.fileID          = FileID;
-		file.Flags           = 0;
+		file.Flags           = FF_NotRenameable;
 		file.FSFileType      = NULL;
 		file.HasResolvedIcon = false;
 		file.Icon            = FT_Arbitrary;
@@ -135,7 +135,7 @@ int	RootDirectory::ReadDirectory(void) {
 		file.Length          = 0;
 		file.XlatorID        = NULL;
 
-		rstrncpy( file.Filename, (BYTE *) AString( (WCHAR *) iHook->FriendlyName.c_str() ), 32 );
+		file.Filename = BYTEString( (BYTE *) AString( (WCHAR *) iHook->FriendlyName.c_str() ) );
 
 		TranslateIconToResolved( &file, iHook->HookIcon );
 

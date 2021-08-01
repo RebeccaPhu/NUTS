@@ -14,7 +14,7 @@ public:
 	int	WriteFile(NativeFile *pFile, CTempFile &store);
 	int ChangeDirectory(DWORD FileID);
 	int	Parent();
-	int	CreateDirectory(BYTE *Filename, bool EnterAfter);
+	int	CreateDirectory( NativeFile *pDir, DWORD CreateFlags );
 
 	bool IsRoot() {
 		if ( folderPath.length() < 4)
@@ -42,9 +42,9 @@ public:
 			rsprintf( status, "%d Items Selected", SelectedItems );
 		}
 		else if ( pDirectory->Files[FileIndex].Flags & FF_Directory )
-			rsprintf( status, "%s - Folder", pDirectory->Files[FileIndex].Filename );
+			rsprintf( status, "%s - Folder", (BYTE *) pDirectory->Files[FileIndex].Filename );
 		else
-			rsprintf( status, "%s - %d bytes", pDirectory->Files[FileIndex].Filename, pDirectory->Files[FileIndex].Length );
+			rsprintf( status, "%s - %d bytes", (BYTE *) pDirectory->Files[FileIndex].Filename, pDirectory->Files[FileIndex].Length );
 
 		return status;
 	}
