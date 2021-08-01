@@ -6,8 +6,8 @@
 
 void ImportCPMDirectoryEntry( NativeFile *pFile, BYTE *pEntry )
 {
-	memcpy( pFile->Filename,  &pEntry[ 1 ], 8 );
-	memcpy( pFile->Extension, &pEntry[ 9 ], 3 );
+	pFile->Filename  = BYTEString( &pEntry[ 1 ], 8 );
+	pFile->Extension = BYTEString( &pEntry[ 9 ], 3 );
 
 	for ( BYTE i=0; i<8; i++ ) { pFile->Filename[ i ]  &= 0x7F; }
 	for ( BYTE i=0; i<3; i++ ) { pFile->Extension[ i ] &= 0x7F; }
@@ -84,17 +84,57 @@ bool CPMDirectoryEntryCMP( BYTE *pEntry1, BYTE *pEntry2 )
 
 void CPMDirectory::LoadDirectory( BYTE *Buffer )
 {
+	DWORD CTrack = 0xFFFFFFFF;
+
+	SectorIDSet set;
+
 	for ( BYTE i=0; i<dpb.DirSecs; i++ )
 	{
-		pSource->ReadSector( DirSector + i, &Buffer[ dpb.SecSize * i ], dpb.SecSize );
+		DWORD sector = DirSector + i;
+		DWORD Track  = sector / dpb.SecsPerTrack;
+		DWORD Sector = sector % dpb.SecsPerTrack;
+
+		if ( Track != CTrack )
+		{
+			set = pSource->GetTrackSectorIDs( 0, Track, true );
+
+			CTrack = Track;
+		}
+
+		if ( set.size() < ( Sector + 1 ) )
+		{
+			return;
+		}
+
+		pSource->ReadSectorCHS( 0, Track, set[ Sector ], &Buffer[ dpb.SecSize * i ] );
 	}
 }
 
 void CPMDirectory::SaveDirectory( BYTE *Buffer )
 {
+	DWORD CTrack = 0xFFFFFFFF;
+
+	SectorIDSet set;
+
 	for ( BYTE i=0; i<dpb.DirSecs; i++ )
 	{
-		pSource->WriteSector( DirSector + i, &Buffer[ dpb.SecSize * i ], dpb.SecSize );
+		DWORD sector = DirSector + i;
+		DWORD Track  = sector / dpb.SecsPerTrack;
+		DWORD Sector = sector % dpb.SecsPerTrack;
+
+		if ( Track != CTrack )
+		{
+			set = pSource->GetTrackSectorIDs( 0, Track, true );
+
+			CTrack = Track;
+		}
+
+		if ( set.size() < ( Sector + 1 ) )
+		{
+			return;
+		}
+
+		pSource->WriteSectorCHS( 0, Track, set[ Sector ], &Buffer[ dpb.SecSize * i ] );
 	}
 }
 
@@ -165,8 +205,8 @@ int CPMDirectory::ReadDirectory(void)
 
 				file.HasResolvedIcon = false;
 
-				rstrncpy( file.Filename,  &pEntry[ 1 ], 8 );
-				rstrncpy( file.Extension, &pEntry[ 9 ], 3 );
+				file.Filename  = BYTEString( &pEntry[ 1 ], 8 );
+				file.Extension = BYTEString( &pEntry[ 9 ], 3 );
 
 				/* Fix up the entries */
 				ImportCPMDirectoryEntry( &file, pEntry );

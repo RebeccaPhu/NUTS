@@ -6,21 +6,32 @@
 
 #include "libfuncs.h"
 
-
-
-int CPMFileSystem::ReadRawBySectors( QWORD Offset, DWORD Length, BYTE *Buffer )
+int CPMFileSystem::ReadExtent( DWORD LBA, DWORD Length, BYTE *Buffer )
 {
 	DWORD BytesToGo    = Length;
-	QWORD SectorOffset = Offset;
 	DWORD BufferOffset = 0;
+
+	DWORD Track;
+	DWORD Sector;
 
 	while ( BytesToGo > 0 )
 	{
-		int r = pSource->ReadRaw( SectorOffset, dpb.SecSize, &Buffer[ BufferOffset ] );
+		Track  = LBA / dpb.SecsPerTrack;
+		Sector = LBA % dpb.SecsPerTrack;
+
+		if ( Track != CTrack )
+		{
+			set = pSource->GetTrackSectorIDs( 0, Track, true );
+
+			CTrack = Track;
+		}
+
+		int r = pSource->ReadSectorCHS( 0, Track, set[ Sector ], &Buffer[ BufferOffset ] );
 
 		BytesToGo    -= min( BytesToGo, dpb.SecSize );
-		SectorOffset += dpb.SecSize;
 		BufferOffset += dpb.SecSize;
+
+		LBA++;
 
 		if ( r != DS_SUCCESS )
 		{
@@ -31,19 +42,32 @@ int CPMFileSystem::ReadRawBySectors( QWORD Offset, DWORD Length, BYTE *Buffer )
 	return 0;
 }
 
-int CPMFileSystem::WriteRawBySectors( QWORD Offset, DWORD Length, BYTE *Buffer )
+int CPMFileSystem::WriteExtent( DWORD LBA, DWORD Length, BYTE *Buffer )
 {
 	DWORD BytesToGo    = Length;
-	QWORD SectorOffset = Offset;
 	DWORD BufferOffset = 0;
+
+	DWORD Track;
+	DWORD Sector;
 
 	while ( BytesToGo > 0 )
 	{
-		int r = pSource->WriteRaw( SectorOffset, dpb.SecSize, &Buffer[ BufferOffset ] );
+		Track  = LBA / dpb.SecsPerTrack;
+		Sector = LBA % dpb.SecsPerTrack;
+
+		if ( Track != CTrack )
+		{
+			set = pSource->GetTrackSectorIDs( 0, Track, true );
+
+			CTrack = Track;
+		}
+
+		int r = pSource->WriteSectorCHS( 0, Track, set[ Sector ], &Buffer[ BufferOffset ] );
 
 		BytesToGo    -= min( BytesToGo, dpb.SecSize );
-		SectorOffset += dpb.SecSize;
 		BufferOffset += dpb.SecSize;
+
+		LBA++;
 
 		if ( r != DS_SUCCESS )
 		{
@@ -113,19 +137,19 @@ BYTE *CPMFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 
 		if ( rstrnicmp( pFile->Extension, (BYTE *) "BAS", 3 ) )
 		{
-			rsprintf( Status, "%s.%s, BASIC File, %d bytes", pFile->Filename, pFile->Extension, pFile->Length );
+			rsprintf( Status, "%s.%s, BASIC File, %d bytes", (BYTE *) pFile->Filename, pFile->Extension, pFile->Length );
 		}
 		else if ( rstrnicmp( pFile->Extension, (BYTE *) "BIN", 3 ) )
 		{
-			rsprintf( Status, "%s.%s, Binary File, %d bytes", pFile->Filename, pFile->Extension, pFile->Length );
+			rsprintf( Status, "%s.%s, Binary File, %d bytes", (BYTE *) pFile->Filename, pFile->Extension, pFile->Length );
 		}
 		else if ( rstrnicmp(pFile->Extension, (BYTE *) "TXT", 3 ) )
 		{
-			rsprintf( Status, "%s.%s, Text File, %d bytes", pFile->Filename, pFile->Extension, pFile->Length );
+			rsprintf( Status, "%s.%s, Text File, %d bytes", (BYTE *) pFile->Filename, pFile->Extension, pFile->Length );
 		}
 		else
 		{
-			rsprintf( Status, "%s.%s, File, %d bytes", pFile->Filename, pFile->Extension, pFile->Length );
+			rsprintf( Status, "%s.%s, File, %d bytes", (BYTE *) pFile->Filename, pFile->Extension, pFile->Length );
 		}
 	}
 
@@ -154,10 +178,13 @@ int CPMFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	}
 
 	DWORD SectorOffset = 0;
+	DWORD CTrack       = 0xFFFFFFFF;
+	
+	SectorIDSet set;
 
 	if ( SystemDisk )
 	{
-		SectorOffset += dpb.SysTracks * dpb.SecsPerTrack * dpb.SecSize;
+		SectorOffset += dpb.SysTracks * dpb.SecsPerTrack;
 	}
 
 	AutoBuffer Directory( dpb.DirSecs * dpb.SecSize );
@@ -204,7 +231,7 @@ int CPMFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 				AutoBuffer DataBuffer( dpb.ExtentSize );
 
-				/* We must do this in 512 byte chunks because their may be a track information
+				/* We must do this in 512 byte chunks because there may be a track information
 				   block in the middle of our sectors */
 				while ( KBlocks > 0 )
 				{
@@ -219,7 +246,7 @@ int CPMFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 					DWORD ThisK = min( dpb.ExtentSize, KBlocks );
 
-					if ( ReadRawBySectors( SectorOffset + ( dpb.ExtentSize * ExtentID ), ThisK, DataBuffer ) != DS_SUCCESS )
+					if ( ReadExtent( SectorOffset + ( ( dpb.ExtentSize * ExtentID ) / dpb.SecSize ), ThisK, DataBuffer ) != DS_SUCCESS )
 					{
 						return -1;
 					}
@@ -466,7 +493,7 @@ int CPMFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 			DoneHeader = true;
 
-			WriteRawBySectors( SectorOffset + ( Block * dpb.ExtentSize ), dpb.ExtentSize, SectorBuf );
+			WriteExtent( SectorOffset + ( ( dpb.ExtentSize * Block ) / dpb.SecSize ), dpb.ExtentSize, SectorBuf );
 		}
 		else
 		{
@@ -681,7 +708,7 @@ int CPMFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	return pDirectory->ReadDirectory();
 }
 
-int CPMFileSystem::Rename( DWORD FileID, BYTE *NewName )
+int CPMFileSystem::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  )
 {
 	BYTE Entry[ 32 ];
 	BYTE RenamedEntry[ 32 ];
@@ -690,7 +717,8 @@ int CPMFileSystem::Rename( DWORD FileID, BYTE *NewName )
 
 	ExportCPMDirectoryEntry( pFile, Entry );
 
-	rstrncpy( pFile->Filename, NewName, 8 );
+	pFile->Filename  = BYTEString( NewName, 8 );
+	pFile->Extension = BYTEString( NewExt, 3 );
 
 	ExportCPMDirectoryEntry( pFile, RenamedEntry );
 
@@ -715,11 +743,11 @@ int CPMFileSystem::Rename( DWORD FileID, BYTE *NewName )
 	return pDirectory->ReadDirectory();
 }
 
-int CPMFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+int CPMFileSystem::DeleteFile( DWORD FileID )
 {
 	BYTE Entry[ 32 ];
 
-	ExportCPMDirectoryEntry( pFile, Entry );
+	ExportCPMDirectoryEntry( &pDirectory->Files[ FileID ], Entry );
 
 	AutoBuffer Directory( dpb.DirSecs * dpb.SecSize );
 	
@@ -746,7 +774,7 @@ int	CPMFileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 {
 	NativeFile file = *pFile;
 
-	DeleteFile( &file, FILEOP_DELETE_FILE );
+	DeleteFile( pFile->fileID );
 
 	file.Length = store.Ext();
 
