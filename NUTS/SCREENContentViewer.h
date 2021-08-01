@@ -106,6 +106,7 @@ private:
 	void DoSnow( DWORD **pPixels, BITMAPINFO *pBMI );
 	void DoRainbow( DWORD **pPixels, BITMAPINFO *pBMI );
 	void DoGhosting( DWORD **pPixels, BITMAPINFO *pBMI );
+	void DoEffectMultiplier( int DoneEffects, DWORD **pPixels, BITMAPINFO *pBMI );
 
 	float rgb2luma( DWORD *pix );
 

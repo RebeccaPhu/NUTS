@@ -576,6 +576,8 @@ int CSCREENContentViewer::Translate( void ) {
 		OriginalWidth  = opts.bmi->bmiHeader.biWidth;
 		OriginalHeight = opts.bmi->bmiHeader.biHeight;
 
+		int DoneEffects = 0;
+
 		if ( Effects & Effect_Antialias )
 		{
 			DoAntialias( &pixels1, bmi );
@@ -586,18 +588,24 @@ int CSCREENContentViewer::Translate( void ) {
 		{
 			DoSnow( &pixels1, bmi );
 			DoSnow( &pixels2, bmi );
+
+			DoneEffects++;
 		}
 
 		if ( Effects & Effect_Rainbow )
 		{
 			DoRainbow( &pixels1, bmi );
 			DoRainbow( &pixels2, bmi );
+
+			DoneEffects++;
 		}
 
 		if ( Effects & Effect_Ghosting )
 		{
 			DoGhosting( &pixels1, bmi );
 			DoGhosting( &pixels2, bmi );
+
+			DoneEffects++;
 		}
 
 		if ( Effects & Effect_Scanlines )
@@ -607,6 +615,14 @@ int CSCREENContentViewer::Translate( void ) {
 
 			DoScanlines( &pixels1, bmi );
 			DoScanlines( &pixels2, bmi );
+
+			DoneEffects++;
+		}
+
+		if ( DoneEffects > 0 )
+		{
+			DoEffectMultiplier( DoneEffects, &pixels1, bmi );
+			DoEffectMultiplier( DoneEffects, &pixels2, bmi );
 		}
 	}
 
@@ -729,6 +745,34 @@ int CSCREENContentViewer::DoEffectsMenu( void )
 	DestroyMenu(hPopup);
 
 	return -1;
+}
+
+void CSCREENContentViewer::DoEffectMultiplier( int DoneEffects, DWORD **pPixels, BITMAPINFO *pBMI )
+{
+	DWORD TotalPixels = pBMI->bmiHeader.biHeight * pBMI->bmiHeader.biWidth;
+
+	/* No new buffer needed here */
+	DWORD *pixels = *pPixels;
+
+	for ( DWORD p = 0; p<TotalPixels; p++ )
+	{
+		BYTE *pix = (BYTE *) &pixels[ p ];
+
+		double b = (double) pix[ 0 ];
+		double g = (double) pix[ 1 ];
+		double r = (double) pix[ 2 ];
+
+		double o = (double) DoneEffects * 0.6;
+		o += 1.0;
+
+		b = b * o; b = max(0,b); b = min(255.0,b);
+		g = g * o; g = max(0,g); g = min(255.0,g);
+		r = r * o; r = max(0,r); r = min(255.0,r);
+
+		pix[ 0 ] = (BYTE) b;
+		pix[ 1 ] = (BYTE) g;
+		pix[ 2 ] = (BYTE) r;
+	}
 }
 
 void CSCREENContentViewer::DoScanlines( DWORD **pPixels, BITMAPINFO *pBMI )
