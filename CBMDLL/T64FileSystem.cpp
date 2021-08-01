@@ -5,6 +5,7 @@
 #include "CBMFunctions.h"
 #include "../NUTS/libfuncs.h"
 #include "../NUTS/SourceFunctions.h"
+#include "../NUTS/TempFile.h"
 
 FSHint T64FileSystem::Offer( BYTE *Extension )
 {
@@ -13,9 +14,12 @@ FSHint T64FileSystem::Offer( BYTE *Extension )
 	hint.FSID       = FSID_T64;
 	hint.Confidence = 0;
 
-	if ( rstrnicmp( Extension, (BYTE *) "T64", 3 ) )
+	if ( Extension != nullptr )
 	{
-		hint.Confidence += 15;
+		if ( rstrnicmp( Extension, (BYTE *) "T64", 3 ) )
+		{
+			hint.Confidence += 15;
+		}
 	}
 
 	BYTE Buf[ 32 ];
@@ -44,7 +48,7 @@ int T64FileSystem::ReadFile(DWORD FileID, CTempFile &store)
 
 	BYTE Buffer[ 16384 ];
 
-	DWORD BytesToGo = pFile->Length - 2;
+	DWORD BytesToGo = (DWORD) pFile->Length - 2;
 	QWORD Offset    = pFile->Attributes[ 1 ];
 	WORD  Adx       = (WORD) pFile->Attributes[ 2 ];
 
@@ -87,7 +91,7 @@ int T64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 }
 
 
-int T64FileSystem::Rename( DWORD FileID, BYTE *NewName )
+int T64FileSystem::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  )
 {
 	NativeFile *pFile = &pDirectory->Files[ FileID ];
 
@@ -157,7 +161,7 @@ BYTE *T64FileSystem::GetStatusString( int FileIndex, int SelectedItems )
 
 		const BYTE *ftypes[ 6 ] = { (BYTE *) "DELETED", (BYTE *) "SEQUENTIAL", (BYTE *) "PROGRAM", (BYTE *) "USER", (BYTE *) "RELATIVE", (BYTE *) "SNAPSHOT" };
 
-		rsprintf( Status, "%s.%s, %s FILE, %d BYTES, LOAD AT %04X", pFile->Filename, pFile->Extension, ftypes[ pFile->Attributes[ 3 ] ], (QWORD) pFile->Length, (QWORD) pFile->Attributes[ 2 ] );
+		rsprintf( Status, "%s.%s, %s FILE, %d BYTES, LOAD AT %04X", (BYTE *) pFile->Filename, (BYTE *) pFile->Extension, ftypes[ pFile->Attributes[ 3 ] ], (QWORD) pFile->Length, (QWORD) pFile->Attributes[ 2 ] );
 	}
 
 	return Status;
@@ -275,7 +279,7 @@ int T64FileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 		return -1;
 	}
 	
-	* (WORD *) &Entry[ 0x02 ] = Changes->Attributes[ 2 ];
+	* (WORD *) &Entry[ 0x02 ] = (WORD) Changes->Attributes[ 2 ];
 	
 	if ( Changes->Attributes[ 3 ] == 0x05 )
 	{
@@ -286,7 +290,7 @@ int T64FileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	{
 		/* *sigh* */
 		Entry[ 0 ] = 1;
-		Entry[ 1 ] = Changes->Attributes[ 3 ] | 0x80;
+		Entry[ 1 ] = (BYTE) Changes->Attributes[ 3 ] | 0x80;
 	}
 
 	if ( pSource->WriteRaw( pFile->Attributes[ 0 ], 32, Entry ) != DS_SUCCESS )
@@ -551,9 +555,9 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 	return pDirectory->ReadDirectory();
 }
 
-int T64FileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+int T64FileSystem::DeleteFile( DWORD FileID )
 {
-	return RegenerateSource( pFile->fileID, 0, pFile, nullptr, T64_REGEN_DELETE );
+	return RegenerateSource( FileID, 0, nullptr, nullptr, T64_REGEN_DELETE );
 }
 
 int T64FileSystem::SwapFile( DWORD FileID1, DWORD FileID2 )
@@ -590,4 +594,271 @@ WCHAR *T64FileSystem::Identify( DWORD FileID )
 	const WCHAR *ftypes[6] = { L"Deleted File Entry", L"Sequential Access File", L"Program", L"User File", L"Relative Access File", L"State Snapshot" };
 
 	return (WCHAR *) ftypes[ pFile->Attributes[ 3 ] ];
+}
+
+int T64FileSystem::MakeAudio( std::vector<NativeFile> &Selection, TapeIndex &indexes, CTempFile &store )
+{
+	TapeLevel     = 0;
+	TapePtr       = 0;
+	TapeBufferPtr = 0;
+
+	/* Set up the index sheet */
+	indexes.Title     = L"T64 Image";
+	indexes.Publisher = L"";
+
+	NativeFileIterator iFile;
+
+	store.Seek( 0 );
+
+	BYTE Header[ 256 ];
+	BYTE SyncBlock[ 9 ]  = { 0x89, 0x88, 0x87, 0x86, 0x85, 0x84, 0x83, 0x82, 0x81 };
+	BYTE RSyncBlock[ 9 ] = { 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+	BYTE FileBuffer[ T64_TAPEAUDIO_BUFFER_SIZE ];
+
+	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
+	{
+		if ( iFile->Attributes[ 2 ] != 0xFFFFFFFF )
+		{
+			TapeCue Cue;
+
+			Cue.IndexPtr  = TapePtr;
+			Cue.IndexName = std::wstring( UString( (char *) iFile->Filename ) );
+			Cue.Flags      = 0;
+
+			indexes.Cues.push_back( Cue );
+
+			/* Pilot tone */
+			for ( WORD pilot = 0; pilot<0x6A00; pilot++ )
+			{
+				WriteShortPulse( store );
+			}
+
+			WriteAudioBuffer( store, SyncBlock, 9 );
+
+			memset( Header, 0, 192 );
+
+			/* Because of course it is */
+			if ( iFile->Attributes[ 3 ] == 0x01 )
+			{
+				Header[ 0 ] = 0x04;
+			}
+			else if ( iFile->Attributes[ 3 ] == 0x02 )
+			{
+				Header[ 0 ] = 0x01;
+			}
+			else
+			{
+				Header[ 0 ] = 0x03;
+			}
+
+			Header[ 0 ] = 0x01;
+
+			* (WORD *) &Header[ 1 ] = (WORD) iFile->Attributes[ 2 ];
+			* (WORD *) &Header[ 3 ] = (WORD) ( iFile->Attributes[ 2 ] + iFile->Length + 1 );
+			
+			memcpy( &Header[ 5 ], (BYTE *) iFile->Filename, 16 );
+
+			TapeChecksum = 0;
+
+			WriteAudioBuffer( store, Header, 192 );
+			WriteAudioBuffer( store, &TapeChecksum, 1 );
+
+			WriteAudioED( store );
+
+			/* Repeat pilot */
+			for ( WORD pilot = 0; pilot<0x4F; pilot++ )
+			{
+				WriteShortPulse( store );
+			}
+
+			WriteAudioBuffer( store, RSyncBlock, 9 );
+			Header[ 0 ] = 0x01;
+
+			TapeChecksum = 0;
+
+			WriteAudioBuffer( store, Header, 192 );
+			WriteAudioBuffer( store, &TapeChecksum, 1 );
+
+			WriteAudioED( store );
+
+			/* Header trailer pilot */
+			for ( WORD pilot = 0; pilot<0x200; pilot++ )
+			{
+				WriteShortPulse( store );
+			}
+
+			/* Write a 0.4 second pause */
+			WriteAudio( store, 127, 17640 );
+
+			Cue.IndexPtr  = TapePtr;
+			Cue.IndexName = L"Data Block";
+			Cue.Extra     = L"Initial Data";
+			Cue.Flags     = TF_ExtraValid | TF_Extra1;
+
+			indexes.Cues.push_back( Cue );
+
+			/* Data Pilot */
+			for ( WORD pilot = 0; pilot<0x1A00; pilot++ )
+			{
+				WriteShortPulse( store );
+			}
+
+			WriteAudioBuffer( store, SyncBlock, 9 );
+
+			CTempFile data;
+
+			ReadFile( iFile->fileID, data );
+
+			for ( int pass=0; pass<2; pass++ )
+			{
+				data.Seek( 0 );
+
+				TapeChecksum = 0;
+
+				DWORD DataToGo = data.Ext();
+
+				while ( DataToGo > 0 )
+				{
+					DWORD DataBytes = min( DataToGo, T64_TAPEAUDIO_BUFFER_SIZE );
+
+					data.Read( FileBuffer, DataBytes );
+
+					WriteAudioBuffer( store, FileBuffer, DataBytes );
+
+					DataToGo -= DataBytes;
+				}
+
+				if ( pass == 0 )
+				{
+					Cue.IndexPtr = TapePtr;
+					Cue.Extra    = L"Repeated Data";
+					Cue.Flags    = TF_ExtraValid | TF_Extra1;
+
+					indexes.Cues.push_back( Cue );
+				}
+
+				WriteAudioBuffer( store, &TapeChecksum, 1 );
+
+				WriteAudioED( store );
+
+				/* Trailer pilot */
+				for ( WORD pilot = 0; pilot<0x4F; pilot++ )
+				{
+					WriteShortPulse( store );
+				}
+			}
+
+				/* Trailer pilot */
+			for ( WORD pilot = 0; pilot<0x200; pilot++ )
+			{
+				WriteShortPulse( store );
+			}
+
+			/* Write a 4 second pause */
+			WriteAudio( store, 127, 176400 );
+		}
+	}
+
+	WriteAudio( store, 0, 0 );
+
+	return 0;
+}
+
+void T64FileSystem::WriteShortPulse( CTempFile &output )
+{
+	WriteAudio( output, 127 + ( 127 * TapeLevel ), 9 );
+
+	TapeLevel = 1 - TapeLevel;
+
+	WriteAudio( output, 127 + ( 127 * TapeLevel ), 9 );
+
+	TapeLevel = 1 - TapeLevel;
+}
+
+void T64FileSystem::WriteMediumPulse( CTempFile &output )
+{
+	WriteAudio( output, 127 + ( 127 * TapeLevel ), 12 );
+
+	TapeLevel = 1 - TapeLevel;
+
+	WriteAudio( output, 127 + ( 127 * TapeLevel ), 12 );
+
+	TapeLevel = 1 - TapeLevel;
+}
+
+void T64FileSystem::WriteLongPulse( CTempFile &output )
+{
+	WriteAudio( output, 127 + ( 127 * TapeLevel ), 16 );
+
+	TapeLevel = 1 - TapeLevel;
+
+	WriteAudio( output, 127 + ( 127 * TapeLevel ), 16 );
+
+	TapeLevel = 1 - TapeLevel;
+}
+
+void T64FileSystem::WriteAudio( CTempFile &output, BYTE sig, DWORD Length )
+{
+	for ( DWORD b=0; b<Length; b++ )
+	{
+		TapeBuffer[ TapeBufferPtr ] = sig;
+
+		TapeBufferPtr++;
+		TapePtr++;
+
+		if ( TapeBufferPtr == T64_TAPEAUDIO_BUFFER_SIZE )
+		{
+			output.Write( TapeBuffer, TapeBufferPtr );
+
+			TapeBufferPtr = 0;
+		}
+	}
+
+	if ( ( Length == 0 ) && ( TapeBufferPtr > 0 ) )
+	{
+		output.Write( TapeBuffer, TapeBufferPtr );
+
+		TapeBufferPtr = 0;
+	}
+}
+
+void T64FileSystem::WriteAudioBuffer( CTempFile &output, BYTE *pBuffer, DWORD Length )
+{
+	for ( DWORD i=0; i<Length; i++ )
+	{
+		BYTE b = pBuffer[ i ];
+		BYTE c = 1;
+
+		TapeChecksum ^= b;
+
+		WriteAudioDM( output );
+
+		for ( BYTE bit=0; bit<8; bit++ )
+		{
+			if ( b & 1 )
+			{
+				WriteAudio1( output );
+
+				c ^= 1;
+			}
+			else
+			{
+				WriteAudio0( output );
+
+				c ^= 0;
+			}
+
+			b &=  0xFE;
+			b >>= 1;
+		}
+
+		if( c == 1 )
+		{
+			WriteAudio1( output );
+		}
+		else
+		{
+			WriteAudio0( output );
+		}
+	}
 }

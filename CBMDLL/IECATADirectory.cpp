@@ -29,7 +29,7 @@ int	IECATADirectory::ReadDirectory(void) {
 	while ( nextBlock != 0U ) {
 		DirectorySectorChain.push_back(nextBlock);
 
-		pSource->ReadSector( nextBlock, d64cache, 512 );
+		pSource->ReadSectorLBA( nextBlock, d64cache, 512 );
 
 		nextBlock	= * (DWORD *) &d64cache[0];
 
@@ -59,15 +59,13 @@ int	IECATADirectory::ReadDirectory(void) {
 				else
 				{
 					file.Flags |= FF_Extension;
-					_snprintf_s( (char *) file.Extension, 4, 3, (char *) extns[ fp[24] & 0x3 ] );
+					file.Extension = BYTEString( (BYTE *) extns[ fp[24] & 0x3 ] );
 				}
 
 				file.FSFileType = FT_C64;
 				file.EncodingID = ENCODING_PETSCII;
 
-				memcpy( file.Filename, &fp[0x00], 16 );
-
-				file.Filename[ 16 ] = 0;
+				file.Filename = BYTEString( &fp[0x00], 16 );
 
 				//	The length is stored in two parts. Firstly, the number of sectors (512 bytes), then the number
 				//	of trailing bytes in the last sector. Thus the value is ((s - 1) * 512) + t.
@@ -106,7 +104,7 @@ int	IECATADirectory::WriteDirectory( void ) {
 
 		memset(Data, 0, 512);	//	Must blank this so non-existent entries are not accidentally read.
 
-		pSource->WriteSector( 1, Data, 512 );
+		pSource->WriteSectorLBA( 1, Data, 512 );
 	}
 	else if (TotalFiles % 18)
 	{
@@ -188,7 +186,7 @@ int	IECATADirectory::WriteDirectory( void ) {
 		FileID++;
 
 		if (i == 18) {
-			pSource->WriteSector(CSector, Data, 512);
+			pSource->WriteSectorLBA(CSector, Data, 512);
 
 			if ( iSector != DirectorySectorChain.end() )
 			{
@@ -201,7 +199,7 @@ int	IECATADirectory::WriteDirectory( void ) {
 
 	if (i != 18)
 	{
-		pSource->WriteSector(CSector, Data, 512);
+		pSource->WriteSectorLBA(CSector, Data, 512);
 	}
 
 	return 0;
@@ -215,7 +213,7 @@ int IECATADirectory::GetFreeBlock() {
 	//	Read the start of the free blocks list from the superblock. Because the start shrinks as chunks of 64 indexes
 	//	are used up, getting a free block is guaranteed to take up no more than 3 sector cycles.
 
-	pSource->ReadSector(0, DataBuf, 512);
+	pSource->ReadSectorLBA(0, DataBuf, 512);
 
 	long	FBSect	= pBlocks[0];	//	First DWORD holds the start sector of the FBL.
 	long	Block;
@@ -223,7 +221,7 @@ int IECATADirectory::GetFreeBlock() {
 	if (FBSect == 0)	//	This means no more space.
 		return -1;
 
-	pSource->ReadSector(FBSect, DataBuf, 512);
+	pSource->ReadSectorLBA(FBSect, DataBuf, 512);
 
 	//	Now scan the read in block for free blocks. Since 0 can't be free by design, 0 indicates a null entry. Entry 127
 	//	is zero if this is the end of the FBL chain, or non-zero for the next FBL sector. If indexes 0-126 are all zero, then
@@ -239,7 +237,7 @@ int IECATADirectory::GetFreeBlock() {
 
 			pBlocks[i]	= 0;	// Claimed.
 
-			pSource->WriteSector(FBSect, DataBuf, 512);
+			pSource->WriteSectorLBA(FBSect, DataBuf, 512);
 
 			return Block;
 		}
@@ -249,11 +247,11 @@ int IECATADirectory::GetFreeBlock() {
 	Block	= FBSect;
 	FBSect	= pBlocks[127];
 
-	pSource->ReadSector(0, DataBuf, 512);	//	Re-read superblock
+	pSource->ReadSectorLBA(0, DataBuf, 512);	//	Re-read superblock
 
 	pBlocks[0]	= FBSect;					//	Change the start of FBL.
 
-	pSource->WriteSector(0, DataBuf, 512);	//	Write the superblock back
+	pSource->WriteSectorLBA(0, DataBuf, 512);	//	Write the superblock back
 
 	return Block;	//	Return the original start sector of the FBL as a free block.
 }
@@ -266,12 +264,12 @@ void IECATADirectory::ReleaseBlock( std::vector<DWORD> *pBlocks ) {
 
 	int		CSector;
 
-	pSource->ReadSector(0, (BYTE *) LinkTable, 512);
+	pSource->ReadSectorLBA(0, (BYTE *) LinkTable, 512);
 
 	//	Free blocks list pointed to by first 4 bytes.
 	CSector	= LinkTable[0];
 
-	pSource->ReadSector(CSector, (BYTE *)LinkTable, 512);
+	pSource->ReadSectorLBA(CSector, (BYTE *)LinkTable, 512);
 
 	while (1) {
 		for (int i=0; i<127; i++) {
@@ -285,7 +283,7 @@ void IECATADirectory::ReleaseBlock( std::vector<DWORD> *pBlocks ) {
 
 				if ( pBlocks->size() == 0 )
 				{
-					pSource->WriteSector(CSector, (BYTE *) LinkTable, 512);
+					pSource->WriteSectorLBA(CSector, (BYTE *) LinkTable, 512);
 
 					return;
 				}
@@ -301,13 +299,13 @@ void IECATADirectory::ReleaseBlock( std::vector<DWORD> *pBlocks ) {
 
 			LinkTable[127]	= NewSector;
 
-			pSource->WriteSector(CSector, (BYTE *) LinkTable, 512);
+			pSource->WriteSectorLBA(CSector, (BYTE *) LinkTable, 512);
 
 			memset(LinkTable, 0, 512);
 		} else {
 			CSector	= LinkTable[127];
 
-			pSource->ReadSector(CSector, (BYTE *) LinkTable, 512);
+			pSource->ReadSectorLBA(CSector, (BYTE *) LinkTable, 512);
 		}
 	}
 }

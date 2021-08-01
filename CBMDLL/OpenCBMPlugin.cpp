@@ -5,6 +5,8 @@
 #include "../NUTS/Preference.h"
 #include "../NUTS/NUTSError.h"
 
+#include <time.h>
+
 opencbm_plugin_exec_command_t   *opencbm_exec_command;
 opencbm_plugin_identify_t       *opencbm_identify;
 opencbm_plugin_driver_open_ex_t *opencbm_driver_open_ex;
@@ -30,8 +32,20 @@ int DriveOpen[17];
 
 CRITICAL_SECTION DLock;
 
+time_t LoadTime = 0;
+
 void LoadOpenCBM()
 {
+	/* Don't do this every time, as this is called from the plugin loader, and just slows things down */
+	time_t now = time(NULL);
+
+	if ( ( now - LoadTime ) <= 5 )
+	{
+		return;
+	}
+
+	LoadTime = now;
+
 	OpenCBMLoaded = false;
 
 	HMODULE hCBM = NULL;

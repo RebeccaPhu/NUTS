@@ -22,7 +22,9 @@ int	D64FileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	D64Directory *pd = (D64Directory *) pDirectory;
 
 	while (logsect != -1) {
-		pSource->ReadSector(logsect, sector, 256);
+		TSLink ts = LinkForSector( logsect );
+
+		pSource->ReadSectorCHS( 0, ts.Track, ts.Sector, sector );
 
 		if (sector[0] != 0) {
 			store.Write( &sector[2], 254 );
@@ -140,8 +142,6 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	{
 		DWORD BytesWrite = min( 254, BytesToGo );
 
-		DWORD AbsSec = SectorForLink( Loc.Track, Loc.Sector );
-
 		if ( BytesToGo > 254 )
 		{
 			Loc = pBAM->GetFreeTS();
@@ -159,7 +159,7 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 		FirstBlock = false;
 
-		if ( pSource->WriteSector( AbsSec, Buffer, 256 ) != DS_SUCCESS )
+		if ( pSource->WriteSectorCHS( 0, Loc.Track, Loc.Sector, Buffer ) != DS_SUCCESS )
 		{
 			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
@@ -219,8 +219,8 @@ BYTE *D64FileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 	{
 		rsprintf(
 			status, "%s.%s - %d BYTES, %s, %s",
-			pDirectory->Files[FileIndex].Filename,
-			pDirectory->Files[FileIndex].Extension,
+			(BYTE *) pDirectory->Files[FileIndex].Filename,
+			(BYTE *) pDirectory->Files[FileIndex].Extension,
 			(DWORD) pDirectory->Files[FileIndex].Length,
 			( pDirectory->Files[FileIndex].Attributes[ 2 ] )?"LOCKED":"NOT LOCKED",
 			( pDirectory->Files[FileIndex].Attributes[ 3 ] )?"CLOSED":"NOT CLOSED (SPLAT)"
@@ -486,7 +486,7 @@ int D64FileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 
 				if ( BytesWrite > 254 ) { BytesWrite = 254; }
 
-				pSource->ReadSector( SectorForLink( Loc.Track, Loc.Sector ), Buffer, 256 );
+				pSource->ReadSectorCHS( 0, Loc.Track, Loc.Sector, Buffer );
 
 				BYTE Track  = Buffer[ 0 ];
 				BYTE Sector = Buffer[ 1 ];
@@ -530,7 +530,7 @@ int D64FileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 					Buffer[ 1 ] = (BYTE) ( BytesWrite & 0xFF );
 				}
 
-				pSource->WriteSector( SectorForLink( Loc.Track, Loc.Sector ), Buffer, 256 );
+				pSource->WriteSectorCHS( 0, Loc.Track, Loc.Sector, Buffer );
 
 				Loc.Track  = Track;
 				Loc.Sector = Sector;
@@ -561,61 +561,43 @@ int D64FileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 	return 0;
 }
 
-int D64FileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+int D64FileSystem::DeleteFile( DWORD FileID )
 {
 	/* This is an easy one. Find the object and get it's sector link, then remove sectors in a chain. */
 
-	NativeFile file = *pFile;
+	NativeFile *pFile = &pDirectory->Files[ FileID ];
 
-	if ( file.EncodingID != ENCODING_PETSCII )
+	TSLink Loc = LinkForSector( pFile->Attributes[ 0 ] );
+
+	BYTE Buffer[ 256 ];
+
+	while ( Loc.Track != 0 )
 	{
-		IncomingASCII( &file );
+		pSource->ReadSectorCHS( 0, Loc.Track, Loc.Sector, Buffer );
+
+		BYTE Track  = Buffer[ 0 ];
+		BYTE Sector = Buffer[ 1 ];
+
+		pBAM->ReleaseSector( Track, Sector );
+
+		Loc.Track  = Track;
+		Loc.Sector = Sector;
 	}
 
-	NativeFileIterator iFile;
+	pDirectory->Files.erase( pDirectory->Files.begin() + FileID );
 
-	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
 	{
-		if ( FilenameCmp( &*iFile, &file ) )
-		{
-			/* Got it */
-			TSLink Loc = LinkForSector( iFile->Attributes[ 0 ] );
+		if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
-			BYTE Buffer[ 256 ];
+		return -1;
+	}
 
-			while ( Loc.Track != 0 )
-			{
-				pSource->ReadSector( SectorForLink( Loc.Track, Loc.Sector ), Buffer, 256 );
+	if ( pDirectory->ReadDirectory() != DS_SUCCESS )
+	{
+		if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 
-				BYTE Track  = Buffer[ 0 ];
-				BYTE Sector = Buffer[ 1 ];
-
-				pBAM->ReleaseSector( Track, Sector );
-
-				Loc.Track  = Track;
-				Loc.Sector = Sector;
-			}
-
-			pDirectory->Files.erase( iFile );
-
-			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
-			{
-				if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
-
-				return -1;
-			}
-
-			if ( pDirectory->ReadDirectory() != DS_SUCCESS )
-			{
-				if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
-
-				return -1;
-			}
-
-			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
-
-			return 0;
-		}
+		return -1;
 	}
 
 	if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
@@ -737,7 +719,7 @@ int D64FileSystem::Format_Process( FormatType FT, HWND hWnd )
 					return 0;
 				}
 
-				if ( pSource->WriteSector( SectorForLink( T, S ), Buffer, 256 ) != DS_SUCCESS )
+				if ( pSource->WriteSectorCHS( 0, T, S, Buffer ) != DS_SUCCESS )
 				{
 					return -1;
 				}
@@ -780,7 +762,7 @@ int D64FileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 	ZeroMemory( Buffer, 256 );
 
-	pSource->WriteSector( SectorForLink( 18, 1 ), Buffer, 256 );
+	pSource->WriteSectorCHS( 0, 18, 1, Buffer );
 
 	pDirectory->Files.clear();
 	
@@ -821,7 +803,7 @@ int D64FileSystem::MarkChain( TSLink Loc )
 
 	while ( 1 )
 	{
-		if ( pSource->ReadSector( SectorForLink( ThisSec.Track, ThisSec.Sector ), Buffer, 256 ) != DS_SUCCESS )
+		if ( pSource->ReadSectorCHS( 0, ThisSec.Track, ThisSec.Sector, Buffer ) != DS_SUCCESS )
 		{
 			return -1;
 		}

@@ -9,7 +9,7 @@ int BAM::ReadBAM( void )
 {
 	BYTE Buffer[ 256 ];
 
-	if ( pSource->ReadSector( SectorForLink( 18, 0 ), Buffer, 256 ) != DS_SUCCESS )
+	if ( pSource->ReadSectorCHS( 0, 18, 0, Buffer ) != DS_SUCCESS )
 	{
 		return -1;
 	}
@@ -157,7 +157,7 @@ int BAM::WriteBAM( void )
 		Track++;
 	}
 
-	if ( pSource->WriteSector( SectorForLink( 18, 0 ), Buffer, 256 ) != DS_SUCCESS )
+	if ( pSource->WriteSectorCHS( 0, 18, 0, Buffer ) != DS_SUCCESS )
 	{
 		return -1;
 	}

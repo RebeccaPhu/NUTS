@@ -52,13 +52,13 @@ int T64Directory::ReadDirectory( void )
 		file.Attributes[ 1 ] = * (WORD *) &Buffer[ 0x08 ]; // Data offset
 		file.Attributes[ 2 ] = * (WORD *) &Buffer[ 0x02 ]; // Load address
 
-		memcpy( file.Filename, &Buffer[ 0x10 ], 0x10 );
+		file.Filename = BYTEString( &Buffer[ 0x10 ], 0x10 );
 
 		TToString( file.Filename, 0x10 );
 
 		file.EncodingID = ENCODING_PETSCII;
 		file.fileID     = FileID;
-		file.Flags      = FF_Extension;
+		file.Flags      = FF_Extension | FF_Audio;
 		file.FSFileType = FT_CBM_TAPE;
 		file.Icon       = FT_Arbitrary;
 		file.Type       = FT_Arbitrary;
@@ -93,7 +93,7 @@ int T64Directory::ReadDirectory( void )
 			}
 		}
 
-		rstrncpy( file.Extension, (BYTE *) extns[ file.Attributes[ 3 ] ], 3 );
+		file.Extension = (BYTE *) extns[ file.Attributes[ 3 ] ];
 
 		WORD EndAddr    = * (WORD *) &Buffer[ 0x04 ];
 

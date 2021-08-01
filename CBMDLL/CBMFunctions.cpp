@@ -150,7 +150,7 @@ int MakeASCII( NativeFile *pFile )
 	   into the text mode screen memory on a C64. But NUTS always uses it as a terminator,
 	   and if you PRINT'd a PETSCII 0 on a C64, you'd get nothing, so it works here.
 	*/
-	for ( WORD n=0; n<256; n++)
+	for ( WORD n=0; n<pFile->Filename.length(); n++)
 	{
 		if ( pFile->Filename[ n ] != 0 )
 		{
@@ -158,7 +158,7 @@ int MakeASCII( NativeFile *pFile )
 		}
 	}
 
-	for ( WORD n=0; n<4; n++)
+	for ( WORD n=0; n<pFile->Extension.length(); n++)
 	{
 		if ( pFile->Extension[ n ] != 0 )
 		{

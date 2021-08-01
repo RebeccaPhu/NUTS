@@ -17,7 +17,7 @@ OpenCBMSource::~OpenCBMSource(void)
 	OpenCBM_CloseDrive( Drive );
 }
 
-int OpenCBMSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int OpenCBMSource::ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	TSLink TS = LinkForSector( Sector );
 
@@ -29,9 +29,39 @@ int OpenCBMSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize 
 	return OpenCBM_ReadBlock( Drive, TS, (BYTE *) pSectorBuf );
 }
 
-int OpenCBMSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int OpenCBMSource::WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	TSLink TS = LinkForSector( Sector );
+
+	if ( !OpenCBMLoaded )
+	{
+		return NUTSError( 0x93, L"OpenCBM not found" );
+	}
+
+	return OpenCBM_WriteBlock( Drive, TS, (BYTE *) pSectorBuf );
+}
+
+int OpenCBMSource::ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )
+{
+	TSLink TS;
+
+	TS.Track  = Track;
+	TS.Sector = Sector;
+
+	if ( !OpenCBMLoaded )
+	{
+		return NUTSError( 0x93, L"OpenCBM not found" );
+	}
+
+	return OpenCBM_ReadBlock( Drive, TS, (BYTE *) pSectorBuf );
+}
+
+int OpenCBMSource::WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )
+{
+	TSLink TS;
+
+	TS.Track  = Track;
+	TS.Sector = Sector;
 
 	if ( !OpenCBMLoaded )
 	{

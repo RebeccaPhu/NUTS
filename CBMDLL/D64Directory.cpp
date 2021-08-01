@@ -31,7 +31,7 @@ int	D64Directory::ReadDirectory(void) {
 	char extns[8][4] = { "DEL", "SEQ", "PRG", "USR", "REL", "", "", "" };
 
 	while (nt != 0) {
-		if ( pSource->ReadSector(SectorForLink(nt, ns), d64cache, 256) != DS_SUCCESS )
+		if ( pSource->ReadSectorCHS( 0, nt, ns, d64cache ) != DS_SUCCESS )
 		{
 			return -1;
 		}
@@ -57,7 +57,7 @@ int	D64Directory::ReadDirectory(void) {
 				file.XlatorID      = NULL;
 				file.HasResolvedIcon = false;
 
-				rsprintf( file.Extension, extns[ ft ] );
+				file.Extension = (BYTE *) extns[ ft ];
 
 				if ( fp[ 0x02 ] & 0x80 ) { file.Attributes[ 2 ] = 0xFFFFFFFF; } else { file.Attributes[ 2 ] = 0x00000000; }
 				if ( fp[ 0x02 ] & 0x40 ) { file.Attributes[ 3 ] = 0xFFFFFFFF; } else { file.Attributes[ 3 ] = 0x00000000; }
@@ -84,7 +84,7 @@ int	D64Directory::ReadDirectory(void) {
 
 				SwapChars( &fp[ 0x05 ], 16 );
 
-				rstrncpy( file.Filename, &fp[ 0x05 ], 16 );
+				file.Filename = BYTEString( &fp[ 0x05 ], 16 );
 
 				//	Getting the length is a fun one. The directory entry doesn't ACTUALLY give the length in
 				//	bytes of the file, only in blocks - for listing purposes - i.e. it's there so your C64
@@ -112,7 +112,7 @@ int	D64Directory::ReadDirectory(void) {
 					file.Length = 0;
 
 					while (1) {
-						pSource->ReadSector(SectorForLink(lt, ls), filecache, 256);
+						pSource->ReadSectorCHS( 0, lt, ls, filecache );
 
 						lt	= filecache[0];
 						ls	= filecache[1];
@@ -157,7 +157,7 @@ int	D64Directory::WriteDirectory(void) {
 	bool SectorsGrabbed = false;
 
 	while ( CFile <= Files.size() ) {
-		if ( pSource->ReadSector( SectorForLink( nt, ns ), Buffer, 256 ) != DS_SUCCESS )
+		if ( pSource->WriteSectorCHS( 0, nt, ns, Buffer ) != DS_SUCCESS )
 		{
 			return -1;
 		}
@@ -221,7 +221,7 @@ int	D64Directory::WriteDirectory(void) {
 			Buffer[ 1 ] = 0xFF;
 		}
 
-		if ( pSource->WriteSector( SectorForLink( nt, ns ), Buffer, 256 ) != DS_SUCCESS )
+		if ( pSource->WriteSectorCHS( 0, nt, ns, Buffer ) != DS_SUCCESS )
 		{
 			if ( IsOpenCBM ) { OpenCBM_CloseDrive( Drive ); }
 

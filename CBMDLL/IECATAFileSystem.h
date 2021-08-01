@@ -21,7 +21,10 @@ public:
 		pSource = pDataSource;
 
 		FSID  = FSID_IECATA;
-		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs | FSF_Supports_Spaces;
+		Flags = 
+			FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity |
+			FSF_Supports_Dirs | FSF_Supports_Spaces |
+			FSF_Uses_Extensions | FSF_Fake_Extensions | FSF_NoDir_Extensions;
 	}
 
 	~IECATAFileSystem(void) {
@@ -42,9 +45,9 @@ public:
 
 	int ChangeDirectory(NativeFile *pFile);
 	int Parent();
-	int CreateDirectory(NativeFile *pFile, bool EnterAfter);
+	int CreateDirectory( NativeFile *pDir, DWORD CreateFlags );
 	bool IsRoot();
-	int DeleteFile( NativeFile *pFile, int FileOp );
+	int DeleteFile( DWORD FileID );
 
 	int Format_PreCheck(int FormatType, HWND hWnd);
 	int Format_Process( FormatType FT, HWND hWnd );

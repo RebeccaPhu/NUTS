@@ -1,5 +1,5 @@
 #pragma once
-#include "e:\nuts\nuts\directory.h"
+#include "../nuts/directory.h"
 class T64Directory :
 	public Directory
 {
