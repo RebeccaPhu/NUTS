@@ -70,16 +70,18 @@ public:
 	}
 
 public:
-	int ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
-	int WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
+	int ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
+	int WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
 
 	int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 
+	int ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf );
+	int WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf );
+
 	int Truncate( QWORD Length );
 
-	WORD GetSectorID( WORD Track, WORD Head, WORD Sector );
-	WORD GetSectorID( DWORD Sector );
+	SectorIDSet GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted );
 
 	void StartFormat( DiskShape &shape );
 

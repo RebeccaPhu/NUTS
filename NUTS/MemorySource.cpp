@@ -19,12 +19,12 @@ MemorySource::~MemorySource(void)
 	free( pData );
 }
 
-int MemorySource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int MemorySource::ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	return ReadRaw( Sector * SectorSize, SectorSize, (BYTE *) pSectorBuf );
 }
 
-int MemorySource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int MemorySource::WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	return WriteRaw( Sector * SectorSize, SectorSize, (BYTE *) pSectorBuf );
 }

@@ -9,8 +9,8 @@ public:
 	~MemorySource(void);
 
 public:
-	int ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
-	int WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
+	int ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
+	int WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
 
 	int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 	int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );

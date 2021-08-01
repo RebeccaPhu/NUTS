@@ -36,9 +36,9 @@ void NestedImageSource::FlushNest( void )
 	}
 }
 
-int NestedImageSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int NestedImageSource::WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
-	if ( ImageDataSource::WriteSector( Sector, pSectorBuf, SectorSize ) != DS_SUCCESS )
+	if ( ImageDataSource::WriteSectorLBA( Sector, pSectorBuf, SectorSize ) != DS_SUCCESS )
 	{
 		return -1;
 	}

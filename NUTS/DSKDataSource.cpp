@@ -6,7 +6,7 @@
 
 #include <algorithm>
  
-int DSKDataSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int DSKDataSource::ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	DWORD Offset = OffsetForSector( Sector );
 
@@ -18,7 +18,7 @@ int DSKDataSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize 
 	return pSource->ReadRaw( Offset, SectorSize, pSectorBuf );
 }
 
-int DSKDataSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int DSKDataSource::WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	DWORD Offset = OffsetForSector( Sector );
 
@@ -297,82 +297,6 @@ DWORD DSKDataSource::OffsetForOffset( DWORD Offset )
 	return 0;
 }
 
-WORD DSKDataSource::GetSectorID( WORD Track, WORD Head, WORD Sector )
-{
-	if ( !ValidDisk ) { return 0xFFFF; }
-
-	WORD TrackID = ( Track << 8 ) | Head;
-
-	std::map<WORD, DSK_TrackInfo>::iterator iTrack;
-
-	iTrack = DiskData.Tracks.find( TrackID );
-
-	if ( iTrack == DiskData.Tracks.end() )
-	{
-		return 0xFFFF;
-	}
-
-	std::map< BYTE, DSK_SectorInfo >::iterator iSector;
-
-	std::vector<DSK_SectorInfo> Secs;
-
-	for ( iSector = iTrack->second.Sectors.begin(); iSector != iTrack->second.Sectors.end(); iSector++ )
-	{
-		Secs.push_back( iSector->second );
-	}
-
-	std::sort( Secs.begin(), Secs.end(), SecSort );
-
-	return Secs[ Sector ].SectorID;
-}
-
-WORD DSKDataSource::GetSectorID( DWORD Sector )
-{
-	std::map<WORD, DSK_TrackInfo>::iterator iTrack;
-
-	iTrack = DiskData.Tracks.begin();
-
-	DWORD SectorsLeft = Sector;
-
-	while ( iTrack != DiskData.Tracks.end() )
-	{
-		if ( SectorsLeft >= iTrack->second.NumSectors )
-		{
-			SectorsLeft -= iTrack->second.NumSectors;
-		}
-		else
-		{
-			/* Get the lowest numbered sector ID */
-			std::map< BYTE, DSK_SectorInfo >::iterator iSector;
-
-			std::vector<DSK_SectorInfo> Secs;
-
-			for ( iSector = iTrack->second.Sectors.begin(); iSector != iTrack->second.Sectors.end(); iSector++ )
-			{
-				Secs.push_back( iSector->second );
-			}
-
-			std::sort( Secs.begin(), Secs.end(), SecSort );
-
-			std::vector<DSK_SectorInfo>::iterator iSec = Secs.begin();
-
-			/* Now look for sectors */
-			while ( SectorsLeft )
-			{
-				iSec++;
-
-				SectorsLeft--;
-			}
-
-			return iSec->SectorID;
-		}
-
-		iTrack++;
-	}
-
-	return 0xFFFF;
-}
-
 void DSKDataSource::StartFormat( DiskShape &shape )
 {
 	BYTE DSKHeader[ 256 ];
@@ -499,4 +423,97 @@ int DSKDataSource::WriteTrack( TrackDefinition track )
 	}
 
 	return 0;
+}
+
+static bool SectorSorter( WORD &a, WORD &b )
+{
+	return a < b;
+}
+
+SectorIDSet DSKDataSource::GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted )
+{
+	SectorIDSet set;
+
+	std::map<WORD, DSK_TrackInfo>::iterator iTrack;
+	std::map< BYTE, DSK_SectorInfo >::iterator iSector;
+
+	for ( iTrack = DiskData.Tracks.begin(); iTrack != DiskData.Tracks.end(); iTrack++ )
+	{
+		if ( ( iTrack->second.SideNum == Head ) && ( iTrack->second.TrackNum == Track ) )
+		{
+			for ( iSector = iTrack->second.Sectors.begin(); iSector != iTrack->second.Sectors.end(); iSector++ )
+			{
+				set.push_back( iSector->second.SectorID );
+			}
+		}
+	}
+
+	if ( Sorted )
+	{
+		std::sort( set.begin(), set.end(), SectorSorter );
+	}
+
+	return set;
+}
+
+int DSKDataSource::ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )
+{
+	std::map<WORD, DSK_TrackInfo>::iterator iTrack;
+	std::map< BYTE, DSK_SectorInfo >::iterator iSector;
+
+	for ( iTrack = DiskData.Tracks.begin(); iTrack != DiskData.Tracks.end(); iTrack++ )
+	{
+		if ( ( iTrack->second.SideNum == Head ) && ( iTrack->second.TrackNum == Track ) )
+		{
+			for ( iSector = iTrack->second.Sectors.begin(); iSector != iTrack->second.Sectors.end(); iSector++ )
+			{
+				DWORD offset = iSector->second.ImageOffset;
+
+				if ( iSector->second.SectorID == Sector )
+				{
+					if ( !ComplexDiskShape )
+					{
+						return pSource->ReadRaw( offset, MediaShape.SectorSize, pSectorBuf );
+					}
+					else
+					{
+						return pSource->ReadRaw( offset, ComplexMediaShape.SectorSize, pSectorBuf );
+					}
+				}
+			}
+		}
+	}
+
+	return NUTSError( 0x163, L"Sector not found");
+}
+
+int DSKDataSource::WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )
+{
+	std::map<WORD, DSK_TrackInfo>::iterator iTrack;
+	std::map< BYTE, DSK_SectorInfo >::iterator iSector;
+
+	for ( iTrack = DiskData.Tracks.begin(); iTrack != DiskData.Tracks.end(); iTrack++ )
+	{
+		if ( ( iTrack->second.SideNum == Head ) && ( iTrack->second.TrackNum == Track ) )
+		{
+			for ( iSector = iTrack->second.Sectors.begin(); iSector != iTrack->second.Sectors.end(); iSector++ )
+			{
+				DWORD offset = iSector->second.ImageOffset;
+
+				if ( iSector->second.SectorID == Sector )
+				{
+					if ( !ComplexDiskShape )
+					{
+						return pSource->WriteRaw( offset, MediaShape.SectorSize, pSectorBuf );
+					}
+					else
+					{
+						return pSource->WriteRaw( offset, ComplexMediaShape.SectorSize, pSectorBuf );
+					}
+				}
+			}
+		}
+	}
+
+	return NUTSError( 0x163, L"Sector not found");
 }

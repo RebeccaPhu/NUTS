@@ -31,8 +31,8 @@ public:
 	~ImageDataSource(void) {
 	}
 
-	virtual int ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
-	virtual int WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
+	virtual int ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
+	virtual int WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
 	
 	virtual int ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );
 	virtual int WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer );

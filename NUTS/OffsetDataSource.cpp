@@ -5,6 +5,7 @@
 OffsetDataSource::OffsetDataSource( DWORD Offset, DataSource *pSource )
 {
 	SourceOffset = Offset;
+	DataOffset   = Offset;
 	pSrc         = pSource;
 
 	PhysicalDiskSize = pSrc->PhysicalDiskSize;
@@ -18,14 +19,14 @@ OffsetDataSource::~OffsetDataSource(void)
 	pSrc->Release();
 }
 
-int	OffsetDataSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int	OffsetDataSource::ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	QWORD NewOffset = SourceOffset + ( Sector * SectorSize );
 
 	return pSrc->ReadRaw( NewOffset, SectorSize, ( BYTE * ) pSectorBuf );
 }
 
-int	OffsetDataSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
+int	OffsetDataSource::WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )
 {
 	QWORD NewOffset = SourceOffset + ( Sector * SectorSize );
 

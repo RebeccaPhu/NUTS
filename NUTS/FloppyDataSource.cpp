@@ -4,7 +4,7 @@
 
 #include <assert.h>
 
-int	FloppyDataSource::ReadSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
+int	FloppyDataSource::ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
 	HANDLE hFloppy;
 
 	hFloppy	= ::CreateFile(
@@ -93,7 +93,7 @@ int FloppyDataSource::WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 	return 0;
 }
 
-int	FloppyDataSource::WriteSector( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
+int	FloppyDataSource::WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
 	FILE	*fFile;
 
 	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
