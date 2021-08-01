@@ -3,6 +3,7 @@
 #include "../NUTS/Defs.h"
 #include "../NUTS/TempFile.h"
 #include "../NUTS/Directory.h"
+#include "../NUTS/DataSource.h"
 
 class ADFSCommon
 {
@@ -14,9 +15,11 @@ protected:
 	int  ExportSidecar( NativeFile *pFile, SidecarExport &sidecar );
 	int  ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj );
 
+	int  RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory, bool AllowLongNames );
+
 	template <class T> int ResolveAppIcons( T *pFS )
 	{
-		if ( !CommonUseResolvedIcons )
+		if ( ( !CommonUseResolvedIcons ) || ( CloneWars ) )
 		{
 			return 0;
 		}
@@ -27,7 +30,7 @@ protected:
 
 		for (iFile=pFS->pDirectory->Files.begin(); iFile!=pFS->pDirectory->Files.end(); iFile++)
 		{
-			if ( iFile->Flags & FF_Directory )
+			if ( ( iFile->Flags & FF_Directory ) && ( iFile->Filename[ 0 ] == '!' ) )
 			{
 				T TempFS( *pFS );
 
@@ -109,6 +112,8 @@ protected:
 	bool CommonUseResolvedIcons;
 
 	void InterpretImportedType( NativeFile *pFile );
+
+	bool CloneWars;
 	
 public:
 	void InterpretNativeType( NativeFile *pFile );

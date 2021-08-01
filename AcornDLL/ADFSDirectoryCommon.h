@@ -1,8 +1,10 @@
 #pragma once
 
 #include "../NUTS/Defs.h"
+#include "../NUTS/DataSource.h"
+#include "TranslatedSector.h"
 
-class ADFSDirectoryCommon
+class ADFSDirectoryCommon : public TranslatedSector
 {
 public:
 	ADFSDirectoryCommon(void);
@@ -10,5 +12,6 @@ public:
 
 public:
 	void TranslateType( NativeFile *file );
+
 };
 

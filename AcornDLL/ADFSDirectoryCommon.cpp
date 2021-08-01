@@ -4,8 +4,11 @@
 #include "Defs.h"
 #include "RISCOSIcons.h"
 
+#include "../NUTS/NUTSError.h"
+
 ADFSDirectoryCommon::ADFSDirectoryCommon(void)
 {
+	FloppyFormat = false;
 }
 
 

@@ -6,30 +6,6 @@
 
 #include <algorithm>
 
-DWORD ADFSDirectory::TranslateSector(DWORD InSector)
-{
-	if ( !UseLFormat )
-	{
-		return InSector;
-	}
-
-	DWORD Track  = InSector / 16;
-	DWORD Sector = InSector % 16;
-
-	DWORD OutSec;
-
-	if ( Track >= 80 )
-	{
-		OutSec = ( (Track -  80) * 32) + 16 + Sector;
-	}
-	else
-	{
-		OutSec = ( Track * 32 ) + Sector;
-	}
-
-	return OutSec;
-}
-
 int	ADFSDirectory::ReadDirectory( void ) {
 	unsigned char	DirBytes[0x800];
 
@@ -37,27 +13,20 @@ int	ADFSDirectory::ReadDirectory( void ) {
 
 	if ( !UseDFormat )
 	{
-		Err += pSource->ReadSector( TranslateSector( DirSector + 0 ), &DirBytes[0x000], 256 );	
-		Err += pSource->ReadSector( TranslateSector( DirSector + 1 ), &DirBytes[0x100], 256 );	
-		Err += pSource->ReadSector( TranslateSector( DirSector + 2 ), &DirBytes[0x200], 256 );	
-		Err += pSource->ReadSector( TranslateSector( DirSector + 3 ), &DirBytes[0x300], 256 );	
-		Err += pSource->ReadSector( TranslateSector( DirSector + 4 ), &DirBytes[0x400], 256 );	
+		Err += ReadTranslatedSector( DirSector + 0, &DirBytes[ 0x000 ], 256, pSource );
+		Err += ReadTranslatedSector( DirSector + 1, &DirBytes[ 0x100 ], 256, pSource );
+		Err += ReadTranslatedSector( DirSector + 2, &DirBytes[ 0x200 ], 256, pSource );
+		Err += ReadTranslatedSector( DirSector + 3, &DirBytes[ 0x300 ], 256, pSource );
+		Err += ReadTranslatedSector( DirSector + 4, &DirBytes[ 0x400 ], 256, pSource );
 	}
 	else
 	{
-		/* D Discs don't have to contend with Rebecca's stupid BeebEm design decisions */
-
-		/* They do seem have peculiar ways of referring to sectors though. The address of a
-		   directory is still in 256-byte sectors, even though the disc uses 1024-byte sectors
-		   in it's logical structure. */
-		Err += pSource->ReadSector( DirSector + 0, &DirBytes[ 0x000 ], 256 );
-		Err += pSource->ReadSector( DirSector + 1, &DirBytes[ 0x100 ], 256 );
-		Err += pSource->ReadSector( DirSector + 2, &DirBytes[ 0x200 ], 256 );
-		Err += pSource->ReadSector( DirSector + 3, &DirBytes[ 0x300 ], 256 );
-		Err += pSource->ReadSector( DirSector + 4, &DirBytes[ 0x400 ], 256 );
-		Err += pSource->ReadSector( DirSector + 5, &DirBytes[ 0x500 ], 256 );
-		Err += pSource->ReadSector( DirSector + 6, &DirBytes[ 0x600 ], 256 );
-		Err += pSource->ReadSector( DirSector + 7, &DirBytes[ 0x700 ], 256 );
+		/* D Format is weird. It uses 1024-byte sectors, but references them as if they
+		   are 256-byte sectors. So the second physical sector is 1, but the system refers
+		   to it as 4.
+		*/
+		Err += ReadTranslatedSector( ( DirSector >> 2 ) + 0, &DirBytes[ 0x000 ], 1024, pSource );
+		Err += ReadTranslatedSector( ( DirSector >> 2 ) + 1, &DirBytes[ 0x400 ], 1024, pSource );
 	}
 
 	if ( Err != DS_SUCCESS )
@@ -68,7 +37,7 @@ int	ADFSDirectory::ReadDirectory( void ) {
 	Files.clear();
 	ResolvedIcons.clear();
 
-	int	ptr,c;
+	DWORD ptr,c;
 
 	ptr	= 5;
 
@@ -94,8 +63,11 @@ int	ADFSDirectory::ReadDirectory( void ) {
 	if ( UseDFormat ) { MaxPtr = 3162; }
 
 	while ( ptr < MaxPtr ) {
-		memset( &file, 0, sizeof(file) );
-		memcpy( &file.Filename, &DirBytes[ptr], 10 );
+		for ( c=0; c<16; c++) { file.Attributes[ c ] = 0; }
+
+		file.Flags    = 0;
+
+		file.Filename = BYTEString( &DirBytes[ptr], 10 );
 
 		if (file.Filename[0] == 0)
 			break;
@@ -137,7 +109,7 @@ int	ADFSDirectory::ReadDirectory( void ) {
 				file.Flags |= FF_Directory;
 		}		
 
-		for (c=0; c<17; c++) {
+		for (c=0; c<10; c++) {
 			if ( (file.Filename[c] & 0x7F) == 0x0d)
 				file.Filename[c] = 0;
 			else
@@ -257,6 +229,16 @@ int	ADFSDirectory::ReadDirectory( void ) {
 			{
 				iFile->Icon = iFile->Type;
 			}
+
+			if ( iFile->Type == FT_Graphic )
+			{
+				iFile->XlatorID = GRAPHIC_ACORN;
+			}
+
+			if ( iFile->Type == FT_BASIC )
+			{
+				iFile->XlatorID = BBCBASIC;
+			}
 		}
 	}
 
@@ -324,8 +306,8 @@ int	ADFSDirectory::WriteDirectory( void ) {
 
 	if ( UseDFormat )
 	{
-		BBCStringCopy( (char *) &DirectorySector[0x7f0], DirString, 10 );
-		BBCStringCopy( (char *) &DirectorySector[0x7dd], DirTitle,  19 );
+		BBCStringCopy( &DirectorySector[0x7f0], DirString, 10 );
+		BBCStringCopy( &DirectorySector[0x7dd], DirTitle,  19 );
 
 		DirectorySector[0x7d8]  = 0;
 		DirectorySector[0x7d9]  = 0;
@@ -341,8 +323,8 @@ int	ADFSDirectory::WriteDirectory( void ) {
 	}
 	else
 	{
-		BBCStringCopy( (char *) &DirectorySector[0x4cc], DirString, 10 );
-		BBCStringCopy( (char *) &DirectorySector[0x4d9], DirTitle,  19 );
+		BBCStringCopy( &DirectorySector[0x4cc], DirString, 10 );
+		BBCStringCopy( &DirectorySector[0x4d9], DirTitle,  19 );
 
 		DirectorySector[0x4d6]	= (unsigned char)   ParentSector & 0xFF;
 		DirectorySector[0x4d7]	= (unsigned char) ((ParentSector & 0xFF00) >> 8);
@@ -362,7 +344,7 @@ int	ADFSDirectory::WriteDirectory( void ) {
 	int	ptr = 5;
 
 	for (iFile = Files.begin(); iFile != Files.end(); iFile++) {
-		BBCStringCopy((char *) &DirectorySector[ptr + 0], (char *) iFile->Filename, 10);
+		BBCStringCopy( &DirectorySector[ptr + 0], iFile->Filename, 10);
 
 		* (DWORD *) &DirectorySector[ptr + 0x00a] = iFile->LoadAddr;
 		* (DWORD *) &DirectorySector[ptr + 0x00e] = iFile->ExecAddr;
@@ -457,17 +439,18 @@ int	ADFSDirectory::WriteDirectory( void ) {
 
 	int Err = 0;
 
-	Err += pSource->WriteSector( TranslateSector( DirSector + 0 ), &DirectorySector[0x000], 256 );
-	Err += pSource->WriteSector( TranslateSector( DirSector + 1 ), &DirectorySector[0x100], 256 );
-	Err += pSource->WriteSector( TranslateSector( DirSector + 2 ), &DirectorySector[0x200], 256 );
-	Err += pSource->WriteSector( TranslateSector( DirSector + 3 ), &DirectorySector[0x300], 256 );
-	Err += pSource->WriteSector( TranslateSector( DirSector + 4 ), &DirectorySector[0x400], 256 );
-
-	if ( UseDFormat )
+	if ( !UseDFormat )
 	{
-		Err += pSource->WriteSector( DirSector + 5, &DirectorySector[0x500], 256 );
-		Err += pSource->WriteSector( DirSector + 6, &DirectorySector[0x600], 256 );
-		Err += pSource->WriteSector( DirSector + 7, &DirectorySector[0x700], 256 );
+		Err += WriteTranslatedSector( DirSector + 0, &DirectorySector[ 0x000 ], 256, pSource );
+		Err += WriteTranslatedSector( DirSector + 1, &DirectorySector[ 0x100 ], 256, pSource );
+		Err += WriteTranslatedSector( DirSector + 2, &DirectorySector[ 0x200 ], 256, pSource );
+		Err += WriteTranslatedSector( DirSector + 3, &DirectorySector[ 0x300 ], 256, pSource );
+		Err += WriteTranslatedSector( DirSector + 4, &DirectorySector[ 0x400 ], 256, pSource );
+	}
+	else
+	{
+		Err += WriteTranslatedSector( ( DirSector >> 2 ) + 0, &DirectorySector[ 0x000 ], 1024, pSource );
+		Err += WriteTranslatedSector( ( DirSector >> 2 ) + 1, &DirectorySector[ 0x400 ], 1024, pSource );
 	}
 
 	return Err;

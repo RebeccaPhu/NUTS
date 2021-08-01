@@ -5,8 +5,9 @@
 #include "ADFSEDirectory.h"
 #include "SpriteFile.h"
 #include "ADFSCommon.h"
+#include "TranslatedSector.h"
 
-class ADFSEFileSystem : public FileSystem, ADFSCommon
+class ADFSEFileSystem : public FileSystem, ADFSCommon, TranslatedSector
 {
 public:
 	ADFSEFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) {
@@ -26,15 +27,16 @@ public:
 		FSID    = source.FSID;
 		Flags   = source.Flags;
 
+		CloneWars = true;
+
+		FloppyFormat = source.FloppyFormat;
+		MediaShape   = source.MediaShape;
+
 		rstrncpy( path, (BYTE *) source.path, 512 );
 
 		pFSMap  = nullptr;
 
-		pEDirectory = new ADFSEDirectory( pSource );
-
-		pEDirectory->Files        = source.pEDirectory->Files;
-		pEDirectory->DirSector    = source.pEDirectory->DirSector;
-		pEDirectory->ParentSector = source.pEDirectory->ParentSector;
+		pEDirectory = new ADFSEDirectory( *source.pEDirectory );
 
 		pFSMap = new NewFSMap( pSource );
 
@@ -44,10 +46,7 @@ public:
 
 		pFSMap->ReadFSMap();
 
-		pEDirectory->DirSector    = source.pEDirectory->DirSector;
-		pEDirectory->ParentSector = source.pEDirectory->ParentSector;
-
-		pDirectory->ReadDirectory();
+		pEDirectory->Files = source.pEDirectory->Files;
 	}
 
 	~ADFSEFileSystem(void) {
@@ -88,8 +87,8 @@ public:
 
 	int ReadFile(DWORD FileID, CTempFile &store);
 	int	WriteFile(NativeFile *pFile, CTempFile &store);
-	int	CreateDirectory( BYTE *Filename, bool EnterAfter );
-	int DeleteFile( NativeFile *pFile, int FileOp );
+	int	CreateDirectory( NativeFile *pDir, DWORD CreateFlags );
+	int DeleteFile( DWORD FileID );
 
 	BYTE *DescribeFile(DWORD FileIndex);
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
@@ -120,7 +119,20 @@ public:
 
 	int ReplaceFile(NativeFile *pFile, CTempFile &store);
 
+	int ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
+	{
+		return ADFSCommon::ExportSidecar( pFile, sidecar );
+	}
+
+	int ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempFile *obj )
+	{
+		return ADFSCommon::ImportSidecar( pFile, sidecar, obj );
+	}
+
 private:
 	TargetedFileFragments FindSpace( DWORD Length, bool ForDir );
+
+	void SetShape(void);
+	void UpdateShape( DWORD SecSize, DWORD SecsTrack );
 };
 

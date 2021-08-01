@@ -2,6 +2,7 @@
 
 #include "ADFSDirectoryCommon.h"
 #include "../nuts/directory.h"
+#include "../NUTS/libfuncs.h"
 #include "NewFSMap.h"
 #include "Defs.h"
 
@@ -16,8 +17,56 @@ public:
 		BigDirName   = nullptr;
 	}
 
+	ADFSEDirectory( const ADFSEDirectory &source ) : Directory( source.pSource )
+	{
+		Files         = source.Files;
+		
+		ResolvedIconList::const_iterator iIcon;
+
+		for ( iIcon = source.ResolvedIcons.begin(); iIcon != source.ResolvedIcons.end(); iIcon++ )
+		{
+			DWORD   nIcon = iIcon->first;
+			IconDef Icon  = iIcon->second;
+
+			void *pDupImage = malloc( Icon.bmi.biSizeImage );
+
+			memcpy( pDupImage, Icon.pImage, Icon.bmi.biSizeImage );
+
+			Icon.pImage = pDupImage;
+
+			ResolvedIcons[ nIcon ] = Icon;
+		}
+
+		pMap = source.pMap;
+
+		MediaShape = source.MediaShape;
+
+		DirSector    = source.DirSector;
+		ParentSector = source.ParentSector;
+
+		if ( source.BigDirName != nullptr )
+		{
+			BigDirName = rstrndup( source.BigDirName, 256 );
+		}
+		else
+		{
+			BigDirName = nullptr;
+		}
+
+		MasterSeq = source.MasterSeq;
+		
+		memcpy( DirTitle, source.DirTitle, 19 );
+		memcpy( DirName, source.DirName, 19 );
+
+		SecSize = source.SecSize;
+	}
+
 	~ADFSEDirectory(void)
 	{
+		if ( BigDirName != nullptr )
+		{
+			free( BigDirName );
+		}
 	}
 
 	int	ReadDirectory(void);
@@ -34,8 +83,8 @@ public:
 	DWORD ParentSector;
 
 	BYTE MasterSeq;
-	BYTE DirTitle[ 19 ];
-	BYTE DirName[  10 ];
+	BYTE DirTitle[ 20 ];
+	BYTE DirName[  20 ];
 
 	BYTE *BigDirName;
 

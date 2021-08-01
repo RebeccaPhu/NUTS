@@ -25,8 +25,8 @@ public:
 
 	unsigned char	MasterSeq;
 
-	char	DirString[11];
-	char	DirTitle[20];
+	BYTE DirString[11];
+	BYTE DirTitle[20];
 
 	DWORD DirSector;
 	DWORD ParentSector;
@@ -61,7 +61,5 @@ public:
 	}
 
 private:
-	DWORD TranslateSector(DWORD InSector);
-
 	DWORD SecSize;
 };

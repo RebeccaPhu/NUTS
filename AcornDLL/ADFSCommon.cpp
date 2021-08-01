@@ -13,6 +13,8 @@
 ADFSCommon::ADFSCommon(void)
 {
 	CommonUseResolvedIcons = false;
+
+	CloneWars = false;
 }
 
 
@@ -23,8 +25,12 @@ ADFSCommon::~ADFSCommon(void)
 
 int ADFSCommon::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
 {
-	rstrncpy( sidecar.Filename, pFile->Filename, 16 );
-	rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+	BYTE tf[32];
+
+	rstrncpy( tf, pFile->Filename, 16 );
+	rstrncat( tf, (BYTE *) ".INF", 256 );
+
+	sidecar.Filename = tf;
 
 	BYTE INFData[80];
 
@@ -44,8 +50,11 @@ int ADFSCommon::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempF
 
 	if ( obj == nullptr )
 	{
-		rstrncpy( sidecar.Filename, pFile->Filename, 16 );
-		rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+		BYTE tf[ 32 ];
+		rstrncpy( tf, pFile->Filename, 16 );
+		rstrncat( tf, (BYTE *) ".INF", 256 );
+
+		sidecar.Filename = tf;
 	}
 	else
 	{
@@ -54,7 +63,7 @@ int ADFSCommon::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempF
 		ZeroMemory( bINFData, 256 );
 
 		obj->Seek( 0 );
-		obj->Read( bINFData, min( 256, obj->Ext() ) );
+		obj->Read( bINFData, (DWORD) min( 256, obj->Ext() ) );
 
 		std::string INFData( (char *) bINFData );
 
@@ -84,7 +93,7 @@ int ADFSCommon::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempF
 		catch ( std::exception &e )
 		{
 			/* eh-oh */
-			return NUTSError( 0x2E, L"Bad sidecar file" );
+			return NUTSError( 0x2E, std::wstring( L"Bad sidecar file: " ) + std::wstring( UString( (char *) e.what() ) ) );
 		}
 
 		/* Fix the standard attrs */
@@ -106,11 +115,11 @@ int ADFSCommon::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar, CTempF
 		/*  Copy the filename - but we must remove the lading directory prefix*/
 		if ( parts[ 0 ].substr( 1, 1 ) == "." )
 		{
-			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
+			OverrideFile.Filename = (BYTE *) parts[ 0 ].substr( 2 ).c_str();
 		}
 		else
 		{
-			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
+			OverrideFile.Filename = (BYTE *) parts[ 0 ].c_str();
 		}
 
 		Override = true;
@@ -136,7 +145,7 @@ void ADFSCommon::FreeAppIcons( Directory *pDirectory )
 
 void ADFSCommon::InterpretImportedType( NativeFile *pFile )
 {
-	if ( pFile->LoadAddr & 0xFFF00000 != 0xFFF00000 )
+	if ( ( pFile->LoadAddr & 0xFFF00000 ) != 0xFFF00000 )
 	{
 		return;
 	}
@@ -192,7 +201,7 @@ void ADFSCommon::InterpretImportedType( NativeFile *pFile )
 
 void ADFSCommon::InterpretNativeType( NativeFile *pFile )
 {
-	if ( pFile->LoadAddr & 0xFFF00000 != 0xFFF00000 )
+	if ( ( pFile->LoadAddr & 0xFFF00000 ) != 0xFFF00000 )
 	{
 		return;
 	}
@@ -205,7 +214,7 @@ void ADFSCommon::InterpretNativeType( NativeFile *pFile )
 
 void ADFSCommon::SetTimeStamp( NativeFile *pFile )
 {
-	if ( pFile->LoadAddr & 0xFFF00000 != 0xFFF00000 )
+	if ( ( pFile->LoadAddr & 0xFFF00000 ) != 0xFFF00000 )
 	{
 		return;
 	}
@@ -221,4 +230,75 @@ void ADFSCommon::SetTimeStamp( NativeFile *pFile )
 
 	pFile->LoadAddr = ( pFile->LoadAddr & 0xFFFFFF00 ) | (DWORD) ( FileTime & 0xFF );
 	pFile->ExecAddr = (DWORD) ( ( FileTime & 0xFFFFFFFF00 ) >> 8) ;
+}
+
+int ADFSCommon::RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory, bool AllowLongNames )
+{
+	/* The idea here is to try and alter the name of the directory to something unique.
+
+	   We're going to do this by copying the filename, then overwriting the trail with
+	   a number starting at 1, and incrementing on each pass. The number is prefixed by _
+
+	   When we find one, we'll return it. If not, we go around again. If we somehow fill
+	   up all 10 characters, we'll error here.
+	*/
+
+	bool Done = false;
+
+	BYTEString CurrentFilename( pDir->Filename, pDir->Filename.length() + 11 );
+	BYTEString ProposedFilename( pDir->Filename.length() + 11 );
+
+	size_t InitialLen = CurrentFilename.length();
+
+	DWORD ProposedIndex = 1;
+
+	BYTE ProposedSuffix[ 11 ];
+
+	while ( !Done )
+	{
+		rstrncpy( ProposedFilename, CurrentFilename, InitialLen );
+
+		rsprintf( ProposedSuffix, "_%d", ProposedIndex );
+
+		WORD SuffixLen = rstrnlen( ProposedSuffix, 9 );
+		
+		/* If we allow long file names, then we just add it on the end, otherwise we have the 10 char limit */
+		if ( ( AllowLongNames ) || ( ( InitialLen + SuffixLen ) <= 10 ) )
+		{
+			rstrcpy( &ProposedFilename[ InitialLen ], ProposedSuffix );
+		}
+		else
+		{
+			rstrncpy( &ProposedFilename[ 10 - SuffixLen ], ProposedSuffix, 10 );
+		}
+
+		/* Now see if that's unique */
+		NativeFileIterator iFile;
+
+		bool Unique = true;
+
+		for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+		{
+			if ( rstricmp( iFile->Filename, ProposedFilename ) )
+			{
+				Unique = false;
+
+				break;
+			}
+		}
+
+		Done = Unique;
+
+		ProposedIndex++;
+
+		if ( ProposedIndex == 0 )
+		{
+			/* EEP - Ran out */
+			return NUTSError( 208, L"Unable to find unique name for incoming directory" );
+		}
+	}
+
+	pDir->Filename = ProposedFilename;
+
+	return 0;
 }

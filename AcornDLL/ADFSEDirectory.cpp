@@ -17,9 +17,17 @@ int	ADFSEDirectory::ReadDirectory( void ) {
 	return ReadEDirectory();
 }
 
-int	ADFSEDirectory::ReadEDirectory( void ) {
+int	ADFSEDirectory::ReadEDirectory( void )
+{
+	Files.clear();
+	ResolvedIcons.clear();
 
 	FileFragments Frags = pMap->GetFileFragments( DirSector );
+
+	if ( Frags.size() == 0 )
+	{
+		return NUTSError( 0x90, L"Directory has no fragments. Disk is corrupt." );
+	}
 
 	FileFragment_iter iFrag;
 
@@ -37,7 +45,10 @@ int	ADFSEDirectory::ReadEDirectory( void ) {
 
 		for ( DWORD sec = 0; sec<Sectors; sec++ )
 		{
-			pSource->ReadSector( iFrag->Sector + sec, &DirBytes[ ReadSize ], pMap->SecSize );
+			if ( ReadTranslatedSector( iFrag->Sector + sec, &DirBytes[ ReadSize ], pMap->SecSize, pSource ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			ReadSize += pMap->SecSize;
 
@@ -53,9 +64,6 @@ int	ADFSEDirectory::ReadEDirectory( void ) {
 		}
 	}
 
-	Files.clear();
-	ResolvedIcons.clear();
-
 	int	ptr,c;
 
 	ptr	= 5;
@@ -70,8 +78,11 @@ int	ADFSEDirectory::ReadEDirectory( void ) {
 	memcpy( DirName,  &DirBytes[0x7F0], 10);
 
 	while ( ptr < 2007 ) {
-		memset( &file, 0, sizeof(file) );
-		memcpy( &file.Filename, &DirBytes[ptr], 10 );
+		for ( c=0; c<16; c++) { file.Attributes[ c ] = 0; }
+
+		file.Flags    = 0;
+
+		file.Filename = BYTEString( &DirBytes[ptr], 10 );
 
 		if (file.Filename[0] == 0)
 			break;
@@ -88,7 +99,7 @@ int	ADFSEDirectory::ReadEDirectory( void ) {
 		if ( DirBytes[ ptr + 0x19 ] & 8 )
 			file.Flags |= FF_Directory;
 		
-		for (c=0; c<17; c++) {
+		for (c=0; c<10; c++) {
 			if ( (file.Filename[c] & 0x7F) == 0x0d)
 				file.Filename[c] = 0;
 			else
@@ -129,7 +140,15 @@ int	ADFSEDirectory::ReadEDirectory( void ) {
 
 int	ADFSEDirectory::ReadPDirectory( void ) {
 
+	Files.clear();
+	ResolvedIcons.clear();
+
 	FileFragments Frags = pMap->GetFileFragments( DirSector );
+
+	if ( Frags.size() == 0 )
+	{
+		return NUTSError( 0x90, L"Directory has no fragments. Disk is corrupt." );
+	}
 
 	FileFragment_iter iFrag;
 
@@ -155,7 +174,10 @@ int	ADFSEDirectory::ReadPDirectory( void ) {
 
 		for ( DWORD sec = 0; sec<Sectors; sec++ )
 		{
-			pSource->ReadSector( iFrag->Sector + sec, &DirBytes[ ReadSize ], pMap->SecSize );
+			if ( ReadTranslatedSector( iFrag->Sector + sec, &DirBytes[ ReadSize ], pMap->SecSize, pSource ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			ReadSize += pMap->SecSize;
 
@@ -192,12 +214,12 @@ int	ADFSEDirectory::ReadPDirectory( void ) {
 
 	DWORD ptr = 0;
 
-	if ( BigDirName != nullptr );
+	if ( BigDirName != nullptr )
 	{
 		free( BigDirName );
 	}
 
-	BigDirName = rstrndup( &DirBytes[ 0x1C ], DNameLen );
+	BigDirName = rstrndup( &DirBytes[ 0x1C ], (WORD) DNameLen );
 
 	ptr = 0x1C + DNameLen + 1;
 
@@ -209,13 +231,15 @@ int	ADFSEDirectory::ReadPDirectory( void ) {
 
 	for ( DWORD Entry=0; Entry<Entries; Entry++ )
 	{
-		memset( &file, 0, sizeof(file) );
+		for ( DWORD c=0; c<16; c++) { file.Attributes[ c ] = 0; }
+
+		file.Flags    = 0;
 
 		DWORD ObNameLen = * (DWORD *) &DirBytes[ ptr + 0x14 ];
 		DWORD ObNamePtr = * (DWORD *) &DirBytes[ ptr + 0x18 ];
 
 		/* Note: The disk format terminates these with 0x0D, but does not include said byte in the length field */
-		rstrncpy( file.Filename, &DirBytes[ NameHeapPtr + ObNamePtr ], ObNameLen );
+		file.Filename = BYTEString( &DirBytes[ NameHeapPtr + ObNamePtr ], (WORD) ObNameLen );
 
 		DWORD BigAttr = * (DWORD *) &DirBytes[ ptr + 0x10 ];
 
@@ -354,7 +378,7 @@ int	ADFSEDirectory::WriteEDirectory( void )
 	NativeFileIterator iFile = Files.begin();
 
 	while ( ( ptr < 0x7D6 ) && ( iFile != Files.end() ) ) {
-		BBCStringCopy( (char *) &DirBytes[ ptr ], (char *) iFile->Filename, 10 );
+		BBCStringCopy( &DirBytes[ ptr ], iFile->Filename, 10 );
 
 		DirBytes[ ptr + 0x19 ] = 0;
 
@@ -386,7 +410,7 @@ int	ADFSEDirectory::WriteEDirectory( void )
 
 		* (DWORD *) &DirBytes[ ptr + 0x0A ] = iFile->LoadAddr;
 		* (DWORD *) &DirBytes[ ptr + 0x0E ] = iFile->ExecAddr;
-		* (DWORD *) &DirBytes[ ptr + 0x12 ] = iFile->Length;
+		* (DWORD *) &DirBytes[ ptr + 0x12 ] = (DWORD) iFile->Length;
 	
 		ptr	+= 0x1A;
 
@@ -395,17 +419,17 @@ int	ADFSEDirectory::WriteEDirectory( void )
 
 	DirBytes[ ptr ] = 0; /* End of files marker */
 
-	DirBytes[ 0x7DA ] =   ParentSector & 0xFF;
-	DirBytes[ 0x7DB ] = ( ParentSector & 0xFF00   ) >> 8;
-	DirBytes[ 0x7DC ] = ( ParentSector & 0xFF0000 ) >> 16;
+	DirBytes[ 0x7DA ] = (BYTE) (   ParentSector & 0xFF );
+	DirBytes[ 0x7DB ] = (BYTE) ( ( ParentSector & 0xFF00   ) >> 8 );
+	DirBytes[ 0x7DC ] = (BYTE) ( ( ParentSector & 0xFF0000 ) >> 16 );
 
 	DirBytes[ 0x7D8 ] = 0;
 	DirBytes[ 0x7D9 ] = 0; /* Reserved - must be zero */
 
 	DirBytes[ 0x7D7 ] = 0; /* Absolute end of directory marker */
 
-	BBCStringCopy( (char *) &DirBytes[0x7F0], (char *) DirName,  10 );
-	BBCStringCopy( (char *) &DirBytes[0x7DD], (char *) DirTitle, 19 );
+	BBCStringCopy( &DirBytes[0x7F0], DirName,  10 );
+	BBCStringCopy( &DirBytes[0x7DD], DirTitle, 19 );
 
 	/* Calculate check byte */
 	DWORD Accumulator = 0;
@@ -446,7 +470,10 @@ int	ADFSEDirectory::WriteEDirectory( void )
 
 		for ( DWORD sec = 0; sec<Sectors; sec++ )
 		{
-			pSource->WriteSector( iFrag->Sector + sec, &DirBytes[ WriteSize ], pMap->SecSize );
+			if ( WriteTranslatedSector( iFrag->Sector + sec, &DirBytes[ WriteSize ], pMap->SecSize, pSource ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			WriteSize += pMap->SecSize;
 
@@ -493,7 +520,7 @@ int	ADFSEDirectory::WritePDirectory( void )
 	DWORD FileTablePtr = RequiredDirSize;
 
 	/* This will be the start of the name heap */
-	DWORD NameTablePtr = FileTablePtr + ( Files.size() * 0x1C );
+	DWORD NameTablePtr = FileTablePtr + ( (DWORD) Files.size() * 0x1C );
 	DWORD NameTableSize = 0;
 	DWORD NameTableStart = NameTablePtr;
 
@@ -552,7 +579,7 @@ int	ADFSEDirectory::WritePDirectory( void )
 	DirBytes[ 0x000 ] = MasterSeq;
 	Tail[      0x04 ] = MasterSeq;
 
-	BBCStringCopy( (char *) &DirBytes[ 0x1C ], (char *) BigDirName, 255 );
+	BBCStringCopy( &DirBytes[ 0x1C ], BigDirName, 255 );
 
 	DirBytes[ 0x04 ] = 'S'; Tail[ 0x000 ] = 'o';
 	DirBytes[ 0x05 ] = 'B'; Tail[ 0x001 ] = 'v';
@@ -561,7 +588,7 @@ int	ADFSEDirectory::WritePDirectory( void )
 
 	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
 	{
-		BBCStringCopy( (char *) &DirBytes[ NameTablePtr ], (char *) iFile->Filename, 255 );
+		BBCStringCopy( &DirBytes[ NameTablePtr ], iFile->Filename, 255 );
 
 		DWORD Attr = 0;
 
@@ -595,7 +622,7 @@ int	ADFSEDirectory::WritePDirectory( void )
 
 		* (DWORD *) &DirBytes[ FileTablePtr + 0x00 ] = iFile->LoadAddr;
 		* (DWORD *) &DirBytes[ FileTablePtr + 0x04 ] = iFile->ExecAddr;
-		* (DWORD *) &DirBytes[ FileTablePtr + 0x08 ] = iFile->Length;
+		* (DWORD *) &DirBytes[ FileTablePtr + 0x08 ] = (DWORD) iFile->Length;
 		* (DWORD *) &DirBytes[ FileTablePtr + 0x10 ] = Attr;
 		* (DWORD *) &DirBytes[ FileTablePtr + 0x14 ] = NameLen;
 		* (DWORD *) &DirBytes[ FileTablePtr + 0x18 ] = NameTablePtr - NameTableStart;
@@ -608,7 +635,7 @@ int	ADFSEDirectory::WritePDirectory( void )
 
 	* (DWORD *) &DirBytes[ 0x18 ] = ParentSector;
 	* (DWORD *) &DirBytes[ 0x14 ] = NameTableSize;
-	* (DWORD *) &DirBytes[ 0x10 ] = Files.size();
+	* (DWORD *) &DirBytes[ 0x10 ] = (DWORD) Files.size();
 	* (DWORD *) &DirBytes[ 0x0C ] = TotalSize;
 	* (DWORD *) &DirBytes[ 0x08 ] = rstrnlen( BigDirName, 255 );
 	
@@ -623,7 +650,7 @@ int	ADFSEDirectory::WritePDirectory( void )
 	DWORD Accumulator = 0;
 
 	/* Directory words, up to, but not including the end-of-files marker */
-	for ( WORD i=0; i < (TotalSize - 4); i+=4 )
+	for ( DWORD i=0; i < (TotalSize - 4); i+=4 )
 	{
 		DWORD v = * (DWORD *) &DirBytes[ i ] ;
 
@@ -631,7 +658,7 @@ int	ADFSEDirectory::WritePDirectory( void )
 	}
 
 	/* Trailing directory tail bytes, not including check byte itself */
-	for ( WORD i=TotalSize - 4; i < (TotalSize - 1); i++ )
+	for ( DWORD i=TotalSize - 4; i < (TotalSize - 1); i++ )
 	{
 		DWORD v = DirBytes[ i ] ;
 
@@ -650,7 +677,10 @@ int	ADFSEDirectory::WritePDirectory( void )
 
 		for ( DWORD sec = 0; sec<Sectors; sec++ )
 		{
-			pSource->WriteSector( iFrag->Sector + sec, &DirBytes[ WriteSize ], pMap->SecSize );
+			if ( WriteTranslatedSector( iFrag->Sector + sec, &DirBytes[ WriteSize ], pMap->SecSize, pSource ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			WriteSize += pMap->SecSize;
 

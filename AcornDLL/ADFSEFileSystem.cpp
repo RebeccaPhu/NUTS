@@ -6,6 +6,7 @@
 #include "SpriteFile.h"
 #include "Sprite.h"
 #include "../NUTS/OffsetDataSource.h"
+#include "BBCFunctions.h"
 
 #include "AcornDLL.h"
 #include "resource.h"
@@ -23,9 +24,13 @@ int ADFSEFileSystem::Init(void) {
 
 	pFSMap  = new NewFSMap( pSource );
 
+	SetShape();
+
 	pEDirectory->pMap = pFSMap;
 
 	pFSMap->ReadFSMap();
+
+	UpdateShape( pFSMap->SecSize, pFSMap->SecsPerTrack );
 
 	pEDirectory->DirSector = pFSMap->RootLoc;
 	pEDirectory->SecSize   = pFSMap->SecSize;
@@ -46,20 +51,29 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	hint.Confidence = 0;
 	hint.FSID       = FSID;
 
+	SetShape();
+
 	BYTE SectorBuf[4096];
 
 	BYTE CheckByte;
 
+	if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP ) ) 
+	{
+		AlternateOffsets.clear();
+
+		/* Also try with a 512-byte offset, as used by some emulators */
+		AlternateOffsets.push_back( 0x200 );
+	}
+
 	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_EP ) )
 	{
-		/* Use ReadRaw because the sector size isn't known */
-		pSource->ReadRaw( 0, 1024, SectorBuf );
+		pSource->ReadSectorCHS( 0, 0, 0, SectorBuf );
 
 		CheckByte = pFSMap->ZoneCheck( SectorBuf, 1024 );
 
 		if ( CheckByte == SectorBuf[ 0 ] )
 		{
-			pSource->ReadRaw( 0x800, 256, SectorBuf );
+			pSource->ReadSectorCHS( 0, 0, 2, SectorBuf );
 
 			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( FSID == FSID_ADFS_E ) )
 			{
@@ -78,13 +92,13 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 
 		// Sector 0 can be damaged, because there's a backup on Sector 1.
 	
-		pSource->ReadRaw( 1024, 1024, SectorBuf );
+		pSource->ReadSectorCHS( 0, 0, 1, SectorBuf );
 
 		CheckByte = pFSMap->ZoneCheck( SectorBuf, 1024 );
 
 		if ( CheckByte == SectorBuf[ 0 ] )
 		{
-			pSource->ReadRaw( 0x800, 256, SectorBuf );
+			pSource->ReadSectorCHS( 0, 0, 2, SectorBuf );
 
 			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( FSID == FSID_ADFS_E ) )
 			{
@@ -103,7 +117,14 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	}
 	
 	/* Going to need to read the Boot Block and locate the map base. */
-	pSource->ReadRaw( 0x0C00, 1024, SectorBuf );
+	if ( FloppyFormat )
+	{
+		pSource->ReadSectorCHS( 0, 0, 3, SectorBuf );
+	}
+	else
+	{
+		pSource->ReadSectorLBA( 6, SectorBuf, 512 );
+	}
 
 	BYTE *pRecord   = &SectorBuf[ 0x1C0 ]; // Bit o' boot block.
 	DWORD BPMB      = 1 << pRecord[ 0x05 ];
@@ -114,6 +135,8 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 
 	DWORD SecSize   = 1 << pRecord[ 0x00 ];
 	DWORD SecsTrack = pRecord[ 0x01 ];
+
+	UpdateShape( SecSize, SecsTrack );
 
 	if ( SecSize < 256 )
 	{
@@ -201,7 +224,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 	delete pFSMap;
 
 	pFSMap = nullptr;
-	
+
 	return hint;
 }
 
@@ -277,7 +300,7 @@ int	ADFSEFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 				return 0;
 			}
 
-			pSource->ReadSector( iFrag->Sector + FragSector, Sector, pFSMap->SecSize );
+			ReadTranslatedSector( iFrag->Sector + FragSector, Sector, pFSMap->SecSize, pSource );
 
 			if ( fileSize > pFSMap->SecSize )
 			{
@@ -311,7 +334,7 @@ int ADFSEFileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 	/* Delete the original file */
 	NativeFile theFile = pDirectory->Files[ pFile->fileID ];
 
-	DeleteFile( &theFile, FILEOP_DELETE_FILE );
+	DeleteFile( theFile.fileID );
 
 	/* Write the new data */
 	pFile->Length = store.Ext();
@@ -346,6 +369,18 @@ int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		return FILEOP_NEEDS_ASCII;
 	}
 
+	if ( pFSMap->FormatVersion != 1 )
+	{
+		/* Filter out spaces */
+		BYTE NoChars[] = { (BYTE) ' ', 0 };
+
+		BYTEString t = BYTEString( pFile->Filename.size() );
+
+		rstrnecpy( t, pFile->Filename, pFile->Filename.length(), NoChars );
+
+		pFile->Filename = t;
+	}
+
 	if ( pDirectory->Files.size() >= 77 )
 	{
 		return NUTSError( 0x80, L"Directory Full" );
@@ -356,9 +391,16 @@ int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile ++ )
 	{
-		if ( rstrnicmp( pFile->Filename, iFile->Filename, 255 ) )
+		if ( rstrnicmp( pFile->Filename, iFile->Filename, 10 ) )
 		{
-			return FILEOP_EXISTS;
+			if ( iFile->Flags & FF_Directory )
+			{
+				return FILEOP_ISDIR;
+			}
+			else
+			{
+				return FILEOP_EXISTS;
+			}
 		}
 	}
 
@@ -406,7 +448,7 @@ int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 				BytesToWrite = FileToGo;
 			}
 
-			pSource->WriteSector( SecNum, SectorBuf, pFSMap->SecSize );
+			WriteTranslatedSector( SecNum, SectorBuf, pFSMap->SecSize, pSource );
 
 			SecNum++;
 
@@ -513,13 +555,13 @@ BYTE *ADFSEFileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 		if ( pFile->Flags & FF_Directory )
 		{
 			rsprintf( status, "%s | [%s%s%s%s] - Directory",
-				pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-"
+				(BYTE *) pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-"
 			);
 		}
 		else
 		{
 			rsprintf( status, "%s | [%s%s%s%s] - %0X bytes - %s/%03X",
-				pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
+				(BYTE *) pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
 				(DWORD) pFile->Length, (char *) pTypeName, Type
 			);
 		}
@@ -845,7 +887,7 @@ int ADFSEFileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
 {
 	if ( PropID == 0 )
 	{
-		BBCStringCopy( (char *) pFSMap->DiscName, (char *) pNewVal, 10 );
+		BBCStringCopy( pFSMap->DiscName, pNewVal, 10 );
 	}
 
 	if ( PropID == 1 )
@@ -905,15 +947,15 @@ AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
 	Attr.Type  = AttrVisible | AttrEnabled | AttrCombo | AttrHex | AttrFile;
 	Attr.Name  = L"File Type";
 
-	static DWORD    FileTypes[ 13 ] = {
+	static DWORD    FileTypes[ ] = {
 		0xFFB, 0xFFD, 0xAFF, 0xFFE, 0xFF7, 0xC85, 0xFFA, 0xFEB, 0xFF9, 0xFFF, 0xFFC
 	};
 
-	static std::wstring Names[ 13 ] = {
+	static std::wstring Names[ ] = {
 		L"BASIC Program", L"Data", L"Draw File", L"Exec (Spool)", L"Font", L"JPEG Image", L"Module", L"Obey (Script)", L"Sprite", L"Text File", L"Utility"
 	};
 
-	for ( BYTE i=0; i<13; i++ )
+	for ( BYTE i=0; i<11; i++ )
 	{
 		AttrOption opt;
 
@@ -1143,7 +1185,55 @@ TargetedFileFragments ADFSEFileSystem::FindSpace( DWORD Length, bool ForDir )
 	return Frags;
 }
 
-int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
+int	ADFSEFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
+
+	if ( ( pDir->EncodingID != ENCODING_ASCII ) && ( pDir->EncodingID != ENCODING_ACORN ) && ( pDir->EncodingID != ENCODING_RISCOS )  )
+	{
+		return FILEOP_NEEDS_ASCII;
+	}
+
+	NativeFile SourceDir = *pDir;
+
+	if ( pFSMap->FormatVersion != 1 )
+	{
+		/* Filter out spaces */
+		BYTE NoChars[] = { (BYTE) ' ', 0 };
+
+		BYTEString t = BYTEString( pDir->Filename.size() );
+
+		rstrnecpy( t, pDir->Filename, pDir->Filename.length(), NoChars );
+
+		SourceDir.Filename = t;
+	}
+
+	for ( NativeFileIterator iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( rstrnicmp( iFile->Filename, SourceDir.Filename, 10 ) )
+		{
+			if ( ( CreateFlags & ( CDF_MERGE_DIR | CDF_RENAME_DIR ) ) == 0 )
+			{
+				if ( iFile->Flags & FF_Directory )
+				{
+					return FILEOP_EXISTS;
+				}
+				else
+				{
+					return FILEOP_ISFILE;
+				}
+			}
+			else if ( CreateFlags & CDF_MERGE_DIR )
+			{
+				return ChangeDirectory( iFile->fileID );
+			}
+			else if ( CreateFlags & CDF_RENAME_DIR )
+			{
+				if ( RenameIncomingDirectory( &SourceDir, pDirectory, ( pFSMap->FormatVersion == 0x00000001 ) ) != NUTS_SUCCESS )
+				{
+					return -1;
+				}
+			}
+		}
+	}
 
 	unsigned char DirectorySector[0x800];
 
@@ -1152,7 +1242,10 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 		return NUTSError( 0x80, L"Directory Full" );
 	}
 
-	/* This is allocated bigger than needed in order to store small files in the same fragment */
+	/* This is allocated bigger than needed in order to store small files in the same fragment.
+	   For plus formats, this gives room to expand the directory without immediately needing a
+	   new fragment.
+	*/
 	TargetedFileFragments DirSpace = FindSpace( 0x1000, true );
 
 	ADFSEDirectory *pNewDirectory = new ADFSEDirectory( pSource );
@@ -1164,12 +1257,12 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 	
 	if ( pFSMap->FormatVersion == 0x00000001 )
 	{
-		pNewDirectory->BigDirName = rstrndup( Filename, 255 );
+		pNewDirectory->BigDirName = rstrndup( SourceDir.Filename, 255 );
 	}
 	else
 	{
-		BBCStringCopy( (char *) pNewDirectory->DirName,  (char *) Filename, 10 );
-		BBCStringCopy( (char *) pNewDirectory->DirTitle, (char *) Filename, 10 );
+		BBCStringCopy( pNewDirectory->DirName,  pDir->Filename, 10 );
+		BBCStringCopy( pNewDirectory->DirTitle, pDir->Filename, 10 );
 	}
 
 	int Err = pNewDirectory->WriteDirectory();
@@ -1183,15 +1276,7 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 
 	NativeFile	DirEnt;
 
-	if ( pFSMap->FormatVersion == 0x00000001 )
-	{
-		rstrncpy( DirEnt.Filename, Filename, 255 );
-	}
-	else
-	{
-		rstrncpy( DirEnt.Filename, Filename, 10 ); DirEnt.Filename[ 10 ] = 0;
-	}
-
+	DirEnt.Filename   = SourceDir.Filename;
 	DirEnt.ExecAddr   = 0;
 	DirEnt.LoadAddr   = 0;
 	DirEnt.Length     = 0;
@@ -1201,6 +1286,18 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 	DirEnt.AttrWrite  = 0xFFFFFFFF;
 	DirEnt.SeqNum     = 0;
 	DirEnt.SSector    = pNewDirectory->DirSector;
+
+	if ( SourceDir.FSFileType == FT_ACORNX )
+	{
+		DirEnt.AttrLocked = SourceDir.AttrLocked;
+		DirEnt.AttrRead   = SourceDir.AttrRead;
+		DirEnt.AttrWrite  = SourceDir.AttrWrite;
+		DirEnt.AttrExec   = SourceDir.AttrExec;
+
+		/* On RISCOS formats, the load and exec addresses are used to hold a timestamp */
+		DirEnt.ExecAddr = SourceDir.ExecAddr;
+		DirEnt.LoadAddr = SourceDir.LoadAddr;
+	}
 
 	pDirectory->Files.push_back(DirEnt);
 
@@ -1212,12 +1309,12 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 		return -1;
 	}
 
-	if ( EnterAfter )
+	if ( CreateFlags & CDF_ENTER_AFTER )
 	{
 		pEDirectory->DirSector = DirEnt.SSector;
 
 		rstrncat(path, (BYTE *) ".", 512 );
-		rstrncat(path, Filename, 512 );
+		rstrncat(path, SourceDir.Filename, 512 );
 	}
 
 	FreeAppIcons( pDirectory );
@@ -1229,89 +1326,61 @@ int	ADFSEFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
 	return r;
 }
 
-int ADFSEFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+int ADFSEFileSystem::DeleteFile( DWORD FileID )
 {
-	if ( Override )
+	NativeFile *pFile = &pDirectory->Files[ FileID ];
+
+	/* This is way easier than writing a file. Because of the two allocation strategies,
+		there is therefore two deletion strategies to match. If the fragment is an isolated
+		fragment (that is there is only one fragment with that fragment ID), then examine
+		the directory to see what other files are using it. If it's only one (i.e. this one)
+		then change the fragment ID to 0 (via NewFSMap) and write out the FSMap, otherwise
+		do nothing.
+
+		If on the other hand, the fragment count > 1, then this is a multi-fragment file spread
+		across the disk, and we just instruct NewFSMap to delete all of them by changing their
+		IDs to 0. We'll let NewFSMap collapse adjacent spaces before writing.
+
+		Finally, remove the directory entry and write to disk.
+	*/
+
+	if ( pFSMap->GetMatchingFragmentCount( pFile->SSector >> 8 ) == 1 )
 	{
-		pFile = &OverrideFile;
+		/* Step one: Count the files using this fragment */
+		DWORD FilesUsing = 0;
 
-		Override = false;
-	}
+		NativeFileIterator iOther;
 
-	std::vector<NativeFile>::iterator iFile;
-
-	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); )
-	{
-		bool DidErase = false;
-
-		if ( FilenameCmp( pFile, &*iFile ) )
+		for ( iOther = pDirectory->Files.begin(); iOther != pDirectory->Files.end(); iOther++ )
 		{
-			/* This is way easier than writing a file. Because of the two allocation strategies,
-			   there is therefore two deletion strategies to match. If the fragment is an isolated
-			   fragment (that is there is only one fragment with that fragment ID), then examine
-			   the directory to see what other files are using it. If it's only one (i.e. this one)
-			   then change the fragment ID to 0 (via NewFSMap) and write out the FSMap, otherwise
-			   do nothing.
-
-			   If on the other hand, the fragment count > 1, then this is a multi-fragment file spread
-			   across the disk, and we just instruct NewFSMap to delete all of them by changing their
-			   IDs to 0. We'll let NewFSMap collapse adjacent spaces before writing.
-
-			   Finally, remove the directory entry and write to disk.
-			*/
-
-			if ( pFSMap->GetMatchingFragmentCount( iFile->SSector >> 8 ) == 1 )
+			if ( ( iOther->SSector & 0xFFFFFF00 ) == ( pFile->SSector & 0xFFFFFF00 ) )
 			{
-				/* Step one: Count the files using this fragment */
-				DWORD FilesUsing = 0;
-
-				NativeFileIterator iOther;
-
-				for ( iOther = pDirectory->Files.begin(); iOther != pDirectory->Files.end(); iOther++ )
-				{
-					if ( ( iOther->SSector & 0xFFFFFF00 ) == ( iFile->SSector & 0xFFFFFF00 ) )
-					{
-						FilesUsing++;
-					}
-				}
+				FilesUsing++;
+			}
+		}
 			
-				/* Must consider this directory itself */
-				if ( ( pEDirectory->DirSector & 0xFFFFFF00 ) == ( iFile->SSector & 0xFFFFFF00 ) )
-				{
-					FilesUsing++;
-				}
-
-				if ( FilesUsing == 1 )
-				{
-					pFSMap->ReleaseFragment( iFile->SSector >> 8 );
-				}
-
-				/* If more than one file is using this fragment, leave it alone */
-			}
-			else
-			{
-				/* Multiple fragment file (or fragment doesn't somehow exist). Just delete them */
-				pFSMap->ReleaseFragment( iFile->SSector >> 8 );
-			}			
-
-			DidErase = true;
-
-			iFile = pDirectory->Files.erase( iFile );
-		}
-
-		if ( !DidErase )
+		/* Must consider this directory itself */
+		if ( ( pEDirectory->DirSector & 0xFFFFFF00 ) == ( pFile->SSector & 0xFFFFFF00 ) )
 		{
-			iFile++;
+			FilesUsing++;
 		}
-		else
-		{
-			if ( pDirectory->WriteDirectory() != DS_SUCCESS )
-			{
-				return -1;
-			}
 
-			iFile = pDirectory->Files.end();
+		if ( FilesUsing == 1 )
+		{
+			pFSMap->ReleaseFragment( pFile->SSector >> 8 );
 		}
+
+		/* If more than one file is using this fragment, leave it alone */
+	}
+	else
+	{
+		/* Multiple fragment file (or fragment doesn't somehow exist). Just delete them */
+		pFSMap->ReleaseFragment( pFile->SSector >> 8 );
+	}			
+
+	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+	{
+		return -1;
 	}
 
 	FreeAppIcons( pDirectory );
@@ -1358,6 +1427,19 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 			case FSID_ADFS_F:
 			case FSID_ADFS_FP:
+				{
+					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
+					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+					::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "64 bytes" );
+					::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+
+					pSystem->pFSMap->LogBPMB = 6;
+					pSystem->pFSMap->BPMB    = 64;
+					pSystem->pFSMap->IDLen   = 15;
+				}
+				break;
+
+			case FSID_ADFS_G:
 				{
 					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
 					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
@@ -1466,14 +1548,13 @@ int ADFSEFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
 	DialogBoxParam( hInstance, MAKEINTRESOURCE( IDD_ADFSFORMAT ), hWnd, FormatProc, (LPARAM) this );
 
 	/* If we don't want an emu header, we must strip the offset data source that the DLL front end stuck on */
-	if ( !IncludeEmuHeader )
+	if ( IncludeEmuHeader )
 	{
-		OffsetDataSource *pWrapper = reinterpret_cast<OffsetDataSource *>(pSource);
+		OffsetDataSource *pWrapper = new OffsetDataSource( 0x200, pSource);
 
-		pSource = pWrapper->pSrc;
+		pSource->Release();
 
-		pSource->Retain();
-		pWrapper->Release();
+		pSource = pWrapper;
 
 		if ( pEDirectory != nullptr )
 		{
@@ -1498,12 +1579,14 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 	DWORD SecSize = 512;
 
-	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) )
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) )
 	{
 		SecSize = 1024;
 	}
 
 	DWORD Sectors = pSource->PhysicalDiskSize / (DWORD) SecSize;
+
+	SetShape();
 
 	/* This will hold two sectors later, for setting up the disc name for D format discs */
 	BYTE SectorBuf[ 1024 ];
@@ -1519,7 +1602,7 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 				return 0;
 			}
 
-			if ( pSource->WriteSector( Sector, SectorBuf, SecSize ) != DS_SUCCESS )
+			if ( WriteTranslatedSector( Sector, SectorBuf, SecSize, pSource ) != DS_SUCCESS ) 
 			{
 				return -1;
 			}
@@ -1616,4 +1699,92 @@ int ADFSEFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	ResolveAppIcons<ADFSEFileSystem>( this );
 
 	return 0;
+}
+
+void ADFSEFileSystem::SetShape(void)
+{
+	FloppyFormat = false;
+
+	/* Set the disk shape according to the format - NOTE this will be
+	   reset after reading the disc record !
+	*/
+	switch ( FSID )
+	{
+		case FSID_ADFS_E:
+		case FSID_ADFS_EP:
+		case FSID_ADFS_F:
+		case FSID_ADFS_FP:
+		case FSID_ADFS_G:
+			{
+				DiskShape shape;
+
+				shape.Heads            = 2;
+				shape.InterleavedHeads = false;
+				shape.Sectors          = 5;
+				shape.SectorSize       = 1024;
+				shape.Tracks           = 80;
+
+				if (( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ))
+				{
+					shape.Sectors = 10;
+				}
+
+				if ( FSID == FSID_ADFS_G )
+				{
+					shape.Sectors = 20;
+				}
+
+				pSource->SetDiskShape( shape );
+
+				MediaShape = shape;
+
+				if ( pEDirectory != nullptr )
+				{
+					pEDirectory->MediaShape = shape;
+				}
+
+				FloppyFormat = true;
+			}
+			break;
+
+		case FSID_ADFS_HN:
+		case FSID_ADFS_HP:
+			{
+				FloppyFormat = false;
+			}
+			break;
+
+		default:
+			{
+				FloppyFormat = false;
+			}
+			break;
+	}
+
+	if ( pEDirectory != nullptr )
+	{
+		pEDirectory->FloppyFormat = FloppyFormat;
+	}
+
+	if ( pFSMap != nullptr )
+	{
+		pFSMap->MediaShape   = MediaShape;
+		pFSMap->FloppyFormat = FloppyFormat;
+	}
+}
+
+void ADFSEFileSystem::UpdateShape( DWORD SecSize, DWORD SecsTrack )
+{
+	if ( FloppyFormat )
+	{
+		MediaShape.SectorSize = SecSize;
+		MediaShape.Sectors    = SecsTrack;
+
+		pSource->SetDiskShape( MediaShape );
+
+		if ( pEDirectory != nullptr )
+		{
+			pEDirectory->MediaShape = MediaShape;
+		}
+	}
 }
