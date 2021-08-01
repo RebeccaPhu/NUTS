@@ -6,14 +6,14 @@ int ReplaceSourceContent( DataSource *pSource, CTempFile &FileObj )
 {
 	BYTE Buffer[ 131072 ];
 
-	DWORD BytesToGo    = FileObj.Ext();
-	DWORD SourceOffset = 0;
+	QWORD BytesToGo    = FileObj.Ext();
+	QWORD SourceOffset = 0;
 
 	FileObj.Seek( 0 );
 	
 	while ( BytesToGo > 0 )
 	{
-		DWORD BytesRead = BytesToGo;
+		QWORD BytesRead = BytesToGo;
 
 		if ( BytesRead > 131072 )
 		{
@@ -39,14 +39,14 @@ int CopyContent( CTempFile &srcObj, CTempFile &destObj )
 {
 	BYTE Buffer[ 131072 ];
 
-	DWORD BytesToGo    = srcObj.Ext();
-	DWORD SourceOffset = 0;
+	QWORD BytesToGo    = srcObj.Ext();
+	QWORD SourceOffset = 0;
 
 	srcObj.Seek( 0 );
 	
 	while ( BytesToGo > 0 )
 	{
-		DWORD BytesRead = BytesToGo;
+		QWORD BytesRead = BytesToGo;
 
 		if ( BytesRead > 131072 )
 		{

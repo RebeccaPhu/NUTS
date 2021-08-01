@@ -55,6 +55,7 @@ INT_PTR CALLBACK LicenseFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 {
 	switch (message )
 	{
+	case WM_INITDIALOG:
 	case WM_ABOUT_RESIZE:
 		{
 			RECT r;
@@ -63,7 +64,7 @@ INT_PTR CALLBACK LicenseFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
 			SetWindowPos( GetDlgItem( hDlg, IDC_LICENSE ), NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOREPOSITION );
 
-			FillRichEditFromFile( GetDlgItem( hDlg, IDC_LICENSE ), L"License.rtf" );
+			FillRichEditFromFile( GetDlgItem( hDlg, IDC_LICENSE ), L"./License.rtf" );
 		}
 		break;
 	}

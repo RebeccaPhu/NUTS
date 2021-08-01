@@ -107,6 +107,45 @@ void CTempFile::Read( void *Buffer, DWORD Length )
 
 void CTempFile::SetExt( QWORD NewPtr )
 {
+	if ( NewPtr == Ext() )
+	{
+		return;
+	}
+
+	if ( NewPtr < Ext() )
+	{
+		HANDLE hFile;
+
+		hFile = ::CreateFile(
+			PathName.c_str(), 
+			GENERIC_READ | GENERIC_WRITE, 
+			NULL, 
+			NULL, 
+			OPEN_EXISTING, 
+			FILE_ATTRIBUTE_NORMAL, 
+			NULL
+		); 
+
+		LONG JesusWindows = (LONG) ( NewPtr >> 32 );
+
+		if ( hFile != INVALID_HANDLE_VALUE )
+		{
+			if ( SetFilePointer( hFile, (LONG) ( NewPtr & 0xFFFFFFFF ), &JesusWindows, FILE_BEGIN ) == INVALID_SET_FILE_POINTER )
+			{
+				return;
+			}
+
+			if ( SetEndOfFile( hFile ) == FALSE )
+			{
+				return;
+			}
+
+			CloseHandle( hFile );
+		}
+
+		return;
+	}
+
 	FILE *f = nullptr;
 	
 	_wfopen_s( &f, PathName.c_str(), L"rb+" );
