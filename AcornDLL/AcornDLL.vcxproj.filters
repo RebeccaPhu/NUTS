@@ -114,6 +114,9 @@
     <ClCompile Include="ADFSDirectoryCommon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TranslatedSector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AcornDFSDirectory.h">
@@ -186,6 +189,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ADFSDirectoryCommon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TranslatedSector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

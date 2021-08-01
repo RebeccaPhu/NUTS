@@ -381,26 +381,9 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 		{
 			if ( PUID == FSID_ADFS_HO )
 			{
-				/* Emulators have this silly "HDF" format that adds 0x200 bytes to the front of an otherwise untouched image.
-				   We'll do a test for this to see if we need to use a headered data source. */
-				BYTE Root[ 0x100 ];
+				ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
 
-				pSource->ReadRaw( 0x200, 0x100, Root );
-
-				if ( rstrncmp( &Root[0x1], (BYTE *) "Hugo", 4 ) )
-				{
-					/* Regular image */
-					pFS = new ADFSFileSystem( pSource );
-				}
-				else
-				{
-					/* Assume its a HDF */
-					DataSource *pOffset = new OffsetDataSource( 0x200, pSource );
-
-					pFS = new ADFSFileSystem( pOffset );
-
-					pOffset->Release();
-				}
+				pFS = pADFS;
 			}
 			else if ( PUID == FSID_ADFS_H8 )
 			{
@@ -435,33 +418,7 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	case FSID_ADFS_HN:
 	case FSID_ADFS_HP:
 		{
-			if ( ( PUID == FSID_ADFS_HN ) || ( PUID == FSID_ADFS_HP ) )
-			{
-				/* Emulators have this silly "HDF" format that adds 0x200 bytes to the front of an otherwise untouched image.
-				   We'll do a test for this to see if we need to use a headered data source. */
-				BYTE BootBlock[ 0x200 ];
-
-				pSource->ReadRaw( 0xC00, 0x200, BootBlock );
-
-				if ( ( NewFSMap::BootBlockCheck( BootBlock ) == BootBlock[ 0x1FF ] ) && ( BootBlock[ 0x1C0 ] != 0x00 ) )
-				{
-					/* Regular image */
-					pFS = new ADFSEFileSystem( pSource );
-				}
-				else
-				{
-					/* Assume its a HDF */
-					DataSource *pOffset = new OffsetDataSource( 0x200, pSource );
-
-					pFS = new ADFSEFileSystem( pOffset );
-
-					pOffset->Release();
-				}
-			}
-			else
-			{
-				pFS = new ADFSEFileSystem( pSource );
-			}
+			pFS = new ADFSEFileSystem( pSource );
 		}
 		break;
 

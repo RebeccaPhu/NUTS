@@ -1,5 +1,30 @@
 #pragma once
 
+/* 800K ADFS D Format is weird. It uses the old map format, but
+   with 1024-byte sectors instead of 256-byte. But, it still
+   uses references that work with 256-byte sectors. As such, the
+   root directory is on logical sector 1, which is physical sector
+   4 on track 0.
+
+   The first macro shifts the sector number right 2 places if D
+   format is in use. All D format sector references have the
+   bottom two bits clear, so no data is lost.
+
+   The sector format gives the sector size. 1024 bytes for D format,
+   256 bytes for all others.
+
+   Note that hard drives always use 256-byte sectors, regardless of
+   Acorn Winchester style or Risc OS style (old map).
+
+   New map Risc OS hard drives use 512-byte sectors. The disc record
+   of new map discs indicates what sector size is to be used, and all
+   sector references are in terms of the recorded sector size.
+*/
+#define DSector( X ) ( (UseDFormat)?(X>>2):X )
+#define DSectorSize ( (UseDFormat)?1024:256 )
+
+#define PlusFormat ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
+
 #define SSector    Attributes[0]
 #define AttrLocked Attributes[1]
 #define AttrRead   Attributes[2]
