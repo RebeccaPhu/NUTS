@@ -1,9 +1,10 @@
 #pragma once
 
+#include "TranslatedSector.h"
 #include "../NUTS/DataSource.h"
 #include "Defs.h"
 
-class NewFSMap
+class NewFSMap : public TranslatedSector
 {
 public:
 	NewFSMap(DataSource *pDataSource) {
@@ -48,6 +49,7 @@ public:
 	BYTE  DiscName[ 11 ];
 	BYTE  BootOption;
 	WORD  ZoneSpare;
+	BYTE  SecsPerTrack;
 	BYTE  LogSecSize;
 
 	WORD  SecSize;
@@ -74,7 +76,6 @@ private:
 	DWORD IDsPerZone;
 
 	/* Extra disc record bits that we don't actually use */
-	BYTE  SecsPerTrack;
 	BYTE  Heads;
 	BYTE  Density;
 	BYTE  LowSector;

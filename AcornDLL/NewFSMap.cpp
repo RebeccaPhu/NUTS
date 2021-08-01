@@ -2,6 +2,7 @@
 #include "NewFSMap.h"
 #include "../NUTS/libfuncs.h"
 #include "../NUTS/NUTSError.h"
+#include "BBCFunctions.h"
 
 #include <algorithm>
 
@@ -98,7 +99,7 @@ void NewFSMap::WriteDiscRecord( BYTE *pRecord, bool Partial )
 
 	pRecord[ 0x20 ] = DiscType;
 
-	BBCStringCopy( (char *) &pRecord[ 0x16 ], (char *) DiscName, 10 );
+	BBCStringCopy( &pRecord[ 0x16 ], DiscName, 10 );
 
 	
 	/* Big fields */
@@ -173,7 +174,26 @@ int	NewFSMap::ReadFSMap()
 
 	while ( !HaveValidRecord )
 	{
-		pSource->ReadSector( SectorStage, Sector, 1024 );
+		if ( SectorStage < 2 )
+		{
+			if ( FloppyFormat )
+			{
+				pSource->ReadSectorCHS( 0, 0, SectorStage, Sector );
+			}
+			else
+			{
+				DWORD RecordSector = SectorStage << 1;
+
+				pSource->ReadSectorLBA( RecordSector + 0, &Sector[ 0x000 ], 512 );
+				pSource->ReadSectorLBA( RecordSector + 1, &Sector[ 0x200 ], 512 );
+			}
+		}
+		else
+		{
+			pSource->ReadSectorLBA( 6, &Sector[ 0x000 ], 512 ); /* Partial record at 0xC00 */
+		}
+
+//		pSource->ReadSector( SectorStage, Sector, 1024 );
 
 		if ( SectorStage == 3 )
 		{
@@ -230,7 +250,8 @@ int	NewFSMap::ReadFSMap()
 
 			DWORD Offset = 4;
 
-			pSource->ReadSector( SubMapAddr / SecSize, Sector, SecSize );
+			ReadTranslatedSector( SubMapAddr / SecSize, Sector, SecSize, pSource );
+//			pSource->ReadSector( SubMapAddr / SecSize, Sector, SecSize );
 
 			if ( ZoneCheck( Sector, SecSize ) != Sector[ 0 ] )
 			{
@@ -238,7 +259,8 @@ int	NewFSMap::ReadFSMap()
 
 				SubMapAddr += ( Zones * SecSize );
 
-				pSource->ReadSector( SubMapAddr / SecSize, Sector, SecSize );
+				ReadTranslatedSector( SubMapAddr / SecSize, Sector, SecSize, pSource );
+//				pSource->ReadSector( SubMapAddr / SecSize, Sector, SecSize );
 			}
 
 			ZoneMapSectors[ z ] = SubMapAddr / SecSize;
@@ -306,6 +328,11 @@ int NewFSMap::ReadSubMap( BYTE *pMap, DWORD NumBits, WORD zone, DWORD BitsOffset
 	{
 		DWORD FragId = ReadBits( pMap, CurrentBit, IDLen );
 		DWORD Offset = CurrentBit;
+
+		if ( CurrentBit >= NumBits )
+		{
+			return 0;
+		}
 
 		CurrentBit += IDLen;
 
@@ -395,8 +422,10 @@ int	NewFSMap::WriteFSMap()
 
 		MapSector[ 0 ] = ZoneCheck( MapSector, 1024 );
 
-		pSource->WriteSector( 0, MapSector, 1024 );
-		pSource->WriteSector( 1, MapSector, 1024 );
+		WriteTranslatedSector( 0, MapSector, 1024, pSource );
+//		pSource->WriteSector( 0, MapSector, 1024 );
+		WriteTranslatedSector( 1, MapSector, 1024, pSource );
+//		pSource->WriteSector( 1, MapSector, 1024 );
 	}
 	else 
 	{
@@ -421,7 +450,8 @@ int	NewFSMap::WriteFSMap()
 
 			MapSector[ 0 ] = ZoneCheck( MapSector, SecSize );
 
-			pSource->WriteSector( ZoneMapSectors[ n ], MapSector, SecSize );
+			WriteTranslatedSector( ZoneMapSectors[ n ], MapSector, SecSize, pSource );
+//			pSource->WriteSector( ZoneMapSectors[ n ], MapSector, SecSize );
 
 			DWORD SecondSector = ZoneMapSectors[ n ];
 
@@ -434,7 +464,8 @@ int	NewFSMap::WriteFSMap()
 				SecondSector += Zones;
 			}
 
-			pSource->WriteSector( SecondSector, MapSector, SecSize );
+			WriteTranslatedSector( SecondSector, MapSector, SecSize, pSource );
+//			pSource->WriteSector( SecondSector, MapSector, SecSize );
 		}
 	}
 
@@ -968,6 +999,11 @@ FileFragments NewFSMap::GetFileFragments( DWORD DiscAddr )
 		}
 	}
 
+	if ( frags.size() == 0 )
+	{
+		return frags;
+	}
+
 	/* Rotate the vector until the first fragment's Zone matches the starting zone */
 	while ( frags.begin()->Zone != StartZone )
 	{
@@ -1150,6 +1186,7 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 	case FSID_ADFS_F:
 	case FSID_ADFS_EP:
 	case FSID_ADFS_FP:
+	case FSID_ADFS_G:
 		LogSecSize = 0xA;
 		SecSize    = 0x400;
 		break;
@@ -1186,7 +1223,7 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 
 	switch ( FSID )
 	{
-	case FSID_ADFS_H:
+	case FSID_ADFS_G:
 		Density += 4;
 		SecsPerTrack += 10;
 	case FSID_ADFS_F:
@@ -1334,6 +1371,7 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 
 		}
 
+		/*
 		if ( z == ( Zones / 2 ) )
 		{
 			if ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
@@ -1355,6 +1393,7 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 				f.Length     -= r.Length;
 			}
 		}
+		*/
 
 		IDExtend( &f.Length );
 
@@ -1366,7 +1405,9 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 	/* Set the root directory location, which is one sector higher because of sub-fragment usage */
 	if ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
 	{
-		RootLoc = 0x000301;
+		TargetedFileFragments frags = GetWriteFileFragments( 0x1000 / SecSize, 0, false );
+
+		RootLoc = ( frags.FragID << 8 ) | 0x01;
 
 		FormatVersion = 0x00000001;
 	}
@@ -1377,10 +1418,10 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 		FormatVersion = 0x00000000;
 	}
 
-	if ( ( FSID == FSID_ADFS_F ) || ( FSID = FSID_ADFS_HN ) )
+	if ( ( FSID == FSID_ADFS_F ) || (FSID == FSID_ADFS_FP) || ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP )  )
 	{
 		/* Finally, Create a boot block */
-		BYTE BootBlock[ 0x200 ];
+		BYTE BootBlock[ 0x400 ];
 
 		ZeroMemory( BootBlock, 0x200 );
 
@@ -1388,7 +1429,15 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 
 		BootBlock[ 0x1FF ] = BootBlockCheck( BootBlock );
 
-		pSource->WriteSector( 6, BootBlock, 0x200 );
+		if ( ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) )
+		{
+			WriteTranslatedSector( 3, BootBlock, 1024, pSource );
+		}
+		else
+		{
+			WriteTranslatedSector( 6, BootBlock, 512, pSource );
+			// pSource->WriteSector( 6, BootBlock, 0x200 );
+		}
 	}
 
 	/* Done! */

@@ -160,20 +160,20 @@ int OldFSMap::ReleaseSpace(FreeSpace &space)
 	{
 		/* Space before the first space */
 		Spaces.insert( Spaces.begin(), space );
-
-		return 0;
 	}
-
-	/* Space fits somewhere in the middle */
-	for (iSpace = Spaces.begin(); iSpace != Spaces.end(); iSpace++) {
-		if ( iSpace->StartSector < space.StartSector )
-		{
-			iPoint = iSpace;
+	else
+	{
+		/* Space fits somewhere in the middle */
+		for (iSpace = Spaces.begin(); iSpace != Spaces.end(); iSpace++) {
+			if ( iSpace->StartSector < space.StartSector )
+			{
+				iPoint = iSpace;
+			}
 		}
-	}
 
-	/* iSpace now points to the last space that is before ours, so insert it before the next space */
-	Spaces.insert( ++iPoint, space );
+		/* iSpace now points to the last space that is before ours, so insert it before the next space */
+		Spaces.insert( ++iPoint, space );
+	}
 
 	/* The vector now technically contains the free space, but if we left it this way the
 	   map would fill with little bits when they shouldn't.
@@ -218,13 +218,27 @@ int OldFSMap::ReadFSMap() {
 
 	Spaces.clear();
 
-	BYTE FSSectors[512];
+	BYTE FSSectors[1024];
 
 	int Err = 0;
 
-	// Free space map occupies two sectors in track 0, so no translation needed
-	Err += pSource->ReadSector( 0, &FSSectors[0x000], 256);
-	Err += pSource->ReadSector( 1, &FSSectors[0x100], 256);
+	if ( FloppyFormat )
+	{
+		if ( UseDFormat )
+		{
+			Err += pSource->ReadSectorCHS( 0, 0, 0, FSSectors );
+		}
+		else
+		{
+			Err += pSource->ReadSectorCHS( 0, 0, 0, &FSSectors[ 0x000 ] );
+			Err += pSource->ReadSectorCHS( 0, 0, 1, &FSSectors[ 0x100 ] );
+		}
+	}
+	else
+	{
+		Err += pSource->ReadSectorLBA( 0, &FSSectors[0x000], 256);
+		Err += pSource->ReadSectorLBA( 1, &FSSectors[0x100], 256);
+	}
 
 	if ( Err != DS_SUCCESS )
 	{
@@ -242,7 +256,7 @@ int OldFSMap::ReadFSMap() {
 	int	ptr	= 0;
 	int	e	= 0;
 
-	while ((ptr < (3 * NextEntry)) && (e < 85)) {
+	while ((ptr < (3 * NextEntry)) && (e < 82)) {
 		FreeSpace	fs;
 
 		fs.StartSector	= (* (DWORD *) &FSSectors[ptr + 000]) & 0xFFFFFF;
@@ -265,7 +279,7 @@ int OldFSMap::ReadFSMap() {
 
 int OldFSMap::WriteFSMap() {
 
-	BYTE FSBytes[0x200];
+	BYTE FSBytes[0x400];
 
 	ZeroMemory( FSBytes, 0x200 );
 
@@ -344,9 +358,23 @@ int OldFSMap::WriteFSMap() {
 
 	int Err = DS_SUCCESS;
 
-	// Free space map occupies two sectors in track 0, so no translation needed
-	Err += pSource->WriteSector( 0, &FSBytes[0x000], 256);
-	Err += pSource->WriteSector( 1, &FSBytes[0x100], 256);
+	if ( FloppyFormat )
+	{
+		if ( UseDFormat )
+		{
+			Err += pSource->WriteSectorCHS( 0, 0, 0, FSBytes );
+		}
+		else
+		{
+			Err += pSource->WriteSectorCHS( 0, 0, 0, &FSBytes[ 0x000 ] );
+			Err += pSource->WriteSectorCHS( 0, 0, 1, &FSBytes[ 0x100 ] );
+		}
+	}
+	else
+	{
+		Err += pSource->WriteSectorLBA( 0, &FSBytes[0x000], 256);
+		Err += pSource->WriteSectorLBA( 1, &FSBytes[0x100], 256);
+	}
 
 	return Err;
 }

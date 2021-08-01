@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "BBCFunctions.h"
 
-void BBCStringCopy(char *pDest, char *pSrc, int limit) {
+void BBCStringCopy( BYTE *pDest, BYTE *pSrc, int limit ) {
 	int n	= 0;
 
 	while ( (n<limit) && (*pSrc) && (*pSrc != 0x0D) ) {
