@@ -75,7 +75,11 @@
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedManifest>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedManifest>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\Debug\</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\Debug\;$(SolutionDir)$(Configuration)</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration)</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -109,7 +113,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
     </Link>
@@ -134,8 +138,11 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>echo $(SolutionDir)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -153,18 +160,25 @@
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>echo $(SolutionDir)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\TZXConfig\TZXHardware.cpp" />
     <ClCompile Include="AboutBox.cpp" />
     <ClCompile Include="AppAction.cpp" />
+    <ClCompile Include="AudioPlayer.cpp" />
     <ClCompile Include="BlockMap.cpp" />
+    <ClCompile Include="CharMap.cpp" />
     <ClCompile Include="CPM.cpp" />
     <ClCompile Include="CPMDirectory.cpp" />
     <ClCompile Include="DataSourceCollector.cpp" />
     <ClCompile Include="DropSite.cpp" />
     <ClCompile Include="DSKDataSource.cpp" />
+    <ClCompile Include="DXAudio.cpp" />
     <ClCompile Include="EncodingClipboard.cpp" />
     <ClCompile Include="EncodingComboBox.cpp" />
     <ClCompile Include="EncodingEdit.cpp" />
@@ -187,6 +201,8 @@
     <ClCompile Include="PropsPage.cpp" />
     <ClCompile Include="RawDataSource.cpp" />
     <ClCompile Include="SCREENTranslator.cpp" />
+    <ClCompile Include="SidebarItem.cpp" />
+    <ClCompile Include="SidePanel.cpp" />
     <ClCompile Include="SourceFunctions.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -202,6 +218,9 @@
     <ClCompile Include="TempFile.cpp" />
     <ClCompile Include="TextFileTranslator.cpp" />
     <ClCompile Include="TEXTTranslator.cpp" />
+    <ClCompile Include="TZXDirectory.cpp" />
+    <ClCompile Include="TZXFileSystem.cpp" />
+    <ClCompile Include="TZXIcons.cpp" />
     <ClCompile Include="WindowsDirectory.cpp" />
     <ClCompile Include="WindowsFileSystem.cpp" />
     <ClCompile Include="DataSource.cpp" />
@@ -222,13 +241,17 @@
   <ItemGroup>
     <ClInclude Include="AboutBox.h" />
     <ClInclude Include="AppAction.h" />
+    <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="BlockMap.h" />
+    <ClInclude Include="BYTEString.h" />
+    <ClInclude Include="CharMap.h" />
     <ClInclude Include="CPM.h" />
     <ClInclude Include="CPMBlockMap.h" />
     <ClInclude Include="CPMDirectory.h" />
     <ClInclude Include="DataSourceCollector.h" />
     <ClInclude Include="DropSite.h" />
     <ClInclude Include="DSKDataSource.h" />
+    <ClInclude Include="DXAudio.h" />
     <ClInclude Include="EncodingClipboard.h" />
     <ClInclude Include="EncodingComboBox.h" />
     <ClInclude Include="EncodingEdit.h" />
@@ -241,6 +264,8 @@
     <ClInclude Include="FontBitmap.h" />
     <ClInclude Include="IconRatio.h" />
     <ClInclude Include="MemorySource.h" />
+    <ClInclude Include="SidebarItem.h" />
+    <ClInclude Include="SidePanel.h" />
     <ClInclude Include="SourceFunctions.h" />
     <ClInclude Include="ImageWizard.h" />
     <ClInclude Include="NestedImageSource.h" />
@@ -263,6 +288,9 @@
     <ClInclude Include="TempFile.h" />
     <ClInclude Include="TextFileTranslator.h" />
     <ClInclude Include="TEXTTranslator.h" />
+    <ClInclude Include="TZXDirectory.h" />
+    <ClInclude Include="TZXFileSystem.h" />
+    <ClInclude Include="TZXIcons.h" />
     <ClInclude Include="WindowsDirectory.h" />
     <ClInclude Include="WindowsFileSystem.h" />
     <ClInclude Include="BitmapCache.h" />
@@ -287,7 +315,9 @@
     <None Include="..\app.bmp" />
     <None Include="..\app2.bmp" />
     <None Include="..\archive.bmp" />
+    <None Include="..\audio.ico" />
     <None Include="..\avi1.bin" />
+    <None Include="..\back.ico" />
     <None Include="..\basic.bmp" />
     <None Include="..\BASIC.ico" />
     <None Include="..\binary.bmp" />
@@ -299,8 +329,10 @@
     <None Include="..\bmp00001.bmp" />
     <None Include="..\cdrom.bmp" />
     <None Include="..\copy.ico" />
+    <None Include="..\copyfile.ico" />
     <None Include="..\data.bmp" />
     <None Include="..\data1.bin" />
+    <None Include="..\deletefile.ico" />
     <None Include="..\director.bmp" />
     <None Include="..\diskimag.bmp" />
     <None Include="..\downfile.ico" />
@@ -311,6 +343,7 @@
     <None Include="..\filesave.ico" />
     <None Include="..\floppydi.bmp" />
     <None Include="..\font.bmp" />
+    <None Include="..\fontswitch.ico" />
     <None Include="..\graphic.bmp" />
     <None Include="..\harddisc.bmp" />
     <None Include="..\harddisk.bmp" />
@@ -326,14 +359,28 @@
     <None Include="..\obey.bmp" />
     <None Include="..\palette.ico" />
     <None Include="..\pallette.ico" />
+    <None Include="..\player_e.bmp" />
+    <None Include="..\player_f.bmp" />
+    <None Include="..\player_first.bmp" />
+    <None Include="..\player_p.bmp" />
+    <None Include="..\player_stop.bmp" />
     <None Include="..\printer.ico" />
+    <None Include="..\refresh.ico" />
+    <None Include="..\rename.ico" />
     <None Include="..\reset.ico" />
+    <None Include="..\rewind.bmp" />
+    <None Include="..\rootfs.ico" />
+    <None Include="..\SidebarCorner.bmp" />
+    <None Include="..\smfontswitch.ico" />
     <None Include="..\sprite.bmp" />
     <None Include="..\SPRITE.ico" />
+    <None Include="..\System.bmp" />
     <None Include="..\TapeImage.bmp" />
     <None Include="..\text.bmp" />
     <None Include="..\upfile.ico" />
     <None Include="..\util.bmp" />
+    <None Include="..\volume.bmp" />
+    <None Include="..\Windows.bmp" />
     <None Include="..\WizBanner.bmp" />
     <None Include="ClassDiagram1.cd" />
     <None Include="NUTS.ico" />

@@ -55,6 +55,20 @@
 #define IDD_LICENSE                     137
 #define IDB_FLOPPYDISC                  139
 #define IDB_ARCHIVE                     140
+#define IDB_PLAYER_REWIND               141
+#define IDB_VOLUME                      142
+#define IDB_SIDEBARCORNER               144
+#define IDB_BITMAP2                     146
+#define IDB_BITMAP3                     147
+#define IDB_SYSTEM                      147
+#define IDB_WINDOWS                     148
+#define IDI_RENAME                      149
+#define IDI_COPYFILE                    150
+#define IDI_DELETEFILE                  151
+#define IDI_AUDIO                       152
+#define IDI_REFRESH                     153
+#define IDI_BACK                        154
+#define IDI_SMFS                        155
 #define IDB_CDROM                       158
 #define IDB_PROGRAM                     159
 #define IDB_SCRIPT                      159
@@ -67,7 +81,12 @@
 #define IDB_APP                         163
 #define IDI_SPRITE                      164
 #define IDB_DATA                        164
+#define IDB_PLAYER_PLAY                 165
+#define IDB_PLAYER_FORWARD              166
+#define IDB_PLAYER_STOP                 167
 #define IDI_SINGLEFILE                  168
+#define IDB_PLAYER_EJECT                168
+#define IDB_PLAYER_FIRST                169
 #define IDD_FORMAT                      170
 #define IDC_WIZ_WELCOME                 171
 #define IDD_WIZ_DIALOG2                 172
@@ -291,6 +310,12 @@
 #define ID_EXTRAS_FLEM                  40064
 #define ID_OPTIONS_SLOWFILEENHANCEMENT  40065
 #define IDM_SLOWENHANCE                 40066
+#define IDM_PLAY_AUDIO                  40067
+#define ID_OPTIONS_MERGEDIRECTORIES     40069
+#define ID_OPTIONS_RENAMEDIRECTORIES    40070
+#define ID_OPTIO                        40071
+#define ID_EDITMENU_CHARACTERMAP        40072
+#define ID_EDITMENU_                    40073
 #define IDM_VIEW_BBCSCREEN              41001
 #define IDM_VIEW_ZXSSCREEN              41002
 #define IDM_VIEW_BBCBASIC               42001
@@ -693,8 +718,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        141
-#define _APS_NEXT_COMMAND_VALUE         40067
+#define _APS_NEXT_RESOURCE_VALUE        156
+#define _APS_NEXT_COMMAND_VALUE         40074
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
