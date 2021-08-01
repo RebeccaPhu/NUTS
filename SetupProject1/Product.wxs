@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="NUTS" Language="1033" Version="1.0.0.0" Manufacturer="Rebecca Gellman" UpgradeCode="7a41adcc-313c-4968-97d1-e6218fe48a75">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes"/>
+
+		<Feature Id="ProductFeature" Title="NUTS - The Native Universal Transfer System" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+      <ComponentRef Id="ApplicationShortcut" />
+		</Feature>
+    <UIRef Id="WixUI_InstallDir" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.SolutionDir)..\License.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="$(var.SolutionDir)..\InstallBanner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="$(var.SolutionDir)..\InstallMark.bmp" />
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFilesFolder">
+				<Directory Id="INSTALLFOLDER" Name="NUTS" />
+			</Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="NUTS"/>
+      </Directory>
+		</Directory>
+	</Fragment>
+
+	<Fragment>
+		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="ProductComponent" Guid="5f1c5532-0e47-481d-aa1c-7f3fce8c5e16">
+        <!-- Main Program EXE -->
+        <File Id="MainProgram" Source="$(var.NUTS.TargetPath)" />
+        <File Id="TZXConfig" Source="$(var.TZXConfig.TargetPath)" />
+        
+        <!-- Plugins -->
+        <File Id="AcornPlugin" Source="$(var.AcornDLL.TargetPath)" />
+        <File Id="AmstradPlugin" Source="$(var.AmstradDLL.TargetPath)" />
+        <File Id="AmigaPlugin" Source="$(var.AmigaDLL.TargetPath)" />
+        <File Id="CommodorePlugin" Source="$(var.CBMDLL.TargetPath)" />
+        <File Id="SinclairPlugin" Source="$(var.SinclairDLL.TargetPath)" />
+        
+        <!-- License -->
+        <File Id="License" Source="$(var.SolutionDir)..\License.rtf" />
+        
+        <!-- Logical Palettes -->
+        <File Id="ExLogPaletteATWIFS"      Source="$(var.SolutionDir)..\Palettes\ATWIFS.LPL" />
+        <File Id="ExLogPaletteBoulderDash" Source="$(var.SolutionDir)..\Palettes\BoulderDash.LPL" />
+        <File Id="ExLogPaletteMRWiz"       Source="$(var.SolutionDir)..\Palettes\MRWiz.LPL" />
+        <File Id="ExLogPaletteRavenskull"  Source="$(var.SolutionDir)..\Palettes\Ravenskull.LPL" />
+
+        <!-- Physical Palettes -->
+        <File Id="ExPhysPaletteBBCAmber"   Source="$(var.SolutionDir)..\Palettes\BBCMicro-8Colour-Amber.PPL" />
+        <File Id="ExPhysPaletteBBCOrange"  Source="$(var.SolutionDir)..\Palettes\BBCMicro-8Colour-OrangePlasma.PPL" />
+        <File Id="ExPhysPaletteBBCGreen"   Source="$(var.SolutionDir)..\Palettes\BBCMicro-8Colour-Green.PPL" />
+        <File Id="ExPhysPaletteBBCBW"      Source="$(var.SolutionDir)..\Palettes\BBCMicro-8Colour-BW.PPL" />
+
+      </Component>
+
+    </ComponentGroup>
+    
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="42fde8b7-7ab5-41d9-8562-e19790b57a88">
+        <Shortcut Id="NUTSProgram"
+                  Name="NUTS"
+                  Description="NUTS - The Native Universal Transfer System"
+                  Target="[INSTALLFOLDER]\NUTS.EXE"
+                  WorkingDirectory="INSTALLFOLDER"
+                    >
+          <Icon Id="NUTSIcon" SourceFile="$(var.SolutionDir)..\icon1.ico"></Icon>
+        </Shortcut>
+        <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU" Key="Software\NUTS" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+  </Fragment>
+</Wix>
