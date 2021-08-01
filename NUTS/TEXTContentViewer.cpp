@@ -299,7 +299,7 @@ int CTEXTContentViewer::CreateToolbar( void ) {
 
 	hChanger = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
 
-	HICON hChangerIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_FONTSWITCH ) );
+	HICON hChangerIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_SMFS ) );
 
 	SendMessage(hChanger, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hChangerIcon);
 
