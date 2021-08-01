@@ -12,12 +12,16 @@
 
 #define FNTop     46
 #define FNLeft    65
-#define FNRight   301
+//#define FNRight   301
+#define FNRight   356
 #define FNBottom  62
 #define FNHeight ( FNBottom - FNTop )
-#define FNWidth  ( FNRight - FNLeft )
+//#define FNWidth  ( FNRight - FNLeft )
 
 #define XtraHeight 64
+
+static WCHAR *pTYes = L"Yes"; static WCHAR *pTNo = L"No"; static WCHAR *pTYesAll = L"Yes To All"; static WCHAR *pTNoAll = L"No To All";
+static WCHAR *pTMerge = L"Merge"; static WCHAR *pTRen = L"Rename"; static WCHAR *pTMergeAll = L"Merge All"; static WCHAR *pTRenAll = L"Rename All";
 
 typedef enum _FileOp {
 	Op_Delete     = 1,
@@ -51,6 +55,14 @@ bool    NoOnce      = false;
 bool    NoToAll     = false;
 bool    Paused      = false;
 bool    Hunting     = false;
+bool    MergeAll    = false;
+bool    RenameAll   = false;
+bool    MergeOnce   = false;
+bool    RenameOnce  = false;
+bool    AlwaysRename= false;
+bool    AlwaysMerge = false;
+bool    DirDialog   = false;
+
 DWORD   HuntCount   = 0;
 
 static DWORD dwthreadid  = 0;
@@ -71,8 +83,19 @@ FileSystem *SaveFS;
 
 std::vector<NativeFile> IgnoreSidecars;
 
+DWORD RecurseSteps;
+
 void CreateOpSteps( std::vector<NativeFile> Selection )
 {
+	RecurseSteps++;
+
+	if ( RecurseSteps == 40 )
+	{
+		MessageBox( hFileWnd, L"Too many levels deep. Some objects have been omitted.", L"NUTS File Operations", MB_ICONWARNING | MB_OK );
+
+		RecurseSteps--;
+	}
+
 	CFileViewer *pPane    = (CFileViewer *) CurrentAction.Pane;
 	FileSystem *pSourceFS = (FileSystem *) CurrentAction.FS;
 
@@ -126,6 +149,11 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 		}
 	}
 
+	/* As we go through the selection and delete files, the subsequent files will shift down in file ID.
+	   So, modify the FileID by subtracting this value, then add 1 to this value. */
+
+	DWORD FileIDOffset = 0;
+
 	/* Re-iterate the selection and add files */
 	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
 	{
@@ -138,7 +166,7 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 			FileOpStep step;
 
 			step.Object = *iFile;
-			
+
 			if ( CurrentAction.Action == AA_COPY )
 			{
 				step.Step = Op_Copy;
@@ -150,6 +178,10 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 			else if ( CurrentAction.Action == AA_DELETE )
 			{
 				step.Step = Op_Delete;
+
+				step.Object.fileID -= FileIDOffset;
+
+				FileIDOffset++;
 			}
 			else if ( CurrentAction.Action == AA_SET_PROPS )
 			{
@@ -168,12 +200,16 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 			TotalOps++;
 		}
 	}
+
+	RecurseSteps--;
 }
 
 void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 {
 	/* This assumes each item in the selection is a file system that
 	   can be copied. If it is not, just skip the item. */
+
+	RecurseSteps = 0;
 
 	NativeFileIterator iFile;
 
@@ -298,7 +334,7 @@ void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreC
 
 		NativeFile SCFile = *pFile;
 
-		rstrncpy( SCFile.Filename, sidecar.Filename, 256 );
+		SCFile.Filename = sidecar.Filename;
 
 		SCFile.Flags  = 0;
 		SCFile.Length = FileObj.Ext();
@@ -324,14 +360,14 @@ void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreC
 
 		for ( iFile = pSrc->pDirectory->Files.begin(); iFile != pSrc->pDirectory->Files.end(); iFile++ )
 		{
-			BYTE CollatedFilename[256];
+			BYTEString CollatedFilename( iFile->Filename.size() + iFile->Extension.size() );
 
-			rstrncpy( CollatedFilename, iFile->Filename, 256 );
+			rstrncpy( CollatedFilename, iFile->Filename, iFile->Filename.length() );
 
 			if ( iFile->Flags & FF_Extension )
 			{
-				rstrncat( CollatedFilename, (BYTE *) ".", 256 );
-				rstrncat( CollatedFilename, iFile->Extension, 256 );
+				rstrncat( CollatedFilename, (BYTE *) ".", iFile->Filename.length() + iFile->Extension.length() );
+				rstrncat( CollatedFilename, iFile->Extension, iFile->Extension.length() );
 			}
 
 			if ( rstrnicmp( CollatedFilename, sidecar.Filename, 256 ) )
@@ -381,7 +417,12 @@ unsigned int __stdcall FileOpThread(void *param) {
 	NoToAll  = false;
 	YesToAll = false;
 
-	FSChangeLock = true;
+	MergeOnce = false;
+	MergeAll  = false;
+	RenameOnce= false;
+	RenameAll = false;
+
+	RecurseSteps = 0;
 
 	pGlobalError->GlobalCode = 0;
 
@@ -407,6 +448,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 	std::vector<FileOpStep>::iterator iStep;
 
+	bool IsInstall = false;
+
 	for ( iStep = OpSteps.begin(); iStep != OpSteps.end(); iStep++ )
 	{
 		if ( pGlobalError->GlobalCode != 0 )
@@ -425,6 +468,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 			pSourceFS = iStep->FS;
 
 			CurrentAction.FS = pSourceFS;
+
+			IsInstall = true;
 
 			break;
 
@@ -448,7 +493,95 @@ unsigned int __stdcall FileOpThread(void *param) {
 		case Op_CDirectory:
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
 			{
-				if ( pTargetFS->CreateDirectory( iStep->Object.Filename, true ) != NUTS_SUCCESS )
+				DWORD CFlags = CDF_ENTER_AFTER;
+
+				if ( IsInstall ) { CFlags |= CDF_INSTALL_OP; }
+				
+				int FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+
+				/* If the target FS doesn't understand the source encoding, then the source needs to translate the filename */
+				if ( FileResult == FILEOP_NEEDS_ASCII )
+				{
+					pSourceFS->MakeASCIIFilename( &iStep->Object );
+
+					FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+				}
+
+				if ( FileResult == FILEOP_EXISTS )
+				{
+					if ( AlwaysMerge )
+					{
+						/* Directory exists and the user would like to merge */
+						CFlags |= CDF_MERGE_DIR;
+
+						FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+					}
+					else if ( AlwaysRename )
+					{
+						/* Directory exists and the user would like to rename */
+						CFlags |= CDF_RENAME_DIR;
+
+						FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+					}
+					else
+					{
+						if ( MergeAll )
+						{
+							/* User already agreed to this */
+							CFlags |= CDF_MERGE_DIR;
+
+							FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+						}
+						else if ( RenameAll )
+						{
+							CFlags |= CDF_RENAME_DIR;
+
+							FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+						}
+						else
+						{
+							/* Directory exists and the user wants to confirm this action */
+							::PostMessage( hFileWnd, WM_FILEOP_SUSPEND, FILEOP_DIR_EXISTS, 0 );
+
+							EnterCriticalSection( &RedrawLock );
+
+							CurrentObject = iStep->Object;
+
+							LeaveCriticalSection( &RedrawLock );
+
+							::PostMessage( hFileWnd, WM_FILEOP_REDRAW, 0, 0 );
+
+							SuspendThread( hFileThread );
+
+							/* Thread resumes here */
+							if ( ( MergeOnce ) || ( MergeAll ) )
+							{
+								CFlags |= CDF_MERGE_DIR;
+
+								FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+							}
+							else if ( ( RenameOnce ) || ( RenameAll ) )
+							{
+								CFlags |= CDF_RENAME_DIR;
+
+								FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+							}
+						}
+					}
+
+					MergeOnce  = false;
+					RenameOnce = false;
+				}
+
+				if ( FileResult == FILEOP_ISFILE )
+				{
+					/* Attempt to overwrite file with directory. That ain't working. */
+					::PostMessageA( hFileWnd, WM_FILEOP_SUSPEND, FILEOP_ISFILE, 0 );
+
+					return 0;
+				}
+
+				if ( FileResult != NUTS_SUCCESS )
 				{
 					NUTSError::Report( L"Create Directory (Target)", hFileWnd );
 
@@ -487,7 +620,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 			if ( pTargetPane != nullptr )
 			{
 				pTargetPane->Updated = true;
-				pTargetPane->Redraw();
+				pTargetPane->Update();
 			}
 			
 			if ( ( CurrentAction.Action == AA_DELETE ) || ( CurrentAction.Action == AA_SET_PROPS ) )
@@ -495,7 +628,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 				if ( pSourcePane != nullptr )
 				{
 					pSourcePane->Updated = true;
-					pSourcePane->Redraw();
+					pSourcePane->Update();
 				}
 			}
 
@@ -534,13 +667,6 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 				int FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
 
-				if ( FileResult == -1 )
-				{
-					NUTSError::Report( L"Copy file", hFileWnd );
-
-					break;
-				}
-
 				/* If the target FS doesn't understand the source encoding, then the source needs to translate the filename */
 				if ( FileResult == FILEOP_NEEDS_ASCII )
 				{
@@ -558,11 +684,11 @@ unsigned int __stdcall FileOpThread(void *param) {
 						/* File exists and the user doesn't care */
 						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-						pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
+						pTargetFS->DeleteFile( iStep->Object.fileID );
 
 						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-						pTargetFS->WriteFile( &iStep->Object, FileObj );
+						FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
 
 						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
 					}
@@ -573,11 +699,11 @@ unsigned int __stdcall FileOpThread(void *param) {
 							/* User already agreed to this */
 							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-							pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
+							pTargetFS->DeleteFile( iStep->Object.fileID );
 
 							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-							pTargetFS->WriteFile( &iStep->Object, FileObj );
+							FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
 
 							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
 						}
@@ -601,11 +727,11 @@ unsigned int __stdcall FileOpThread(void *param) {
 							{
 								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-								pTargetFS->DeleteFile( &iStep->Object, FILEOP_COPY_FILE );
+								pTargetFS->DeleteFile( iStep->Object.fileID );
 
 								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-								pTargetFS->WriteFile( &iStep->Object, FileObj );
+								FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
 
 								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
 							}
@@ -636,6 +762,13 @@ unsigned int __stdcall FileOpThread(void *param) {
 					break;
 				}
 
+				if ( FileResult != NUTS_SUCCESS )
+				{
+					NUTSError::Report( L"Copy file", hFileWnd );
+
+					break;
+				}
+
 				Redraw = true;
 			}
 			break;
@@ -645,7 +778,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 				if ( !Confirm )
 				{
 					/* File exists and the user doesn't care */
-					if ( pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE ) != NUTS_SUCCESS )
+					if ( pSourceFS->DeleteFile( iStep->Object.fileID ) != NUTS_SUCCESS )
 					{
 						NUTSError::Report( L"File Delete", hFileWnd );
 
@@ -657,7 +790,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 					if ( YesToAll )
 					{
 						/* User already agreed to this */
-						if ( pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE ) != NUTS_SUCCESS )
+						if ( pSourceFS->DeleteFile( iStep->Object.fileID ) != NUTS_SUCCESS )
 						{
 							NUTSError::Report( L"File Delete", hFileWnd );
 
@@ -682,7 +815,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 						/* Thread resumes here */
 						if ( ( YesOnce ) || ( YesToAll ) )
 						{
-							if ( pSourceFS->DeleteFile( &iStep->Object, FILEOP_DELETE_FILE ) != NUTS_SUCCESS )
+							if ( pSourceFS->DeleteFile( iStep->Object.fileID ) != NUTS_SUCCESS )
 							{
 								NUTSError::Report( L"Delete File", hFileWnd );
 
@@ -811,8 +944,6 @@ unsigned int __stdcall FileOpThread(void *param) {
 		CurrentOp++;
 	}
 
-	FSChangeLock = false;
-
 	::PostMessage( hFileWnd, WM_CLOSE, 0, 0 );
 
 	return 0;
@@ -830,7 +961,12 @@ void DrawClippedTitleStack( std::vector<TitleComponent> *pStack, HDC hWindowDC, 
 
 	std::vector<TitleComponent>::iterator iStack;
 
+	RECT r;
+
+	GetClientRect( GetDlgItem( hFileWnd, IDC_FILE_PROGRESS), &r );
+
 	DWORD FullWidth = 0;
+	DWORD FNWidth = ( r.right - r.left ) - 42;
 	DWORD MaxWidth  = FNWidth / 8;
 
 	BYTE i;
@@ -844,7 +980,7 @@ void DrawClippedTitleStack( std::vector<TitleComponent> *pStack, HDC hWindowDC, 
 			pString = pSourceFS->GetTitleString( pFile );
 		}
 
-		FullWidth += strlen( (char *) pString );
+		FullWidth += rstrnlen( pString, 8192 );
 	}
 
 	int offset = 0;
@@ -926,8 +1062,12 @@ void DrawFilename( HWND hWnd, NativeFile *pFile )
 
 		RECT rect;
 
+		GetClientRect( GetDlgItem( hFileWnd, IDC_FILE_PROGRESS), &rect );
+
+		DWORD FNWidth = ( rect.right - rect.left ) - 42;
+
 		rect.left   = FNLeft - 2;
-		rect.right  = FNRight + 2;
+		rect.right  = FNLeft + FNWidth + 2;
 		rect.top    = FNTop - 2;
 		rect.bottom = FNBottom + 2;
 
@@ -1094,7 +1234,7 @@ void StopOps( void )
 	}
 
 	DeleteCriticalSection( &RedrawLock );
-
+	
 	if ( hIconDC != NULL ) { DeleteDC( hIconDC ); }
 	if ( hNameDC != NULL ) { DeleteDC( hNameDC ); }
 
@@ -1156,10 +1296,20 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 				bool DidFileQuery = false;
 
-				if ( Btn == IDC_FILE_YES ) { YesOnce  = true; DidFileQuery = true; }
-				if ( Btn == IDC_FILE_NO )  { NoOnce   = true; DidFileQuery = true; }
-				if ( Btn == IDC_YES_ALL )  { YesToAll = true; DidFileQuery = true; }
-				if ( Btn == IDC_NO_ALL )   { NoToAll  = true; DidFileQuery = true; }
+				if ( DirDialog )
+				{
+					if ( Btn == IDC_FILE_YES ) { MergeOnce  = true; DidFileQuery = true; }
+					if ( Btn == IDC_FILE_NO )  { RenameOnce = true; DidFileQuery = true; }
+					if ( Btn == IDC_YES_ALL )  { MergeAll   = true; DidFileQuery = true; }
+					if ( Btn == IDC_NO_ALL )   { RenameAll  = true; DidFileQuery = true; }
+				}
+				else
+				{
+					if ( Btn == IDC_FILE_YES ) { YesOnce  = true; DidFileQuery = true; }
+					if ( Btn == IDC_FILE_NO )  { NoOnce   = true; DidFileQuery = true; }
+					if ( Btn == IDC_YES_ALL )  { YesToAll = true; DidFileQuery = true; }
+					if ( Btn == IDC_NO_ALL )   { NoToAll  = true; DidFileQuery = true; }
+				}
 
 				if ( DidFileQuery )
 				{
@@ -1212,7 +1362,7 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			HuntCount = 0;
 
 			InitializeCriticalSection( &RedrawLock );
-
+			
 			hFileWnd = hwndDlg;
 
 			if (!hFont) {
@@ -1264,11 +1414,21 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 			::SetWindowPos( hFileWnd, HWND_TOPMOST, 0, 0, InitRect.right - InitRect.left, InitRect.bottom - InitRect.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER );
 
+			::SendMessage( GetDlgItem( hFileWnd, IDC_FILE_YES ), WM_SETTEXT, 0, (LPARAM) pTYes );
+			::SendMessage( GetDlgItem( hFileWnd, IDC_FILE_NO ),  WM_SETTEXT, 0, (LPARAM) pTNo );
+			::SendMessage( GetDlgItem( hFileWnd, IDC_YES_ALL ),  WM_SETTEXT, 0, (LPARAM) pTYesAll );
+			::SendMessage( GetDlgItem( hFileWnd, IDC_NO_ALL ),   WM_SETTEXT, 0, (LPARAM) pTNoAll );
+
 			Paused   = false;
 			YesOnce  = false;
 			NoOnce   = false;
 			YesToAll = false;
 			NoToAll  = false;
+
+			MergeOnce = false;
+			RenameOnce= false;
+			MergeAll  = false;
+			RenameAll = false;
 
 			hFileCancel = CreateEvent( NULL, TRUE, FALSE, NULL );
 			hFileThread = (HANDLE) _beginthreadex(NULL, NULL, FileOpThread, NULL, NULL, (unsigned int *) &dwthreadid);
@@ -1327,17 +1487,23 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 				::SetWindowPos( hFileWnd, HWND_TOPMOST, 0, 0, InitRect.right - InitRect.left, InitRect.bottom - InitRect.top, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER );
 
-				static WCHAR *pExists = L"An object in the destination with the same filename already exists. Overwrite?";
-				static WCHAR *pIsDir  = L"An object in the destination with the same filename already exists, and is a directory.";
-				static WCHAR *pDelete = L"Are you sure you want to delete these items? This operation cannot be undone.";
+				static WCHAR *pExists  = L"An object in the destination with the same filename already exists. Overwrite?";
+				static WCHAR *pIsDir   = L"An object in the destination with the same filename already exists, and is a directory.";
+				static WCHAR *pIsFile  = L"An object in the destination with the same filename already exists, and is a file.";
+				static WCHAR *pDelete  = L"Are you sure you want to delete these items? This operation cannot be undone.";
+				static WCHAR *pDExists = L"A directory in the destination with the same name already exists. Merge the directories, or rename the new directory?";
 
-				if ( ( wParam == FILEOP_EXISTS ) || ( wParam == FILEOP_DELETE_FILE ) || ( wParam == FILEOP_WARN_ATTR ) )
+				if ( ( wParam == FILEOP_EXISTS ) || ( wParam == FILEOP_DELETE_FILE ) || ( wParam == FILEOP_WARN_ATTR ) || ( wParam == FILEOP_DIR_EXISTS ) )
 				{
 					::SendMessage( GetDlgItem( hFileWnd, IDC_OHNOES ), STM_SETICON, (WPARAM) LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_WARNING2) ), 0 );
 					
 					if ( wParam == FILEOP_EXISTS )
 					{
 						::SendMessage( GetDlgItem( hFileWnd, IDC_SUSPEND_MSG ), WM_SETTEXT, 0, (LPARAM) pExists );
+					}
+					else if ( wParam == FILEOP_DIR_EXISTS )
+					{
+						::SendMessage( GetDlgItem( hFileWnd, IDC_SUSPEND_MSG ), WM_SETTEXT, 0, (LPARAM) pDExists );
 					}
 					else if ( wParam == FILEOP_DELETE_FILE )
 					{
@@ -1346,6 +1512,25 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 					else if ( wParam == FILEOP_WARN_ATTR )
 					{
 						::SendMessage( GetDlgItem( hFileWnd, IDC_SUSPEND_MSG ), WM_SETTEXT, 0, (LPARAM) ExplainAttrs() );
+					}
+
+					if ( wParam == FILEOP_DIR_EXISTS )
+					{
+						DirDialog = true;
+
+						::SendMessage( GetDlgItem( hFileWnd, IDC_FILE_YES ), WM_SETTEXT, 0, (LPARAM) pTMerge );
+						::SendMessage( GetDlgItem( hFileWnd, IDC_FILE_NO ),  WM_SETTEXT, 0, (LPARAM) pTRen );
+						::SendMessage( GetDlgItem( hFileWnd, IDC_YES_ALL ),  WM_SETTEXT, 0, (LPARAM) pTMergeAll );
+						::SendMessage( GetDlgItem( hFileWnd, IDC_NO_ALL ),   WM_SETTEXT, 0, (LPARAM) pTRenAll );
+					}
+					else
+					{
+						DirDialog = false;
+
+						::SendMessage( GetDlgItem( hFileWnd, IDC_FILE_YES ), WM_SETTEXT, 0, (LPARAM) pTYes );
+						::SendMessage( GetDlgItem( hFileWnd, IDC_FILE_NO ),  WM_SETTEXT, 0, (LPARAM) pTNo );
+						::SendMessage( GetDlgItem( hFileWnd, IDC_YES_ALL ),  WM_SETTEXT, 0, (LPARAM) pTYesAll );
+						::SendMessage( GetDlgItem( hFileWnd, IDC_NO_ALL ),   WM_SETTEXT, 0, (LPARAM) pTNoAll );
 					}
 
 					EnableWindow( GetDlgItem( hFileWnd, IDC_FILE_YES ), TRUE );
@@ -1360,6 +1545,14 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 				{
 					::SendMessage( GetDlgItem( hFileWnd, IDC_OHNOES ), STM_SETICON, (WPARAM) LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_JOSE) ), 0 );
 					::SendMessage( GetDlgItem( hFileWnd, IDC_SUSPEND_MSG ), WM_SETTEXT, 0, (LPARAM) pIsDir );
+
+					EnableWindow( GetDlgItem( hFileWnd, IDC_FILE_PAUSE ), FALSE );
+				}
+
+				if ( wParam == FILEOP_ISFILE )
+				{
+					::SendMessage( GetDlgItem( hFileWnd, IDC_OHNOES ), STM_SETICON, (WPARAM) LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_JOSE) ), 0 );
+					::SendMessage( GetDlgItem( hFileWnd, IDC_SUSPEND_MSG ), WM_SETTEXT, 0, (LPARAM) pIsFile );
 
 					EnableWindow( GetDlgItem( hFileWnd, IDC_FILE_PAUSE ), FALSE );
 				}

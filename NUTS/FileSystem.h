@@ -9,6 +9,7 @@
 #include "NestedImageSource.h"
 
 #include <string>
+#include <deque>
 
 #define NUTS_SUCCESS       0x00000000
 #define ERROR_READONLY     0x00000020
@@ -17,10 +18,21 @@
 #define USE_CUSTOM_WND     0x00000023
 #define ASCIIFILE_REQUIRED 0x00000024
 
+#define CDF_ENTER_AFTER    0x00000001
+#define CDF_INSTALL_OP     0x00000002
+#define CDF_MANUAL_OP      0x00000004
+#define CDF_MERGE_DIR      0x00000008
+#define CDF_RENAME_DIR     0x00000010
+
+
 class FileSystem
 {
 public:
 	FileSystem(DataSource *pDataSource) {
+		AlternateOffsets.clear();
+
+		TopicIcon = FT_MiscImage;
+
 		pSource	= pDataSource;
 
 		if ( pSource != nullptr ) { pSource->Retain(); }
@@ -73,7 +85,7 @@ public:
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
-	virtual int	CreateDirectory( BYTE *Filename, bool EnterAfter ) {
+	virtual int	CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
@@ -128,7 +140,7 @@ public:
 		return baseStatus;
 	}
 
-	virtual int DeleteFile( NativeFile *pFile, int FileOp ) {
+	virtual int DeleteFile( DWORD FileID ) {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
@@ -321,9 +333,33 @@ public:
 		return 0;
 	}
 	
-	virtual int Rename( DWORD FileID, BYTE *NewName )
+	virtual int Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt )
 	{
-		rstrncpy( pDirectory->Files[ FileID ].Filename, NewName, 256 );
+		for ( NativeFileIterator iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+		{
+			bool Same = false;
+
+			if ( ( rstrcmp( iFile->Filename, NewName ) ) && ( FileID != iFile->fileID ) )
+			{
+				Same = true;
+			}
+			else if ( ( iFile->Flags & FF_Extension ) && ( rstrcmp( iFile->Extension, NewExt ) ) && ( FileID != iFile->fileID ) )
+			{
+				Same = true;
+			}
+
+			if ( Same )
+			{
+				return NUTSError( 0x206, L"An object with that name already exists" );
+			}
+		}
+
+		pDirectory->Files[ FileID ].Filename = BYTEString( NewName );
+
+		if ( pDirectory->Files[ FileID ].Flags & FF_Extension )
+		{
+			pDirectory->Files[ FileID ].Extension = BYTEString( NewExt );
+		}
 
 		int r = pDirectory->WriteDirectory();
 
@@ -352,7 +388,7 @@ public:
 
 	virtual int MakeASCIIFilename( NativeFile *pFile )
 	{
-		for ( WORD i=0; i<256; i++ )
+		for ( WORD i=0; i<pFile->Filename.length(); i++ )
 		{
 			pFile->Filename[ i ] &= 0x7F;
 
@@ -382,10 +418,30 @@ public:
 		return 0;
 	}
 
+	virtual LocalCommands GetLocalCommands( void )
+	{
+		LocalCommands cmds;
+
+		cmds.HasCommandSet = false;
+
+		return cmds;
+	}
+
+	virtual int ExecLocalCommand( DWORD CmdIndex, std::vector<NativeFile> &Selection, HWND hParentWnd )
+	{
+		return 0;
+	}
+
+	virtual int MakeAudio( std::vector<NativeFile> &Selection, TapeIndex &indexes, CTempFile &store )
+	{
+		return 0;
+	}
+
 	DWORD FSID;
 	DWORD EnterIndex;
 	bool  IsRaw;
 	DWORD Flags;
+	DWORD TopicIcon;
 
 	FileSystem *pParentFS;
 
@@ -394,6 +450,8 @@ public:
 
 	HWND hMainWindow;
 	HWND hPaneWindow;
+
+	std::deque<DWORD> AlternateOffsets;
 
 protected:
 	HANDLE hCancelFormat;

@@ -57,7 +57,6 @@ public:
 public:
 	void LoadPlugins();
 	FSHints FindFS( DataSource *pSource, NativeFile *pFile = nullptr );
-	FSHints FindFS( NativeFile *pImage );
 	FileSystem *FindAndLoadFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *LoadFS( DWORD FSID, DataSource *pSource, bool Initialise = true );
 	std::wstring FSName( DWORD FSID );

@@ -5,6 +5,7 @@
 
 #include "IDE8Source.h"
 #include "ImageDataSource.h"
+#include "OffsetDataSource.h"
 #include "TextFileTranslator.h"
 
 #include "BitmapCache.h"
@@ -293,9 +294,14 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 
 		for ( i=0; i<D->NumFS; i++ )
 		{
+			FSHint hint  = { 0, 0 };
+
 			FileSystem *pFS = LoadFS( D->FSDescriptors[i].PUID, pSource, false );
 
-			FSHint hint = { 0, 0 };
+			if ( pFS == nullptr )
+			{
+				continue;
+			}
 
 			if ( pFile == nullptr )
 			{
@@ -305,8 +311,6 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 			{
 				hint = pFS->Offer( pFile->Extension );
 			}
-
-			delete pFS;
 
 			if ( hint.Confidence > 0 )
 			{
@@ -319,7 +323,7 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 
 	FSHint hint = { 0, 0 };
 
-	hint.FSID = FSID_ZIP;
+	hint.FSID      = FSID_ZIP;
 
 	BYTE Buf[ 4 ];
 
@@ -366,17 +370,6 @@ FileSystem *CPlugins::FindAndLoadFS( DataSource *pSource, NativeFile *pFile )
 	return newFS;
 }
 
-FSHints CPlugins::FindFS( NativeFile *pImage )
-{
-	std::vector<FSHint> hints;
-
-//	ImageDataSource src( tempFile );
-
-//	return FindFS( &src );
-
-	return hints;
-}
-
 FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource, bool Initialise )
 {
 	if ( FSID == FSID_ZIP )
@@ -414,7 +407,75 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource, bool Initialise )
 					pSource = pDSK;
 				}
 
-				FileSystem *pFS = iter->CreatorFunc( FSID, pSource );
+				/* Try all available offsets */
+				std::deque<DWORD> Offsets;
+				DWORD Offset = 0;
+				int Attempts = 0;
+
+				FSHint hint, rhint;
+
+				hint.Confidence = 0;
+
+				FileSystem *fav = nullptr;
+				FileSystem *pFS = nullptr;
+
+				while ( Attempts < 20 )
+				{
+					DataSource *pCloneSource = pSource;
+
+					if ( Offset != 0 )
+					{
+						pCloneSource = new OffsetDataSource( Offset, pSource );
+					}
+
+					pFS = iter->CreatorFunc( FSID, pCloneSource );
+
+					if ( pFS == nullptr )
+					{
+						break;
+					}
+
+					pFS->FSID = FSID;
+
+					if ( Offset != 0 )
+					{
+						pCloneSource->Release();
+					}
+
+					rhint = pFS->Offer( nullptr );
+
+					if ( Attempts == 0 )
+					{
+						Offsets = pFS->AlternateOffsets;
+					}
+
+					if ( rhint.Confidence >= hint.Confidence )
+					{
+						if ( fav != nullptr )
+						{
+							delete fav;
+						}
+
+						fav = pFS;
+
+						hint.Confidence = rhint.Confidence;
+					}
+
+					if ( Offsets.size() > 0 )
+					{
+						Offset = Offsets.front();
+						
+						Offsets.pop_front();
+					}
+					else
+					{
+						break;
+					}
+
+					Attempts++;
+				}
+
+				pFS = fav;
 
 				if ( Initialise )
 				{
@@ -466,6 +527,14 @@ std::wstring CPlugins::FSName( DWORD FSID )
 	if( FSID == FSID_ZIP )
 	{
 		return L"ZIP File";
+	}
+	else if ( FSID == FS_Windows )
+	{
+		return L"Windows Drive";
+	}
+	else if ( FSID == FS_Root )
+	{
+		return L"System";
 	}
 
 	std::wstring name = L"Unknown File System";
