@@ -220,17 +220,17 @@ int SpriteFile::ResolveIcons( void )
 	return 0;
 }
 
-int SpriteFile::Rename( DWORD FileID, BYTE *NewName )
+int SpriteFile::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  )
 {
 	DWORD Offset = (DWORD) pDirectory->Files[ FileID ].Attributes[ 0 ];
 
 	BYTE SpriteName[ 12 ];
 
 	/* Update our directory's copy */
-	rstrncpy( pDirectory->Files[ FileID ].Filename, NewName, 256 );
+	pDirectory->Files[ FileID ].Filename = BYTEString( NewName, 12 );
 
 	/* Update the file itself */
-	rstrncpy( SpriteName, NewName, 256 );
+	rstrncpy( SpriteName, NewName, 12 );
 
 	pSource->WriteRaw( Offset + 4, 12, SpriteName );
 

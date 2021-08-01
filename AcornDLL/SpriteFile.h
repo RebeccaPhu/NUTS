@@ -3,6 +3,8 @@
 #include "../nuts/filesystem.h"
 #include "SpriteFileDirectory.h"
 
+#include "RISCOSIcons.h"
+
 class SpriteFile : public FileSystem
 {
 public:
@@ -13,6 +15,8 @@ public:
 		Flags = FSF_Size | FSF_Prohibit_Nesting;
 
 		pSpriteDirectory = nullptr;
+
+		TopicIcon = RISCOSIcons::GetIconForType( 0xFF9 );
 	}
 
 	~SpriteFile(void) {
@@ -66,7 +70,7 @@ public:
 		return 0;
 	}
 
-	int Rename( DWORD FileID, BYTE *NewName );
+	int Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 
 	int  ResolveIcons( void );
 	int  FreeIcons( void );

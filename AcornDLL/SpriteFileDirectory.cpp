@@ -44,13 +44,13 @@ int	SpriteFileDirectory::ReadDirectory( void ) {
 		file.Type       = FT_Graphic;
 		file.Icon       = RISCOSIcons::GetIconForType( 0xFF9 );
 		file.Length     = NextSprite;
+		file.Flags      = 0;
 
 		file.HasResolvedIcon = UseResolvedIcons;
 
 		file.Attributes[ 0 ] = SpriteOffset;
-		file.Filename[  13 ] = 0;
 
-		rstrncpy( file.Filename, &SpriteHeader[ 4 ], 12 );
+		file.Filename = BYTEString( &SpriteHeader[ 4 ], 12 );
 
 		/* Fill in some attributes. None editable, but informational to the user */
 		DWORD WidthWords = * (DWORD *) &SpriteHeader[ 0x10 ];
