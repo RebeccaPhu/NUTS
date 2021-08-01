@@ -14,7 +14,7 @@ int AmigaDirectory::ReadDirectory(void)
 	BYTE HTSector[ 512 ];
 
 	/* Read the hash table sector first */
-	pSource->ReadSector( DirSector, HTSector, 512 );
+	pSource->ReadSectorLBA( DirSector, HTSector, 512 );
 
 	DWORD Ptr = 0x18;
 
@@ -45,7 +45,7 @@ void AmigaDirectory::ProcessHashChain( DWORD NSector )
 {
 	BYTE FSector[ 512 ];
 
-	pSource->ReadSector( NSector, FSector, 512 );
+	pSource->ReadSectorLBA( NSector, FSector, 512 );
 
 	NativeFile file;
 
@@ -59,7 +59,7 @@ void AmigaDirectory::ProcessHashChain( DWORD NSector )
 	file.XlatorID        = 0;
 	file.Length          = BEDWORD( &FSector[ 0x144 ] );
 
-	rstrncpy( file.Filename, &FSector[ 0x1b1 ], FSector[ 0x1b0 ] );
+	file.Filename = BYTEString( &FSector[ 0x1b1 ], FSector[ 0x1b0 ] );
 
 	DWORD FType = BEDWORD( &FSector[ 0x1FC ] );
 

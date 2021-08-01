@@ -32,7 +32,7 @@ public:
 
 		BYTE HTSector[ 512 ];
 
-		pSource->ReadSector( pAmigaDirectory->DirSector, HTSector, 512 );
+		pSource->ReadSectorLBA( pAmigaDirectory->DirSector, HTSector, 512 );
 
 		VolumeName = rstrndup( &HTSector[ 0x1B1 ], HTSector[ 0x1B0 ] );
 	}

@@ -12,7 +12,7 @@ FSHint AmigaFileSystem::Offer( BYTE *Extension )
 
 	BYTE Sector[512];
 
-	pSource->ReadSector( 0, Sector, 512 );
+	pSource->ReadSectorLBA( 0, Sector, 512 );
 
 	if ( rstrncmp( Sector, (BYTE *) "DOS", 3 ) )
 	{
@@ -48,7 +48,7 @@ int AmigaFileSystem::ReadFileBlocks( DWORD FileHeaderBlock, CTempFile &store )
 	BYTE Sector[512];
 	BYTE DataSector[512];
 
-	pSource->ReadSector( FileHeaderBlock, Sector, 512 );
+	pSource->ReadSectorLBA( FileHeaderBlock, Sector, 512 );
 
 	DWORD BlockType = BEDWORD( &Sector[ 0 ] );
 
@@ -69,7 +69,7 @@ int AmigaFileSystem::ReadFileBlocks( DWORD FileHeaderBlock, CTempFile &store )
 				continue;
 			}
 
-			pSource->ReadSector( BlockNum, DataSector, 512 );
+			pSource->ReadSectorLBA( BlockNum, DataSector, 512 );
 
 			FileBlock--;
 
@@ -114,7 +114,7 @@ int AmigaFileSystem::ReadFileBlocks( DWORD FileHeaderBlock, CTempFile &store )
 				continue;
 			}
 
-			pSource->ReadSector( BlockNum, DataSector, 512 );
+			pSource->ReadSectorLBA( BlockNum, DataSector, 512 );
 
 			ExtnBlock--;
 
@@ -324,11 +324,11 @@ BYTE *AmigaFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 	}
 	else if ( pDirectory->Files[ FileIndex ].Flags & FF_Directory )
 	{
-		rsprintf( status, "%s - Directory", pDirectory->Files[ FileIndex ].Filename );
+		rsprintf( status, "%s - Directory", (BYTE *) pDirectory->Files[ FileIndex ].Filename );
 	}
 	else
 	{
-		rsprintf( status, "%s - File - %d bytes", pDirectory->Files[ FileIndex ].Filename, (DWORD) pDirectory->Files[ FileIndex ].Length );
+		rsprintf( status, "%s - File - %d bytes", (BYTE *) pDirectory->Files[ FileIndex ].Filename, (DWORD) pDirectory->Files[ FileIndex ].Length );
 	}
 
 	return status;
