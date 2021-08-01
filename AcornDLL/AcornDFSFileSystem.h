@@ -18,19 +18,50 @@ public:
 		strncpy_s(path, 8192, "$", 8192);
 
 		Override = false;
+
+		/* Set the disk shape to 40 track for now, it may get reset when initialised properly */
+		DiskShape shape;
+
+		shape.Heads            = 1;
+		shape.InterleavedHeads = false;
+		shape.Sectors          = 10;
+		shape.SectorSize       = 256;
+		shape.Tracks           = 40;
+
+		pSource->SetDiskShape( shape );
 	}
 
 	~AcornDFSFileSystem(void) {
 		delete pDFSDirectory;
 	}
 
+	int Init( void )
+	{
+		DiskShape shape;
+
+		shape.Heads            = 1;
+		shape.InterleavedHeads = false;
+		shape.Sectors          = 10;
+		shape.SectorSize       = 256;
+		shape.Tracks           = 40;
+
+		if ( FSID == FSID_DFS_80 )
+		{
+			shape.Tracks = 80;
+		}
+
+		pSource->SetDiskShape( shape );
+
+		return FileSystem::Init();
+	}
+
 	int	 ReadFile(DWORD FileID, CTempFile &store);
 	int  WriteFile(NativeFile *pFile, CTempFile &store);
 	int  ReplaceFile(NativeFile *pFile, CTempFile &store);
-	int  DeleteFile( NativeFile *pFile, int FileOp );
+	int  DeleteFile( DWORD FileID );
 	int  ChangeDirectory( DWORD FileID );
 	int	 Parent();
-	int	 CreateDirectory( BYTE *Filename, bool EnterAfter);
+	int	 CreateDirectory( NativeFile *pDir, DWORD CreateFlags );
 	bool IsRoot();
 	BYTE *DescribeFile( DWORD FileIndex );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
@@ -93,7 +124,7 @@ public:
 
 	FSToolList GetToolsList( void );
 	int RunTool( BYTE ToolNum, HWND ProgressWnd );
-	int Rename( DWORD FileID, BYTE *NewName );
+	int Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 
 private:
 	AcornDFSDirectory *pDFSDirectory;

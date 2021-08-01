@@ -19,24 +19,29 @@ int	AcornDFSFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 	if ( file->Length & 0xFF )
 		Sectors++;
 
-	unsigned char Sector[256];
+	BYTE Buffer[256];
 
-	DWORD offset   = 0;
 	DWORD fileSize = (DWORD) file->Length;
 
+	BYTE Track  = file->Attributes[ 0 ] / 10;
+	BYTE Sector = file->Attributes[ 0 ] % 10;
+
 	while (Sectors) {
-		pSource->ReadSector( file->Attributes[ 0 ] + offset, Sector, 256);
+		pSource->ReadSectorCHS( 0, Track, Sector, Buffer );
 
 		if ( fileSize > 256U )
 		{
-			store.Write( Sector, 256U );
+			store.Write( Buffer, 256U );
 		}
 		else
 		{
-			store.Write( Sector, fileSize );
+			store.Write( Buffer, fileSize );
 		}
 
-		offset++;
+		Sector++;
+
+		if ( Sector == 10 ) { Sector = 0; Track++; }
+		
 		Sectors--;
 		fileSize -= 256;
 	}
@@ -53,7 +58,7 @@ int AcornDFSFileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 	{
 		if ( ( rstrnicmp( pFile->Filename, iFile->Filename, 7 ) ) && ( iFile->AttrPrefix == pFile->AttrPrefix ) ) /* DFS limits files to 7 chars */
 		{
-			DeleteFile( &*iFile, FILEOP_DELETE_FILE );
+			DeleteFile( iFile->fileID );
 
 			break;
 		}
@@ -208,7 +213,8 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	/* Write the sectors out */
 	BYTE SectorBuf[ 256 ];
 
-	DWORD CSector = Sector;
+	DWORD CSector = Sector % 10;
+	DWORD CTrack  = Sector / 10;
 	DWORD Bytes   = pFile->Length;
 
 	store.Seek( 0 );
@@ -224,10 +230,13 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 		store.Read( SectorBuf, BytesToGo );
 
-		pSource->WriteSector( CSector, SectorBuf, 256 );
+		pSource->WriteSectorCHS( 0, CTrack, CSector, SectorBuf );
 
 		Bytes -= BytesToGo;
+
 		CSector++;
+
+		if ( CSector == 10 ) { CSector = 0; CTrack++; }
 	}
 
 	/* Write out the new directory */
@@ -246,18 +255,23 @@ int	AcornDFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	return 0;
 }
 
-int	AcornDFSFileSystem::CreateDirectory( BYTE *Filename, bool EnterAfter ) {
+int	AcornDFSFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 
-	pDFSDirectory->ExtraDirectories[ Filename[ 0 ] ] = true;
+	if ( ( pDir->EncodingID != ENCODING_ASCII ) && ( pDir->EncodingID != ENCODING_ACORN ) && ( pDir->EncodingID != ENCODING_RISCOS )  )
+	{
+		return FILEOP_NEEDS_ASCII;
+	}
+
+	pDFSDirectory->ExtraDirectories[ pDir->Filename[ 0 ] ] = true;
 
 	int r = 0;
 
-	if ( EnterAfter )
+	if ( CreateFlags & CDF_ENTER_AFTER )
 	{
-		pDFSDirectory->CurrentDir = Filename[ 0 ];
-
-		r = pDirectory->ReadDirectory();
+		pDFSDirectory->CurrentDir = pDir->Filename[ 0 ];
 	}
+	
+	r = pDirectory->ReadDirectory();
 
 	return r;
 }
@@ -299,13 +313,13 @@ BYTE *AcornDFSFileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 
 		if ( pFile->Flags & FF_Directory )
 		{
-			rsprintf( status, "%s | Directory Prefix", pFile->Filename );
+			rsprintf( status, "%s | Directory Prefix", (BYTE *) pFile->Filename );
 		}
 		else
 		{
 			rsprintf( status,
 				"%s | [%s] - %0X bytes - Load: &%08X Exec: &%08X",
-				pFile->Filename, (pFile->AttrLocked)?"L":"-",
+				(BYTE *) pFile->Filename, (pFile->AttrLocked)?"L":"-",
 				(QWORD) pFile->Length, pFile->LoadAddr, pFile->ExecAddr
 			);
 		}
@@ -316,9 +330,6 @@ BYTE *AcornDFSFileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 
 FSHint AcornDFSFileSystem::Offer( BYTE *Extension )
 {
-	//	D64s have a somewhat "optimized" layout that doesn't give away any reliable markers that the file
-	//	is indeed a D64. So we'll just have to check the extension and see what happens.
-
 	FSHint hint;
 
 	hint.Confidence = 0;
@@ -339,7 +350,12 @@ FSHint AcornDFSFileSystem::Offer( BYTE *Extension )
 
 	BYTE SectorBuf[ 512 ];
 
-	if ( pSource->ReadSector(0, SectorBuf, 512) != DS_SUCCESS )
+	if ( pSource->ReadSectorCHS( 0, 0, 0, &SectorBuf[ 000 ] ) != DS_SUCCESS )
+	{
+		return hint;
+	}
+
+	if ( pSource->ReadSectorCHS( 0, 0, 1, &SectorBuf[ 256 ] ) != DS_SUCCESS )
 	{
 		return hint;
 	}
@@ -373,7 +389,8 @@ int AcornDFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	static FSSpace Map;
 
-	pSource->ReadSector( 0, Sector, 512 );
+	pSource->ReadSectorCHS( 0, 0, 0, &Sector[ 000 ] );
+	pSource->ReadSectorCHS( 0, 0, 1, &Sector[ 256 ] );
 
 	DWORD NumBlocks = ((Sector[256 + 6 + 0] & 3) << 8) | Sector[256 + 6 + 1];
 
@@ -591,21 +608,11 @@ int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 
 	int Stages = 1;
 
-	DWORD NumSectors = 0;
-
-	if ( FSID == FSID_DFS_40 )
-	{
-		NumSectors = 40 * 10;
-	}
+	DWORD MaxTracks = 40;
 
 	if ( FSID == FSID_DFS_80 )
 	{
-		NumSectors = 80 * 10;
-	}
-
-	if ( NumSectors == 0 )
-	{
-		return NUTSError( 0x36, L"Invalid format specified" );
+		MaxTracks = 80;
 	}
 
 	if ( FT = FormatType_Full )
@@ -616,21 +623,24 @@ int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 
 		ZeroMemory( SectorBuf, 256 );
 
-		for ( WORD n=0; n < NumSectors; n++ )
+		for ( WORD t=0; t < MaxTracks; t++ )
 		{
-			if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+			for ( WORD s=0; s < 10; s++ )
 			{
-				return 0;
+				if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+				{
+					return 0;
+				}
+
+				pSource->WriteSectorCHS( 0, t, s, SectorBuf );
+
+				PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 0, Stages, ( t * 10 ) + s, MaxTracks * 10, false ), 0 );
 			}
-
-			pSource->WriteSector( n, SectorBuf, 256 );
-
-			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 0, Stages, n, NumSectors, false ), 0 );
 		}
 	}
 
 	pDFSDirectory->RealFiles.clear();
-	pDFSDirectory->NumSectors = NumSectors;
+	pDFSDirectory->NumSectors = MaxTracks * 10;
 	pDFSDirectory->MasterSeq  = 0;
 	pDFSDirectory->Option     = 0;
 
@@ -644,9 +654,11 @@ int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 }
 
 
-int AcornDFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+int AcornDFSFileSystem::DeleteFile( DWORD FileID )
 {
-	if ( ( pFile->Flags & FF_Directory ) && ( FileOp == FILEOP_DELETE_FILE ) )
+	NativeFile *pFile = &pDirectory->Files[ FileID ];
+
+	if ( pFile->Flags & FF_Directory ) 
 	{
 		BYTE Prefix = pFile->Filename[ 0 ];
 
@@ -665,11 +677,6 @@ int AcornDFSFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
 
 	/* This is easy, we literally just removing the offending file from the directory, and save */
 	NativeFileIterator iFile;
-
-	if ( Override )
-	{
-		pFile = &OverrideFile;
-	}
 
 	for ( iFile = pDFSDirectory->RealFiles.begin(); iFile != pDFSDirectory->RealFiles.end(); iFile++ )
 	{
@@ -698,8 +705,12 @@ int AcornDFSFileSystem::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar
 {
 	bool Respect = Preference( L"SidecarPaths", true );
 
-	rstrncpy( sidecar.Filename, pFile->Filename, 16 );
-	rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+	BYTE tf[ 32 ];
+
+	rstrncpy( tf, pFile->Filename, 16 );
+	rstrncat( tf, (BYTE *) ".INF", 256 );
+
+	sidecar.Filename = tf;
 
 	BYTE INFData[80];
 
@@ -726,8 +737,11 @@ int AcornDFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar
 
 	if ( obj == nullptr )
 	{
-		rstrncpy( sidecar.Filename, pFile->Filename, 16 );
-		rstrncat( sidecar.Filename, (BYTE *) ".INF", 256 );
+		BYTE tf[32];
+		rstrncpy( tf, pFile->Filename, 16 );
+		rstrncat( tf, (BYTE *) ".INF", 256 );
+
+		sidecar.Filename = tf;
 	}
 	else
 	{
@@ -790,7 +804,7 @@ int AcornDFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar
 		/*  Copy the filename - but we must remove the leading directory prefix*/
 		if ( parts[ 0 ].substr( 1, 1 ) == "." )
 		{
-			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].substr( 2 ).c_str(), 10 );
+			OverrideFile.Filename = (BYTE *) parts[ 0 ].substr( 2 ).c_str();
 
 			if ( Respect )
 			{
@@ -799,7 +813,7 @@ int AcornDFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &sidecar
 		}
 		else
 		{
-			rstrncpy( OverrideFile.Filename, (BYTE *) parts[ 0 ].c_str(), 10 );
+			OverrideFile.Filename = (BYTE *) parts[ 0 ].c_str();
 		}
 
 		OverrideFile.FSFileType = FT_ACORN;
@@ -957,24 +971,34 @@ int AcornDFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 							if ( iFile->Length % 256 ) { NSectors++; }
 
 							BYTE SectorBuf[ 256 ];
-							WORD d = s;
+							
+							BYTE SrcTrack  = iFile->SSector / 10;
+							BYTE SrcSector = iFile->SSector % 10;
+							BYTE DstTrack  = s / 10;
+							BYTE DstSector = s % 10;
 
-							for ( WORD n = iFile->SSector; n < iFile->SSector + NSectors; n++ )
+							for ( WORD n = 0; n < NSectors; n++ )
 							{
-								if ( pSource->ReadSector( n, SectorBuf, 256 ) != DS_SUCCESS )
+								if ( pSource->ReadSectorCHS( 0, SrcTrack, SrcSector, SectorBuf ) != DS_SUCCESS )
 								{
 									return -1;
 								}
 								
-								if ( pSource->WriteSector( d, SectorBuf, 256 ) != DS_SUCCESS )
+								if ( pSource->WriteSectorCHS( 0, DstTrack, DstSector, SectorBuf ) != DS_SUCCESS )
 								{
 									return -1;
 								}
 
-								Occupied[ n ] = 0x00;
-								Occupied[ d ] = 0xFF;
+								Occupied[ iFile->SSector + n ] = 0x00;
+								Occupied[ s + n ]              = 0xFF;
 
-								d++;
+								SrcSector++;
+
+								if ( SrcSector == 10 ) { SrcSector = 0; SrcTrack++; }
+
+								DstSector++;
+
+								if ( DstSector == 10 ) { DstSector = 0; DstTrack++; }
 							}
 
 							realFile->SSector = s;
@@ -1016,7 +1040,7 @@ int AcornDFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 	return r;
 }
 
-int AcornDFSFileSystem::Rename( DWORD FileID, BYTE *NewName )
+int AcornDFSFileSystem::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  )
 {
 	int r = 0;
 
@@ -1027,7 +1051,7 @@ int AcornDFSFileSystem::Rename( DWORD FileID, BYTE *NewName )
 	{
 		if ( iFile->SSector == pDirectory->Files[ FileID ].SSector )
 		{
-			rstrncpy( iFile->Filename, NewName, 7 );
+			iFile->Filename = BYTEString( NewName, 7 );
 
 			r = pDirectory->WriteDirectory();
 

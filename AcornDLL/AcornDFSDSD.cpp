@@ -20,7 +20,7 @@ DataSource *AcornDFSDSD::FileDataSource( DWORD FileID )
 	{
 		for ( BYTE sec=0; sec<10; sec++ )
 		{
-			pSource->ReadSector( (long) Offset + sec, &Track[ sec * 256 ], 256 );
+			pSource->ReadRaw( ( Offset + sec ) * 256, 256, &Track[ sec * 256 ] );
 		}
 
 		Surface.Write( Track, 10 * 256 );
@@ -59,7 +59,7 @@ int AcornDFSDSD::ReplaceFile(NativeFile *pFile, CTempFile &store)
 
 		for ( BYTE sec=0; sec<10; sec++ )
 		{
-			if ( pSource->WriteSector( (long) Offset + sec, &Track[ sec * 256 ], 256 ) != DS_SUCCESS )
+			if ( pSource->WriteRaw( ( Offset + sec ) * 256, 256, &Track[ sec * 256 ] ) != DS_SUCCESS )
 			{
 				return -1;
 			}

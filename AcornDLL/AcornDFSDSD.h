@@ -32,11 +32,11 @@ public:
 		Drive.XlatorID        = 0;
 		Drive.HasResolvedIcon = false;
 
-		rstrncpy( Drive.Filename, (BYTE *) "Drive 0", 7 );
+		Drive.Filename = (BYTE *) "Drive 0";
 
 		Files.push_back( Drive );
 
-		rstrncpy( Drive.Filename, (BYTE *) "Drive 2", 7 );
+		Drive.Filename = (BYTE *) "Drive 2";
 
 		Drive.fileID = 1;
 

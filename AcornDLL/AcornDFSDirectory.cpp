@@ -10,8 +10,8 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 
 	BYTE	SectorData[512];
 
-	pSource->ReadSector( 0, &SectorData[000], 256);
-	pSource->ReadSector( 1, &SectorData[256], 256);
+	pSource->ReadSectorCHS( 0, 0, 0, &SectorData[000] );
+	pSource->ReadSectorCHS( 0, 0, 1, &SectorData[256] );
 
 	int	offset	= 8;
 
@@ -36,9 +36,9 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 		file.fileID = FileID;
 		file.Flags  = 0;
 		
-		memset(file.Filename, 0, 16);
+		file.Filename = BYTEString( 16 );
 
-		memcpy(&file.Filename[0], &SectorData[offset], 7);
+		memcpy( (BYTE *) &file.Filename[0], &SectorData[offset], 7);
 
 		BYTE ThisDir = SectorData[offset + 7] & 0x7f;
 		
@@ -50,8 +50,7 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 
 				FakeSubDir.EncodingID      = ENCODING_ACORN;
 				FakeSubDir.fileID          = FileID;
-				FakeSubDir.Filename[0]     = ThisDir;
-				FakeSubDir.Filename[1]     = 0;
+				FakeSubDir.Filename        = BYTEString( &ThisDir, 1 );
 				FakeSubDir.FSFileType      = FT_ACORN;
 				FakeSubDir.HasResolvedIcon = false;
 				FakeSubDir.XlatorID        = 0;
@@ -160,6 +159,11 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 			file.XlatorID = GRAPHIC_ACORN;
 		}
 
+		if ( file.Type == FT_BASIC )
+		{
+			file.XlatorID = BBCBASIC;
+		}
+
 		file.EncodingID = ENCODING_ACORN;
 		file.FSFileType = FT_ACORN;
 		file.Icon       = file.Type;
@@ -185,8 +189,7 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 
 			FakeSubDir.EncodingID      = ENCODING_ACORN;
 			FakeSubDir.fileID          = FileID;
-			FakeSubDir.Filename[0]     = iExtra->first;
-			FakeSubDir.Filename[1]     = 0;
+			FakeSubDir.Filename        = BYTEString( &iExtra->first, 1 );
 			FakeSubDir.FSFileType      = FT_ACORN;
 			FakeSubDir.HasResolvedIcon = false;
 			FakeSubDir.XlatorID        = 0;
@@ -262,7 +265,8 @@ int	AcornDFSDirectory::WriteDirectory(void) {
 	}
 
 	/* Write the thing now */
-	pSource->WriteSector( 0, SectorBuf, 512 );
+	pSource->WriteSectorCHS( 0, 0, 0, &SectorBuf[ 000 ] );
+	pSource->WriteSectorCHS( 0, 0, 1, &SectorBuf[ 256 ] );
 
 	return 0;
 }
