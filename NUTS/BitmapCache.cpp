@@ -27,7 +27,21 @@ IDB_HARDDISC:   "Hard Disk Icon", Influens Icons, Mat-u, CC Attribution-NonComme
 IDB_SCRIPT:     "File Script Icon", Junior Icons, Treetog ArtWork, Free for personal use
 IDB_TEXT:       "Text Icon", Crystal Office Icon Set, MediaJon (www.iconshots.com), Linkware
 IDB_TAPEIMAGE:  "Cassette Graphite Icon", Cassette Icons, iTweek, Free for personal use.
-IDB_ARCHIVE:    "Light Brown, ZIP, Archive", Cats Icons 2, McDo Design, Free for non-commerical use.
+IDB_ARCHIVE:    "Light Brown ZIP Icon", Cats Icons 2, McDo Design, Free for non-commerical use.
+IDB_SYSTEM:     "Computer Icon", Aero Icons, Lokas Software, CC Attribution 3.0 Unported.
+IDB_WINDOWS:    "Windows Icon", Crystal Intense Icons, Tatice, CC Attribution-Noncommercial-NoDervis 3.0
+
+IDI_NEWDIR:     "New Folder Graphite Icon", Aqua Candy Revolution Icons, McDo Design, Free for non-commercial use
+IDI_FONTSWITCH: "Font Icon", FatCow Hosting Icons, FatCow, CC Attribution 3.0 US
+IDI_UPFILE:     "Move File Up Icon", Blue Bits Icons, Icojam, Freeware
+IDI_DOWNFILE:   "Move File Down Icon", Blue Bits Icons, Icojam, Freeware
+IDI_RENAME:     "Text Field Rename Icon", Web Design Icon Set, SEM Labs, Freeware
+IDI_COPYFILE:   "Copy Icon", Funktional Icons, Creative Freedom, CC Attribution-NoDerivs 3.0 Unported
+IDI_DELETEFILE: "Delete Icon", Funktional Icons, Creative Freedom, CC Attribution-NoDerivs 3.0 Unported
+IDI_AUDIO:      "Sound Icon", FatCow Hosting Icons, FatCow, CC Attribution 3.0 US
+IDI_ROOTFS:     "Actions Top Icon", Glaze Icons, Marco Martin, GNU Lesser General Public LIcense
+IDI_REFRESH:    "Refresh Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
+IDI_BACK:       "Back Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
 */
 
 void CBitmapCache::LoadBitmaps() {
@@ -53,6 +67,8 @@ void CBitmapCache::LoadBitmaps() {
 		{ FT_Floppy,    IDB_FLOPPYDISC },
 		{ FT_Directory, IDB_FOLDER     },
 		{ FT_Archive,   IDB_ARCHIVE    },
+		{ FT_System,    IDB_SYSTEM     },
+		{ FT_Windows,   IDB_WINDOWS    },
 		{ FT_None,      NULL },
 	};
 

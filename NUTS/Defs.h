@@ -3,10 +3,13 @@
 #include <vector>
 #include <map>
 
+#include "BYTEString.h"
+
 #define ENCODING_ASCII 0x000A5C11
 #define FT_WINDOWS     0x80000000
 #define FT_ROOT        0x00000000
 #define FT_ZIP         0xC0000000
+#define FT_UNSET       0xFFFFFFFF
 #define PUID_ZIP       0x021D021D
 #define FSID_ZIP       0x021D021D
 
@@ -35,12 +38,16 @@ typedef enum _FileType {
 	FT_Floppy    = 18, // Floppy Drive
 	FT_Directory = 19, // Directory (J, R, Hartley)
 	FT_Archive   = 20, // Archive (ZIP, LHA, etc)
+	FT_System    = 21, // System (the top level)
+	FT_Windows   = 22, // Windows Volume
 } FileType;
 
 typedef struct _NativeFile {
 	DWORD fileID;          // File index into the pDirectory->Files vector
-	BYTE  Filename[256];   // Filename, in EncodingID encoding
-	BYTE  Extension[4];    // Extension (if Flags & FF_Extension)
+//	BYTE  Filename[256];   // Filename, in EncodingID encoding
+//	BYTE  Extension[4];    // Extension (if Flags & FF_Extension)
+	BYTEString  Filename;  // Filename, in EncodingID encoding
+	BYTEString  Extension; // Extension (if Flags & FF_Extension), in EncodingID encoding 
 	DWORD Flags;           // File flags
 	QWORD Length;          // Length in bytes
 	DWORD Attributes[16];  // Arbitrary set of FS-specific attributes
@@ -77,10 +84,13 @@ typedef struct _AppAction {
 } AppAction;
 
 typedef enum _FileFlags {
-	FF_Directory = 0x1,
-	FF_Extension = 0x2,
-	FF_Pseudo    = 0x40000000,
-	FF_Special   = 0x80000000,
+	FF_Directory        = 0x00000001, /* FS item is a directory */
+	FF_Extension        = 0x00000002, /* FS item has an extension to it's filename */
+	FF_EncodingOverride = 0x00000004, /* FS item should override the FS encoding */
+	FF_NotRenameable    = 0x00000008, /* FS item cannot be renamed */
+	FF_Audio            = 0x00000010, /* FS item contains renderable audio */
+	FF_Pseudo           = 0x40000000, /* FS item is a pseudo item (e.g. Drive in AcornDSD) */
+	FF_Special          = 0x80000000, /* FS item is the "Parent" icon */
 } FileFlags;
 
 typedef enum _BuiltInFSIDs {
@@ -102,25 +112,28 @@ typedef struct _TitleComponent {
 } TitleComponent;
 
 typedef enum _FSFlags {
-	FSF_Formats_Raw      = 0x00000001,
-	FSF_Formats_Image    = 0x00000002,
-	FSF_Creates_Image    = 0x00000004,
-	FSF_Supports_Spaces  = 0x00000008,
-	FSF_Supports_Dirs    = 0x00000010,
-	FSF_ArbitrarySize    = 0x00000020,
-	FSF_UseSectors       = 0x00000040,
-	FSF_DynamicSize      = 0x00000080,
-	FSF_FixedSize        = 0x00000100,
-	FSF_ReadOnly         = 0x00000200,
-	FSF_SupportFreeSpace = 0x00000400,
-	FSF_SupportBlocks    = 0x00000800,
-	FSF_Size             = 0x00001000,
-	FSF_Capacity         = 0x00002000,
-	FSF_Reorderable      = 0x00004000,
-	FSF_Exports_Sidecars = 0x00008000,
-	FSF_Prohibit_Nesting = 0x00010000,
-	FSF_Uses_DSK         = 0x00020000,
-	FSF_No_Quick_Format  = 0x00040000,
+	FSF_Formats_Raw      = 0x00000001, /* FileSystem can be placed on a raw device such as a memory card or hard drive - NOT FLOPPIES */
+	FSF_Formats_Image    = 0x00000002, /* FileSystem can be used to format an image - everything should have this, but you never know */
+	FSF_Creates_Image    = 0x00000004, /* FileSystem can be used to create a new image - likewise */
+	FSF_Supports_Spaces  = 0x00000008, /* Filenames can have spaces in them */
+	FSF_Supports_Dirs    = 0x00000010, /* Subdirectories can exist */
+	FSF_ArbitrarySize    = 0x00000020, /* The image can be created with an arbitrary image file size */
+	FSF_UseSectors       = 0x00000040, /* The image size should be a multiple of sector size */
+	FSF_DynamicSize      = 0x00000080, /* The image size should be as small as possible to begin with - it will grow as needed */
+	FSF_FixedSize        = 0x00000100, /* The image should have a fixed specific size and never change */
+	FSF_ReadOnly         = 0x00000200, /* The filesystem cannot be written to. Ever. EVER. */
+	FSF_SupportFreeSpace = 0x00000400, /* The filesystem can report free space - Tape images cannot do this, e.g. */
+	FSF_SupportBlocks    = 0x00000800, /* The filesystem can report used blocks (not necessarily sectors) - Tape images cannot do this, e.g. */
+	FSF_Size             = 0x00001000, /* The filesystem can report its image size. Image sources use this, but it may not be available on physical devices. */
+	FSF_Capacity         = 0x00002000, /* The filesystem can report its maximum capacity */
+	FSF_Reorderable      = 0x00004000, /* Files in the filesystem are orderable, and order is (probably) important. Allow the user to re-order files */
+	FSF_Exports_Sidecars = 0x00008000, /* When exporting files to Windows FSes, the filesystem can export a sidecar file. Also, import/from. */
+	FSF_Prohibit_Nesting = 0x00010000, /* The Filesystem cannot allow another filesystem image inside of it. Chiefly used for special FSes like Root and AcornDSD. */
+	FSF_Uses_DSK         = 0x00020000, /* The filesystem is represented in image form using the CPCEMU DSK format */
+	FSF_No_Quick_Format  = 0x00040000, /* When formatting the filesystem do not offer the quick-format option */
+	FSF_Uses_Extensions  = 0x00080000, /* Files have extensions */
+	FSF_Fake_Extensions  = 0x00100000, /* File extensions are provided visually by the originating system, but they are not changeable by the user */
+	FSF_NoDir_Extensions = 0x00200000, /* Directories may not have extensions (only files) */
 } FSFlags;
 
 typedef enum _DSFlags {
@@ -167,22 +180,22 @@ typedef enum _BlockType {
 } BlockType;
 
 typedef enum _AttrType {
-	AttrVisible  = 0x00000001,
-	AttrEnabled  = 0x00000002,
-	AttrSelect   = 0x00000004,
-	AttrBool     = 0x00000008,
-	AttrCombo    = 0x00000010,
-	AttrNumeric  = 0x00000020,
-	AttrHex      = 0x00000040,
-	AttrOct      = 0x00000080,
-	AttrDec      = 0x00000100,
-	AttrWarning  = 0x00000200,
-	AttrDanger   = 0x00000400,
-	AttrFile     = 0x00000800,
-    AttrDir      = 0x00001000,
-	AttrNegative = 0x00002000,
-	AttrString   = 0x00004000,
-	AttrTime     = 0x00008000,
+	AttrVisible  = 0x00000001, /* Attribute is visible on the Properties page */
+	AttrEnabled  = 0x00000002, /* Attribute can be edited */
+	AttrSelect   = 0x00000004, /* Attribute is one item from a list */
+	AttrBool     = 0x00000008, /* Attribute is a checkbox */
+	AttrCombo    = 0x00000010, /* Attribute is one item from a list OR a free form text. */
+	AttrNumeric  = 0x00000020, /* Attribute is a number type as free form text */
+	AttrHex      = 0x00000040, /* Attribute is in hexadecimal */
+	AttrOct      = 0x00000080, /* Attribute is in octal */
+	AttrDec      = 0x00000100, /* Attribute is in decimal (BOOR-RING) */
+	AttrWarning  = 0x00000200, /* Attribute should trigger a warning on application that changing it will have non-innocuous (but not dangerous) effects */
+	AttrDanger   = 0x00000400, /* Attribute should trigger a warning on application that changing it will probably be a really stupid idea */
+	AttrFile     = 0x00000800, /* Attribute applies to files in the filesystem */
+    AttrDir      = 0x00001000, /* Attribute applies to directories in the filesystem */
+	AttrNegative = 0x00002000, /* Attribute supports negative numbers */
+	AttrString   = 0x00004000, /* Attribute is a free-form text string */
+	AttrTime     = 0x00008000, /* Attribute is a time stamp */
 } AttrType;
 
 typedef struct _AttrOption {
@@ -218,6 +231,27 @@ typedef std::vector<AttrDesc> AttrDescriptors;
 typedef std::vector<AttrDesc>::iterator AttrDesc_iter;
 typedef std::vector<AttrOption> AttrOptions;
 typedef std::vector<AttrOption>::iterator AttrOpt_iter;
+
+typedef enum _LCFlags {
+	LC_IsChecked   = 0x00000001, /* Menu entry has a check mark */
+	LC_IsSeparator = 0x00000002, /* Menu entry is a separator line */
+	LC_ApplyNone   = 0x00000004, /* Menu entry applies when NO FS items are selected */
+	LC_ApplyOne    = 0x00000008, /* Menu entry applies when ONE FS item is selected */
+	LC_ApplyMany   = 0x00000010, /* Menu entry applies when MORE THAN ONE FS item are selected */
+    LC_Always      = 0x0000001C, /* Menu entry applies REGARDLESS of how many FS items are selected */
+	LC_OneOrMore   = 0x00000018, /* Menu entry applies when ONE OR MORE FS items are selected */
+} LCFlags;
+
+typedef struct _LocalCommand {
+	DWORD Flags;
+	std::wstring Name;
+} LocalCommand;
+
+typedef struct _LocalCommands {
+	bool HasCommandSet;
+	std::wstring Root;
+	std::vector<LocalCommand> CommandSet;
+} LocalCommands;
 
 typedef struct _ScreenMode {
 	std::wstring FriendlyName;
@@ -295,12 +329,12 @@ typedef struct _FSTool {
 } FSTool;
 
 typedef struct _SidecarExport {
-	BYTE Filename[256];
+	BYTEString Filename;
 	void *FileObj;
 } SidecarExport;
 
 typedef struct _SidecarImport {
-	BYTE Filename[256];
+	BYTEString Filename;
 } SidecarImport;
 
 typedef std::vector<FSTool> FSToolList;
@@ -328,6 +362,7 @@ typedef struct _DiskShape {
 	WORD  TrackInterleave;
 	WORD  LowestSector;
 	WORD  SectorSize;
+	bool  InterleavedHeads;
 } DiskShape;
 
 typedef struct _TrackSection {
@@ -371,6 +406,26 @@ typedef struct _TrackDefinition {
 	BYTE         GAP5;
 } TrackDefinition;
 
+typedef enum _TapeFlag {
+	TF_ExtraValid = 0x00000001,
+	TF_Extra1     = 0x00000002,
+	TF_Extra2     = 0x00000004,
+	TF_Extra3     = 0x00000008,
+} TapeFlag;
+
+typedef struct _TapeCue {
+	DWORD IndexPtr;
+	std::wstring IndexName;
+	std::wstring Extra;
+	DWORD Flags;
+} TapeCue;
+
+typedef struct _TapeIndex {
+	std::wstring Title;
+	std::wstring Publisher;
+	std::vector<TapeCue> Cues;
+} TapeIndex;
+
 #define FILEOP_SUCCESS      0
 #define FILEOP_NEEDS_ASCII  1
 #define FILEOP_DELETE_FILE  2
@@ -378,6 +433,9 @@ typedef struct _TrackDefinition {
 #define FILEOP_EXISTS       4
 #define FILEOP_ISDIR        5
 #define FILEOP_WARN_ATTR    6
+#define CMDOP_REFRESH       7
+#define FILEOP_DIR_EXISTS   8
+#define FILEOP_ISFILE       9
 
 #define BlocksWide  23
 #define BlocksHigh  28
@@ -385,6 +443,7 @@ typedef struct _TrackDefinition {
 #define TotalBlocks ( BlocksWide * BlocksHigh )
 
 #define NixWindow( W ) if ( W != nullptr ) { DestroyWindow( W ); W = nullptr; }
+#define NixObject( O ) if ( O != NULL ) { DeleteObject( O ); O = NULL; }
 
 #define	WM_ENTERICON        (WM_APP + 0)
 #define WM_GOTOPARENT       (WM_APP + 1)
@@ -416,5 +475,15 @@ typedef struct _TrackDefinition {
 #define WM_EXTERNALDROP     (WM_APP + 27)
 #define WM_THREADDONE       (WM_APP + 28)
 #define WM_FILEOP_NOTICE    (WM_APP + 29)
+#define WM_REFRESH_PANE     (WM_APP + 30)
+#define WM_FONTCHANGER      (WM_APP + 31)
+#define WM_CHARMAPCHAR      (WM_APP + 32)
 
 #define TUID_TEXT           0x73477347
+
+
+#define IDM_MOVEUP    44001
+#define IDM_MOVEDOWN  44002
+#define IDM_ROOTFS    44003
+#define IDM_FONTSW    44004
+#define IDM_PARENT    44005

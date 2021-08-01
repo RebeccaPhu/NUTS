@@ -16,6 +16,8 @@
 #include "Preference.h"
 #include "DataSourceCollector.h"
 #include "NUTSError.h"
+#include "FileOps.h"
+#include "CharMap.h"
 
 #include <winioctl.h>
 #include <process.h>
@@ -63,27 +65,48 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
-unsigned int __stdcall ActionThread(void *param);
-
-HANDLE leftThread  = NULL;
-HANDLE rightThread = NULL;
-
 HWND   FocusPane   = NULL;
 HWND   DragSource  = NULL;
 
 std::map< DWORD, GlobalCommand> GlobalCommandMap;
 
-typedef struct _EnterVars
-{
-	CFileViewer *pane;
-	std::vector<FileSystem *> *pStack;
-	std::vector<TitleComponent> *pTitleStack;
-	int EnterIndex;
-	FileSystem *FS;
-	DWORD FSID;
-} EnterVars;
-
 DataSourceCollector *pCollector = new DataSourceCollector();
+
+/* Action Thread */
+CRITICAL_SECTION FSActionLock;
+
+std::deque<FSAction> ActionQueue;
+
+HANDLE hActionEvent, hActionShutdown, hFSActionThread;
+
+void InitFSActions( void )
+{
+	unsigned int	dwthreadid;
+
+	hActionShutdown = CreateEvent(NULL, TRUE, FALSE, NULL);
+	hActionEvent    = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+	ActionQueue.clear();
+
+	InitializeCriticalSection( &FSActionLock );
+
+	hFSActionThread	= (HANDLE) _beginthreadex(NULL, NULL, FSActionThread, NULL, NULL, &dwthreadid);
+}
+
+void StopFSActions( void )
+{
+	SetEvent( hActionShutdown );
+
+	if ( WaitForSingleObject( hFSActionThread, 10000 ) == WAIT_TIMEOUT ) {
+		TerminateThread( hFSActionThread, 500 );
+	}
+
+	CloseHandle( hFSActionThread );
+	CloseHandle( hActionShutdown );
+	CloseHandle( hActionEvent );
+
+	DeleteCriticalSection( &FSActionLock );
+}
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
@@ -116,6 +139,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	}
 
 	InitAppActions();
+	InitFSActions();
 
 	hAccelTable	= LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_NUTS));
 
@@ -123,12 +147,16 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	while (GetMessage(&msg, NULL, 0, 0)) {
 		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			if ( !IsDialogMessage( msg.hwnd, &msg ) )
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
 	}
 
 	StopAppActions();
+	StopFSActions();
 
 	return (int) msg.wParam;
 }
@@ -173,39 +201,7 @@ LRESULT CALLBACK DummyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 
 void ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleComponent> *pTitleStack, CFileViewer *pPane )
 {
-	std::vector< FileSystem *>::iterator iStack;
-	
-	pTitleStack->clear();
-
-	iStack = pFS->begin();
-
-	/* Skip over the root if we have more than 1 FS deep */
-	if ( pFS->size() > 1U )
-	{
-		iStack++;
-	}
-
-	while ( iStack != pFS->end() )
-	{
-		TitleComponent t;
-
-		if ( (*iStack)->EnterIndex == 0xFFFFFFFF )
-		{
-			strncpy_s( (char *) t.String, 512, (char *) (*iStack)->GetTitleString( nullptr ), 511 );
-		}
-		else
-		{
-			strncpy_s( (char *) t.String, 512, (char *) (*iStack)->GetTitleString( &(*iStack)->pDirectory->Files[ (*iStack)->EnterIndex ] ), 511 );
-		}
-
-		t.Encoding = (*iStack)->GetEncoding();
-
-		pTitleStack->push_back( t );
-
-		iStack++;
-	}
-
-	pPane->SetTitleStack( *pTitleStack );
+	pPane->ReCalculateTitleStack( pFS, pTitleStack );
 }
 
 void ConfigureExtrasMenu( void )
@@ -286,6 +282,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	icc.dwICC = ICC_WIN95_CLASSES;
 	InitCommonControlsEx(&icc);
 
+	LoadLibrary( L"RichEd20.dll" );
+
 	BitmapCache.LoadBitmaps();
 
 	SetUpBaseMappings();
@@ -293,7 +291,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	DWORD WindowWidth  = Preference( L"WindowWidth",  (DWORD) 800 );
 	DWORD WindowHeight = Preference( L"WindowHeight", (DWORD) 500 );
 
-	hWnd = CreateWindow(
+	hWnd = CreateWindowEx(
+		WS_EX_CONTROLPARENT,
 		szWindowClass,
 		szTitle,
 		WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS,
@@ -306,6 +305,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 	hMainWnd	= hWnd;
 
+	CharMap::hMainWnd = hWnd;
+
 	FSPlugins.LoadPlugins();
 
 	ConfigureExtrasMenu();
@@ -315,6 +316,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 	leftFS.push_back( leftPane.FS );
 	rightFS.push_back( rightPane.FS );
+
+	leftPane.Update();
+	rightPane.Update();
 
 	ReCalculateTitleStack( &leftFS, &leftTitles, &leftPane );
 	ReCalculateTitleStack( &rightFS, &rightTitles, &rightPane );
@@ -330,50 +334,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	return TRUE;
 }
 
-unsigned int __stdcall DoParentThread(void *param);
-
-int DoParent(CFileViewer *pane) {
-	DWORD dwthreadid;
-
-	EnterVars *pVars = new EnterVars;
-
-	pVars->pane = pane;
-
-	if ( pane == &leftPane )
-	{
-		leftThread = (HANDLE) _beginthreadex(NULL, NULL, DoParentThread, pVars, NULL, (unsigned int *) &dwthreadid);
-	}
-	else
-	{
-		rightThread = (HANDLE) _beginthreadex(NULL, NULL, DoParentThread, pVars, NULL, (unsigned int *) &dwthreadid);
-	}
-
-	return 0;
-}
-
-unsigned int __stdcall DoParentThread( void *param )
+unsigned int DoParent( FSAction *pVars )
 {
-	EnterVars *pVars = (EnterVars *) param;
-
 	pVars->pane->SetSearching( true );
 
 	FileSystem *FS = pVars->pane->FS;
 
-	std::vector<TitleComponent> *pTitleStack = &leftTitles;
-	std::vector<FileSystem *> *pFS = &leftFS;
-
-	if ( pVars->pane == &rightPane )
-	{
-		pFS = &rightFS;
-		pTitleStack = &rightTitles;
-	}
-
-	if (FS->IsRoot()) {
+	if ( FS->IsRoot() ) {
 		delete FS;
 
-		pFS->pop_back();
+		pVars->pStack->pop_back();
 
-		FS = pFS->back();
+		FS = pVars->pStack->back();
 
 		pVars->pane->FS          = FS;
 		pVars->pane->CurrentFSID = FS->FSID;
@@ -391,48 +363,17 @@ unsigned int __stdcall DoParentThread( void *param )
 
 	pVars->pane->FS->EnterIndex = 0xFFFFFFFF;
 
-	ReCalculateTitleStack( pFS, pTitleStack, pVars->pane );
-
-	if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-	if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
+	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
 
 	pVars->pane->SetSearching( false );
 	pVars->pane->Updated = true;
 	pVars->pane->Update();
 
-	delete pVars;
-
 	return 0;
 }
 
-unsigned int __stdcall DoEnterThread(void *param);
-
-int DoEnter(CFileViewer *pane, std::vector<FileSystem *> *pStack, std::vector<TitleComponent> *pTitleStack, int EnterIndex) {
-	DWORD dwthreadid;
-
-	EnterVars *pVars = new EnterVars;
-
-	pVars->EnterIndex  = EnterIndex;
-	pVars->pane        = pane;
-	pVars->pStack      = pStack;
-	pVars->pTitleStack = pTitleStack;
-
-	if ( pane == &leftPane )
-	{
-		leftThread = (HANDLE) _beginthreadex(NULL, NULL, DoEnterThread, pVars, NULL, (unsigned int *) &dwthreadid);
-	}
-	else
-	{
-		rightThread = (HANDLE) _beginthreadex(NULL, NULL, DoEnterThread, pVars, NULL, (unsigned int *) &dwthreadid);
-	}
-
-	return 0;
-}
-
-unsigned int __stdcall DoEnterThread(void *param)
+unsigned int DoEnter( FSAction *pVars )
 {
-	EnterVars *pVars = (EnterVars *) param;
-
 	pVars->pane->SetSearching( true );
 
 	FileSystem *pCurrentFS = pVars->pStack->back();
@@ -452,14 +393,9 @@ unsigned int __stdcall DoEnterThread(void *param)
 			ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
 		}
 
-		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
-
 		pVars->pane->SetSearching( false );
 		pVars->pane->Updated	= true;
 		pVars->pane->Update();
-
-		delete pVars;
 
 		return 0;
 	}
@@ -468,12 +404,7 @@ unsigned int __stdcall DoEnterThread(void *param)
 		( pCurrentFS->pDirectory->Files[pVars->EnterIndex].Type != FT_MiscImage ) &&
 		( pCurrentFS->pDirectory->Files[pVars->EnterIndex].Type != FT_Archive ) )
 	{
-		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
-
 		pVars->pane->SetSearching( false );
-
-		delete pVars;
 
 		return 0;
 	}
@@ -553,12 +484,7 @@ unsigned int __stdcall DoEnterThread(void *param)
 					);
 				}
 
-				if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-				if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
-
 				pVars->pane->SetSearching( false );
-
-				delete pVars;
 
 				return NUTSError( 0x00000022, L"Unrecognised file system" );
 			}
@@ -566,12 +492,7 @@ unsigned int __stdcall DoEnterThread(void *param)
 		else
 		{
 
-			if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-			if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
-
 			pVars->pane->SetSearching( false );
-
-			delete pVars;
 
 			NUTSError::Report( L"Load Data Source", hMainWnd );
 
@@ -579,31 +500,215 @@ unsigned int __stdcall DoEnterThread(void *param)
 		}
 	}
 
-	if ( pNewFS->Flags & FSF_Reorderable )
-	{
-		EnableWindow( pVars->pane->ControlButtons[ 2 ], TRUE );
-		EnableWindow( pVars->pane->ControlButtons[ 3 ], TRUE );
-	}
-	else
-	{
-		EnableWindow( pVars->pane->ControlButtons[ 2 ], FALSE );
-		EnableWindow( pVars->pane->ControlButtons[ 3 ], FALSE );
-	}
-
 	pCurrentFS->EnterIndex = pVars->EnterIndex;
 
 	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
-
-	if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-	if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
 
 	pVars->pane->SetSearching( false );
 	pVars->pane->Updated = true;
 	pVars->pane->Update();
 
-	delete pVars;
-
 	return 0; 
+}
+
+unsigned int DoEnterAs( FSAction *pVars )
+{
+	DWORD Index = pVars->pane->GetSelectedIndex();
+
+	DataSource *pSource    = pVars->FS->FileDataSource( Index );
+	NativeFile file        = pVars->FS->pDirectory->Files[ Index ];
+
+	pVars->FS->EnterIndex = Index;
+
+	if ( pSource == nullptr )
+	{
+		if ( pGlobalError->GlobalCode == 0 )
+		{
+			MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+		}
+		else
+		{
+			NUTSError::Report( L"Load Data Source", hMainWnd );
+		}
+
+		return 0;
+	}
+
+	bool IsRaw = IsRawFS( UString( (char *) pVars->FS->pDirectory->Files[ Index ].Filename ) );
+
+	if (!IsRaw) {
+		if ( MessageBox( hMainWnd,
+			L"The drive you have selected is recognised by Windows as containing a valid volume.\n\n"
+			L"Entering this filesystem with an explicit handler will almost certainly cause untold misery, and should "
+			L"only be attempted if you are absolutely certain you know what you are doing.\n\n"
+			L"Are you sure you want to proceed?",
+			L"NUTS File System Probe", MB_YESNO | MB_ICONEXCLAMATION ) != IDYES )
+		{
+			return 0;
+		}
+	}
+
+	pVars->pane->SetSearching( true );
+
+	pGlobalError->GlobalCode = NUTS_SUCCESS;
+
+	if ( pVars->FSID != FS_Null )
+	{
+		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource, false );
+
+		pSource->Release();
+
+		if (newFS) {
+			newFS->EnterIndex       = 0xFFFFFFFF;
+			newFS->pParentFS        = pVars->FS;
+			newFS->UseResolvedIcons = UseResolvedIcons;
+			newFS->HideSidecars     = HideSidecars;
+			newFS->hMainWindow      = hMainWnd;
+			newFS->hPaneWindow      = pVars->pane->hWnd;
+
+			if ( newFS->Init() != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"Initialise File System", hMainWnd );
+			}
+
+			pVars->pane->FS    = newFS;
+
+			pVars->pStack->push_back( newFS );
+
+			pVars->pane->CurrentFSID = newFS->FSID;
+
+			pVars->pane->SelectionStack.push_back( -1 );
+		}
+		else
+		{
+			if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
+			{
+				NUTSError::Report( L"Load Data Source", hMainWnd );
+			}
+			else
+			{
+				MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONERROR | MB_OK );
+			}
+		}
+	}
+
+	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+
+	pVars->pane->SetSearching( false );
+
+	pVars->pane->Updated     = true;
+
+	pVars->pane->Update();
+
+	return 0;
+}
+
+void DoRootFS( FSAction *pVars )
+{
+	/* Remove items from the stack until we get back to the root FS */
+	while ( 1 )
+	{
+		FileSystem *pFS = pVars->pStack->back();
+
+		if ( pFS->FSID != FS_Root )
+		{
+			pVars->pStack->pop_back();
+
+			delete pFS;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	pVars->pane->FS = pVars->pStack->front();
+	pVars->pane->CurrentFSID = pVars->pane->FS->FSID;
+	pVars->pane->SelectionStack.clear();
+	pVars->pane->SelectionStack.push_back( -1 );
+
+	pVars->pane->Update();
+
+	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+}
+
+void DoRefresh( FSAction *pVars )
+{
+	if ( pVars->FS->Refresh() != NUTS_SUCCESS )
+	{
+		NUTSError::Report( L"Refresh", hMainWnd );
+	}
+	else
+	{				
+		pVars->pane->Update();
+	}
+}
+
+
+unsigned int __stdcall FSActionThread(void *param)
+{
+	while ( 1 )
+	{
+		HANDLE evts[2];
+
+		evts[ 0 ] = hActionEvent;
+		evts[ 1 ] = hActionShutdown;
+
+		WaitForMultipleObjects( 2, evts, FALSE, 250 );
+
+		if ( WaitForSingleObject( hActionShutdown, 0 ) == WAIT_OBJECT_0 )
+		{
+			return 0;
+		}
+
+		FSAction action;
+		bool     HasWork = false;
+
+		EnterCriticalSection( &FSActionLock );
+
+		if ( ActionQueue.size() > 0 )
+		{
+			action = ActionQueue.front();
+
+			ActionQueue.pop_front();
+
+			HasWork = true;
+		}
+
+		LeaveCriticalSection( &FSActionLock );
+
+		if ( !HasWork ) { continue; }
+
+		switch ( action.Type )
+		{
+		case ActionDoBack:
+			DoParent( &action );
+			break;
+
+		case ActionDoEnter:
+			DoEnter( &action );
+			break;
+
+		case ActionDoEnterAs:
+			DoEnterAs( &action );
+			break;
+
+		case ActionDoRoot:
+			DoRootFS( &action );
+			break;
+
+		case ActionDoRefresh:
+			DoRefresh( &action );
+			break;
+
+		default:
+			break;
+		}
+
+		action.pane->UpdateSidePanelFlags();
+	}
+
+	return 0;
 }
 
 void DoResizeWindow(HWND hWnd) {
@@ -666,150 +771,6 @@ void TrackMouse( void )
 
 		Tracking = true;
 	}
-}
-
-unsigned int __stdcall DoEnterAsThread(void *param);
-
-void DoEnterAs( std::vector<FileSystem *> *pStack, CFileViewer *pPane, FileSystem *pCurrentFS, std::vector<TitleComponent> *pTitleStack, DWORD FSID )
-{
-	DWORD dwthreadid;
-
-	EnterVars *pVars = new EnterVars;
-
-	pVars->pane        = pPane;
-	pVars->pStack      = pStack;
-	pVars->pTitleStack = pTitleStack;
-	pVars->FSID        = FSID;
-	pVars->FS          = pCurrentFS;
-
-	if ( pPane == &leftPane )
-	{
-		leftThread = (HANDLE) _beginthreadex(NULL, NULL, DoEnterAsThread, pVars, NULL, (unsigned int *) &dwthreadid);
-	}
-	else
-	{
-		rightThread = (HANDLE) _beginthreadex(NULL, NULL, DoEnterAsThread, pVars, NULL, (unsigned int *) &dwthreadid);
-	}
-}
-
-unsigned int __stdcall DoEnterAsThread( void *param )
-{
-	EnterVars *pVars = (EnterVars *) param;
-
-	DWORD Index = pVars->pane->GetSelectedIndex();
-
-	DataSource *pSource    = pVars->FS->FileDataSource( Index );
-	NativeFile file        = pVars->FS->pDirectory->Files[ Index ];
-
-	pVars->FS->EnterIndex = Index;
-
-	if ( pSource == nullptr )
-	{
-		if ( pGlobalError->GlobalCode == 0 )
-		{
-			MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
-		}
-		else
-		{
-			NUTSError::Report( L"Load Data Source", hMainWnd );
-		}
-
-		if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-		if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
-
-		delete pVars;
-
-		return 0;
-	}
-
-	bool IsRaw = IsRawFS( UString( (char *) pVars->FS->pDirectory->Files[ Index ].Filename ) );
-
-	if (!IsRaw) {
-		if ( MessageBox( hMainWnd,
-			L"The drive you have selected is recognised by Windows as containing a valid volume.\n\n"
-			L"Entering this filesystem with an explicit handler will almost certainly cause untold misery, and should "
-			L"only be attempted if you are absolutely certain you know what you are doing.\n\n"
-			L"Are you sure you want to proceed?",
-			L"NUTS File System Probe", MB_YESNO | MB_ICONEXCLAMATION ) != IDYES )
-		{
-			if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-			if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
-
-			delete pVars;
-
-			return 0;
-		}
-	}
-
-	pVars->pane->SetSearching( true );
-
-	pGlobalError->GlobalCode = NUTS_SUCCESS;
-
-	if ( pVars->FSID != FS_Null )
-	{
-		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource, false );
-
-		pSource->Release();
-
-		if (newFS) {
-			newFS->EnterIndex       = 0xFFFFFFFF;
-			newFS->pParentFS        = pVars->FS;
-			newFS->UseResolvedIcons = UseResolvedIcons;
-			newFS->HideSidecars     = HideSidecars;
-			newFS->hMainWindow      = hMainWnd;
-			newFS->hPaneWindow      = pVars->pane->hWnd;
-
-			if ( newFS->Init() != NUTS_SUCCESS )
-			{
-				NUTSError::Report( L"Initialise File System", hMainWnd );
-			}
-
-			pVars->pane->FS    = newFS;
-
-			pVars->pStack->push_back( newFS );
-
-			pVars->pane->CurrentFSID = newFS->FSID;
-
-			pVars->pane->SelectionStack.push_back( -1 );
-
-			if ( newFS->Flags & FSF_Reorderable )
-			{
-				EnableWindow( pVars->pane->ControlButtons[ 2 ], TRUE );
-				EnableWindow( pVars->pane->ControlButtons[ 3 ], TRUE );
-			}
-			else
-			{
-				EnableWindow( pVars->pane->ControlButtons[ 2 ], FALSE );
-				EnableWindow( pVars->pane->ControlButtons[ 3 ], FALSE );
-			}
-		}
-		else
-		{
-			if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
-			{
-				NUTSError::Report( L"Load Data Source", hMainWnd );
-			}
-			else
-			{
-				MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONERROR | MB_OK );
-			}
-		}
-	}
-
-	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
-
-	if ( pVars->pane == &leftPane )  { CloseHandle( leftThread );  leftThread  = NULL; }
-	if ( pVars->pane == &rightPane ) { CloseHandle( rightThread ); rightThread = NULL; }
-
-	pVars->pane->SetSearching( false );
-
-	pVars->pane->Updated     = true;
-
-	pVars->pane->Update();
-
-	delete pVars;
-
-	return 0;
 }
 
 void DoExternalDrop( HWND hDroppedWindow, void *pPaths )
@@ -932,6 +893,7 @@ void DoExternalDrop( HWND hDroppedWindow, void *pPaths )
 
 void DoTitleStrings( std::vector<FileSystem *> *pStack, CFileViewer *pPane, int PanelIndex, DWORD TitleSize );
 
+
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -981,6 +943,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			CheckMenuItem( hMainMenu, IDM_SIDECAR_PATHS, ((bool)Preference( L"SidecarPaths", true ))?MF_CHECKED:MF_UNCHECKED );
 			CheckMenuItem( hMainMenu, IDM_SLOWENHANCE, ((bool)Preference( L"SlowEnhance", true ))?MF_CHECKED:MF_UNCHECKED );
 
+			AlwaysRename = (bool) Preference( L"RenameDirectories", false );
+			AlwaysMerge  = (bool) Preference( L"MergeDirectories", false );
+
+			CheckMenuItem( hMainMenu, ID_OPTIONS_RENAMEDIRECTORIES, (AlwaysRename)?MF_CHECKED:MF_UNCHECKED );
+			CheckMenuItem( hMainMenu, ID_OPTIONS_MERGEDIRECTORIES, (AlwaysMerge)?MF_CHECKED:MF_UNCHECKED );
+
 			SetTimer( hWnd, 0x5016CE, 5000, NULL );
 		}
 
@@ -1014,42 +982,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_ROOTFS:
 		{
-			std::vector<FileSystem *> *pStack = &leftFS;
-			CFileViewer *pPane = (CFileViewer *) wParam;
-			std::vector<TitleComponent> *pTitleStack = &leftTitles;
-
-			if ( pPane == &rightPane )
+			if (wParam == (WPARAM) leftPane.hWnd)
 			{
-				pStack      = &rightFS;
-				pTitleStack = &rightTitles;
-			}
-
-			/* Remove items from the stack until we get back to the root FS */
-			while ( 1 )
+				DoAction( ActionDoRoot, &leftPane, &leftFS, &leftTitles, lParam );
+			} 
+			else if (wParam == (WPARAM) rightPane.hWnd)
 			{
-				FileSystem *pFS = pStack->back();
-
-				if ( pFS->FSID != FS_Root )
-				{
-					pStack->pop_back();
-
-					delete pFS;
-				}
-				else
-				{
-					break;
-				}
+				DoAction( ActionDoRoot, &rightPane, &rightFS, &rightTitles, lParam );
 			}
-
-			pPane->FS = pStack->front();
-			pPane->CurrentFSID = pPane->FS->FSID;
-			pPane->SelectionStack.clear();
-			pPane->SelectionStack.push_back( -1 );
-			pPane->Updated = true;
-
-			ReCalculateTitleStack( pStack, pTitleStack, pPane );
 		}
 
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_REFRESH_PANE:
+		{
+			if (wParam == (WPARAM) leftPane.hWnd)
+			{
+				DoAction( ActionDoRefresh, &leftPane, &leftFS, &leftTitles, lParam );
+			} 
+			else if (wParam == (WPARAM) rightPane.hWnd)
+			{
+				DoAction( ActionDoRefresh, &rightPane, &rightFS, &rightTitles, lParam );
+			}
+		}
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_COMMAND:
@@ -1065,20 +1020,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				if ( r == GC_ResultRefresh )
 				{
-					PostMessage( leftPane.hWnd, WM_COMMAND, IDM_REFRESH, 0 );
-					PostMessage( rightPane.hWnd, WM_COMMAND, IDM_REFRESH, 0 );
+					DoAction( ActionDoRefresh, &leftPane, &leftFS, &leftTitles, lParam );
+					DoAction( ActionDoRefresh, &rightPane, &leftFS, &leftTitles, lParam );
 				}
 
 				if ( r == GC_ResultRootRefresh )
 				{
 					if ( leftPane.FS->FSID == FS_Root )
 					{
-						PostMessage( leftPane.hWnd, WM_COMMAND, IDM_REFRESH, 0 );
+						DoAction( ActionDoRefresh, &leftPane, &leftFS, &leftTitles, lParam );
 					}
 
 					if ( rightPane.FS->FSID == FS_Root )
 					{
-						PostMessage( rightPane.hWnd, WM_COMMAND, IDM_REFRESH, 0 );
+						DoAction( ActionDoRefresh, &rightPane, &leftFS, &leftTitles, lParam );
 					}
 				}
 			}
@@ -1096,6 +1051,55 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
 			break;
+
+		case ID_OPTIONS_RENAMEDIRECTORIES:
+			if ( AlwaysRename )
+			{
+				AlwaysRename = false;
+				AlwaysMerge  = false;
+			}
+			else
+			{
+				AlwaysRename = true;
+				AlwaysMerge  = false;
+			}
+
+			Preference( L"RenameDirectories" ) = AlwaysRename;
+			Preference( L"MergeDirectories" )  = AlwaysMerge;
+
+			{
+				HMENU hMainMenu = GetMenu( hWnd );
+
+				CheckMenuItem( hMainMenu, ID_OPTIONS_RENAMEDIRECTORIES, (AlwaysRename)?MF_CHECKED:MF_UNCHECKED );
+				CheckMenuItem( hMainMenu, ID_OPTIONS_MERGEDIRECTORIES, (AlwaysMerge)?MF_CHECKED:MF_UNCHECKED );
+			}
+
+			break;
+
+		case ID_OPTIONS_MERGEDIRECTORIES:
+			if ( AlwaysMerge )
+			{
+				AlwaysRename = false;
+				AlwaysMerge  = false;
+			}
+			else
+			{
+				AlwaysRename = false;
+				AlwaysMerge  = true;
+			}
+
+			Preference( L"RenameDirectories" ) = AlwaysRename;
+			Preference( L"MergeDirectories" )  = AlwaysMerge;
+
+			{
+				HMENU hMainMenu = GetMenu( hWnd );
+
+				CheckMenuItem( hMainMenu, ID_OPTIONS_RENAMEDIRECTORIES, (AlwaysRename)?MF_CHECKED:MF_UNCHECKED );
+				CheckMenuItem( hMainMenu, ID_OPTIONS_MERGEDIRECTORIES, (AlwaysMerge)?MF_CHECKED:MF_UNCHECKED );
+			}
+
+			break;
+
 		case ID_OPTIONS_RESOLVEDICONS:
 			{
 				UseResolvedIcons = !UseResolvedIcons;
@@ -1252,37 +1256,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_DOENTERAS:
 		{
-			CFileViewer *Pane = &leftPane;
-			std::vector<FileSystem *> *pStack = &leftFS;
-			std::vector<TitleComponent> *pTitleStack = &leftTitles;
-
-			if ( wParam == (WPARAM) rightPane.hWnd )
+			if (wParam == (WPARAM) leftPane.hWnd)
 			{
-				Pane = &rightPane;
-				pStack = &rightFS;
-				pTitleStack = &rightTitles;
+				DoAction( ActionDoEnterAs, &leftPane, &leftFS, &leftTitles, 0, lParam );
+			} 
+			else if (wParam == (WPARAM) rightPane.hWnd)
+			{
+				DoAction( ActionDoEnterAs, &rightPane, &rightFS, &rightTitles, 0, lParam );
 			}
-
-			DoEnterAs( pStack, Pane, Pane->FS, pTitleStack, lParam );
 		}
+
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_ENTERICON:
 		{
-			CFileViewer *Pane = &leftPane;
-			std::vector<FileSystem *> *pStack = &leftFS;
-			std::vector<TitleComponent> *pTitleStack = &leftTitles;
-
 			OutputDebugString(L"Double click\n");
 
-			if (wParam == (WPARAM) rightPane.hWnd)
+			if (wParam == (WPARAM) leftPane.hWnd)
 			{
-				Pane = &rightPane;
-				pStack = &rightFS;
-				pTitleStack = &rightTitles;
+				DoAction( ActionDoEnter, &leftPane, &leftFS, &leftTitles, lParam );
+			} 
+			else if (wParam == (WPARAM) rightPane.hWnd)
+			{
+				DoAction( ActionDoEnter, &rightPane, &rightFS, &rightTitles, lParam );
 			}
-
-			DoEnter(Pane, pStack, pTitleStack, lParam);
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -1348,9 +1345,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_GOTOPARENT:
 		if (wParam == (WPARAM) leftPane.hWnd)
-			DoParent( &leftPane );
+		{
+			DoAction( ActionDoBack, &leftPane, &leftFS, &leftTitles, 0 );
+		} 
 		else if (wParam == (WPARAM) rightPane.hWnd)
-			DoParent( &rightPane );
+		{
+			DoAction( ActionDoBack, &rightPane, &rightFS, &rightTitles, 0 );
+		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
@@ -1455,4 +1456,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return 0;
+}
+
+void DoAction( ActionType t, CFileViewer *p, std::vector<FileSystem *> *s, std::vector<TitleComponent> *pT, int i, DWORD TargetFSID )
+{
+	FSAction a;
+
+	a.Type        = t;
+	a.pane        = p;
+	a.pStack      = s;
+	a.pTitleStack = pT;
+	a.EnterIndex  = i;
+	a.FS          = p->FS;
+	a.FSID        = TargetFSID;
+
+	EnterCriticalSection( &FSActionLock );
+
+	ActionQueue.push_back( a );
+
+	LeaveCriticalSection( &FSActionLock );
+
+	SetEvent( hActionEvent );
 }
