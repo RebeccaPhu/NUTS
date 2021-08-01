@@ -5,6 +5,7 @@
 #include "Plugins.h"
 #include "libfuncs.h"
 #include "IconRatio.h"
+#include "AudioPlayer.h"
 
 #include <CommCtrl.h>
 
@@ -50,11 +51,14 @@ CFileViewer::CFileViewer(void) {
 		WndClassReg = true;
 	}
 
+	InitializeCriticalSection( &CacheLock );
+
 	KnownX	= 0;
 	KnownY	= 0;
 
 	viewBuffer	= NULL;
 	viewDC		= NULL;
+	hSourceDC   = NULL;
 
 	FS			= NULL;
 
@@ -81,6 +85,8 @@ CFileViewer::CFileViewer(void) {
 	MenuFSMap.clear();
 	ControlButtons.clear();
 	FileSelections.clear();
+	FileLabels.clear();
+	FileDescs.clear();
 	SelectionStack.clear();
 	SelectionStack.push_back( -1 );
 
@@ -115,8 +121,6 @@ CFileViewer::CFileViewer(void) {
 	LastItemIndex = 0x7FFFFFFF;
 
 	pDropSite = nullptr;
-
-	InitializeCriticalSection( &RedrawLock );
 }
 
 CFileViewer::~CFileViewer(void) {
@@ -136,8 +140,6 @@ CFileViewer::~CFileViewer(void) {
 		DeleteDC(viewDC);
 	}
 
-	DeleteCriticalSection( &RedrawLock );
-
 	if ( pDropSite != nullptr )
 	{
 		pDropSite->Revoke();
@@ -145,13 +147,17 @@ CFileViewer::~CFileViewer(void) {
 		/* This deletes itself when the ref count goes to zero */
 		pDropSite->Release();
 	}
+
+	FreeLabels();
+
+	DeleteCriticalSection( &CacheLock );
 }
 
 int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	titleBarFont	= CreateFont(16,6,0,0,FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"MS Shell Dlg");
 	filenameFont	= CreateFont(12,5,0,0,FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"MS Shell Dlg");
 
-	hWnd = CreateWindowEx(NULL, L"NUTS File Browser Pane", L"", SS_BLACKFRAME|SS_NOTIFY|SS_OWNERDRAW|WS_CHILD|WS_VISIBLE|WS_TABSTOP, x, 0, w, h, Parent, NULL, hInstance, NULL);
+	hWnd = CreateWindowEx(WS_EX_CONTROLPARENT, L"NUTS File Browser Pane", L"", SS_BLACKFRAME|SS_NOTIFY|SS_OWNERDRAW|WS_CHILD|WS_VISIBLE|WS_TABSTOP, x, 0, w, h, Parent, NULL, hInstance, NULL);
 	//SS_WHITERECT|
 
 	viewers[ hWnd ] = this;
@@ -164,35 +170,6 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 
 	hScrollBar	= CreateWindowEx(NULL, L"SCROLLBAR", L"", WS_CHILD|WS_VISIBLE|SBS_VERT|WS_DISABLED, w - 24, 24, 16, h, hWnd, NULL, hInst, NULL);
 
-	ControlButtons.push_back( CreateWindowEx(NULL, L"BUTTON", L"", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_ICON, tw,       0, 24, 24, hWnd, NULL, hInst, NULL) );
-	ControlButtons.push_back( CreateWindowEx(NULL, L"BUTTON", L"", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_ICON, tw + 25,  0, 24, 24, hWnd, NULL, hInst, NULL) );
-	ControlButtons.push_back( CreateWindowEx(NULL, L"BUTTON", L"", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_ICON, tw + 50,  0, 24, 24, hWnd, NULL, hInst, NULL) );
-	ControlButtons.push_back( CreateWindowEx(NULL, L"BUTTON", L"", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_ICON, tw + 75,  0, 24, 24, hWnd, NULL, hInst, NULL) );
-	ControlButtons.push_back( CreateWindowEx(NULL, L"BUTTON", L"", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_ICON, tw + 100, 0, 24, 24, hWnd, NULL, hInst, NULL) );
-
-	HICON hFontIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_FONTSWITCH));
-
-	SendMessage( ControlButtons[0], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hFontIcon );
-
-	HICON hRootIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ROOTFS));
-
-	SendMessage( ControlButtons[1], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hRootIcon );
-
-	HICON hUpIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_UPFILE));
-
-	SendMessage( ControlButtons[2], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hUpIcon );
-
-	HICON hDownIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_DOWNFILE));
-
-	SendMessage( ControlButtons[3], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hDownIcon );
-
-	HICON hNewIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_NEWDIR));
-
-	SendMessage( ControlButtons[4], BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hNewIcon );
-
-	EnableWindow( ControlButtons[2], FALSE );
-	EnableWindow( ControlButtons[3], FALSE );
-
 	hProgress = CreateWindowEx(
 		0, PROGRESS_CLASS, NULL,
 		WS_CHILD | PBS_MARQUEE,
@@ -203,6 +180,10 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	::PostMessage( hProgress, PBM_SETMARQUEE, (WPARAM) TRUE, 0 );
 
 	DoStatusBar();
+
+	SideBar.Create( hWnd, hInst );
+
+	Refresh();
 
 	return 0;
 }
@@ -265,7 +246,7 @@ void CFileViewer::DoScroll(WPARAM wParam, LPARAM lParam) {
 	if (LOWORD(wParam) == SB_THUMBTRACK) {
 		ScrollStartY = HIWORD(wParam) * 8;
 
-		Update();
+		Refresh();
 	}
 
 	if (LOWORD(wParam) == SB_LINEUP) {
@@ -276,7 +257,7 @@ void CFileViewer::DoScroll(WPARAM wParam, LPARAM lParam) {
 
 		SetScrollPos(hScrollBar, SB_CTL, ScrollStartY / 8, TRUE);
 
-		Update();
+		Refresh();
 	}
 
 	if (LOWORD(wParam) == SB_PAGEUP) {
@@ -287,7 +268,7 @@ void CFileViewer::DoScroll(WPARAM wParam, LPARAM lParam) {
 
 		SetScrollPos(hScrollBar, SB_CTL, ScrollStartY / 8, TRUE);
 
-		Update();
+		Refresh();
 	}
 
 //	GetScrollRange(hScrollBar, SB_CTL, &min, &max);
@@ -300,7 +281,7 @@ void CFileViewer::DoScroll(WPARAM wParam, LPARAM lParam) {
 
 		SetScrollPos(hScrollBar, SB_CTL, ScrollStartY / 8, TRUE);
 
-		Update();
+		Refresh();
 	}
 
 	if (LOWORD(wParam) == SB_PAGEDOWN) {
@@ -311,13 +292,13 @@ void CFileViewer::DoScroll(WPARAM wParam, LPARAM lParam) {
 
 		SetScrollPos(hScrollBar, SB_CTL, ScrollStartY / 8, TRUE);
 
-		Update();
+		Refresh();
 	}
 
 	if (LOWORD(wParam) == SB_ENDSCROLL) {
 		SetScrollPos(hScrollBar, SB_CTL, ScrollStartY / 8, TRUE);
 
-		Update();
+		Refresh();
 	}
 }
 
@@ -338,28 +319,6 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 	switch (message) {
 		case WM_COMMAND:
-			if ( (HWND) lParam == ControlButtons[ 0 ] )
-			{
-				FSPlugins.NextFont( FS->GetEncoding(), PaneIndex );
-
-				Redraw();
-			}
-
-			if ( (HWND) lParam == ControlButtons[ 1 ] )
-			{
-				SendMessage( ParentWnd, WM_ROOTFS, (WPARAM) this, (LPARAM) NULL );
-			}
-
-			if ( (HWND) lParam == ControlButtons[ 2 ] )
-			{
-				DoSwapFiles( 0x00 );
-			}
-
-			if ( (HWND) lParam == ControlButtons[ 3 ] )
-			{
-				DoSwapFiles( 0xFF );
-			}
-
 			if ( ( LOWORD(wParam) >= FILESYS_MENU_BASE ) && ( LOWORD(wParam) <= FILESYS_MENU_END ) )
 			{
 				DWORD items = GetSelectionCount();
@@ -375,6 +334,27 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 				}
 			}
 
+			if ( LOWORD(wParam) == IDM_PLAY_AUDIO )
+			{
+				DoPlayAudio();
+			}
+
+			if ( ( LOWORD(wParam) > LC_MENU_BASE ) && ( LOWORD(wParam) <= LC_MENU_END ) )
+			{
+				std::vector<NativeFile> Selection = GetSelection();
+
+				int r = FS->ExecLocalCommand( LOWORD(wParam) - LC_MENU_BASE - 1, Selection, hWnd );
+
+				if ( r == CMDOP_REFRESH )
+				{
+					::PostMessage( hWnd, WM_COMMAND, IDM_REFRESH, 0 );
+				}
+				else if ( r < 0 )
+				{
+					NUTSError::Report( L"Local command", hWnd );
+				}
+			}
+
 			if ( ( LOWORD(wParam) >= GFX_MENU_BASE ) && ( LOWORD(wParam) <= GFX_MENU_END ) )
 			{
 				DoSCREENContentViewer( MenuXlatorMap[ LOWORD( wParam ) ] );
@@ -386,18 +366,51 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 			}
 
 			switch ( LOWORD(wParam) ) {
+				case IDM_MOVEUP:
+					{
+						DoSwapFiles( 0x00 );
+
+						FreeLabels();
+
+						Redraw();
+					}
+					break;
+
+				case IDM_MOVEDOWN:
+					{
+						DoSwapFiles( 0xFF );
+
+						FreeLabels();
+
+						Redraw();
+					}
+					break;
+
+				case IDM_ROOTFS:
+					{
+						SendMessage( ParentWnd, WM_ROOTFS, (WPARAM) hWnd, (LPARAM) NULL );
+					}
+					break;
+
+				case IDM_FONTSW:
+					{
+						FreeLabels();
+
+						FSPlugins.NextFont( FS->GetEncoding(), PaneIndex );
+
+						Redraw();
+					}
+					break;
+
 				case IDM_REFRESH:
 					{
-						if ( FS->Refresh() != NUTS_SUCCESS )
-						{
-							NUTSError::Report( L"Refresh", ParentWnd );
-						}
-						else
-						{				
-							Updated = true;
-						
-							Redraw();
-						}
+						SendMessage( ParentWnd, WM_REFRESH_PANE, (WPARAM) this, (LPARAM) NULL );						
+					}
+					break;
+
+				case IDM_PARENT:
+					{
+						::SendMessage(ParentWnd, WM_GOTOPARENT, (WPARAM) hWnd, 0);
 					}
 					break;
 
@@ -412,7 +425,7 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 						ParentSelected = false;
 
-						Update();
+						Refresh();
 					}
 					break;
 
@@ -529,27 +542,18 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 				case IDM_LARGEICONS:
 					Displaying = DisplayLargeIcons;
 
-					Updated = true;
-					GetCliRect( DimRect );
-					RecalculateDimensions( DimRect );
-					Redraw();
+					Update();
 					break;
 
 				case IDM_DETAILS:
 					Displaying = DisplayDetails;
 
-					Updated = true;
-					GetCliRect( DimRect );
-					RecalculateDimensions( DimRect );
-					Redraw();
+					Update();
 					break;
 				case IDM_FILELIST:
 					Displaying = DisplayList;
 
-					Updated = true;
-					GetCliRect( DimRect );
-					RecalculateDimensions( DimRect );
-					Redraw();
+					Update();
 					break;
 			}
 
@@ -606,6 +610,8 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 			switch ( wParam )
 				{
 					case VK_TAB:
+						return DefWindowProc(hSourceWnd, message, wParam, lParam);
+
 					case VK_RETURN:
 						return DLGC_STATIC;
 			
@@ -613,6 +619,8 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 					case VK_RIGHT:
 					case VK_HOME:
 					case VK_END:
+					case VK_UP:
+					case VK_DOWN:
 						return DLGC_WANTARROWS;
 
 					case VK_SHIFT:
@@ -697,7 +705,7 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 			SetScrollPos(hScrollBar, SB_CTL, ScrollStartY / 8, TRUE);
 
-			Update();
+			Refresh();
 
 			break;
 
@@ -743,6 +751,8 @@ void CFileViewer::Resize(int w, int h)
 	RecalculateDimensions( ThisRect );
 
 	SetWindowPos( hProgress, NULL, ((ThisRect.right - ThisRect.left) / 2) - ( ProgW / 2 ), ((ThisRect.bottom - ThisRect.top) / 2) - ( ProgH / 2), ProgW, ProgH, SWP_NOZORDER | SWP_NOREPOSITION );
+
+	SideBar.Resize();
 }
 
 void CFileViewer::DrawBasicLayout() {
@@ -754,10 +764,13 @@ void CFileViewer::DrawBasicLayout() {
 
 	rect.right -= 15;
 
+	rect.left += 128;
+
 	DrawEdge(viewDC, &rect, EDGE_SUNKEN, BF_RECT);
 
+	/* You put your offsets in, your offsets out... */
 	rect.right += 15;
-	rect.right -= 24 * ControlButtons.size();
+	rect.right -= 24;
 
 	rect.top	-= 22;
 
@@ -767,6 +780,8 @@ void CFileViewer::DrawBasicLayout() {
 	{
 		hViewerBrush = CreateSolidBrush( BColour );
 	}
+
+	rect.left -= 128;
 
 	rect.bottom	= rect.top + 24;
 
@@ -825,7 +840,13 @@ void CFileViewer::DrawBasicLayout() {
 }
 
 void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) {
-	HDC	hSourceDC = CreateCompatibleDC(viewDC);
+	if ( hSourceDC == NULL )
+	{
+		hSourceDC = CreateCompatibleDC(viewDC);
+	}
+
+	if ( IconsPerLine == 0 ) { return; }
+	if ( LinesPerWindow == 0 ) { return; }
 
 	HBITMAP hIcon        = NULL;
 	HBITMAP hCreatedIcon = NULL;
@@ -834,33 +855,6 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 	DWORD      ih = 34;
 	DWORD      rw = 34;
 	DWORD      rh = 34;
-
-	if ( pFile->HasResolvedIcon )
-	{
-		if ( FS->pDirectory->ResolvedIcons.find( pFile->fileID ) != FS->pDirectory->ResolvedIcons.end() )
-		{
-			IconDef icon = FS->pDirectory->ResolvedIcons[ pFile->fileID ];
-
-			iw = icon.bmi.biWidth;
-			ih = icon.bmi.biHeight;
-
-			AspectRatio CAR = ScreenCompensatedIconRatio( AspectRatio( (WORD) iw, (WORD) ih), icon.Aspect, 64, 34 );
-
-			rw = CAR.first;
-			rh = CAR.second;
-
-			hCreatedIcon = CreateBitmap( iw, ih, icon.bmi.biPlanes, icon.bmi.biBitCount, icon.pImage );
-
-			hIcon = hCreatedIcon;
-		}
-	}
-	
-	if ( hIcon == NULL )
-	{
-		hIcon = BitmapCache.GetBitmap(Icon);
-	}
-
-	HGDIOBJ		hO	= SelectObject(hSourceDC, hIcon);
 
 	DWORD FontID = FSPlugins.FindFont( pFile->EncodingID, PaneIndex );
 
@@ -876,7 +870,6 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 	{
 		Truncs = 14;
 	}
-
 
 	if ( rstrnlen( pFile->Filename, 64 ) > ( Truncs + 2 ) )
 	{
@@ -895,17 +888,17 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 		rstrncat( FullName, pFile->Extension, 64 );
 	}
 
-	FontBitmap FileLabel( FontID, (BYTE *) FullName, rstrnlen( FullName, 64 ), false, Selected );
-
 	int y = ((i / IconsPerLine) * ItemHeight ) - ScrollStartY;
 	int x =  (i % IconsPerLine) * ItemWidth;
+
+	x += 128;
 
 	DWORD rop = SRCCOPY;
 
 	if ( Selected ) { rop = NOTSRCCOPY; }
 
-	DWORD ix = 0;
-	DWORD iy = 0;
+	int   ix  = 0;
+	int   iy  = 0;
 	DWORD tiw = 34;
 	DWORD tih = 34;
 
@@ -949,32 +942,88 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 		iy += ( tih - rh ) / 2;
 	}
 
-	StretchBlt( viewDC, ix, iy, rw, rh, hSourceDC, 0, 0, iw, ih, rop );
+	int TopLimit = 0 - rh;
+	int BottomLimit = ( LinesPerWindow + 1 ) * ItemHeight;
 
-	if ( Displaying == DisplayLargeIcons )
-	{	
-		FileLabel.DrawText( viewDC, x + 33U + 17U, y + 34U + 40U + 4U, DT_CENTER | DT_VCENTER );
-	}
-	else if ( Displaying == DisplayList )
+	if ( ( iy >= TopLimit ) && ( iy <= BottomLimit ) )
 	{
-		FileLabel.DrawText( viewDC, x + 48U, y + 28U, DT_LEFT | DT_TOP );
-	}
-
-	if ( Displaying == DisplayDetails )
-	{
-		FileLabel.DrawText( viewDC, x + 48U, y + 30U, DT_LEFT | DT_TOP );
-
-		if ( !(pFile->Flags & FF_Special) )
+		if ( pFile->HasResolvedIcon )
 		{
-			FontBitmap DetailString( FontID, FS->DescribeFile( pFile->fileID  ), 40, false, Selected );
+			if ( TheseIcons.find( pFile->fileID ) != TheseIcons.end() )
+			{
+				IconDef icon = TheseIcons[ pFile->fileID ];
 
-			DetailString.DrawText( viewDC, x + 48U, y + 48U, DT_LEFT | DT_TOP );
+				iw = icon.bmi.biWidth;
+				ih = icon.bmi.biHeight;
+
+				AspectRatio CAR = ScreenCompensatedIconRatio( AspectRatio( (WORD) iw, (WORD) ih), icon.Aspect, 64, 34 );
+
+				rw = CAR.first;
+				rh = CAR.second;
+
+				hCreatedIcon = CreateBitmap( iw, ih, icon.bmi.biPlanes, icon.bmi.biBitCount, icon.pImage );
+
+				hIcon = hCreatedIcon;
+			}
 		}
+	
+		if ( hIcon == NULL )
+		{
+			hIcon = BitmapCache.GetBitmap(Icon);
+		}
+
+		HGDIOBJ		hO	= SelectObject(hSourceDC, hIcon);
+
+		StretchBlt( viewDC, ix, iy, rw, rh, hSourceDC, 0, 0, iw, ih, rop );
+
+		FontBitmap *pFileLabel;
+	
+		if ( ! (pFile->Flags & FF_Special) )
+		{
+			pFileLabel = FileLabels[ pFile->fileID ];
+		}
+
+		if ( ( pFileLabel == nullptr ) || ( pFile->Flags & FF_Special ) )
+		{
+			pFileLabel = new FontBitmap( FontID, (BYTE *) FullName, rstrnlen( FullName, 64 ), false, Selected );
+		}
+
+		if ( ! (pFile->Flags & FF_Special) )
+		{
+			FileLabels[ pFile->fileID ] = pFileLabel;
+		}
+
+		if ( Displaying == DisplayLargeIcons )
+		{	
+			pFileLabel->DrawText( viewDC, x + 33U + 17U, y + 34U + 40U + 4U, DT_CENTER | DT_VCENTER );
+		}
+		else if ( Displaying == DisplayList )
+		{
+			pFileLabel->DrawText( viewDC, x + 48U, y + 28U, DT_LEFT | DT_TOP );
+		}
+
+		if ( Displaying == DisplayDetails )
+		{
+			pFileLabel->DrawText( viewDC, x + 48U, y + 30U, DT_LEFT | DT_TOP );
+
+			if ( !(pFile->Flags & FF_Special) )
+			{
+				FontBitmap *pDetailString = FileDescs[ pFile->fileID ];
+
+				if ( pDetailString == nullptr )
+				{
+					pDetailString = new FontBitmap( FontID, FS->DescribeFile( pFile->fileID  ), 40, false, Selected );
+
+					FileDescs[ pFile->fileID ] = pDetailString;
+				}
+
+				pDetailString->DrawText( viewDC, x + 48U, y + 48U, DT_LEFT | DT_TOP );
+			}
+		}
+
+		SelectObject(hSourceDC, hO);
 	}
 
-	SelectObject(hSourceDC, hO);
-
-	DeleteDC(hSourceDC);
 	if ( SelectionStack.size() > 0 )
 	{
 		if ( ( Updated ) && ( SelectionStack.back() != -1 ) && ( i == SelectionStack.back() ) )
@@ -989,11 +1038,18 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 	}
 }
 
-void CFileViewer::Redraw() {
-	EnterCriticalSection( &RedrawLock );
+void CFileViewer::Refresh()
+{
+	InvalidateRect( hWnd, NULL, FALSE );
 
+	::SendMessageA( hWnd, WM_PAINT, NULL, NULL );
+}
+
+void CFileViewer::Redraw() {
 	HDC  hDC = GetDC(hWnd);
 	RECT wndRect;
+
+	EnterCriticalSection( &CacheLock );
 
 	GetCliRect( wndRect);
 
@@ -1019,7 +1075,7 @@ void CFileViewer::Redraw() {
 	if ( (FS) && ( !IsSearching ) ) {
 		std::vector<NativeFile>::iterator	iFile;
 
-		DWORD exi = FS->pDirectory->Files.size(); // Extra increment
+		DWORD exi = TheseFiles.size(); // Extra increment
 
 		if ( FS->FSID != FS_Root )
 		{
@@ -1027,10 +1083,15 @@ void CFileViewer::Redraw() {
 		}
 
 		if (Updated) {
-			FileEntries		= FS->pDirectory->Files.size();
-			FileSelections  = std::vector<bool>( FS->pDirectory->Files.size(), false );
+			FreeLabels();
 
-			ScrollStartY	= 0;
+
+			RECT DimRect;
+
+			GetCliRect( DimRect );
+			RecalculateDimensions( DimRect );
+
+			ScrollStartY   = 0;
 
 			if ( SelectionStack.size() > 0 )
 			{
@@ -1065,51 +1126,35 @@ void CFileViewer::Redraw() {
 				SetScrollInfo(hScrollBar, SB_CTL, &si, TRUE);
 
 				ScrollMax = nwh;
-			} else
+			}
+			else
+			{
+				ScrollMax = LinesPerWindow * ItemHeight;
+
 				EnableWindow(hScrollBar, FALSE);
+			}
 
 			DoStatusBar();
 		}
 
-		int	IconIndex = 1;
-		int FileIndex = 0;
-		
 		long NewScrollStartY = ScrollStartY;
-
-		if ( CurrentFSID == FS_Root )
-		{
-			IconIndex = 0;
-		}
-		else
-		{
-			BYTE ParentString[ 9 ] = { "X Parent" };
-
-			ParentString[ 0 ] = 174;
-
-			NativeFile Dummy;
-			strncpy_s( (char *) Dummy.Filename, 16, (char *) ParentString, 8 );
-			Dummy.Flags = FF_Special;
-			Dummy.EncodingID = ENCODING_ASCII;
-
-			DrawFile( 0, &Dummy, FT_Directory, ParentSelected);
-		}
 
 		SendMessage( ParentWnd, WM_IDENTIFYFONT, (WPARAM) this, (LPARAM) FSPlugins.FindFont( FS->GetEncoding(), PaneIndex ) );
 
-		for (iFile=FS->pDirectory->Files.begin(); iFile != FS->pDirectory->Files.end(); iFile++) {
+		for (iFile=TheseFiles.begin(); iFile != TheseFiles.end(); iFile++) {
 			NativeFile file = *iFile;
 			
 			bool Selected =  false;
 
-			if ( FileSelections.size() >= (DWORD) ( FileIndex + 1 ) )
+			if ( FileSelections.size() >= (DWORD) ( file.fileID + 1 ) )
 			{
-				Selected = FileSelections[ FileIndex ];
+				Selected = FileSelections[ file.fileID ];
 			}
 
-			DrawFile( IconIndex, &file, file.Icon, Selected );
-
-			IconIndex++;
-			FileIndex++;
+			if ( file.fileID < TheseFiles.size() )
+			{
+				DrawFile( file.fileID, &file, file.Icon, Selected );
+			}
 		}
 
 		if ( ( Updated ) && ( ( SelectionStack.size() > 0 ) && ( SelectionStack.back() != -1 ) ) )
@@ -1154,12 +1199,12 @@ void CFileViewer::Redraw() {
 		CurrentPen = ( CurrentPen + 1 ) % 3;
 	}
 
-	BitBlt(hDC, 0,24,KnownX,KnownY, viewDC,0,24,SRCCOPY);
-	BitBlt(hDC, 0,0,(KnownX - (ControlButtons.size() * 21)) + 1,24, viewDC, 0,0, SRCCOPY);
+	BitBlt(hDC, 128,24,KnownX-128,KnownY, viewDC,128,24,SRCCOPY);
+	BitBlt(hDC, 0,0,(KnownX - (ControlButtons.size() * 21)) + 15,24, viewDC, 0, 0, SRCCOPY);
 
 	ReleaseDC(hWnd, hDC);
 
-	LeaveCriticalSection( &RedrawLock );
+	LeaveCriticalSection( &CacheLock );
 }
 
 void CFileViewer::RecalculateDimensions( RECT &wndRect )
@@ -1173,7 +1218,7 @@ void CFileViewer::RecalculateDimensions( RECT &wndRect )
 		ItemWidth      = 100U;
 		ItemHeight     = 64U;
 		IconYOffset    = 6U;
-		IconsPerLine   = WindowWidth / 100U;
+		IconsPerLine   = ( WindowWidth - 128 ) / 100U;
 		LinesPerWindow = ( WindowHeight - 6U ) / 64U;
 		break;
 
@@ -1181,7 +1226,7 @@ void CFileViewer::RecalculateDimensions( RECT &wndRect )
 		ItemWidth      = 400U;
 		ItemHeight     = 40U;
 		IconYOffset    = 6U;
-		IconsPerLine   = WindowWidth / 400U;
+		IconsPerLine   = ( WindowWidth - 128 ) / 400U;
 		LinesPerWindow = (WindowHeight - 6U) / 40U;
 		break;
 
@@ -1189,7 +1234,7 @@ void CFileViewer::RecalculateDimensions( RECT &wndRect )
 		ItemWidth      = 200U;
 		ItemHeight     = 20U;
 		IconYOffset    = 4U;
-		IconsPerLine   = WindowWidth / 200U;
+		IconsPerLine   = ( WindowWidth - 128 ) / 200U;
 		LinesPerWindow = (WindowHeight - 4U) / 20U;
 		break;
 
@@ -1204,31 +1249,19 @@ DWORD CFileViewer::GetItem(DWORD x, DWORD y) {
 	// Adjusted y position (accounting for scroll)
 	DWORD ay = ( y + ScrollStartY - 30U);
 
-	if ( x > ( ItemWidth * IconsPerLine ) )
+	DWORD rx = x - 128;
+
+	if ( rx > ( ItemWidth * IconsPerLine ) )
 	{
 		// Outside of horizontally valid area
 		return -2;
 	}
 
-	DWORD Index = ( (ay / ItemHeight) * IconsPerLine ) + ( x / ItemWidth );
-	DWORD Index2 = Index;
+	DWORD Index = ( (ay / ItemHeight) * IconsPerLine ) + ( rx / ItemWidth );
 
-	if ( FS->FSID != FS_Root )
+	if ( Index < TheseFiles.size() )
 	{
-		Index2--;
-	}
-
-
-	if ( Index == 0U )
-	{
-		return 0U;
-	}
-	else
-	{
-		if ( Index2 < FS->pDirectory->Files.size() )
-		{
-			return Index;
-		}
+		return Index;
 	}
 
 	return -2;
@@ -1246,16 +1279,7 @@ void CFileViewer::ActivateItem(int x, int y) {
 
 	DWORD Items = GetSelectionCount();
 
-	if ( FS->FSID != FS_Root )
-	{
-		ix--;
-	}
-
-	if ( (ix == -1) && ( Items == 0 ) )
-	{
-		::SendMessage(ParentWnd, WM_GOTOPARENT, (WPARAM) hWnd, 0);
-	}
-	else if (ix >= 0)
+	if (ix >= 0)
 	{
 		DIndex = (WORD) ix;
 
@@ -1263,7 +1287,7 @@ void CFileViewer::ActivateItem(int x, int y) {
 
 		bool Translateable = false;
 
-		for ( i = FS->pDirectory->Files.begin(); i != FS->pDirectory->Files.end(); i++ )
+		for ( i = TheseFiles.begin(); i != TheseFiles.end(); i++ )
 		{
 			if ( ( FileSelections[ i->fileID ] ) || ( i->fileID == ix ) )
 			{
@@ -1299,14 +1323,22 @@ void CFileViewer::ClearItems( bool DoUpdate = true) {
 
 	if ( FS )
 	{
-		FileSelections = std::vector<bool>( FS->pDirectory->Files.size(), false );
+		FreeLabels();
+
+		EnterCriticalSection( &CacheLock );
+
+		FileSelections = std::vector<bool>( TheseFiles.size(), false );
+		FileLabels     = std::vector<FontBitmap *>( TheseFiles.size(), nullptr );
+		FileDescs      = std::vector<FontBitmap *>( TheseFiles.size(), nullptr );
+
+		LeaveCriticalSection( &CacheLock );
 	}
 
 	ParentSelected	= false;
 
 	if ( DoUpdate )
 	{
-		Update();
+		Refresh();
 	}
 }
 
@@ -1318,35 +1350,55 @@ void CFileViewer::ToggleItem(int x, int y) {
 
 	DWORD ix = GetItem(x,y);
 
-	if ( ( ix == 0 ) && ( FS->FSID != FS_Root ) )
-	{
-		ParentSelected	= !ParentSelected;
-	}
-	else
-	{
-		if ( FS->FSID != FS_Root )
-		{
-			ix--;
-		}
+	if ( ( ix > 0x80000000 ) || ( ix >= TheseFiles.size() ) ) {
+		ClearItems();
 
-		if ( ( ix > 0x80000000 ) || ( ix >= FS->pDirectory->Files.size() ) ) {
-			ClearItems();
-
-			return;
-		}
-
-		FileSelections[ix]	= !FileSelections[ix];
+		return;
 	}
 
-	Update();
+	EnterCriticalSection( &CacheLock );
+
+	delete FileLabels[ ix ];
+
+	FileLabels[ ix ] = nullptr;
+
+	FileSelections[ix]	= !FileSelections[ix];
+
+	LeaveCriticalSection( &CacheLock );
+
+	UpdateSidePanelFlags();
+
+	Refresh();
 }
 
 void CFileViewer::Update() {
-	RECT rect;
+	/* Lock the CS */
+	EnterCriticalSection( &CacheLock );
 
-	GetClientRect(hWnd, &rect);
+	/* Take copies */
+	if ( FS != nullptr )
+	{
+		TheseFiles = FS->pDirectory->Files;
+		TheseIcons = FS->pDirectory->ResolvedIcons;
+	}
+	else
+	{
+		TheseFiles.clear();
+		TheseIcons.clear();
+	}
 
-	InvalidateRect(hWnd, &rect, FALSE);
+	FileEntries	   = TheseFiles.size();
+	FileSelections = std::vector<bool>( FileEntries, false );
+	FileLabels     = std::vector<FontBitmap *>( FileEntries, nullptr );
+	FileDescs      = std::vector<FontBitmap *>( FileEntries, nullptr );
+
+	Updated = true;
+
+	LeaveCriticalSection( &CacheLock );
+
+	SideBar.SetTopic( FS->TopicIcon, FSPlugins.FSName( FS->FSID ) );
+
+	Refresh();
 }
 
 void CFileViewer::StartDragging() {
@@ -1531,7 +1583,7 @@ std::vector<NativeFile> CFileViewer::GetSelection( void )
 	{
 		if ( *i )
 		{
-			Selection.push_back( FS->pDirectory->Files[ Index ] );
+			Selection.push_back( TheseFiles[ Index ] );
 		}
 
 		Index++;
@@ -1633,6 +1685,7 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 
 			if ( ye < ys ) { ye = dragY; ys = mouseY; }
 
+			EnterCriticalSection( &CacheLock );
 
 			for ( DWORD xi = xs; xi < xe; xi += ItemWidth )
 			{
@@ -1649,6 +1702,10 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 				}
 			}
 
+			LeaveCriticalSection( &CacheLock );
+
+			FreeLabels();
+
 			Redraw();
 		}
 
@@ -1661,6 +1718,8 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 
 		MouseDown = false;
 		Dragging  = false;
+
+		UpdateSidePanelFlags();
 	}
 
 	if ( Msg == WM_MOUSEMOVE )
@@ -1729,11 +1788,6 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 		DWORD n = GetSelectedIndex();
 		DWORD i = GetItem( dragX, dragY );
 
-		if ( FS->FSID != FS_Root )
-		{
-			i--;
-		}
-
 		DWORD sc = GetSelectionCount();
 
 		if ( sc == 1 )
@@ -1768,7 +1822,7 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 			for (int i=0; i<FileEntries; i++)
 				FileSelections[i]	= false;
 
-			Update();
+			Refresh();
 
 			ActivateItem(mouseX, mouseY);
 		}
@@ -1796,7 +1850,7 @@ void CFileViewer::DoSCREENContentViewer( DWORD PrefTUID )
 
 	if ( DIndex != 0xFFFF )
 	{
-		Selection.push_back( FS->pDirectory->Files[ DIndex ] );
+		Selection.push_back( TheseFiles[ DIndex ] );
 	}
 
 	int wInd = 1;
@@ -1840,7 +1894,7 @@ void CFileViewer::DoTEXTContentViewer( DWORD PrefTUID )
 
 	if ( DIndex != 0xFFFF )
 	{
-		Selection.push_back( FS->pDirectory->Files[ DIndex ] );
+		Selection.push_back( TheseFiles[ DIndex ] );
 	}
 
 	int wInd = 1;
@@ -1869,6 +1923,12 @@ void CFileViewer::DoTEXTContentViewer( DWORD PrefTUID )
 
 		pTXViewer->FSEncodingID = iter->EncodingID;
 
+		/* Ah, but some things (e.g. TZX description files) should be PC437! */
+		if ( iter->Flags & FF_EncodingOverride )
+		{
+			pTXViewer->FSEncodingID = ENCODING_ASCII;
+		}
+
 		GetWindowRect(ParentWnd, &rect);
 
 		pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
@@ -1886,7 +1946,7 @@ void CFileViewer::DoContentViewer( void )
 
 	if ( DIndex != 0xFFFF )
 	{
-		Selection.push_back( FS->pDirectory->Files[ DIndex ] );
+		Selection.push_back( TheseFiles[ DIndex ] );
 	}
 
 	TextTranslatorList    TXTList = FSPlugins.GetTextTranslators( NULL );
@@ -1916,6 +1976,12 @@ void CFileViewer::DoContentViewer( void )
 			pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
 
 			pTXViewer->FSEncodingID = iter->EncodingID;
+
+			/* Ah, but some things (e.g. TZX description files) should be PC437! */
+			if ( iter->Flags & FF_EncodingOverride )
+			{
+				pTXViewer->FSEncodingID = ENCODING_ASCII;
+			}
 
 			pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
 
@@ -1958,58 +2024,128 @@ void CFileViewer::DoContentViewer( void )
 
 void CFileViewer::RenameFile( void )
 {
+	IgnoreKeys = 1;
+
 	NativeFileIterator iter;
 
 	std::vector<NativeFile> Selection = GetSelection();
 
 	for ( iter = Selection.begin(); iter != Selection.end(); iter++ )
 	{
+		if ( iter->Flags & FF_NotRenameable )
+		{
+			/* Call Rename anyway, so the FS can explain /why/ this is disallowed */
+			FS->Rename( iter->fileID, nullptr, nullptr );
+
+			continue;
+		}
+
 		BYTE OldName[ 256 ];
+		BYTE OldExt[ 256 ];
 
 		rstrncpy( OldName, iter->Filename, 256 );
+		rstrncpy( OldExt, iter->Extension, 256 );
 
-		CFileViewer::pRenameFile = (BYTE *) FS->GetEncoding();
+		CFileViewer::StaticEncoding = FS->GetEncoding();
+		CFileViewer::StaticFlags    = FS->Flags;
+		CFileViewer::pRenameFile    = OldName;
+		CFileViewer::pRenameExt     = OldExt;
 
 		if ( DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_RENAME), hWnd, RenameDialogProc, (LPARAM) OldName ) == IDOK )
 		{
-			if ( FS->Rename( iter->fileID, OldName ) != NUTS_SUCCESS )
+			if ( FS->Rename( iter->fileID, OldName, OldExt ) != NUTS_SUCCESS )
 			{
 				NUTSError::Report( L"Rename", ParentWnd );
 			}
 		}
+
+		if ( CFileViewer::pRenameEdit != nullptr )
+		{
+			delete CFileViewer::pRenameEdit;
+		}
+
+		CFileViewer::pRenameEdit = nullptr;
+
+		if ( CFileViewer::pRenameEditX != nullptr )
+		{
+			delete CFileViewer::pRenameEditX;
+		}
+
+		CFileViewer::pRenameEditX = nullptr;
 	}
 
-	Updated = true;
-
-	Redraw();
+	Update();
 }
 
 void CFileViewer::NewDirectory( void )
 {
-	CFileViewer::pNewDir = (BYTE *) FS->GetEncoding();
+	IgnoreKeys = 1;
+
+	BYTE DirName[ 256 ];
+	BYTE DirExt[ 256 ];
+
+	CFileViewer::pNewDir  = DirName;
+	CFileViewer::pNewDirX = DirExt;
+
+	DirName[ 0 ] = 0;
+	DirExt[ 0 ]  = 0;
+
+	CFileViewer::StaticEncoding = FS->GetEncoding();
+	CFileViewer::StaticFlags    = FS->Flags;
 
 	if ( DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_NEWDIR), hWnd, NewDirDialogProc, (LPARAM) 0 ) == IDOK )
 	{
 		if ( pNewDir != nullptr )
 		{
-			if ( FS->CreateDirectory( pNewDir, false ) != NUTS_SUCCESS )
+			NativeFile Dir;
+
+			Dir.EncodingID = StaticEncoding;
+			Dir.FSFileType = FT_UNSET;
+			Dir.Filename   = pNewDir;
+
+			if ( ( StaticFlags & FSF_Uses_Extensions ) && ( ! ( StaticFlags & FSF_NoDir_Extensions ) ) )
+			{
+				Dir.Extension = pNewDirX;
+			}
+
+			Dir.Flags = FF_Directory;
+			Dir.Type  = FT_Directory;
+
+			if ( FS->CreateDirectory( &Dir, CDF_MANUAL_OP ) != NUTS_SUCCESS )
 			{
 				NUTSError::Report( L"Create Directory", ParentWnd );
 			}
 
-			free( pNewDir );
-
-			pNewDir = nullptr;
+			pNewDir  = nullptr;
+			pNewDirX = nullptr;
 		}
 	}
 
-	Updated = true;
+	if ( pNewDirEdit != nullptr )
+	{
+		delete pNewDirEdit;
 
-	Redraw();
+		pNewDirEdit  = nullptr;
+	}
+
+	if ( pNewDirEditX != nullptr )
+	{
+		delete pNewDirEditX;
+	
+		pNewDirEditX = nullptr;
+	}
+
+	Update();
 }
 
-BYTE *CFileViewer::pRenameFile         = nullptr;
-EncodingEdit *CFileViewer::pRenameEdit = nullptr;
+BYTE *CFileViewer::pRenameFile          = nullptr;
+EncodingEdit *CFileViewer::pRenameEdit  = nullptr;
+
+BYTE *CFileViewer::pRenameExt           = nullptr;
+EncodingEdit *CFileViewer::pRenameEditX = nullptr;
+
+DWORD CFileViewer::StaticFlags    = 0;
+DWORD CFileViewer::StaticEncoding = 0;
 
 INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -2017,13 +2153,41 @@ INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM w
 	{
 	case WM_INITDIALOG:
 		{
-			pRenameEdit = new EncodingEdit( hDlg, 12, 36, 455, true );
+			if ( StaticFlags & FSF_Uses_Extensions )
+			{
+				pRenameEdit  = new EncodingEdit( hDlg, 12, 52, 348, false );
+				pRenameEditX = new EncodingEdit( hDlg, 362, 52, 105, true );
 
-			pRenameEdit->Encoding = (DWORD) CFileViewer::pRenameFile;
+				pRenameEditX->Encoding = StaticEncoding;
 
-			CFileViewer::pRenameFile = (BYTE *) lParam;
+				pRenameEditX->SetText( pRenameExt );
 
-			pRenameEdit->SetText( (BYTE *) lParam );
+				pRenameEditX->SetBuddy( pRenameEdit );
+
+				if ( StaticFlags & FSF_Fake_Extensions )
+				{
+					pRenameEditX->Disabled = true;
+				}
+
+				if ( !( StaticFlags & FSF_Supports_Spaces ) )
+				{
+					pRenameEditX->AllowSpaces = false;
+				}
+			}
+			else
+			{
+				pRenameEdit = new EncodingEdit( hDlg, 12, 52, 455, true );
+			}
+
+			pRenameEdit->Encoding = StaticEncoding;
+
+			if ( !( StaticFlags & FSF_Supports_Spaces ) )
+			{
+				pRenameEdit->AllowSpaces = false;
+			}
+
+			pRenameEdit->SetText( pRenameFile );
+
 			pRenameEdit->SelectAll();
 			pRenameEdit->SetFocus();
 		}
@@ -2033,14 +2197,26 @@ INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM w
 		{
 			if ( LOWORD( wParam ) == IDOK )
 			{
-				rstrncpy(  CFileViewer::pRenameFile, pRenameEdit->GetText(), 256 );
+				rstrncpy(  CFileViewer::pRenameFile, pRenameEdit->GetText(),  256 );
+
+				if ( StaticFlags & FSF_Uses_Extensions )
+				{
+					rstrncpy(  CFileViewer::pRenameExt,  pRenameEditX->GetText(), 256 );
+				}
 
 				EndDialog( hDlg, IDOK );
 			}
-
-			if ( LOWORD( wParam ) == IDCANCEL )
+			else if ( LOWORD( wParam ) == IDCANCEL )
 			{
 				EndDialog( hDlg, IDCANCEL );
+			}
+			else if ( pRenameEditX != nullptr )
+			{
+				PostMessage( pRenameEditX->hWnd, message, wParam, lParam );
+			}
+			else if ( pRenameEdit != nullptr )
+			{
+				PostMessage( pRenameEdit->hWnd, message, wParam, lParam );
 			}
 		}
 		break;
@@ -2049,8 +2225,10 @@ INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM w
 	return FALSE;
 }
 
-BYTE *CFileViewer::pNewDir             = nullptr;
-EncodingEdit *CFileViewer::pNewDirEdit = nullptr;
+BYTE *CFileViewer::pNewDir              = nullptr;
+EncodingEdit *CFileViewer::pNewDirEdit  = nullptr;
+BYTE *CFileViewer::pNewDirX             = nullptr;
+EncodingEdit *CFileViewer::pNewDirEditX = nullptr;
 
 INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -2058,11 +2236,38 @@ INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM w
 	{
 	case WM_INITDIALOG:
 		{
-			pNewDirEdit = new EncodingEdit( hDlg, 12, 36, 455, true );
+			if ( ( StaticFlags & FSF_Uses_Extensions ) && ( ! (StaticFlags & FSF_NoDir_Extensions) ) )
+			{
+				pNewDirEdit  = new EncodingEdit( hDlg, 12, 52, 348, false );
+				pNewDirEditX = new EncodingEdit( hDlg, 362, 52, 105, true );
 
-			pNewDirEdit->Encoding = (DWORD) CFileViewer::pNewDir;
+				pNewDirEditX->Encoding = StaticEncoding;
 
-			CFileViewer::pNewDir = (BYTE *) lParam;
+				pNewDirEditX->SetText( pNewDirX );
+
+				pNewDirEditX->SetBuddy( pNewDirEdit );
+
+				if ( StaticFlags & FSF_Fake_Extensions )
+				{
+					pNewDirEditX->Disabled = true;
+				}
+
+				if ( !( StaticFlags & FSF_Supports_Spaces ) )
+				{
+					pNewDirEditX->AllowSpaces = false;
+				}
+			}
+			else
+			{
+				pNewDirEdit = new EncodingEdit( hDlg, 12, 52, 455, true );
+			}
+
+			pNewDirEdit->Encoding = CFileViewer::StaticEncoding;
+
+			if ( !( StaticFlags & FSF_Supports_Spaces ) )
+			{
+				pNewDirEdit->AllowSpaces = false;
+			}
 
 			pNewDirEdit->SetFocus();
 		}
@@ -2072,16 +2277,31 @@ INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM w
 		{
 			if ( LOWORD( wParam ) == IDOK )
 			{
-				CFileViewer::pNewDir = rstrndup( pNewDirEdit->GetText(), 256 );
+				rstrncpy( pNewDir, pNewDirEdit->GetText(), 256 );
+
+				if ( StaticFlags & FSF_Uses_Extensions )
+				{
+					if ( ! (StaticFlags & FSF_NoDir_Extensions ) )
+					{
+						rstrncpy( pNewDirX, pNewDirEditX->GetText(), 256 );
+					}
+				}
 
 				EndDialog( hDlg, IDOK );
 			}
-
-			if ( LOWORD( wParam ) == IDCANCEL )
+			else if ( LOWORD( wParam ) == IDCANCEL )
 			{
 				CFileViewer::pNewDir = nullptr;
 
 				EndDialog( hDlg, IDCANCEL );
+			}
+			else if ( pNewDirEditX != nullptr )
+			{
+				PostMessage( pNewDirEditX->hWnd, message, wParam, lParam );
+			}
+			else if ( pNewDirEdit != nullptr )
+			{
+				PostMessage( pNewDirEdit->hWnd, message, wParam, lParam );
 			}
 		}
 		break;
@@ -2098,7 +2318,7 @@ void CFileViewer::DoSwapFiles( BYTE UpDown )
 	}
 
 	DWORD SwapFile = GetSelectedIndex();
-	DWORD MaxFile  = FS->pDirectory->Files.size();
+	DWORD MaxFile  = TheseFiles.size();
 
 	// The condition above should nix this, but still..
 	if ( MaxFile == 0 )
@@ -2139,6 +2359,14 @@ void CFileViewer::DoSwapFiles( BYTE UpDown )
 		}
 	}
 
+	EnterCriticalSection( &CacheLock );
+
+	TheseFiles = FS->pDirectory->Files;
+
+	LeaveCriticalSection( &CacheLock );
+
+	FreeLabels();
+
 	Redraw();
 }
 
@@ -2164,13 +2392,6 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 		return;
 	}
 
-	if ( FileSelections.size() == 0 )
-	{
-		ParentSelected = true;
-
-		return;
-	}
-
 	int keyCode = (int) wParam;
 
 	DWORD sc = GetSelectionCount();
@@ -2179,48 +2400,38 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 	{
 	case VK_LEFT:
 		{
-			if ( sc == 0 )
+			int si = FileSelections.size();
+
+			std::vector<bool>::iterator iS;
+			int fi = 0;
+
+			for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
 			{
-				ParentSelected = true;
+				if ( ( *iS ) && ( fi < si ) )
+				{
+					si = fi;
+				}
+				fi++;
+			}
+
+			if ( ( sc > 0 ) && ( si > 0 ) )
+			{
+				si--;
 			}
 			else
 			{
-				if ( ( sc == 1 ) && ( GetSelectedIndex() == 0 ) && ( FS->FSID != FS_Root ) )
+				si = 0;
+			}
+
+			if ( !ShiftPressed() )
+			{
+				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
 				{
-					ClearItems( false );
-				}
-				else
-				{
-					DWORD si = 0xFFFFFFFF;
-
-					std::vector<bool>::iterator iS;
-					DWORD fi = 0;
-
-					for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
-					{
-						if ( ( *iS ) && ( fi < si ) )
-						{
-							si = fi;
-						}
-						fi++;
-					}
-
-					if ( !ShiftPressed() )
-					{
-						for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
-						{
-							*iS = false;
-						}
-					}
-
-					if ( si > 0 )
-					{
-						si--;
-					}
-
-					FileSelections[ si ] = true;
+					*iS = false;
 				}
 			}
+
+			FileSelections[ si ] = true;
 		}
 
 		break;
@@ -2257,26 +2468,20 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 			}
 
 			FileSelections[ si ] = true;
-
-			ParentSelected = false;
 		}
 
 		break;
 
 	case VK_UP:
 		{
-			if ( sc == 0 )
-			{
-				ParentSelected = true;
-			}
-			else
-			{
-				int   si = 0x7FFFFFFF;
-				DWORD ei = 0x00000000;
+			int   si = 0x7FFFFFFF;
+			DWORD ei = 0x00000000;
 
-				std::vector<bool>::iterator iS;
-				DWORD fi = 0;
+			std::vector<bool>::iterator iS;
+			DWORD fi = 0;
 
+			if ( sc >0 ) 
+			{
 				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
 				{
 					if ( ( *iS ) && ( fi < si ) )
@@ -2289,40 +2494,47 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 					}
 					fi++;
 				}
+			}
+			else
+			{
+				si = 0;
+				ei = 0;
+			}
+
+			if ( !ShiftPressed() )
+			{
+				ClearItems( false );
+
+				ei = si;
+			}
+
+			if ( (si - (int) IconsPerLine) > 0 )
+			{
+				si -= IconsPerLine;
 
 				if ( !ShiftPressed() )
 				{
-					ClearItems( false );
+					ei -= IconsPerLine;
 				}
+			}
+			else
+			{
+				si = 0;
 
-				if ( (si - (int) IconsPerLine) > 0 )
+				if ( !ShiftPressed() )
 				{
-					si -= IconsPerLine;
-
-					if ( !ShiftPressed() )
-					{
-						ei -= IconsPerLine;
-					}
+					ei = 0;
 				}
-				else
+			}
+
+			fi = 0;
+			for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+			{
+				if ( ( fi >= si ) && ( fi <= ei ) )
 				{
-					si = 0;
-
-					if ( !ShiftPressed() )
-					{
-						ei = 0;
-					}
+					*iS = true;
 				}
-
-				fi = 0;
-				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
-				{
-					if ( ( fi >= si ) && ( fi <= ei ) )
-					{
-						*iS = true;
-					}
-					fi++;
-				}
+				fi++;
 			}
 		}
 
@@ -2330,18 +2542,14 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 
 	case VK_DOWN:
 		{
-			if ( sc == 0 )
-			{
-				ParentSelected = true;
-			}
-			else
-			{
-				int   si = 0x7FFFFFFF;
-				DWORD ei = 0x00000000;
+			int   si = 0x7FFFFFFF;
+			DWORD ei = 0x00000000;
 
-				std::vector<bool>::iterator iS;
-				DWORD fi = 0;
+			std::vector<bool>::iterator iS;
+			DWORD fi = 0;
 
+			if ( sc > 0 )
+			{
 				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
 				{
 					if ( ( *iS ) && ( fi < si ) )
@@ -2354,40 +2562,47 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 					}
 					fi++;
 				}
+			}
+			else
+			{
+				si = 0;
+				ei = 0;
+			}
+
+			if ( !ShiftPressed() )
+			{
+				ClearItems( false );
+
+				si = ei;
+			}
+
+			if ( (si + (int) IconsPerLine) < FileSelections.size() - 1 )
+			{
+				ei += IconsPerLine;
 
 				if ( !ShiftPressed() )
 				{
-					ClearItems( false );
+					si += IconsPerLine;
 				}
+			}
+			else
+			{
+				ei = FileSelections.size() - 1;
 
-				if ( (si + (int) IconsPerLine) < FileSelections.size() - 1 )
+				if ( !ShiftPressed() )
 				{
-					ei += IconsPerLine;
-
-					if ( !ShiftPressed() )
-					{
-						si += IconsPerLine;
-					}
+					si = FileSelections.size() - 1;
 				}
-				else
+			}
+
+			fi = 0;
+			for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
+			{
+				if ( ( fi >= si ) && ( fi <= ei ) )
 				{
-					ei = FileSelections.size() - 1;
-
-					if ( !ShiftPressed() )
-					{
-						si = FileSelections.size() - 1;
-					}
+					*iS = true;
 				}
-
-				fi = 0;
-				for ( iS = FileSelections.begin(); iS != FileSelections.end(); iS++ )
-				{
-					if ( ( fi >= si ) && ( fi <= ei ) )
-					{
-						*iS = true;
-					}
-					fi++;
-				}
+				fi++;
 			}
 		}
 
@@ -2395,14 +2610,16 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 
 	case VK_RETURN:
 		{
-			DWORD si = GetSelectedIndex();
-
-			if ( FS->FSID != FS_Root )
+			if ( IgnoreKeys > 0 )
 			{
-				si++;
+				IgnoreKeys--;
 			}
+			else
+			{
+				DWORD si = GetSelectedIndex();
 
-			ActivateItem( ( ( si % IconsPerLine ) * ItemWidth ) + ( ItemWidth / 2 ), ( (si / IconsPerLine ) * ItemHeight ) + (ItemHeight / 2 ) );
+				ActivateItem( ( ( si % IconsPerLine ) * ItemWidth ) + ( ItemWidth / 2 ) + 128, ( (si / IconsPerLine ) * ItemHeight ) + (ItemHeight / 2 ) );
+			}
 		}
 		break;
 
@@ -2413,7 +2630,11 @@ void CFileViewer::DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam )
 
 	DoStatusBar();
 
-	Update();
+	FreeLabels();
+
+	UpdateSidePanelFlags();
+
+	Redraw();
 }
 
 void CFileViewer::DoContextMenu( void )
@@ -2480,7 +2701,7 @@ void CFileViewer::DoContextMenu( void )
 
 	bool ImageSet = true;
 
-	for ( iFile = FS->pDirectory->Files.begin(); iFile != FS->pDirectory->Files.end(); iFile++ )
+	for ( iFile = TheseFiles.begin(); iFile != TheseFiles.end(); iFile++ )
 	{
 		if ( ( FileSelections[ iFile->fileID ] ) && ( iFile->Type != FT_MiscImage ) )
 		{
@@ -2499,6 +2720,40 @@ void CFileViewer::DoContextMenu( void )
 		EnableMenuItem( hPopup, IDM_RENAME, MF_BYCOMMAND | MF_DISABLED );
 	}
 
+	/* If no files are selected but at least one is playable, or at least one of the selected
+	   files is playable, add the Play Audio menu option */
+
+	bool Playable = false;
+
+	DWORD c = GetSelectionCount();
+
+	for ( iFile = TheseFiles.begin(); iFile != TheseFiles.end(); iFile++ )
+	{
+		if ( c > 0 )
+		{
+			if ( ( FileSelections[ iFile->fileID ] ) && ( iFile->Flags & FF_Audio) )
+			{
+				Playable = true;
+			}
+		}
+		else
+		{
+			if ( iFile->Flags & FF_Audio )
+			{
+				Playable = true;
+			}
+		}
+	}
+
+	if ( Playable )
+	{
+		AppendMenu( hSubMenu, MF_SEPARATOR, 0, 0 );
+
+		AppendMenu( hSubMenu, MF_STRING, IDM_PLAY_AUDIO, L"Play/Save &Tape Audio" );
+	}
+
+	DoLocalCommandMenu( hPopup );
+
 	TrackPopupMenu(hSubMenu, 0, rect.left + mouseX, rect.top + mouseY, 0, hWnd, NULL);
 
 	DestroyMenu(hPopup);
@@ -2516,4 +2771,243 @@ void CFileViewer::DoStatusBar( void )
 	}
 
 	::PostMessage( ParentWnd, WM_UPDATESTATUS, (WPARAM) this, (LPARAM) pStatus );
+}
+
+void CFileViewer::FreeLabels( void )
+{
+	std::vector<FontBitmap *>::iterator iF;
+
+	EnterCriticalSection( &CacheLock );
+
+	for ( iF = FileLabels.begin(); iF !=FileLabels.end(); iF++ )
+	{
+		if ( *iF != nullptr )
+		{
+			delete *iF;
+		}
+
+		*iF = nullptr;
+	}
+
+	for ( iF = FileDescs.begin(); iF !=FileDescs.end(); iF++ )
+	{
+		if ( *iF != nullptr )
+		{
+			delete *iF;
+		}
+
+		*iF = nullptr;
+	}
+
+	LeaveCriticalSection( &CacheLock );
+}
+
+void CFileViewer::DoLocalCommandMenu( HMENU hPopup )
+{
+	LocalCommands cmds = FS->GetLocalCommands();
+
+	if ( !cmds.HasCommandSet )
+	{
+		return;
+	}
+
+	HMENU hSubMenu = GetSubMenu(hPopup, 0);	
+
+	HMENU hCommandMenu = CreatePopupMenu();
+
+	AppendMenu( hSubMenu, MF_SEPARATOR, 0, NULL );
+	AppendMenu( hSubMenu, MF_STRING | MF_POPUP, (UINT_PTR) hCommandMenu, cmds.Root.c_str());
+
+	UINT index = LC_MENU_BASE + 1;
+
+	std::vector<LocalCommand>::iterator iter;
+
+	for ( iter = cmds.CommandSet.begin(); iter != cmds.CommandSet.end(); iter++ )
+	{
+		UINT Flags = MF_STRING;
+
+		DWORD s = GetSelectionCount();
+
+		if ( ( s == 0 ) && ( ! ( iter->Flags & LC_ApplyNone ) ) ) { Flags |= MF_GRAYED; }
+		if ( ( s == 1 ) && ( ! ( iter->Flags & LC_ApplyOne  ) ) ) { Flags |= MF_GRAYED; }
+		if ( ( s >  1 ) && ( ! ( iter->Flags & LC_ApplyMany ) ) ) { Flags |= MF_GRAYED; }
+
+		if ( iter->Flags & LC_IsChecked ) { Flags |= MF_CHECKED; }
+
+		if ( iter->Flags & LC_IsSeparator )
+		{
+			AppendMenu( hCommandMenu, MF_SEPARATOR, 0, 0 );
+		}
+		else
+		{
+			AppendMenu( hCommandMenu, Flags, index, iter->Name.c_str() );
+		}
+
+		index++;
+	}
+	
+}
+
+void CFileViewer::DoPlayAudio( void )
+{
+	std::vector<NativeFile> TapeParts;
+
+	NativeFileIterator iFile;
+
+	DWORD c = GetSelectionCount();
+
+	for ( iFile = TheseFiles.begin(); iFile != TheseFiles.end(); iFile++ )
+	{
+		if ( iFile->Flags & FF_Audio )
+		{
+			if ( c == 0 )
+			{
+				TapeParts.push_back( *iFile );
+			}
+			else
+			{
+				if ( FileSelections[ iFile->fileID ] )
+				{
+					TapeParts.push_back( *iFile );
+				}
+			}
+		}
+	}
+
+	CTempFile store;
+	TapeIndex indexes;
+
+	FS->MakeAudio( TapeParts, indexes, store );
+
+	store.Keep();
+
+	AudioPlayer *player = new AudioPlayer( store, indexes );
+
+	player->Create( hWnd, hInst );
+}
+
+void CFileViewer::ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleComponent> *pTitleStack )
+{
+	EnterCriticalSection( &CacheLock );
+
+	std::vector< FileSystem *>::iterator iStack;
+	
+	pTitleStack->clear();
+
+	iStack = pFS->begin();
+
+	// Skip over the root if we have more than 1 FS deep 
+	if ( pFS->size() > 1U )
+	{
+		iStack++;
+	}
+
+	while ( iStack != pFS->end() )
+	{
+		TitleComponent t;
+
+		if ( (*iStack)->EnterIndex == 0xFFFFFFFF )
+		{
+			strncpy_s( (char *) t.String, 512, (char *) (*iStack)->GetTitleString( nullptr ), 511 );
+		}
+		else
+		{
+			strncpy_s( (char *) t.String, 512, (char *) (*iStack)->GetTitleString( &(*iStack)->pDirectory->Files[ (*iStack)->EnterIndex ] ), 511 );
+		}
+
+		t.Encoding = (*iStack)->GetEncoding();
+
+		pTitleStack->push_back( t );
+
+		iStack++;
+	}
+	
+	SetTitleStack( *pTitleStack );
+
+	LeaveCriticalSection( &CacheLock );
+}
+
+void CFileViewer::UpdateSidePanelFlags()
+{
+	DWORD f = 0;
+
+	EnterCriticalSection( &CacheLock );
+
+	DWORD sc = GetSelectionCount();
+
+	if ( CurrentFSID == FS_Root )
+	{
+		f |= SPF_RootFS;
+	}
+
+	if ( FS->Flags & FSF_Supports_Dirs )
+	{
+		f |= SPF_NewDirs;
+	}
+
+	if ( ! ( FS->Flags & FSF_Prohibit_Nesting ) )
+	{
+		f |= SPF_NewImages;
+	}
+
+	if ( ( FS->Flags & FSF_Reorderable ) && ( sc > 0 ) )
+	{
+		f |= SPF_ReOrderable;
+	}
+
+	std::vector<bool>::iterator i;
+
+	DWORD Index = 0;
+	bool Rename = true;
+	bool Delete = true;
+	bool Copy   = true;
+	bool Audio  = true;
+
+	for ( i = FileSelections.begin(); i != FileSelections.end(); i++ )
+	{
+		if ( ( *i ) || ( sc == 0 ) )
+		{
+			if ( TheseFiles[ Index ].Flags & FF_NotRenameable )
+			{
+				Rename = false;
+			}
+
+			if ( TheseFiles[Index].Flags & FF_Pseudo )
+			{
+				Delete = false;
+				Rename = false;
+				Copy   = false;
+			}
+
+			if ( TheseFiles[Index].Flags & FF_Special )
+			{
+				Delete = false;
+				Rename = false;
+				Copy   = false;
+			}
+
+			if ( !( TheseFiles[Index].Flags & FF_Audio ) )
+			{
+				Audio = false;
+			}
+		}
+
+		Index++;
+	}
+
+	if ( sc == 0 )
+	{
+		Delete = false;
+		Rename = false;
+		Copy   = false;
+	}
+
+	if ( Audio ) { f |= SPF_Playable; }
+	if ( Delete ) { f |= SPF_Delete; }
+	if ( Copy ) { f |= SPF_Copy; }
+	if ( Rename ) { f |= SPF_Rename; }
+
+	LeaveCriticalSection( &CacheLock );
+
+	SideBar.SetFlags( f );
 }

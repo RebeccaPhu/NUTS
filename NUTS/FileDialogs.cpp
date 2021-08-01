@@ -94,3 +94,42 @@ bool OpenFileDialog( HWND hWnd, std::wstring &filename, std::wstring FileType, s
 
 	return r;
 }
+
+bool OpenAnyFileDialog( HWND hWnd, std::wstring &filename, std::wstring Caption )
+{
+	WCHAR Filename[ MAX_PATH ];
+
+	Filename[ 0 ] = 0;
+
+	OPENFILENAME of;
+
+	ZeroMemory( &of, sizeof( of ) );
+
+	WCHAR filter[ 256 ];
+	wsprintf( &filter[ 0 ], L"Any file" );
+	wsprintf( &filter[ 9 ], L"*.*" );
+
+	filter[ 13 ] = 0;
+
+	of.lStructSize       = sizeof( OPENFILENAME );
+	of.hwndOwner         = hWnd;
+	of.lpstrCustomFilter = NULL;
+	of.lpstrFile         = Filename;
+	of.nMaxFile          = MAX_PATH;
+	of.lpstrFileTitle    = NULL;
+	of.nMaxFileTitle     = 0;
+	of.lpstrInitialDir   = NULL;
+	of.nFilterIndex      = 1;
+	of.Flags             = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST;
+	of.lpstrFilter       = filter;
+	of.lpstrTitle        = Caption.c_str();
+
+	bool r = GetOpenFileName( &of );
+
+	if ( r )
+	{
+		filename = std::wstring( Filename );
+	}
+
+	return r;
+}

@@ -365,14 +365,14 @@ unsigned int __stdcall CreationThread(void *param)
 
 		BYTE *pF = pFilename->GetText();
 
-		rstrncpy( file.Filename, pF, 255 );
+		file.Filename = pF;
 
 		ContainerFS->WriteFile( &file, NewImage );
 		
 		CFileViewer *pPane = (CFileViewer *) CurrentAction.Pane;
 
 		pPane->Updated = true;
-		pPane->Redraw();
+		pPane->Refresh();
 	}
 
 	/* This is here purely to make the "and I'm spent" moment visible to the user */

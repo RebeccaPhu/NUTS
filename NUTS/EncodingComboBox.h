@@ -89,9 +89,11 @@ private:
 	bool  DDPressed;
 	DWORD iIndex;
 	bool  Tracking;
+	bool  OverDropdown;
 	long  HoverID;
 	DWORD wx;
 	DWORD wy;
+	DWORD ww;
 
 	std::map< WORD, BYTE *> ListEntries;
 };

@@ -5,7 +5,9 @@
 #include "TEXTContentViewer.h"
 #include "SCREENContentViewer.h"
 #include "EncodingEdit.h"
+#include "FontBitmap.h"
 #include "DropSite.h"
+#include "SidePanel.h"
 #include "Defs.h"
 
 #include <vector>
@@ -43,9 +45,15 @@ public:
 	static INT_PTR CALLBACK RenameDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static BYTE *pRenameFile;
 	static EncodingEdit *pRenameEdit;
+	static BYTE *pRenameExt;
+	static EncodingEdit *pRenameEditX;
+	static DWORD StaticFlags;
+	static DWORD StaticEncoding;
 	static INT_PTR CALLBACK NewDirDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static BYTE *pNewDir;
 	static EncodingEdit *pNewDirEdit;
+	static BYTE *pNewDirX;
+	static EncodingEdit *pNewDirEditX;
 
 public:
 	FileSystem *FS;
@@ -61,17 +69,22 @@ private:
 	HWND    hScrollBar;
 	HWND    hProgress;
 
+	SidePanel SideBar;
+
 	HFONT   titleBarFont;
 	HFONT   filenameFont;
 
 	HBITMAP viewBuffer;
 	HGDIOBJ viewObj;
 	HDC     viewDC;
+	HDC     hSourceDC;
 	long    KnownX,KnownY;
 
 	int     FileEntries;
 
 	std::vector<bool> FileSelections;
+	std::vector<FontBitmap *> FileLabels;
+	std::vector<FontBitmap *> FileDescs;
 
 	bool    ParentSelected;
 	bool    HasFocus;
@@ -99,9 +112,15 @@ private:
 	DWORD   WindowHeight;
 	DWORD   WindowWidth;
 
-	CRITICAL_SECTION RedrawLock;
-
 	DropSite *pDropSite;
+
+	int		IgnoreKeys;
+
+	/* Caching */
+	CRITICAL_SECTION CacheLock;
+
+	std::vector<NativeFile> TheseFiles;
+	ResolvedIconList        TheseIcons;
 
 private:
 	void  DrawBasicLayout();
@@ -126,8 +145,11 @@ private:
 	void  DoSwapFiles( BYTE UpDown );
 	void  DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam );
 	void  DoContextMenu( void );
+	void  DoLocalCommandMenu( HMENU hPopup );
 	void  DoStatusBar( void );
 	void  NewDirectory( void );
+	void  FreeLabels( void );
+	void  DoPlayAudio( void );
 
 	std::map<UINT, DWORD> MenuFSMap;
 	std::map<UINT, DWORD> MenuXlatorMap;
@@ -142,7 +164,7 @@ private:
 
 	long CalculatedY;
 
-	bool IsSearching;
+	volatile bool IsSearching;
 	int  LastItemIndex;
 
 public:
@@ -155,12 +177,21 @@ public:
 	DWORD GetSelectedIndex( void );
 
 	void  SetSearching( bool s );
+
+	void  Refresh();
+
+	void ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleComponent> *pTitleStack );
+
+	void UpdateSidePanelFlags();
 };
 
 #define FILESYS_MENU_BASE 43000
-#define GFX_MENU_BASE     43600
-#define TXT_MENU_BASE     43800
+#define GFX_MENU_BASE     43400
+#define TXT_MENU_BASE     43600
+#define LC_MENU_BASE      43800
 
-#define FILESYS_MENU_END  ( FILESYS_MENU_BASE + 499 )
+#define FILESYS_MENU_END  ( FILESYS_MENU_BASE + 399 )
 #define GFX_MENU_END      ( GFX_MENU_BASE + 199 )
 #define TXT_MENU_END      ( TXT_MENU_BASE + 199 )
+#define LC_MENU_END       ( LC_MENU_BASE + 199 )
+

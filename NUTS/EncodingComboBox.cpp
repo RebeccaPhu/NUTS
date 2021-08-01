@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "EncodingComboBox.h"
 
 #include <WindowsX.h>
@@ -33,7 +33,7 @@ EncodingComboBox::EncodingComboBox( HWND hParent, int x, int y, int w )
 		wc.lpfnWndProc   = EncodingComboBoxWindowProc;
 		wc.hInstance     = hInst;
 		wc.lpszClassName = EncodingComboBoxClass;
-		wc.hCursor       = LoadCursor( hInst, IDC_ARROW );
+		wc.hCursor       = LoadCursor( NULL, IDC_ARROW );
 
 		RegisterClass(&wc);
 
@@ -44,7 +44,7 @@ EncodingComboBox::EncodingComboBox( HWND hParent, int x, int y, int w )
 		ddwc.lpfnWndProc   = EncodingComboBoxWindowProc;
 		ddwc.hInstance     = hInst;
 		ddwc.lpszClassName = EncodingComboBoxClassDD;
-		ddwc.hCursor       = LoadCursor( hInst, IDC_ARROW );
+		ddwc.hCursor       = LoadCursor( NULL, IDC_ARROW );
 
 		RegisterClass(&ddwc);
 
@@ -70,23 +70,24 @@ EncodingComboBox::EncodingComboBox( HWND hParent, int x, int y, int w )
 
 	wx = x;
 	wy = y;
+	ww = w;
 
 	boxes[ hWnd ] = this;
 
 	hDropDown = CreateWindowEx(
 		0,
 		EncodingComboBoxClassDD,
-		L"Encoding Combo Box Drop Down Button",
+		L"Wouldn't it be nice, to get on with me neigh-bours",
 		WS_CHILD | WS_VISIBLE | WS_TABSTOP,
 
-		x + (w - 18 ), y, 18, 23,
+		x + (w - 22 ), y, 22, 23,
 
 		hParent, NULL, hInst, NULL
 	);
 
 	boxes[ hDropDown ] = this;
 
-	pTextArea  = new EncodingEdit( hParent, x, y, w - 18, false );
+	pTextArea  = new EncodingEdit( hParent, x, y, w - 22, false );
 	DDPressed  = false;
 	iIndex     = 0;
 	Tracking   = false;
@@ -165,9 +166,49 @@ LRESULT EncodingComboBox::WindowProc( HWND wnd, UINT uMsg, WPARAM wParam, LPARAM
 
 	case WM_MOUSEMOVE:
 		{
-			HoverID = ( GET_Y_LPARAM( lParam ) - 8 ) / 20;
+			long xc = GET_X_LPARAM( lParam );
 
-			Invalidate = true;
+			if ( wnd == hWnd )
+			{
+				if ( ( xc >= 0 ) && ( xc <= (long) ww ) )
+				{
+					OverDropdown = true;
+
+					HoverID = ( GET_Y_LPARAM( lParam ) - 8 ) / 20;
+
+					Invalidate = true;
+
+					SetCursor( LoadCursor( NULL, IDC_ARROW ) );
+				}
+				else
+				{
+					OverDropdown = false;
+
+					HoverID = -1;
+
+					Invalidate = true;
+				}
+			}
+
+			if ( wnd == hDropDown )
+			{
+				TrackMouse();
+			}
+		}
+		break;
+
+	case WM_MOUSELEAVE:
+		{
+			if ( wnd == hDropDown )
+			{
+				DDPressed = false;
+
+				RECT r;
+				GetClientRect( hDropDown, &r );
+				InvalidateRect( hDropDown, &r, FALSE );
+
+				Tracking = false;
+			}
 		}
 		break;
 
@@ -230,6 +271,11 @@ int EncodingComboBox::DoPaint( HWND wnd )
 		}
 
 		DeleteObject( (HGDIOBJ) DDBrush );
+
+		r.top += 4;
+
+		SetBkColor( hDC, brsh.lbColor );
+		DrawText( hDC, L"▼", 1, &r, DT_CENTER | DT_VCENTER );
 	}
 
 	if ( wnd == hWnd )
@@ -274,7 +320,7 @@ int EncodingComboBox::DoDropdown( void )
 
 	GetWindowRect( ParentWnd, &wr );
 
-	::SetWindowPos( hWnd, NULL, wr.left + wx, wr.top + wy + 23, 8 + ww * 8, 8 + max( 4, ListEntries.size() ) * 20, SWP_NOREPOSITION | SWP_NOZORDER );
+	::SetWindowPos( hWnd, NULL, wr.left + wx, wr.top + wy + 23, 8 + ww * 8, 8 + max( 4, ListEntries.size() * 20 ), SWP_NOREPOSITION | SWP_NOZORDER );
 
 	ShowWindow( hWnd, SW_SHOW );
 
@@ -296,9 +342,9 @@ void EncodingComboBox::TrackMouse( void )
 		TRACKMOUSEEVENT tme;
 
 		tme.cbSize      = sizeof( TRACKMOUSEEVENT );
-		tme.dwFlags     = TME_NONCLIENT;
+		tme.dwFlags     = TME_LEAVE;
 		tme.dwHoverTime = HOVER_DEFAULT;
-		tme.hwndTrack   = hWnd;
+		tme.hwndTrack   = hDropDown;
 
 		TrackMouseEvent( &tme );
 
