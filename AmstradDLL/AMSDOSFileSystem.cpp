@@ -32,9 +32,8 @@ AMSDOSFileSystem::AMSDOSFileSystem(DataSource *pDataSource) : CPMFileSystem( pDa
 
 	Flags =
 		FSF_Creates_Image | FSF_Formats_Image |
-		FSF_Supports_Spaces | FSF_Supports_Dirs |
 		FSF_SupportBlocks | FSF_SupportFreeSpace | FSF_Capacity |
-		FSF_FixedSize | FSF_UseSectors | FSF_Uses_DSK | FSF_No_Quick_Format;
+		FSF_FixedSize | FSF_UseSectors | FSF_Uses_DSK | FSF_No_Quick_Format | FSF_Uses_Extensions;
 }
 
 bool AMSDOSFileSystem::IncludeHeader( BYTE *pHeader )
@@ -58,6 +57,8 @@ bool AMSDOSFileSystem::IncludeHeader( BYTE *pHeader )
 
 FSHint AMSDOSFileSystem::Offer( BYTE *Extension )
 {
+	SetShape();
+
 	FSHint hint;
 
 	hint.FSID       = FSID;
@@ -71,21 +72,21 @@ FSHint AMSDOSFileSystem::Offer( BYTE *Extension )
 		}
 	}
 
-	WORD SecID = pSource->GetSectorID( 0 );
+	SectorIDSet set = pSource->GetTrackSectorIDs( 0, 0, false );
 
 	/* CPC Data Disk */
-	if ( ( SecID != 0xFFFF ) && ( SecID >= 0xC0 ) && ( SecID <= 0xCA ) )
+	if ( ( set.size() > 0 ) && ( set[ 0 ] >= 0xC0 ) && ( set[ 0 ] <= 0xCA ) )
 	{
 		hint.Confidence += 10;
 	}
 
 	/* CPC System Disk */
-	if ( ( SecID != 0xFFFF ) && ( SecID >= 0x40 ) && ( SecID <= 0x4A ) )
+	if ( ( set.size() > 0 ) && ( set[ 0 ] >= 0x40 ) && ( set[ 0 ] <= 0x4A ) )
 	{
 		hint.Confidence += 10;
 	}
 
-	if ( SecID == 0xFFFF )
+	if ( set.size() == 0 )
 	{
 		hint.Confidence = 0;
 	}
@@ -288,7 +289,7 @@ int AMSDOSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	CTempFile tmp;
 
 	ReadFile( FileID, tmp );
-	DeleteFile( pFile, FILEOP_DELETE_FILE );
+	DeleteFile( FileID );
 	WriteFile( &file, tmp );
 
 	return 0;
@@ -318,7 +319,7 @@ bool AMSDOSFileSystem::GetCPMHeader( NativeFile *pFile, BYTE *pHeader )
 	* (WORD *) &pHeader[ 26 ] = (WORD) pFile->Attributes[ 6 ];
 	* (WORD *) &pHeader[ 24 ] = (WORD) pFile->Length;
 
-	pHeader[ 18 ] = pFile->Attributes[ 7 ];
+	pHeader[ 18 ] = (BYTE) pFile->Attributes[ 7 ];
 
 	/* Calculate checksum on header */
 	WORD sum = 0;

@@ -26,6 +26,81 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="cpccpm.sys" />
+    <None Include="..\sinclairdll\TurboData.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\stop48.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\SinclairDLL\Block10.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\setsignal.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\Select.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\Return.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\PureTone.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\pulse.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\PureData.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\pause.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\message.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\LoopStart.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\LoopEnd.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\jump.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\info.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\hardware.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\GroupStart.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\glue.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\general.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\GroupEnd.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\Direct.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\description.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\custom.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\CSW.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\sinclairdll\Call.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -50,6 +125,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LocomotiveBASICTranslator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AmstradCDTFileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AmstradCDTDirectory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -97,6 +178,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\NUTS\Preference.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\TZXDirectory.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\TZXFileSystem.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\TZXIcons.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="AmstradCDTFileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AmstradCDTDirectory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\SourceFunctions.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TZXConfig\TZXHardware.cpp">
       <Filter>Source Files\Imported Source</Filter>
     </ClCompile>
   </ItemGroup>

@@ -32,14 +32,25 @@ void AMSDOSDirectory::ExtraReadDirectory( NativeFile *pFile )
 
 	if ( pFile->Attributes[ 0xF ] == 0 )
 	{
-		DWORD Adx = pFile->Attributes[ 1 ] * 1024;
-
-		BYTE Header[ 128 ];
+		BYTE Header[ 512 ];
 		BYTE CPMHeader[ 32 ];
 
 		ExportCPMDirectoryEntry( pFile, CPMHeader );
 
-		pSource->ReadRaw( ( DirSector * 0x200 ) + Adx, 128, Header );
+		/* Calculate where the sector is */
+		DWORD Adx = DirSector + ( pFile->Attributes[ 1 ] * 2 );
+
+		WORD Track  = Adx / 9;
+		WORD Sector = Adx % 9;
+
+		SectorIDSet set = pSource->GetTrackSectorIDs( 0, Track, true );
+
+		if ( set.size() < ( Sector + 1 ) )
+		{
+			return;
+		}
+
+		pSource->ReadSectorCHS( 0, Track, set[ Sector ], Header );
 
 		/* Checksum the header, as AMSDOS uses headerless files sometimes because **** you, that's why */
 		WORD sum = 0;
