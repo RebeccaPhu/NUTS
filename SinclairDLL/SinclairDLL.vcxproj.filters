@@ -25,6 +25,90 @@
     <None Include="SinclairFont.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\blank-tzx.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Block10.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="TurboData.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="PureTone.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="pulse.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="PureData.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Direct.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="CSW.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="general.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="pause.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="GroupStart.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="GroupEnd.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="jump.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="LoopStart.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="LoopEnd.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Call.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Return.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Select.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="stop48.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="setsignal.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="description.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="message.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="info.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="hardware.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="custom.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="glue.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="turboloader.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -58,6 +142,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DOS3FileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SinclairTZXDirectory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SinclairTZXFileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TRDFileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TRDDirectory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -118,6 +214,30 @@
     </ClCompile>
     <ClCompile Include="..\NUTS\Preference.cpp">
       <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\TZXIcons.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\TZXDirectory.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\TZXFileSystem.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="SinclairTZXDirectory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SinclairTZXFileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TZXConfig\TZXHardware.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="TRDFileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TRDDirectory.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

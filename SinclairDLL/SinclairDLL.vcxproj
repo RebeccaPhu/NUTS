@@ -68,12 +68,19 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <TargetName>Sinclair</TargetName>
+    <LibraryPath>$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)$(Configuration)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(SolutionDir)$(Configuration)</LibraryPath>
+    <TargetName>Sinclair</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <TargetName>Sinclair</TargetName>
+    <LibraryPath>$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -98,7 +105,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>$(OutDir)Sinclair.dll</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);TZXConfig.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -116,6 +124,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)Sinclair.dll</OutputFile>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);TZXConfig.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -133,12 +142,44 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <OutputFile>$(OutDir)Sinclair.dll</OutputFile>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);TZXConfig.lib</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>echo $(SolutionDir)$(Configuration)</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="..\blank-tzx.bmp" />
+    <None Include="bitmap1.bmp" />
+    <None Include="Block10.bmp" />
+    <None Include="Call.bmp" />
+    <None Include="CSW.bmp" />
+    <None Include="custom.bmp" />
+    <None Include="description.bmp" />
+    <None Include="Direct.bmp" />
+    <None Include="general.bmp" />
+    <None Include="glue.bmp" />
+    <None Include="GroupEnd.bmp" />
+    <None Include="GroupStart.bmp" />
+    <None Include="hardware.bmp" />
+    <None Include="info.bmp" />
+    <None Include="jump.bmp" />
+    <None Include="LoopEnd.bmp" />
+    <None Include="LoopStart.bmp" />
+    <None Include="message.bmp" />
+    <None Include="pause.bmp" />
+    <None Include="pulse.bmp" />
+    <None Include="PureData.bmp" />
+    <None Include="PureTone.bmp" />
     <None Include="rcdata1.bin" />
     <None Include="ReadMe.txt" />
+    <None Include="Return.bmp" />
+    <None Include="Select.bmp" />
+    <None Include="setsignal.bmp" />
     <None Include="SinclairFont.bin" />
+    <None Include="stop48.bmp" />
+    <None Include="TurboData.bmp" />
+    <None Include="turboloader.bin" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DOS3Directory.h" />
@@ -152,6 +193,10 @@
     <ClInclude Include="TAPDirectory.h" />
     <ClInclude Include="TAPFileSystem.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="SinclairTZXDirectory.h" />
+    <ClInclude Include="SinclairTZXFileSystem.h" />
+    <ClInclude Include="TRDDirectory.h" />
+    <ClInclude Include="TRDFileSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\NUTS\CPM.cpp" />
@@ -164,6 +209,10 @@
     <ClCompile Include="..\NUTS\Preference.cpp" />
     <ClCompile Include="..\NUTS\SourceFunctions.cpp" />
     <ClCompile Include="..\NUTS\TempFile.cpp" />
+    <ClCompile Include="..\NUTS\TZXDirectory.cpp" />
+    <ClCompile Include="..\NUTS\TZXFileSystem.cpp" />
+    <ClCompile Include="..\NUTS\TZXIcons.cpp" />
+    <ClCompile Include="..\TZXConfig\TZXHardware.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</CompileAsManaged>
@@ -191,6 +240,10 @@
     </ClCompile>
     <ClCompile Include="TAPDirectory.cpp" />
     <ClCompile Include="TAPFileSystem.cpp" />
+    <ClCompile Include="SinclairTZXDirectory.cpp" />
+    <ClCompile Include="SinclairTZXFileSystem.cpp" />
+    <ClCompile Include="TRDDirectory.cpp" />
+    <ClCompile Include="TRDFileSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="SinclairDLL.rc" />

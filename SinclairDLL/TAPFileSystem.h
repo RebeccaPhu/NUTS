@@ -37,8 +37,8 @@ public:
 
 	int	ReadFile(DWORD FileID, CTempFile &store);
 	int	WriteFile(NativeFile *pFile, CTempFile &store);
-	int DeleteFile( NativeFile *pFile, int FileOp );
-	int Rename( DWORD FileID, BYTE *NewName );
+	int DeleteFile( DWORD FileID );
+	int Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 	BYTE *DescribeFile( DWORD FileIndex );
 
 	AttrDescriptors GetAttributeDescriptions( void );
@@ -46,10 +46,27 @@ public:
 	int SwapFile( DWORD FileID1, DWORD FileID2 );
 	int SetProps( DWORD FileID, NativeFile *Changes );
 
+	int MakeAudio( std::vector<NativeFile> &Selection, TapeIndex &indexes, CTempFile &store );
+
 private:
 	BYTE TAPSum( BYTE *Blk, DWORD Bytes );
 
 	int RewriteTAPFile( DWORD SpecialID, DWORD SwapID, BYTE *pName, int Reason );
 
 	int	WriteAtStore(NativeFile *pFile, CTempFile &store, CTempFile *output, DWORD Offset);
+
+	inline void MakeAudioPulses( DWORD PulseWidth, DWORD PulseCycles, CTempFile *output );
+	inline void MakeAudioPulse( DWORD PulseWidth1, DWORD PulseWidth2, CTempFile *output );
+	inline void MakeAudioBytes( BYTE *pData, DWORD lData, CTempFile *output );
+	inline void MakePause( DWORD ms, CTempFile *output );
+	inline void WriteAudio( CTempFile *output );
+
+private:
+	BYTE SignalLevel;
+
+	BYTE   TapeAudio[ 16384 ];
+	DWORD  TapePtr;
+	DWORD  TapeLimit;
+	double TapePartial;
+	DWORD  AudioPtr;
 };

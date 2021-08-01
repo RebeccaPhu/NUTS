@@ -58,7 +58,7 @@ int TAPDirectory::ReadDirectory(void)
 
 			ZeroMemory( &File, sizeof( File ) );
 
-			rstrncpy( File.Filename, &HeaderBlock[ 4 ], 10 );
+			File.Filename = BYTEString( &HeaderBlock[ 4 ], 10 );
 
 			File.Filename[10] = 0x20;
 
@@ -73,7 +73,7 @@ int TAPDirectory::ReadDirectory(void)
 				}
 			}
 
-			File.Flags = 0;
+			File.Flags           = FF_Audio;
 			File.Attributes[ 0 ] = 0xFFFFFFFF;
 			File.fileID          = FileID;
 			File.FSFileType      = FT_SINCLAIR;
@@ -159,7 +159,7 @@ int TAPDirectory::ReadDirectory(void)
 			
 			if ( IsOrphan )
 			{
-				File.Flags = 0;
+				File.Flags           = FF_Audio;
 				File.Attributes[ 0 ] = TAPOffset;
 				File.Length          = * (WORD *) &ShortHeader[ 0 ];
 				File.fileID          = FileID;
@@ -170,7 +170,7 @@ int TAPDirectory::ReadDirectory(void)
 				File.Attributes[ 2 ] = 0xFFFFFFFF;
 				File.XlatorID        = NULL;
 
-				rstrncpy( File.Filename, (BYTE *) "ORPHAN BLK", 10 );
+				File.Filename = (BYTE *) "ORPHAN BLK";
 
 				File.Length -= 2;
 

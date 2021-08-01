@@ -28,6 +28,11 @@ DOS3FileSystem::DOS3FileSystem(DataSource *pDataSource) : CPMFileSystem( pDataSo
 	pDir = (CPMDirectory *) new DOS3Directory( pDataSource, pMap, DOS3_DPB );
 
 	pDirectory = (Directory *) pDir;
+
+	Flags =
+		FSF_Creates_Image | FSF_Formats_Image |
+		FSF_SupportBlocks | FSF_SupportFreeSpace | FSF_Capacity |
+		FSF_FixedSize | FSF_UseSectors | FSF_Uses_DSK | FSF_No_Quick_Format | FSF_Uses_Extensions;
 }
 
 bool DOS3FileSystem::IncludeHeader( BYTE *pHeader )
@@ -69,10 +74,10 @@ FSHint DOS3FileSystem::Offer( BYTE *Extension )
 		}
 	}
 
-	WORD SecID = pSource->GetSectorID( 0 );
+	SectorIDSet set = pSource->GetTrackSectorIDs( 0, 0, false );
 
 	/* +3DOS Disk */
-	if ( ( SecID != 0xFFFF ) && ( SecID >= 0x01 ) && ( SecID <= 0x09 ) )
+	if ( ( set.size() > 0 ) && ( set[ 0 ] >= 0x01 ) && ( set[ 0 ] <= 0x09 ) )
 	{
 		hint.Confidence += 10;
 	}
@@ -229,7 +234,7 @@ int DOS3FileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	CTempFile tmp;
 
 	ReadFile( FileID, tmp );
-	DeleteFile( pFile, FILEOP_DELETE_FILE );
+	DeleteFile( FileID );
 	WriteFile( &file, tmp );
 
 	return 0;

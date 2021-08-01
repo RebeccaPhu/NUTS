@@ -3,11 +3,15 @@
 #include "TAPFileSystem.h"
 #include "../NUTS/SourceFunctions.h"
 
+#define round(a) ( (a-floor(a)>=0.5)?(floor(a)+1):(floor(a)) )
+
 TAPFileSystem::TAPFileSystem(DataSource *pDataSource) : FileSystem(pDataSource) 
 {
 	pSource = pDataSource;
 
 	FSID = FSID_SPECTRUM_TAP;
+
+	TopicIcon = FT_TapeImage;
 
 	Flags = FSF_Size | FSF_Supports_Spaces | FSF_Reorderable | FSF_Prohibit_Nesting;
 
@@ -83,7 +87,7 @@ BYTE *TAPFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 			{
 				rsprintf(
 					status, "Program: %s - %04X bytes LINE %d, vars: %04X",
-					pDirectory->Files[ FileIndex ].Filename,
+					(BYTE *) pDirectory->Files[ FileIndex ].Filename,
 					(DWORD) pDirectory->Files[ FileIndex ].Length,
 					pDirectory->Files[ FileIndex ].Attributes[ 3 ],
 					pDirectory->Files[ FileIndex ].Attributes[ 4 ]
@@ -93,7 +97,7 @@ BYTE *TAPFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 			{
 				rsprintf(
 					status, "Program: %s - %04X bytes, vars: %04X",
-					pDirectory->Files[ FileIndex ].Filename,
+					(BYTE *) pDirectory->Files[ FileIndex ].Filename,
 					(DWORD) pDirectory->Files[ FileIndex ].Length,
 					pDirectory->Files[ FileIndex ].Attributes[ 4 ]
 				);
@@ -208,7 +212,6 @@ BYTE *TAPFileSystem::DescribeFile( DWORD FileIndex )
 		{
 			rsprintf(
 				status, "Orphaned block (No header) - %04X bytes",
-				UString( (char *) pDirectory->Files[ FileIndex ].Filename ),
 				(DWORD) pDirectory->Files[ FileIndex ].Length
 			);
 		}
@@ -505,7 +508,7 @@ int TAPFileSystem::RewriteTAPFile( DWORD SpecialID, DWORD SwapID, BYTE *pName, i
 
 		if ( ( Reason == REASON_RENAME ) && ( iFile->fileID == SpecialID ) )
 		{
-			rstrncpy( file.Filename, pName, 10 );
+			file.Filename = BYTEString( pName, 10 );
 		}
 
 		int Copied = WriteAtStore( &file, OldFile, &Rewritten, Pos );
@@ -600,15 +603,15 @@ AttrDescriptors TAPFileSystem::GetAttributeDescriptions( void )
 	return Attrs;
 }
 
-int TAPFileSystem::DeleteFile( NativeFile *pFile, int FileOp )
+int TAPFileSystem::DeleteFile( DWORD FileID )
 {
 	/* Note: FileOp is only ever FILEOP_DELETE because we don't complain if the filename already
 	   exists. */
 
-	return RewriteTAPFile( pFile->fileID, 0, nullptr, REASON_DELETE );
+	return RewriteTAPFile( FileID, 0, nullptr, REASON_DELETE );
 }
 
-int TAPFileSystem::Rename( DWORD FileID, BYTE *NewName )
+int TAPFileSystem::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  )
 {
 	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == 0xFFFFFFFF )
 	{
@@ -631,4 +634,245 @@ int TAPFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	}
 
 	return RewriteTAPFile( FileID, 0, nullptr, REASON_PROPS );
+}
+
+#define TStates(t) ( ( (double) t / 3500000.0 ) * 44100.0 )
+#define PStates(t) ( ( (double) t / 1000.0 ) * 44100.0 )
+
+int TAPFileSystem::MakeAudio( std::vector<NativeFile> &Selection, TapeIndex &indexes, CTempFile &store )
+{
+	/* Set up the index sheet */
+	indexes.Title     = L"TAP Image";
+	indexes.Publisher = L"";
+
+	SignalLevel = 0;
+	TapePtr     = 0;
+	AudioPtr    = 0;
+	TapeLimit   = 16384;
+	TapePartial = 0.0;
+
+	NativeFileIterator iFile;
+
+	store.Seek( 0 );
+
+	std::wstring FileName = L"";
+
+	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
+	{
+		if ( iFile->Attributes[ 2 ] != 0xFFFFFFFF )
+		{
+			TapeCue Cue;
+
+			BYTE Header[ 19 ];
+
+			ZeroMemory( Header, 19 );
+
+			Header[ 0 ] = 0x13;
+
+			memset( &Header[ 0x02 ], 0x20, 10 );
+			memcpy( &Header[ 0x02 ], (BYTE *) iFile->Filename, rstrnlen( iFile->Filename, 10 ) );
+
+			* (WORD *) &Header[ 0x0C ] = iFile->Length;
+
+			Header[ 0x01 ] = (BYTE) iFile->Attributes[ 2 ];
+
+			switch ( iFile->Attributes[ 2 ] )
+			{
+			case 0x00:
+				* (WORD *) &Header[ 0x0E ] = iFile->Attributes[ 3 ];
+				* (WORD *) &Header[ 0x10 ] = iFile->Attributes[ 4 ];
+
+				Cue.IndexName = L"Program: " + std::wstring( UString( (char *) iFile->Filename ) );
+				break;
+
+			case 0x01:
+				Header[ 0x0F ] = iFile->Attributes[ 5 ];
+
+				Cue.IndexName = L"Number Array: " + std::wstring( UString( (char *) iFile->Filename ) );
+				break;
+
+			case 0x02:
+				Header[ 0x0F ] = iFile->Attributes[ 5 ];
+
+				Cue.IndexName = L"Character Array: " + std::wstring( UString( (char *) iFile->Filename ) );
+				break;
+
+			case 0x03:
+				* (WORD *) &Header[ 0x0E ] = iFile->Attributes[ 1 ];
+				* (WORD *) &Header[ 0x10 ] = 32768;
+
+				Cue.IndexName = L"Bytes: " + std::wstring( UString( (char *) iFile->Filename ) );
+				break;
+			}
+
+			for ( BYTE c=0; c<18; c++ ) { Header[ 18 ] ^= Header[ c ]; }
+
+			FileName = L"Data block";
+
+			Cue.Flags = 0;
+			Cue.IndexPtr = AudioPtr;
+			Cue.Extra    = L"Header Block";
+			Cue.Flags    = TF_ExtraValid | TF_Extra1;
+
+			indexes.Cues.push_back( Cue );
+			MakeAudioPulses( 2168, 8063, &store );
+			MakeAudioPulse( 667, 753, &store );
+
+			MakeAudioBytes( Header, 19, &store );
+
+			MakePause( 1000, &store );
+		}
+		else
+		{
+			FileName = L"Orphaned Data Block";
+		}
+
+		TapeCue Cue;
+
+		Cue.IndexName = FileName + L", " + std::to_wstring( iFile->Length ) + L" bytes";
+		Cue.Extra     = L"Data block";
+		Cue.Flags     = TF_ExtraValid | TF_Extra1;
+		Cue.IndexPtr  = AudioPtr;
+
+		indexes.Cues.push_back( Cue );
+
+		MakeAudioPulses( 2168, 3223, &store );
+		MakeAudioPulse( 667, 753, &store );
+
+		DWORD BytesToGo = iFile->Length;
+		DWORD Offset    = iFile->Attributes[ 0 ];
+
+		BYTE  Buffer[ 16384 ];
+
+		while ( BytesToGo > 0 )
+		{
+			DWORD BytesRead = min( 16384, BytesToGo );
+
+			pSource->ReadRaw( Offset, BytesRead, Buffer );
+
+			MakeAudioBytes( Buffer, BytesRead, &store );
+
+			Offset    += BytesRead;
+			BytesToGo -= BytesRead;
+		}
+
+		MakePause( 2000, &store );
+	}
+
+	if ( TapePtr > 0 )
+	{
+		TapeLimit = TapePtr;
+
+		WriteAudio( &store );
+	}
+
+	return 0;
+}
+
+void TAPFileSystem::MakeAudioPulses( DWORD PulseWidth, DWORD PulseCycles, CTempFile *output )
+{
+	BYTE sig;
+
+	for ( DWORD i=0; i<PulseCycles; i++ )
+	{
+		double ss = TStates( PulseWidth );
+		
+		DWORD ssr = (DWORD) round(ss);
+
+		for ( DWORD s = 0; s<ssr; s++ )
+		{
+			sig = 127 + (127 * SignalLevel );
+
+			TapeAudio[ TapePtr++ ] = sig;
+
+			AudioPtr++;
+
+			WriteAudio( output );
+		}
+
+		SignalLevel = 1 - SignalLevel;
+	}
+}
+
+void TAPFileSystem::MakeAudioPulse( DWORD PulseWidth1, DWORD PulseWidth2, CTempFile *output )
+{
+	BYTE sig;
+
+	double ss = TStates( PulseWidth1 );
+		
+	DWORD ssr = (DWORD) round(ss);
+
+	sig = 127 + (127 * SignalLevel );
+
+	for ( DWORD s = 0; s<ssr; s++ )
+	{
+		TapeAudio[ TapePtr++ ] = sig;
+
+		AudioPtr++;
+
+		WriteAudio( output );
+	}
+
+	SignalLevel = 1 - SignalLevel;
+
+	ss = TStates( PulseWidth2 );
+		
+	ssr = (DWORD) round(ss);
+
+	sig = 127 + (127 * SignalLevel );
+
+	for ( DWORD s = 0; s<ssr; s++ )
+	{
+		TapeAudio[ TapePtr++ ] = sig;
+
+		AudioPtr++;
+
+		WriteAudio( output );
+	}
+
+	SignalLevel = 1 - SignalLevel;
+}
+
+void TAPFileSystem::MakeAudioBytes( BYTE *pData, DWORD lData, CTempFile *output )
+{
+	for ( DWORD p=0; p<lData; p++ )
+	{
+		for (BYTE b=128; b!=0; b>>=1 )
+		{
+			if ( ( pData[ p ] & b ) == b )
+			{
+				MakeAudioPulse( 1710, 1710, output );
+			}
+			else
+			{
+				MakeAudioPulse( 855, 855, output );
+			}
+		}
+	}
+}
+
+void TAPFileSystem::MakePause( DWORD ms, CTempFile *output )
+{
+	BYTE sig = 127;
+
+	DWORD ss = PStates( ms );
+
+	for ( DWORD s = 0; s<ss; s++ )
+	{
+		TapeAudio[ TapePtr++ ] = sig;
+
+		AudioPtr++;
+
+		WriteAudio( output );
+	}
+}
+
+void TAPFileSystem::WriteAudio( CTempFile *output )
+{
+	if ( TapePtr >= TapeLimit )
+	{
+		output->Write( TapeAudio, TapePtr );
+
+		TapePtr = 0;
+	}
 }
