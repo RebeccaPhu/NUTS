@@ -195,9 +195,15 @@ void ZIPDirectory::TranslateFileType(NativeFile *file) {
 
 	if ( pDot != nullptr )
 	{
-		rstrncpy( file->Extension, pDot + 1, 3 );
+		file->Extension = BYTEString( pDot + 1 );
+
+		/* This looks weird, but is fine. We're going to zero off the dot,
+		   create a new BYTEString from the BYTE * data pointed to by the
+		   old, and the set the old to the new. */
 
 		*pDot = 0;
+
+		file->Filename = BYTEString( file->Filename );
 
 		file->Flags |= FF_Extension;
 	}
