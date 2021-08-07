@@ -2,7 +2,7 @@
 
 #include "../nuts/filesystem.h"
 #include "SpriteFileDirectory.h"
-
+#include "AcornDLL.h"
 #include "RISCOSIcons.h"
 
 class SpriteFile : public FileSystem

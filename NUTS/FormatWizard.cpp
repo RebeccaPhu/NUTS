@@ -120,7 +120,7 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						break;
 					}
 
-					pFormatter = FSPlugins.LoadFS( FormatFSID, pSource, false );
+					pFormatter = FSPlugins.LoadFS( FormatFSID, pSource );
 
 					pSource->Release();
 
@@ -184,28 +184,30 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 				SendMessage(GetDlgItem(hwndDlg, IDC_QUICK_FORMAT), BM_SETCHECK, (WPARAM) BST_CHECKED, 0);
 
-				std::vector<PluginDescriptor> Plugins = FSPlugins.GetPluginList();
-				std::vector<PluginDescriptor>::iterator iPlugin;
+				NUTSProviderList Providers = FSPlugins.GetProviders();
+				NUTSProvider_iter iProvider;
 
-				for ( iPlugin = Plugins.begin(); iPlugin != Plugins.end(); iPlugin++ )
+				for ( iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
 				{
-					for ( DWORD i = 0; i < iPlugin->NumFS; i++ )
+					FSDescriptorList FSDescriptors = FSPlugins.GetFilesystems( iProvider->ProviderID );
+
+					for ( FSDescriptor_iter iFS = FSDescriptors.begin(); iFS != FSDescriptors.end(); iFS++ )
 					{
-						if ( iPlugin->FSDescriptors[ i ].Flags & FSF_Formats_Image )
+						if ( iFS->Flags & FSF_Formats_Image )
 						{
-							int pos = SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iPlugin->FSDescriptors[ i ].FriendlyName.c_str() );
+							int pos = SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iFS->FriendlyName.c_str() );
 
-							SendMessage( hList, LB_SETITEMDATA, pos, (LPARAM) iPlugin->FSDescriptors[ i ].PUID );
+							SendMessage( hList, LB_SETITEMDATA, pos, (LPARAM) iFS->PUID );
 
-							AvailableFSIDs.push_back( iPlugin->FSDescriptors[ i ].PUID );
+							AvailableFSIDs.push_back( iFS->PUID );
 						}
-						else if ( iPlugin->FSDescriptors[ i ].Flags & FSF_Formats_Raw )
+						else if ( iFS->Flags & FSF_Formats_Raw )
 						{
-							int pos = SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iPlugin->FSDescriptors[ i ].FriendlyName.c_str() );
+							int pos = SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iFS->FriendlyName.c_str() );
 
-							SendMessage( hList, LB_SETITEMDATA, pos, (LPARAM) iPlugin->FSDescriptors[ i ].PUID );
+							SendMessage( hList, LB_SETITEMDATA, pos, (LPARAM) iFS->PUID );
 
-							AvailableFSIDs.push_back( iPlugin->FSDescriptors[ i ].PUID );
+							AvailableFSIDs.push_back( iFS->PUID );
 						}
 					}
 				}

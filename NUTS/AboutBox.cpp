@@ -88,19 +88,22 @@ INT_PTR CALLBACK PluginsFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 
 	case WM_INITDIALOG:
 		{
-			std::vector<PluginDescriptor> Plugins = FSPlugins.GetPluginList();
+			NUTSProviderList Providers = FSPlugins.GetProviders();
 
-			std::vector<PluginDescriptor>::iterator i;
+			NUTSProvider_iter i;
+			BYTE index = 0;
 
-			for (i=Plugins.begin(); i!= Plugins.end(); i++ )
+			for ( i = Providers.begin(); i != Providers.end(); i++ )
 			{
-				SendMessage( GetDlgItem( hDlg, IDC_PLUGINLIST ), LB_ADDSTRING, NULL, (LPARAM) i->Provider.c_str() );
+				SendMessage( GetDlgItem( hDlg, IDC_PLUGINLIST ), LB_ADDSTRING, NULL, (LPARAM) i->FriendlyName.c_str() );
 
-				for (int f=0; f<i->NumFS; f++ )
+				FSDescriptorList fs = FSPlugins.GetFilesystems( i->ProviderID );
+
+				FSDescriptor_iter fi;
+
+				for ( fi = fs.begin(); fi != fs.end(); fi++ )
 				{
-					FSDescriptor *pFS = (FSDescriptor *) &(i->FSDescriptors[f]);
-
-					std::wstring tFS = L"     " + pFS->FriendlyName;
+					std::wstring tFS = L"     " + fi->FriendlyName;
 
 					SendMessage( GetDlgItem( hDlg, IDC_PLUGINLIST ), LB_ADDSTRING, NULL, (LPARAM) tFS.c_str() );
 				}

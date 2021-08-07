@@ -2,6 +2,9 @@
 #include "stdafx.h"
 
 #include "AcornDLL.h"
+#include "../NUTS/libfuncs.h"
+
+BYTE *sig = (BYTE *) "NUTS Plugin Signature";
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -9,6 +12,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 					 )
 {
 	hInstance = hModule;
+
+	NUTSSignature = sig;
 
 	switch (ul_reason_for_call)
 	{

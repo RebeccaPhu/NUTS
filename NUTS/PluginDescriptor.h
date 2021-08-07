@@ -4,45 +4,80 @@
 #include <string>
 #include <list>
 
+#define MAKEFSID( plid, pid, fid ) ( (DWORD) ( plid << 16 ) | (DWORD) ( pid << 8 ) | (DWORD) fid )
+#define MAKEPROVID( plid, pid ) ( (DWORD) ( plid << 16 ) | (DWORD) ( pid << 8 ) )
+#define PLUGINID( cid ) ( (WORD) ( ( cid >> 16 ) & 0xFFFF ) )
+#define PROVIDERID( cid ) ( (BYTE) ( ( cid >> 8 ) & 0xFF ) )
+#define FSIDID( cid ) ( (BYTE) ( cid & 0xFF ) )
+#define PROVID( cid ) ( (DWORD) ( (DWORD) cid & 0xFFFFFF00 ) )
+#define MYFSID ( FSID & 0xFFFF )
+
 typedef unsigned long long QWORD;
+
+typedef enum _PluginCommandID {
+	PC_SetPluginConnectors,
+	PC_ReportProviders,
+	PC_GetProviderDescriptor,
+	PC_ReportFileSystems,
+	PC_DescribeFileSystem,
+	PC_GetOffsetLists,
+	PC_CreateFileSystem,
+	PC_ReportImageExtensions,
+	PC_GetImageExtension,
+	PC_ReportEncodingCount,
+	PC_SetEncodingBase,
+	PC_ReportFonts,
+	PC_GetFontPointer,
+	PC_ReportIconCount,
+	PC_DescribeIcon,
+	PC_ReportFSFileTypeCount,
+	PC_SetFSFileTypeBase,
+	PC_ReportTranslators,
+	PC_DescribeTranslator,
+	PC_CreateTranslator,
+	PC_ReportRootHooks,
+	PC_DescribeRootHook,
+	PC_ReportRootCommands,
+	PC_DescribeRootCommand,
+	PC_PerformRootCommand,
+	PC_TranslateZIPContent,
+} PluginCommandID;
+
+typedef union _PluginCommandParameter {
+	void  *pPtr;
+	DWORD Value;
+} PluginCommandParameter;
+
+typedef struct _PluginCommand {
+	PluginCommandID CommandID;
+	PluginCommandParameter InParams[ 8 ];
+	PluginCommandParameter OutParams[ 8 ];
+} PluginCommand;
+
+#define NUTS_PLUGIN_SUCCESS      0
+#define NUTS_PLUGIN_UNRECOGNISED 1
+#define NUTS_PLUGIN_ERROR        0xFFFF
+
+typedef struct _NUTSProvider {
+	std::wstring FriendlyName;
+	DWORD        PluginID;
+	DWORD        ProviderID;
+} NUTSProvider;
 
 typedef struct _FileDescriptor {
 	std::wstring FriendlyName;
 	DWORD PUID;
 	DWORD Flags;
-	DWORD NumIcons;
-	DWORD IconIDs[64];
-	VOID  *Icons[64];
-	DWORD NumExts;
-	WCHAR *Exts[64];
-	DWORD IconTypes[64];
-	DWORD IconMaps[64];
 	DWORD SectorSize;
 	QWORD MaxSize;
 } FSDescriptor;
 
-typedef struct _FontDescriptor {
-	std::wstring FriendlyName;
-	DWORD PUID;
-	DWORD Flags;
-	BYTE MinChar;
-	BYTE MaxChar;
-	BYTE ProcessableControlCodes[32];
-	BYTE  *pFontData;
-	DWORD MatchingEncodings[16];
-} FontDescriptor;
-
-typedef struct _TextTranslator {
+typedef struct _DataTranslator {
+	DWORD ProviderID;
 	std::wstring FriendlyName;
 	DWORD TUID;
 	DWORD Flags;
-} TextTranslator;
-
-typedef struct _GraphicTranslator {
-	std::wstring FriendlyName;
-	DWORD TUID;
-	DWORD Flags;
-} GraphicTranslator;
+} DataTranslator;
 
 typedef struct _RootHook
 {
@@ -50,24 +85,7 @@ typedef struct _RootHook
 	DWORD        HookFSID;
 	HBITMAP      HookIcon;
 	BYTE         HookData[ 32 ];
+	DWORD        Flags;
 } RootHook;
-
-typedef struct _PluginDescriptor {
-	std::wstring Provider;
-	DWORD PUID;
-	WORD  NumFS;
-	WORD  NumFonts;
-	WORD  NumTextXlators;
-	WORD  NumGraphicXlators;
-	WORD  NumRootHooks;
-	WORD  NumGlobalCommands;
-
-	FSDescriptor      *FSDescriptors;
-	FontDescriptor    *FontDescriptors;
-	TextTranslator    *TextXlators;
-	GraphicTranslator *GraphicXlators;
-	RootHook          *RootHooks;
-	std::wstring      GlobalCommand[ 8 ];
-} PluginDescriptor;
 
 #endif

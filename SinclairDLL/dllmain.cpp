@@ -3,12 +3,16 @@
 
 #include "SinclairDLL.h"
 
+BYTE *sig = (BYTE *) "NUTS Plugin Signature";
+
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
 					 )
 {
 	hInstance = hModule;
+
+	NUTSSignature = sig;
 
 	switch (ul_reason_for_call)
 	{

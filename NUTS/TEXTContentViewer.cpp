@@ -55,7 +55,7 @@ CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, DWORD TUID )
 	}
 
 	XlatorID = TUID;
-	pXlator  = (TEXTTranslator *) FSPlugins.LoadTextTranslator( TUID );
+	pXlator  = (TEXTTranslator *) FSPlugins.LoadTranslator( TUID );
 	TempPath = FileObj.Name();
 
 	FileObj.Keep();

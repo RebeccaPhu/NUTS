@@ -139,7 +139,7 @@ FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )
 
 		DataSource *pSource = new MemorySource( hook.HookData, 32 );
 
-		FileSystem *newFS = FSPlugins.LoadFS( hook.HookFSID, pSource, false );
+		FileSystem *newFS = FSPlugins.LoadFS( hook.HookFSID, pSource );
 
 		newFS->EnterIndex       = 0xFFFFFFFF;
 		newFS->pParentFS        = this;

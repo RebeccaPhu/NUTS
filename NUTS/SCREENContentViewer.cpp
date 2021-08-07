@@ -242,7 +242,7 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 		Parent, NULL, hInstance, NULL
 	);
 
-	pXlator = (SCREENTranslator *) FSPlugins.LoadGraphicTranslator( XlatorID );
+	pXlator = (SCREENTranslator *) FSPlugins.LoadTranslator( XlatorID );
 
 	viewers[ hWnd ] = this;
 

@@ -4,7 +4,7 @@
 #include "OldFSMap.h"
 #include "ADFSCommon.h"
 #include "TranslatedSector.h"
-
+#include "AcornDLL.h"
 #include "Defs.h"
 
 #include <vector>
@@ -21,9 +21,6 @@ public:
 		Flags = FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Supports_Dirs | FSF_Exports_Sidecars;
 
 		rstrncpy( path, (BYTE *) "$", 512 );
-
-		UseLFormat = false;
-		UseDFormat = false;
 
 		SecSize    = 256;
 
@@ -58,9 +55,6 @@ public:
 		rstrncpy( DiscName, (BYTE *) source.DiscName, 10 );
 
 		pFSMap  = nullptr;
-
-		UseLFormat = source.UseLFormat;
-		UseDFormat = source.UseDFormat;
 
 		FloppyFormat = source.FloppyFormat;
 		MediaShape   = source.MediaShape;
@@ -115,22 +109,9 @@ public:
 	AttrDescriptors GetAttributeDescriptions( void );
 	AttrDescriptors GetFSAttributeDescriptions( void );
 
-	void SetLFormat(void) {
-		UseLFormat = true;
-
-		FSID = FSID_ADFS_L;
-	}
-
-	void SetDFormat(void) {
-		UseDFormat = true;
-		SecSize    = 1024;
-
-		FSID = FSID_ADFS_D;
-	}
-
 	DWORD GetEncoding(void )
 	{
-		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
+		if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
 		{
 			return ENCODING_RISCOS;
 		}
@@ -174,9 +155,6 @@ public:
 
 private:
 	ADFSDirectory *pADFSDirectory;
-
-	bool UseLFormat;
-	bool UseDFormat;
 
 	DWORD SecSize;
 	DWORD ValidateItems;

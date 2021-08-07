@@ -19,7 +19,8 @@ HWND  hWizard = NULL;
 
 static HFONT hFont = NULL;
 
-ProviderList Providers;
+NUTSProviderList Providers;
+
 FormatList   Formats;
 DWORD        Encoding;
 FormatDesc   ChosenFS;
@@ -72,9 +73,9 @@ INT_PTR CALLBACK Wiz2WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 				Providers = FSPlugins.GetProviders();
 
-				for ( ProviderDesc_iter iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
+				for ( NUTSProvider_iter iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
 				{
-					::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_ADDSTRING, 0, (LPARAM) iProvider->Provider.c_str() );
+					::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_ADDSTRING, 0, (LPARAM) iProvider->FriendlyName.c_str() );
 				}
 			}
 
@@ -116,7 +117,7 @@ INT_PTR CALLBACK Wiz2WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 							{
 								FSList.clear();
 
-								Formats = FSPlugins.GetFormats( Providers[ Index ].PUID );
+								Formats = FSPlugins.GetFormats( Providers[ Index ].PluginID );
 
 								for ( FormatDesc_iter iFormat = Formats.begin(); iFormat != Formats.end(); iFormat++ )
 								{
@@ -330,7 +331,7 @@ unsigned int __stdcall CreationThread(void *param)
 
 	if ( pSource != nullptr )
 	{
-		FileSystem *FS = (FileSystem *) FSPlugins.LoadFS( ChosenFS.FUID, pSource, false );
+		FileSystem *FS = (FileSystem *) FSPlugins.LoadFS( ChosenFS.FUID, pSource );
 
 		pSource->Release();
 

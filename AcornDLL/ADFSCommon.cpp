@@ -15,6 +15,8 @@ ADFSCommon::ADFSCommon(void)
 	CommonUseResolvedIcons = false;
 
 	CloneWars = false;
+
+	Override  = false;
 }
 
 

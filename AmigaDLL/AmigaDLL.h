@@ -15,10 +15,9 @@
 #include "../NUTS/DataSourceCollector.h"
 #include "../NUTS/NUTSError.h"
 
-extern "C" AMIGADLL_API PluginDescriptor *GetPluginDescriptor(void);
-extern "C" AMIGADLL_API void *CreateFS( DWORD PUID, DataSource *pSource );
-
-extern "C" AMIGADLL_API DataSourceCollector *pExternCollector;
-extern "C" AMIGADLL_API NUTSError *pExternError;
+extern "C" AMIGADLL_API BYTE *NUTSSignature;
+extern "C" AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd );
 
 extern HMODULE hInstance;
+
+

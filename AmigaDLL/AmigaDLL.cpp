@@ -17,81 +17,62 @@ HMODULE hInstance;
 BYTE *pTopaz1 = nullptr;
 BYTE *pTopaz2 = nullptr;
 
-AMIGADLL_API DataSourceCollector *pExternCollector;
-AMIGADLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
-FSDescriptor AmigaFS[2] = {
+DWORD FILE_AMIGA;
+DWORD ENCODING_AMIGA;
+
+BYTE *NUTSSignature;
+
+FSDescriptor AmigaFS[] = {
 	{
 		/* .FriendlyName = */ L"Commodore Amiga OFS Disk Image",
 		/* .PUID         = */ FSID_AMIGAO,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors,
-		0, { }, { },
-		1, { L"ADF" }, { FT_MiscImage }, { FT_DiskImage },
 		512, 1700
 	},
 	{
 		/* .FriendlyName = */ L"Commodore Amiga FFS Disk Image",
 		/* .PUID         = */ FSID_AMIGAF,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors,
-		0, { }, { },
-		1, { L"ADF" }, { FT_MiscImage }, { FT_DiskImage },
 		512, 1700
 	}
 };
 
-FontDescriptor AmigaFonts[2] = {
-	{
-		/* .FriendlyName  = */ L"Topaz 1",
-		/* .PUID          = */ FONTID_TOPAZ1,
-		/* .Flags         = */ 0,
-		/* .MinChar       = */ 0,
-		/* .MaxChar       = */ 127,
-		/* .ProcessableControlCodes = */ { 0xFF },
-		/* .pFontData     = */ NULL,
-		/* .MatchingFSIDs = */ {
-			ENCODING_AMIGA,
-			0
-		}
-	},
-	{
-		/* .FriendlyName  = */ L"Topaz 2",
-		/* .PUID          = */ FONTID_TOPAZ2,
-		/* .Flags         = */ 0,
-		/* .MinChar       = */ 0,
-		/* .MaxChar       = */ 127,
-		/* .ProcessableControlCodes = */ { 0xFF },
-		/* .pFontData     = */ NULL,
-		/* .MatchingFSIDs = */ {
-			ENCODING_AMIGA,
-			0
-		}
-	}
-};
+#define AMIGAFS_COUNT ( sizeof(AmigaFS) / sizeof(FSDescriptor) )
 
-PluginDescriptor AmigaDescriptor = {
-	/* .Provider = */ L"Amiga",
-	/* .PUID     = */ PLUGINID_AMIGA,
-	/* .NumFS    = */ 2,
-	/* .NumFonts = */ 2,
-	/* .BASXlats = */ 0,
-	/* .GFXXlats = */ 0,
-	/* .NumHooks = */ 0,
-	/* .Commands = */ 0,
+std::wstring ImageExtensions[] = { L"ADF" };
 
-	/* .FSDescriptors  = */ AmigaFS,
-	/* .FontDescriptor = */ AmigaFonts,
-	/* .BASXlators     = */ nullptr,
-	/* .GFXXlats       = */ nullptr,
-	/* .RootHooks      = */ nullptr,
-	/* .Commands       = */ { },
-};
+#define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
 
-AMIGADLL_API PluginDescriptor *GetPluginDescriptor(void)
+AMIGADLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
-	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
-	pCollector   = pExternCollector;
-	pGlobalError = pExternError;
+	FileSystem *pFS = NULL;
+
+	switch ( PUID )
+	{
+	case FSID_AMIGAO:
+	case FSID_AMIGAF:
+		pFS = new AmigaFileSystem( pSource );
+		break;
+	}
+
+	pFS->FSID = PUID;
+
+	return (void *) pFS;
+}
+
+NUTSProvider ProviderAmiga = { L"Amiga", 0, 0 };
+
+WCHAR *pTopaz1FontName = L"Topaz 1";
+WCHAR *pTopaz2FontName = L"Topaz 2";
+
+void LoadFonts()
+{
+	HRSRC   hResource;
+	HGLOBAL hMemory;
+	DWORD   dwSize;
+	LPVOID  lpAddress;
 
 	if ( pTopaz1 == nullptr )
 	{
@@ -118,24 +99,138 @@ AMIGADLL_API PluginDescriptor *GetPluginDescriptor(void)
 		ZeroMemory( pTopaz2, 256 * 8 );
 		memcpy( &pTopaz2[ 33 * 8 ], lpAddress, dwSize );
 	}
-
-	AmigaDescriptor.FontDescriptors[0].pFontData = pTopaz1;
-	AmigaDescriptor.FontDescriptors[1].pFontData = pTopaz2;
-
-	return &AmigaDescriptor;
 }
 
-AMIGADLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
-{
-	void *pFS = NULL;
 
-	switch ( PUID )
+AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
+{
+	switch ( cmd->CommandID )
 	{
-	case FSID_AMIGAO:
-	case FSID_AMIGAF:
-		pFS = (void *) new AmigaFileSystem( pSource );
-		break;
+	case PC_SetPluginConnectors:
+		pCollector   = (DataSourceCollector *) cmd->InParams[ 0 ].pPtr;
+		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
+		
+		LoadFonts();
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportProviders:
+		cmd->OutParams[ 0 ].Value = 1;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetProviderDescriptor:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &ProviderAmiga;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+		
+	case PC_ReportFileSystems:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].Value = AMIGAFS_COUNT;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_DescribeFileSystem:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &AmigaFS[ cmd->InParams[ 1 ].Value ];
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_ReportImageExtensions:
+		cmd->OutParams[ 0 ].Value = IMAGE_EXT_COUNT;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetImageExtension:
+		cmd->OutParams[ 0 ].pPtr = (void *) ImageExtensions[ cmd->InParams[ 0 ].Value ].c_str();
+		cmd->OutParams[ 1 ].Value = FT_MiscImage;
+		cmd->OutParams[ 2 ].Value = FT_DiskImage;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_CreateFileSystem:
+		{
+			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
+
+			DWORD ProviderID = cmd->InParams[ 0 ].Value;
+			DWORD FSID       = cmd->InParams[ 1 ].Value;
+
+			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
+
+			void *pFS = (void *) CreateFS( FullFSID, pSource );
+
+			cmd->OutParams[ 0 ].pPtr = pFS;
+
+			if ( pFS == nullptr )
+			{
+				return NUTS_PLUGIN_ERROR;
+			}
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+	case PC_ReportEncodingCount:
+		cmd->OutParams[ 0 ].Value = 1;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_SetEncodingBase:
+		ENCODING_AMIGA  = cmd->InParams[ 0 ].Value + 0;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportFonts:
+		cmd->OutParams[ 0 ].Value = 2;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetFontPointer:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) pTopaz1;
+			cmd->OutParams[ 1 ].pPtr  = (void *) pTopaz1FontName;
+			cmd->OutParams[ 2 ].Value = ENCODING_AMIGA;
+			cmd->OutParams[ 3 ].Value = NULL;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+		if ( cmd->InParams[ 0 ].Value == 1 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) pTopaz2;
+			cmd->OutParams[ 1 ].pPtr  = (void *) pTopaz2FontName;
+			cmd->OutParams[ 2 ].Value = ENCODING_AMIGA;
+			cmd->OutParams[ 3 ].Value = NULL;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_ReportFSFileTypeCount:
+		cmd->OutParams[ 0 ].Value = 1;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_SetFSFileTypeBase:
+		{
+			DWORD Base = cmd->InParams[ 0 ].Value;
+
+			FILE_AMIGA = Base + 0;
+		}
+
+		return NUTS_PLUGIN_SUCCESS;
+
 	}
 
-	return pFS;
+	return NUTS_PLUGIN_UNRECOGNISED;
 }

@@ -57,7 +57,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 
 	BYTE CheckByte;
 
-	if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP ) ) 
+	if ( ( MYFSID == FSID_ADFS_HN ) || ( MYFSID == FSID_ADFS_HP ) ) 
 	{
 		AlternateOffsets.clear();
 
@@ -65,7 +65,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		AlternateOffsets.push_back( 0x200 );
 	}
 
-	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_EP ) )
+	if ( ( MYFSID == FSID_ADFS_E ) || ( MYFSID == FSID_ADFS_EP ) )
 	{
 		pSource->ReadSectorCHS( 0, 0, 0, SectorBuf );
 
@@ -75,14 +75,14 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		{
 			pSource->ReadSectorCHS( 0, 0, 2, SectorBuf );
 
-			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( FSID == FSID_ADFS_E ) )
+			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( MYFSID == FSID_ADFS_E ) )
 			{
 				hint.Confidence = 25;
 
 				return hint;
 			}
 
-			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( FSID == FSID_ADFS_EP ) )
+			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( MYFSID == FSID_ADFS_EP ) )
 			{
 				hint.Confidence = 25;
 
@@ -100,14 +100,14 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		{
 			pSource->ReadSectorCHS( 0, 0, 2, SectorBuf );
 
-			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( FSID == FSID_ADFS_E ) )
+			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( MYFSID == FSID_ADFS_E ) )
 			{
 				hint.Confidence = 25;
 
 				return hint;
 			}
 
-			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( FSID == FSID_ADFS_EP ) )
+			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( MYFSID == FSID_ADFS_EP ) )
 			{
 				hint.Confidence = 25;
 
@@ -191,7 +191,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		hint.Confidence = 25;
 
 		/* So it looks like new-map, but what kind? Could be F,E+,F+,G or a hard disc */
-		switch ( FSID )
+		switch ( MYFSID )
 		{
 		case FSID_ADFS_HN:
 		case FSID_ADFS_HP:
@@ -208,7 +208,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 			break;
 		}
 
-		if ( ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_HP ) || ( FSID == FSID_ADFS_G ) )
+		if ( ( MYFSID == FSID_ADFS_FP ) || ( MYFSID == FSID_ADFS_HP ) || ( MYFSID == FSID_ADFS_G ) )
 		{
 			if ( pFSMap->FormatVersion == 1 )
 			{
@@ -641,6 +641,8 @@ FileSystem *ADFSEFileSystem::FileFilesystem( DWORD FileID )
 		DataSource *pSource = FileDataSource( FileID );
 
 		FileSystem *pSpriteFS = new SpriteFile( pSource );
+
+		pSpriteFS->FSID = MAKEFSID( PLID, 0x01, 0x0A );
 
 		return pSpriteFS;
 	}
@@ -1378,6 +1380,8 @@ int ADFSEFileSystem::DeleteFile( DWORD FileID )
 		pFSMap->ReleaseFragment( pFile->SSector >> 8 );
 	}			
 
+	pDirectory->Files.erase( pDirectory->Files.begin() + FileID );
+
 	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
 	{
 		return -1;
@@ -1409,7 +1413,7 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00200006 );
 			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00150006 );
 
-			switch ( pSystem->FSID )
+			switch ( pSystem->FSID & 0xFFFF )
 			{
 			case FSID_ADFS_E:
 			case FSID_ADFS_EP:
@@ -1579,7 +1583,7 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 	DWORD SecSize = 512;
 
-	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) )
+	if ( ( MYFSID == FSID_ADFS_E ) || ( MYFSID == FSID_ADFS_F ) || ( MYFSID == FSID_ADFS_EP ) || ( MYFSID == FSID_ADFS_FP ) || ( MYFSID == FSID_ADFS_G ) )
 	{
 		SecSize = 1024;
 	}
@@ -1613,7 +1617,7 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 3, 0, 1, false ), (LPARAM) MapMsg );
 
-	pFSMap->ConfigureDisk( FSID );
+	pFSMap->ConfigureDisk( MYFSID );
 
 	if ( pDirectory == nullptr )
 	{
@@ -1623,7 +1627,7 @@ int ADFSEFileSystem::Format_Process( FormatType FT, HWND hWnd )
 		pEDirectory->pMap = pFSMap;
 	}
 		
-	if ( ( FSID == FSID_ADFS_E ) || ( FSID==FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID==FSID_ADFS_FP ) || ( FSID==FSID_ADFS_G ) )
+	if ( ( MYFSID == FSID_ADFS_E ) || ( MYFSID==FSID_ADFS_F ) || ( MYFSID == FSID_ADFS_EP ) || ( MYFSID==FSID_ADFS_FP ) || ( MYFSID==FSID_ADFS_G ) )
 	{
 		time_t t = time(NULL);
 		struct tm *pT = localtime( &t );
@@ -1708,7 +1712,7 @@ void ADFSEFileSystem::SetShape(void)
 	/* Set the disk shape according to the format - NOTE this will be
 	   reset after reading the disc record !
 	*/
-	switch ( FSID )
+	switch ( MYFSID )
 	{
 		case FSID_ADFS_E:
 		case FSID_ADFS_EP:
@@ -1724,12 +1728,12 @@ void ADFSEFileSystem::SetShape(void)
 				shape.SectorSize       = 1024;
 				shape.Tracks           = 80;
 
-				if (( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ))
+				if (( MYFSID == FSID_ADFS_F ) || ( MYFSID == FSID_ADFS_FP ))
 				{
 					shape.Sectors = 10;
 				}
 
-				if ( FSID == FSID_ADFS_G )
+				if ( MYFSID == FSID_ADFS_G )
 				{
 					shape.Sectors = 20;
 				}

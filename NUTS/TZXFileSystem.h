@@ -98,9 +98,10 @@ private:
 public:
 	TZXDirectory *pDir;
 
-private:
+protected:
 	TZXPB tzxpb;
 
+private:
 	bool SPFIX_Warning;
 
 	BYTE SignalLevel;

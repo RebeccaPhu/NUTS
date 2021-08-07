@@ -10,8 +10,8 @@
 #define FT_ROOT        0x00000000
 #define FT_ZIP         0xC0000000
 #define FT_UNSET       0xFFFFFFFF
-#define PUID_ZIP       0x021D021D
-#define FSID_ZIP       0x021D021D
+#define PUID_ZIP       0x0000021D
+#define FSID_ZIP       0x0000021D
 
 typedef unsigned long long QWORD;
 
@@ -142,14 +142,6 @@ typedef enum _DSFlags {
 	DS_SlowAccess        = 0x00000004,
 } DSFlags;
 
-typedef struct _ProviderDesc {
-	std::wstring Provider;
-	DWORD        PUID;
-} ProviderDesc;
-
-typedef std::vector<ProviderDesc> ProviderList;
-typedef std::vector<ProviderDesc>::iterator ProviderDesc_iter;
-
 typedef struct _FormatDesc {
 	std::wstring Format;
 	DWORD        FUID;
@@ -222,10 +214,17 @@ typedef struct _ExtDef {
 	FileType Icon;
 } ExtDef;
 
-typedef enum _GFXFlags {
-	GFXLogicalPalette = 0x00000001,
-	GFXMultipleModes  = 0x00000002,
-} GFXFlags;
+typedef enum _TXFlags {
+	TXTextTranslator  = 0x00000001,
+	TXGFXTranslator   = 0x00000002,
+	GFXLogicalPalette = 0x00000004,
+	GFXMultipleModes  = 0x00000008,
+} TXFlags;
+
+typedef enum _RootHookFlags {
+	RHF_CreatesFileSystem = 0x00000001,
+	RHF_CreatesDataSource = 0x00000002,
+} RootHookFlags;
 
 typedef std::vector<AttrDesc> AttrDescriptors;
 typedef std::vector<AttrDesc>::iterator AttrDesc_iter;
@@ -340,19 +339,20 @@ typedef struct _SidecarImport {
 typedef std::vector<FSTool> FSToolList;
 typedef FSToolList::iterator FSToolIterator;
 
-typedef struct _GlobaCommand {
+typedef struct _RootCommand {
 	DWORD PUID;
 	DWORD CmdIndex;
 	std::wstring Text;
-} GlobalCommand;
+} RootCommand;
 
-typedef enum _GlobalCommandResult {
+typedef enum _RootCommandResult {
 	GC_ResultNone        = 0,
 	GC_ResultRefresh     = 1,
 	GC_ResultRootRefresh = 2,
-} GlobalCommandResult;
+} RootCommandResult;
 
-typedef std::vector<GlobalCommand> GlobalCommandSet;
+typedef std::vector<RootCommand> RootCommandSet;
+typedef std::vector<RootCommand>::iterator RootCommandSetIterator;
 
 /* Physical disk definitions */
 typedef struct _DiskShape {

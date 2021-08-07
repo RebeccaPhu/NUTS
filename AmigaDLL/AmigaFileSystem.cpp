@@ -2,12 +2,13 @@
 #include "AmigaFileSystem.h"
 #include "InfoIcon.h"
 #include "../NUTS/Defs.h"
+#include "../NUTS/PluginDescriptor.h"
 
 FSHint AmigaFileSystem::Offer( BYTE *Extension )
 {
 	FSHint hint;
 
-	hint.FSID       = FS_Null;
+	hint.FSID       = MYFSID;
 	hint.Confidence = 0;
 
 	BYTE Sector[512];
@@ -18,7 +19,7 @@ FSHint AmigaFileSystem::Offer( BYTE *Extension )
 	{
 		hint.FSID = FSID_AMIGAO;
 
-		if ( Sector[ 3 ] & 1 )
+		if ( ( Sector[ 3 ] & 1 ) && ( MYFSID == FSID_AMIGAF ) )
 		{
 			hint.FSID = FSID_AMIGAF;
 		}

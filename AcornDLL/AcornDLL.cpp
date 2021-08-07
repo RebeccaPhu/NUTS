@@ -28,337 +28,189 @@ BYTE *pAcornFont;
 BYTE *pTeletextFont;
 BYTE *pRiscOSFont;
 
+DWORD ENCODING_ACORN;
+DWORD ENCODING_RISCOS;
+DWORD FT_ACORN;
+DWORD FT_SPRITE;
+DWORD FT_ACORNX;
+DWORD GRAPHIC_ACORN;
+DWORD GRAPHIC_SPRITE;
+DWORD BBCBASIC;
+
 HMODULE hInstance;
 
-ACORNDLL_API DataSourceCollector *pExternCollector;
-ACORNDLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
-FSDescriptor AcornFS[19] = {
+BYTE *NUTSSignature;
+
+FSDescriptor BBCMicroFS[] = {
 	{
 		/* .FriendlyName = */ L"Acorn DFS (40T)",
 		/* .PUID         = */ FSID_DFS_40,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_FixedSize,
-		0, { }, { },
-		2, { L"SSD", L"IMG" }, { FT_MiscImage, FT_MiscImage }, { FT_DiskImage, FT_DiskImage },
 		256, 256U * 10U * 40U
 	},
 	{
 		/* .FriendlyName = */ L"Acorn DFS (80T)",
 		/* .PUID         = */ FSID_DFS_80,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		256, 256U * 10U * 80U
 	},
 	{
 		/* .FriendlyName = */ L"Acorn DFS (Double Sided Image)",
 		/* .PUID         = */ FSID_DFS_DSD,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_DynamicSize,
-		0, { }, { },
-		1, { L"DSD" }, { FT_MiscImage }, { FT_DiskImage },
 		0
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS 160K 40T SS (S)",
 		/* .PUID         = */ FSID_ADFS_S,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		2, { L"ADF", L"ADL" }, { FT_MiscImage, FT_MiscImage }, { FT_DiskImage, FT_DiskImage },
 		256, 256U * 16U * 40U
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS 320K 80T SS (M)",
 		/* .PUID         = */ FSID_ADFS_M,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		256, 256U * 16U * 80U
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS 640K 80T DS (L)",
 		/* .PUID         = */ FSID_ADFS_L,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		256, 256U * 16U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (Old Map)",
 		/* .PUID         = */ FSID_ADFS_H,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
-		0, { }, { },
-		0, { }, { }, { },
 		256, 0
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (8 Bit IDE)",
 		/* .PUID         = */ FSID_ADFS_H8,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
-		0, { }, { },
-		0, { }, { }, { },
 		256, 0
-	},
+	}
+};
+
+#define BBCMICRO_FSCOUNT ( sizeof(BBCMicroFS) / sizeof( FSDescriptor) )
+
+FSDescriptor RISCOSFS[] = {
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 640K (L)",
 		/* .PUID         = */ FSID_ADFS_L2,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		1024, 1024U * 5U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 800K (D)",
 		/* .PUID         = */ FSID_ADFS_D,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		1024, 1024U * 5U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 800K (E)",
 		/* .PUID         = */ FSID_ADFS_E,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		13, { }, { },
-		0, { }, { }, { },
 		1024, 1024U * 5U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 800K (E+)",
 		/* .PUID         = */ FSID_ADFS_EP,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		1024, 1024U * 5U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (F)",
 		/* .PUID         = */ FSID_ADFS_F,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		1024, 1024U * 10U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (F+)",
 		/* .PUID         = */ FSID_ADFS_FP,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		1024, 1024U * 10U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 3.2M (G)",
 		/* .PUID         = */ FSID_ADFS_G,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
-		0, { }, { },
-		0, { }, { }, { },
 		1024, 1024U * 20U * 160U
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (Old Map)",
 		/* .PUID         = */ FSID_ADFS_HO,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
-		0, { }, { },
-		0, { }, { }, { },
 		256, 0
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (New Map)",
 		/* .PUID         = */ FSID_ADFS_HN,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
-		0, { }, { },
-		1, { L"HDF" }, { FT_MiscImage }, { FT_DiskImage },
 		256, 0
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (Long Names)",
 		/* .PUID         = */ FSID_ADFS_HP,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
-		0, { }, { },
-		0, { }, { }, { },
 		256, 0
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS Sprite File",
 		/* .PUID         = */ FSID_SPRITE,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_DynamicSize,
-		0, { }, { },
-		0, { }, { }, { },
 		0
 	}
 };
 
-FontDescriptor AcornFonts[3] =
-	{
-		{
-		/* .FriendlyName  = */ L"BBC Micro",
-		/* .PUID          = */ FONTID_ACORN,
-		/* .Flags         = */ 0,
-		/* .MinChar       = */ 32,
-		/* .MaxChar       = */ 255,
-		/* .ProcessableControlCodes = */ { 21, 6, 0xFF },
-		/* .pFontData     = */ NULL,
-		/* .MatchingFSIDs = */ {
-			ENCODING_ACORN,
-			0,
-			},
-		},
-		{
-		/* .FriendlyName  = */ L"Risc OS",
-		/* .PUID          = */ FONTID_RISCOS,
-		/* .Flags         = */ 0,
-		/* .MinChar       = */ 0,
-		/* .MaxChar       = */ 255,
-		/* .ProcessableControlCodes = */ { 21, 6, 0xFF },
-		/* .pFontData     = */ NULL,
-		/* .MatchingFSIDs = */ {
-			ENCODING_RISCOS,
-			0,
-			}
-		},
-		{
-		/* .FriendlyName  = */ L"Teletext",
-		/* .PUID          = */ FONTID_TELETEXT,
-		/* .Flags         = */ 0,
-		/* .MinChar       = */ 0,
-		/* .MaxChar       = */ 255,
-		/* .ProcessableControlCodes = */ { 21, 6, 0xFF },
-		/* .pFontData     = */ NULL,
-		/* .MatchingFSIDs = */ {
-			ENCODING_ACORN,
-			ENCODING_RISCOS,
-			}
-		}
+#define RISCOS_FSCOUNT ( sizeof(RISCOSFS) / sizeof( FSDescriptor) )
+
+std::wstring ImageExtensions[] = { L"SSD", L"IMG", L"DSD", L"ADF", L"ADL", L"HDF" };
+
+#define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
+
+DataTranslator Translators[] = {
+	{ 0, L"BBC BASIC I - V",   0, TXTextTranslator },
+	{ 0, L"Acorn Modes 0 - 7", 0, TXGFXTranslator | GFXLogicalPalette | GFXMultipleModes },
+	{ 1, L"RISC OS Sprite",    0, TXGFXTranslator | GFXMultipleModes }
 };
 
-TextTranslator BBCBASICTXT[] = {
-	{
-		L"BBC BASIC I - V",
-		BBCBASIC,
-		0
-	}
-};
+#define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
 
 
-GraphicTranslator AcornGFX[] = {
-	{
-		L"Acorn Modes 0-7",
-		GRAPHIC_ACORN,
-		GFXLogicalPalette | GFXMultipleModes
-	},
-	{
-		L"RISC OS Sprite",
-		GRAPHIC_SPRITE,
-		GFXMultipleModes
-	}
-};
-
-PluginDescriptor AcornDescriptor = {
-	/* .Provider = */ L"Acorn",
-	/* .PUID     = */ PLUGINID_ACORN,
-	/* .NumFS    = */ 19,
-	/* .NumFonts = */ 3,
-	/* .BASXlats = */ 1,
-	/* .GFXXlats = */ 2,
-	/* .NumHooks = */ 0,
-	/* .Commands = */ 0,
-
-	/* .FSDescriptors  = */ AcornFS,
-	/* .FontDescriptor = */ AcornFonts,
-	/* .BASICXlators   = */ BBCBASICTXT,
-	/* .GFXXlators     = */ AcornGFX,
-	/* .RootHooks      = */ nullptr,
-	/* .Commands       = */ { }
-};
-
-ACORNDLL_API PluginDescriptor *GetPluginDescriptor(void)
+typedef struct _RISCOSIcon
 {
-	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
-	pCollector   = pExternCollector;
-	pGlobalError = pExternError;
+	DWORD RISCOSType;
+	FileType NUTSType;
+	std::string Name;
+	UINT Bitmap;
+} RISCOSIcon;
 
-	if ( pAcornFont == nullptr )
-	{
-		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_ACORN ), RT_RCDATA);
-		HGLOBAL hMemory  = LoadResource(hInstance, hResource);
-		DWORD dwSize     = SizeofResource(hInstance, hResource);
-		LPVOID lpAddress = LockResource(hMemory);
+UINT IconBitmapIDs[ 13 ] = { IDB_BASIC, IDB_DATA, IDB_DRAWFILE, IDB_EXEC, IDB_FONT, IDB_JPEG, IDB_MODULE, IDB_OBEY, IDB_SPRITE, IDB_TEXT, IDB_UTIL, IDB_FOLDER, IDB_APP };
 
-		// Font data starts from character 32
-		pAcornFont = (BYTE *) malloc( 256 * 8 );
+RISCOSIcon AcornIcons[] = {
+	{ 0xFFB, FT_BASIC,     "BASIC Program", IDB_BASIC    }, 
+	{ 0xFFD, FT_Data,      "Data",          IDB_DATA     },
+	{ 0xAFF, FT_Graphic,   "Draw File",     IDB_DRAWFILE },
+	{ 0xFFE, FT_Script,    "Exec (Spool)",  IDB_EXEC     },
+	{ 0xFF7, FT_Arbitrary, "Font",          IDB_FONT     },
+	{ 0xC85, FT_Graphic,   "JPEG Image",    IDB_JPEG     },
+	{ 0xFFA, FT_Code,      "Module",        IDB_MODULE   },
+	{ 0xFEB, FT_Script,    "Obey (Script)", IDB_OBEY     },
+	{ 0xFF9, FT_MiscImage, "Sprite",        IDB_SPRITE   },
+	{ 0xFFF, FT_Text,      "Text File",     IDB_TEXT     },
+	{ 0xFFC, FT_Code,      "Utility",       IDB_UTIL     },
+	{ 0xA00, FT_Directory, "Directory",     IDB_FOLDER   },
+	{ 0xA01, FT_Directory, "Application",   IDB_APP      }
+};
 
-		memcpy( &pAcornFont[ 32 * 8 ], lpAddress, dwSize );
-
-		AcornFonts[0].pFontData = pAcornFont;
-
-		hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_TELETEXT ), RT_RCDATA);
-		hMemory    = LoadResource(hInstance, hResource);
-		dwSize     = SizeofResource(hInstance, hResource);
-		lpAddress  = LockResource(hMemory);
-
-		// Font data starts from character 32
-		pTeletextFont = (BYTE *) malloc( 256 * 8 );
-
-		memcpy( &pTeletextFont[ 0 * 8   ], lpAddress, dwSize / 2 );
-		memcpy( &pTeletextFont[ 128 * 8 ], lpAddress, dwSize / 2 );
-
-		AcornFonts[2].pFontData = pTeletextFont;
-
-		hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_RISCOS ), RT_RCDATA);
-		hMemory    = LoadResource(hInstance, hResource);
-		dwSize     = SizeofResource(hInstance, hResource);
-		lpAddress  = LockResource(hMemory);
-
-		// Font data starts from character 32
-		pRiscOSFont = (BYTE *) malloc( 256 * 8 );
-
-		BYTE *pFontSrc = ( BYTE * ) lpAddress;
-
-		ZeroMemory( pRiscOSFont, 256 * 8 );
-		memcpy( &pRiscOSFont[ 32 * 8  ], &pFontSrc[ 0 ], ( 256 - 32 ) * 8 );
-
-		AcornFonts[ 1 ].pFontData = pRiscOSFont;
-
-		AcornSCREENTranslator::pTeletextFont = pTeletextFont;
-
-		UINT IconBitmapIDs[ 13 ] = { IDB_BASIC, IDB_DATA, IDB_DRAWFILE, IDB_EXEC, IDB_FONT, IDB_JPEG, IDB_MODULE, IDB_OBEY, IDB_SPRITE, IDB_TEXT, IDB_UTIL, IDB_FOLDER, IDB_APP };
-
-		for ( BYTE i=0; i<13; i++ )
-		{
-			HBITMAP bmp = LoadBitmap( hInstance, MAKEINTRESOURCE( IconBitmapIDs[ i ] ) );
-
-			AcornDescriptor.FSDescriptors[ 10 ].Icons[ i ] = (void *) bmp;
-		}
-	}
-
-	return &AcornDescriptor;
-}
-
-void SetRISCOSIcons( void ) 
-{
-	/* Refresh the icon store with the IDs assigned to us by NUTS */
-	DWORD    FileTypes[ 13 ] = { 0xFFB, 0xFFD, 0xAFF, 0xFFE, 0xFF7, 0xC85, 0xFFA, 0xFEB, 0xFF9, 0xFFF, 0xFFC, 0xA00, 0xA01 };
-	FileType IntTypes[  13 ] = { FT_BASIC, FT_Data, FT_Graphic, FT_Script, FT_Arbitrary, FT_Graphic, FT_Code, FT_Script, FT_MiscImage, FT_Text, FT_Code, FT_Directory, FT_Directory };
-	std::string Names[  13 ] = { "BASIC Program", "Data", "Draw File", "Exec (Spool)", "Font", "JPEG Image", "Module", "Obey (Script)", "Sprite", "Text File", "Utility", "Directory", "Application" };
-
-	for ( BYTE i=0; i<13; i++ )
-	{
-		RISCOSIcons::AddIconMaps(
-			AcornDescriptor.FSDescriptors[ 10 ].IconIDs[ i ],
-			FileTypes[ i ],
-			IntTypes[ i ],
-			Names[ i ],
-			(HBITMAP) AcornDescriptor.FSDescriptors[ 10 ].Icons[ i ]
-		);
-	}
-}
+#define NumIcons ( sizeof(AcornIcons) / sizeof(RISCOSIcon) )
 
 ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 {
 	FileSystem *pFS = nullptr;
-
-	SetRISCOSIcons();
 
 	switch ( PUID )
 	{
@@ -399,11 +251,6 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 			{
 				ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
 
-				if ( PUID == FSID_ADFS_D )
-				{
-					pADFS->SetDFormat();
-				}
-
 				pFS = pADFS;
 			}
 		}
@@ -426,8 +273,6 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 		{
 			ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
 
-			pADFS->SetLFormat();
-
 			pFS = pADFS;
 		}
 		break;
@@ -446,30 +291,28 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	return pFS;
 }
 
-ACORNDLL_API void *CreateTranslator( DWORD TUID )
+void *CreateTranslator( DWORD TUID )
 {
 	void *pXlator = nullptr;
 
 	if ( TUID == GRAPHIC_ACORN )
 	{
-		pXlator = (SCREENTranslator *) new AcornSCREENTranslator();
+		pXlator = (void *) new AcornSCREENTranslator();
 	}
 	else if ( TUID == GRAPHIC_SPRITE )
 	{
-		pXlator = (SCREENTranslator *) new SpriteTranslator();
+		pXlator = (void *) new SpriteTranslator();
 	}
 	else if ( TUID == BBCBASIC )
 	{
-		pXlator = (TEXTTranslator *) new BBCBASICTranslator();
+		pXlator = (void *) new BBCBASICTranslator();
 	}
 
 	return pXlator;
 }
 
-ACORNDLL_API bool TranslateZIPContent( void *pFile, void *pExtra )
+bool TranslateZIPContent( void *pFile, void *pExtra )
 {
-	SetRISCOSIcons();
-
 	/* Translate the extra data in the ZIP (max 64 bytes) if it is present */
 
 	NativeFile *File = (NativeFile *) pFile;
@@ -563,4 +406,309 @@ ACORNDLL_API bool TranslateZIPContent( void *pFile, void *pExtra )
 	}
 
 	return false;
+}
+
+void LoadFonts()
+{
+	HRSRC   hResource;
+	HGLOBAL hMemory;
+	DWORD   dwSize;
+	LPVOID  lpAddress;
+
+	if ( pAcornFont == nullptr )
+	{
+		hResource = FindResource(hInstance, MAKEINTRESOURCE( IDF_ACORN ), RT_RCDATA);
+		hMemory   = LoadResource(hInstance, hResource);
+		dwSize    = SizeofResource(hInstance, hResource);
+		lpAddress = LockResource(hMemory);
+
+		// Font data starts from character 32
+		pAcornFont = (BYTE *) malloc( 256 * 8 );
+
+		memcpy( &pAcornFont[ 32 * 8 ], lpAddress, dwSize );
+	}
+
+	if ( pTeletextFont == nullptr )
+	{
+		hResource = FindResource(hInstance, MAKEINTRESOURCE( IDF_TELETEXT ), RT_RCDATA);
+		hMemory   = LoadResource(hInstance, hResource);
+		dwSize    = SizeofResource(hInstance, hResource);
+		lpAddress = LockResource(hMemory);
+
+		// Font data starts from character 32
+		pTeletextFont = (BYTE *) malloc( 256 * 8 );
+
+		memcpy( &pTeletextFont[ 0 * 8   ], lpAddress, dwSize / 2 );
+		memcpy( &pTeletextFont[ 128 * 8 ], lpAddress, dwSize / 2 );
+	}
+
+	if ( pRiscOSFont == nullptr )
+	{
+		hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_RISCOS ), RT_RCDATA);
+		hMemory    = LoadResource(hInstance, hResource);
+		dwSize     = SizeofResource(hInstance, hResource);
+		lpAddress  = LockResource(hMemory);
+
+		// Font data starts from character 32
+		pRiscOSFont = (BYTE *) malloc( 256 * 8 );
+
+		BYTE *pFontSrc = ( BYTE * ) lpAddress;
+
+		ZeroMemory( pRiscOSFont, 256 * 8 );
+		memcpy( &pRiscOSFont[ 32 * 8  ], &pFontSrc[ 0 ], ( 256 - 32 ) * 8 );
+	}
+
+	AcornSCREENTranslator::pTeletextFont = pTeletextFont;
+}
+
+NUTSProvider ProviderBBCMicro = { L"BBC Micro", 0, 0 };
+NUTSProvider ProviderRISCOS   = { L"RISC OS", 0, 0 };
+
+WCHAR *pBBCMicroFontName = L"BBC Micro";
+WCHAR *pRiscOSFontName   = L"Risc OS";
+WCHAR *pTTXFontName      = L"Teletext";
+
+ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
+{
+	switch ( cmd->CommandID )
+	{
+	case PC_SetPluginConnectors:
+		pCollector   = (DataSourceCollector *) cmd->InParams[ 0 ].pPtr;
+		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
+		
+		LoadFonts();
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportProviders:
+		cmd->OutParams[ 0 ].Value = 2;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetProviderDescriptor:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &ProviderBBCMicro;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+		if ( cmd->InParams[ 0 ].Value == 1 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &ProviderRISCOS;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+		
+	case PC_GetOffsetLists:
+		{
+			cmd->OutParams[ 0 ].Value = 0;
+
+			BYTE pid = (BYTE) cmd->InParams[ 0 ].Value;
+
+			if ( pid == 1 )
+			{
+				BYTE fsid = (BYTE) cmd->InParams[ 1 ].Value;
+
+				if ( ( fsid == 7 ) || ( fsid == 8 ) || ( fsid == 9 ) )
+				{
+					cmd->OutParams[ 0 ].Value = 2;
+					cmd->OutParams[ 1 ].Value = 0;
+					cmd->OutParams[ 2 ].Value = 0x200;
+				}
+			}
+		}
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportFileSystems:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].Value = BBCMICRO_FSCOUNT;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+		if ( cmd->InParams[ 0 ].Value == 1 )
+		{
+			cmd->OutParams[ 0 ].Value = RISCOS_FSCOUNT;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_DescribeFileSystem:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &BBCMicroFS[ cmd->InParams[ 1 ].Value ];
+			return NUTS_PLUGIN_SUCCESS;
+		}
+		if ( cmd->InParams[ 0 ].Value == 1 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &RISCOSFS[ cmd->InParams[ 1 ].Value ];
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_ReportImageExtensions:
+		cmd->OutParams[ 0 ].Value = IMAGE_EXT_COUNT;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetImageExtension:
+		cmd->OutParams[ 0 ].pPtr = (void *) ImageExtensions[ cmd->InParams[ 0 ].Value ].c_str();
+		cmd->OutParams[ 1 ].Value = FT_MiscImage;
+		cmd->OutParams[ 2 ].Value = FT_DiskImage;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_CreateFileSystem:
+		{
+			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
+
+			DWORD ProviderID = cmd->InParams[ 0 ].Value;
+			DWORD FSID       = cmd->InParams[ 1 ].Value;
+
+			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
+
+			void *pFS = (void *) CreateFS( FullFSID, pSource );
+
+			cmd->OutParams[ 0 ].pPtr = pFS;
+
+			if ( pFS == nullptr )
+			{
+				return NUTS_PLUGIN_ERROR;
+			}
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+	case PC_ReportEncodingCount:
+		cmd->OutParams[ 0 ].Value = 2;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_SetEncodingBase:
+		ENCODING_ACORN  = cmd->InParams[ 0 ].Value + 0;
+		ENCODING_RISCOS = cmd->InParams[ 0 ].Value + 1;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportFonts:
+		cmd->OutParams[ 0 ].Value = 3;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetFontPointer:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) pAcornFont;
+			cmd->OutParams[ 1 ].pPtr  = (void *) pBBCMicroFontName;
+			cmd->OutParams[ 2 ].Value = ENCODING_ACORN;
+			cmd->OutParams[ 3 ].Value = NULL;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+		if ( cmd->InParams[ 0 ].Value == 1 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) pRiscOSFont;
+			cmd->OutParams[ 1 ].pPtr  = (void *) pRiscOSFontName;
+			cmd->OutParams[ 2 ].Value = ENCODING_RISCOS;
+			cmd->OutParams[ 3 ].Value = NULL;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		if ( cmd->InParams[ 0 ].Value == 2 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) pTeletextFont;
+			cmd->OutParams[ 1 ].pPtr  = (void *) pTTXFontName;
+			cmd->OutParams[ 2 ].Value = ENCODING_ACORN;
+			cmd->OutParams[ 3 ].Value = ENCODING_RISCOS;
+			cmd->OutParams[ 4 ].Value = NULL;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_ReportIconCount:
+		cmd->OutParams[ 0 ].Value = NumIcons;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_DescribeIcon:
+		{
+			BYTE Icon   = (BYTE) cmd->InParams[ 0 ].Value;
+			UINT IconID = (UINT) cmd->InParams[ 1 ].Value;
+
+			HBITMAP bmp = LoadBitmap( hInstance, MAKEINTRESOURCE( AcornIcons[ Icon ].Bitmap ) );
+
+			RISCOSIcons::AddIconMaps(
+				IconID,
+				AcornIcons[ Icon ].RISCOSType,
+				AcornIcons[ Icon ].NUTSType,
+				AcornIcons[ Icon ].Name,
+				bmp
+			);
+
+			cmd->OutParams[ 0 ].pPtr = (void *) bmp;
+		}
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportFSFileTypeCount:
+		cmd->OutParams[ 0 ].Value = 3;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_SetFSFileTypeBase:
+		{
+			DWORD Base = cmd->InParams[ 0 ].Value;
+
+			FT_ACORN  = Base + 0;
+			FT_SPRITE = Base + 1;
+			FT_ACORNX = Base + 2;
+		}
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportTranslators:
+		cmd->OutParams[ 0 ].Value = TRANSLATOR_COUNT;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_DescribeTranslator:
+		{
+			BYTE tx = (BYTE) cmd->InParams[ 0 ].Value;
+
+			Translators[ tx ].TUID = cmd->InParams[ 1 ].Value;
+
+			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
+			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
+			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
+
+			BBCBASIC       = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 0 ].TUID );
+			GRAPHIC_ACORN  = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 1 ].TUID );
+			GRAPHIC_SPRITE = MAKEFSID( cmd->InParams[ 2 ].Value, 1, Translators[ 2 ].TUID );
+		}
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_CreateTranslator:
+		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_TranslateZIPContent:
+		{
+			NativeFile *pFile = (NativeFile *) cmd->InParams[ 0 ].pPtr;
+			BYTE *pExtra      = (BYTE *)       cmd->InParams[ 1 ].pPtr;
+
+			bool r = TranslateZIPContent( pFile, pExtra );
+
+			if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
+		}
+		
+		return NUTS_PLUGIN_SUCCESS;
+	}
+
+	return NUTS_PLUGIN_UNRECOGNISED;
 }

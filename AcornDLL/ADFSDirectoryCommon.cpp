@@ -3,7 +3,7 @@
 
 #include "Defs.h"
 #include "RISCOSIcons.h"
-
+#include "AcornDLL.h"
 #include "../NUTS/NUTSError.h"
 
 ADFSDirectoryCommon::ADFSDirectoryCommon(void)

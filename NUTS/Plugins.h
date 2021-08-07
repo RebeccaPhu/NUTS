@@ -12,22 +12,25 @@
 
 #include "SCREENTranslator.h"
 
-#define FONTID_PC437 0x04370001
+#define FONTID_PC437 0x00000437
 
-typedef PluginDescriptor *(*fnGetPluginDescriptor)(void);
-typedef FileSystem *(*fnCreateFS)( DWORD, DataSource * );
-typedef void *(*fnCreateTranslator)( DWORD );
-typedef int (*fnPerformGlobalCommand)( HWND, DWORD );
-typedef bool (*fnZIPTranslate)( void *, void * );
+typedef int (*fnNUTSPluginFunction)(PluginCommand *);
 
-typedef struct _Plugin {
+typedef struct _NUTSPlugin {
 	HMODULE Handle;
-	fnGetPluginDescriptor  DescriptorFunc;
-	fnCreateFS             CreatorFunc;
-	fnCreateTranslator     XlatCreatorFunc;
-	fnPerformGlobalCommand PerformGlobalCommand;
-	fnZIPTranslate         TranslateZIPContent;
-} Plugin;
+	fnNUTSPluginFunction   CommandHandler;
+	DWORD                  PluginID;
+} NUTSPlugin;
+
+typedef std::vector<NUTSProvider> NUTSProviderList;
+typedef std::vector<NUTSProvider>::iterator NUTSProvider_iter;
+typedef std::vector<FSDescriptor> FSDescriptorList;
+typedef std::vector<FSDescriptor>::iterator FSDescriptor_iter;
+typedef std::map<DWORD, BYTE *> NUTSFontList;
+typedef std::map<DWORD, BYTE *>::iterator FontList_iter;
+typedef std::map<DWORD, std::wstring> NUTSFontNames;
+typedef std::map<DWORD, std::wstring>::iterator FontName_iter;
+typedef std::map< DWORD, std::vector< QWORD > > FSImageOffsets;
 
 typedef struct _FormatMenu {
 	std::wstring FS;
@@ -39,14 +42,13 @@ typedef struct _FSMenu {
 	std::vector<FormatMenu> FS;
 } FSMenu;
 
-typedef std::vector<Plugin> PluginList;
+typedef std::vector<NUTSPlugin> PluginList;
+typedef std::vector<NUTSPlugin>::iterator Plugin_iter;
 typedef std::vector<RootHook> RootHookList;
 
-typedef std::vector<TextTranslator>     TextTranslatorList;
-typedef std::vector<GraphicTranslator>  GraphicTranslatorList;
-typedef TextTranslatorList::iterator    TextTranslatorIterator;
-typedef GraphicTranslatorList::iterator GraphicTranslatorIterator;
-typedef RootHookList::iterator          RootHookIterator;
+typedef std::vector<DataTranslator> TranslatorList;
+typedef TranslatorList::iterator    TranslatorIterator;
+typedef RootHookList::iterator      RootHookIterator;
 
 class CPlugins
 {
@@ -58,45 +60,62 @@ public:
 	void LoadPlugins();
 	FSHints FindFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *FindAndLoadFS( DataSource *pSource, NativeFile *pFile = nullptr );
-	FileSystem *LoadFS( DWORD FSID, DataSource *pSource, bool Initialise = true );
+	FileSystem *LoadFS( DWORD FSID, DataSource *pSource );
 	std::wstring FSName( DWORD FSID );
-	std::vector<PluginDescriptor> GetPluginList();
-	void *LoadFont( DWORD FontID );
+	void *LoadFont( DWORD ReqFontID );
 	DWORD FindFont( DWORD Encoding, BYTE Index );
 	void NextFont( DWORD Encoding, BYTE Index );
-	WCHAR *FontName( DWORD FontID );
+	WCHAR *FontName( DWORD ReqFontID );
 	std::vector<FSMenu> GetFSMenu();
-	void *LoadGraphicTranslator( DWORD TUID );
-	void *LoadTextTranslator( DWORD TUID );
+	void *LoadTranslator( DWORD TUID );
 
-	ProviderList GetProviders( void );
-	FormatList GetFormats( DWORD PUID );
-	TextTranslatorList GetTextTranslators( DWORD PUID );
-	GraphicTranslatorList GetGraphicTranslators( DWORD PUID );
-	RootHookList GetRootHooks();
-	GlobalCommandSet GetGlobalCommands();
+	NUTSProviderList  GetProviders( void );
+	FSDescriptorList  GetFilesystems( DWORD ProviderID );
+	FormatList        GetFormats( DWORD PUID );
+	TranslatorList    GetTranslators( DWORD PUID, DWORD Type );
+	RootHookList      GetRootHooks();
+	RootCommandSet    GetRootCommands();
 
 	std::vector<DWORD> FontListForEncoding( DWORD Encoding );
 
-	int PerformGlobalCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex );
+	int PerformRootCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex );
 
 	bool TranslateZIPContent( NativeFile *pFile, BYTE *pExtra );
 
 private:
-	std::vector<PluginDescriptor> PluginDescriptors;
-	std::vector<FSDescriptor>     FSDescriptors;
-	std::vector<FontDescriptor>   FontDescriptors;
-	PluginList Plugins;
+	NUTSProviderList  Providers;
+	FSDescriptorList  FSDescriptors;
+	NUTSFontList      FontList;
+	NUTSFontNames     FontNames;
+	FSImageOffsets    ImageOffsets;
+	PluginList        Plugins;
+	TranslatorList    Translators;
+	RootHookList      RootHooks;
+	RootCommandSet    RootCommands;
 
 	std::map<DWORD, std::vector<DWORD>> EncodingFontMap;
 	std::map<DWORD, BYTE> EncodingFontSelectors[2];
 
 private:
-	void LoadPlugin( char *plugin );
+	void LoadPlugin( WCHAR *plugin );
+	void GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid );
+	void LoadImageExtensions( NUTSPlugin *plugin );
+	void LoadFonts( NUTSPlugin *plugin );
+	void LoadIcons( NUTSPlugin *plugin );
+	void LoadTranslators( NUTSPlugin *plugin );
+	void LoadRootHooks( NUTSPlugin *plugin );
+	void LoadRootCommands( NUTSPlugin *plugin );
+
+	NUTSPlugin *GetPlugin( DWORD FSID );
 
 	void *pPC437Font;
 
 	DWORD IconID;
+	DWORD PluginID;
+	DWORD EncodingID;
+	DWORD FontID;
+	DWORD FSFTID;
+	DWORD TXID;
 };
 
 extern CPlugins FSPlugins;

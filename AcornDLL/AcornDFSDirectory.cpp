@@ -1,7 +1,7 @@
 #include "StdAfx.h"
 #include "AcornDFSDirectory.h"
 #include "../NUTS/libfuncs.h"
-
+#include "AcornDLL.h"
 #include "Defs.h"
 
 int	AcornDFSDirectory::ReadDirectory(void) {

@@ -1510,7 +1510,7 @@ void CFileViewer::PopulateXlatorMenus( HMENU hPopup )
 
 
 
-	ProviderList Providers = FSPlugins.GetProviders();
+	NUTSProviderList Providers = FSPlugins.GetProviders();
 
 	UINT GFXindex = GFX_MENU_BASE;
 	UINT TXTindex = TXT_MENU_BASE;
@@ -1521,32 +1521,32 @@ void CFileViewer::PopulateXlatorMenus( HMENU hPopup )
 
 	TXTindex++;
 
-	ProviderDesc_iter iter;
+	NUTSProvider_iter iter;
 
 	for (iter = Providers.begin(); iter != Providers.end(); iter++ )
 	{
-		GraphicTranslatorList GFX = FSPlugins.GetGraphicTranslators( iter->PUID );
+		TranslatorList GFX = FSPlugins.GetTranslators( iter->ProviderID, TXGFXTranslator );
 
-		GraphicTranslatorIterator gfx;
+		TranslatorIterator gfx;
 
 		for ( gfx = GFX.begin(); gfx != GFX.end(); gfx++ )
 		{
 			AppendMenu( hGraphixMenu, MF_STRING, (UINT) GFXindex, gfx->FriendlyName.c_str() );
 
-			MenuXlatorMap[ GFXindex ] = gfx->TUID;
+			MenuXlatorMap[ GFXindex ] = gfx->ProviderID;
 
 			GFXindex++;
 		}
 
-		TextTranslatorList TXT = FSPlugins.GetTextTranslators( iter->PUID );
+		TranslatorList TXT = FSPlugins.GetTranslators( iter->ProviderID, TXTextTranslator );
 
-		TextTranslatorIterator txt;
+		TranslatorIterator txt;
 
 		for ( txt = TXT.begin(); txt != TXT.end(); txt++ )
 		{
 			AppendMenu( hTextMenu, MF_STRING, (UINT) TXTindex, txt->FriendlyName.c_str() );
 
-			MenuXlatorMap[ TXTindex ] = txt->TUID;
+			MenuXlatorMap[ TXTindex ] = txt->ProviderID;
 
 			TXTindex++;
 		}
@@ -1949,8 +1949,7 @@ void CFileViewer::DoContentViewer( void )
 		Selection.push_back( TheseFiles[ DIndex ] );
 	}
 
-	TextTranslatorList    TXTList = FSPlugins.GetTextTranslators( NULL );
-	GraphicTranslatorList GFXList = FSPlugins.GetGraphicTranslators( NULL );
+	TranslatorList TXList = FSPlugins.GetTranslators( NULL, NULL );
 
 	GetWindowRect(ParentWnd, &rect);
 
@@ -1967,7 +1966,7 @@ void CFileViewer::DoContentViewer( void )
 			return;
 		}
 
-		TextTranslatorIterator iText;
+		TranslatorIterator iTx;
 
 		if ( iter->XlatorID == TUID_TEXT )
 		{
@@ -1988,9 +1987,9 @@ void CFileViewer::DoContentViewer( void )
 			wInd++;
 		}
 
-		for ( iText = TXTList.begin(); iText != TXTList.end(); iText++ )
+		for ( iTx = TXList.begin(); iTx != TXList.end(); iTx++ )
 		{
-			if ( iter->XlatorID == iText->TUID )
+			if ( ( iter->XlatorID == iTx->ProviderID ) && ( iTx->Flags & TXTextTranslator ) )
 			{
 				CTEXTContentViewer *pTXViewer;
 
@@ -2002,13 +2001,8 @@ void CFileViewer::DoContentViewer( void )
 
 				wInd++;
 			}
-		}
 
-		GraphicTranslatorIterator iGFX;
-
-		for ( iGFX = GFXList.begin(); iGFX != GFXList.end(); iGFX++ )
-		{
-			if ( iter->XlatorID == iGFX->TUID )
+			if ( ( iter->XlatorID == iTx->ProviderID ) && ( iTx->Flags & TXGFXTranslator ) )
 			{
 				CSCREENContentViewer *pSCViewer;
 

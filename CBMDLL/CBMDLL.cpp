@@ -20,101 +20,53 @@
 
 #include "CBMDefs.h"
 
+/* Don't ask. */
 BYTE *pPETSCII = nullptr;
+BYTE *pPETSCIIs[2] = { nullptr, nullptr };
 
 HMODULE hInstance;
 
-CBMDLL_API DataSourceCollector *pExternCollector;
-CBMDLL_API NUTSError *pExternError;
 DataSourceCollector *pCollector;
 
-FSDescriptor CBMFS[3] = {
+BYTE *NUTSSignature;
+
+DWORD FT_C64;
+DWORD FT_CBM_TAPE;
+
+DWORD ENCODING_PETSCII;
+DWORD PLUGINID_CBM;
+
+FSDescriptor CBMFS[] = {
 	{
 		/* .FriendlyName = */ L"D64 Commodore Disk Image",
 		/* .PUID         = */ FSID_D64,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces,
-		0, { }, { },
-		1, { L"D64" }, { FT_MiscImage }, { FT_DiskImage },
 		256, 1700
 	},
 	{
 		/* .FriendlyName = */ L"T64 Commodore Tape Image",
 		/* .PUID         = */ FSID_T64,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_DynamicSize | FSF_Reorderable | FSF_Prohibit_Nesting,
-		0, { }, { },
-		1, { L"T64" }, { FT_MiscImage }, { FT_TapeImage },
 		0, 0
 	},
 	{
 		/* .FriendlyName = */ L"IEC-ATA Hard Disk",
 		/* .PUID         = */ FSID_IECATA,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Formats_Raw | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors,
-		0, { }, { },
-		0, { }, { }, { },
 		512, 0
 	}
 };
 
-FontDescriptor CBMFonts[2] = {
-	{
-		/* .FriendlyName  = */ L"PETSCII 1",
-		/* .PUID          = */ FONTID_PETSCII1,
-		/* .Flags         = */ 0,
-		/* .MinChar       = */ 0,
-		/* .MaxChar       = */ 127,
-		/* .ProcessableControlCodes = */ { 0xFF },
-		/* .pFontData     = */ NULL,
-		/* .MatchingFSIDs = */ {
-			ENCODING_PETSCII,
-			0
-		}
-	},
-	{
-		/* .FriendlyName  = */ L"PETSCII 2",
-		/* .PUID          = */ FONTID_PETSCII2,
-		/* .Flags         = */ 0,
-		/* .MinChar       = */ 0,
-		/* .MaxChar       = */ 127,
-		/* .ProcessableControlCodes = */ { 0xFF },
-		/* .pFontData     = */ NULL,
-		/* .MatchingFSIDs = */ {
-			ENCODING_PETSCII,
-			0
-		}
-	}
-};
+#define CBM_FSCOUNT ( sizeof(CBMFS) / sizeof( FSDescriptor) )
+
+std::wstring ImageExtensions[] = { L"D64", L"T64" };
+
+#define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
 
 RootHook RootHooks[ 4 ];
 
-PluginDescriptor CBMDescriptor = {
-	/* .Provider = */ L"CBM",
-	/* .PUID     = */ PLUGINID_CBM,
-	/* .NumFS    = */ 3,
-	/* .NumFonts = */ 2,
-	/* .BASXlats = */ 0,
-	/* .GFXXlats = */ 0,
-	/* .HumHooks = */ 0,
-	/* .Commands = */ 1,
-
-	/* .FSDescriptors  = */ CBMFS,
-	/* .FontDescriptor = */ CBMFonts,
-	/* .BASXlators     = */ nullptr,
-	/* .GFXXlats       = */ nullptr,
-	/* .RootHooks      = */ RootHooks,
-	/* .Commands       = */ { L"Set OpenCBM Path" }
-};
-
-CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
+void LoadFonts()
 {
-	/* Do this because the compiler is too stupid to do a no-op converstion without having it's hand held */
-	pCollector   = pExternCollector;
-	pGlobalError = pExternError;
-
-	if ( !OpenCBMLoaded )
-	{
-		LoadOpenCBM( );
-	}
-
 	if ( pPETSCII == nullptr )
 	{
 		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_C64 ), RT_RCDATA);
@@ -131,9 +83,9 @@ CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 
 		for ( BYTE c=0; c<2; c++ )
 		{
-			CBMFonts[c].pFontData = (BYTE *) malloc( 256 * 8 );
+			pPETSCIIs[c] = (BYTE *) malloc( 256 * 8 );
 
-			memset( CBMFonts[c].pFontData, 0, 256 * 8 );
+			memset( pPETSCIIs[c], 0, 256 * 8 );
 
 			WORD shifts[][3] = {
 				{ 0x20, 0x20, 0x20 },
@@ -148,7 +100,7 @@ CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 			while ( ( shifts[s][0] != 0 ) || ( shifts[s][1] != 0 ) )
 			{
 				memcpy(
-					&CBMFonts[c].pFontData[ shifts[s][2] * 8 ],
+					&pPETSCIIs[c][ shifts[s][2] * 8 ],
 					&pPETSCII[ ( 0x800 * c ) + ( shifts[s][0] * 8 ) ],
 					shifts[s][1] * 8
 				);
@@ -157,30 +109,39 @@ CBMDLL_API PluginDescriptor *GetPluginDescriptor(void)
 			}
 		}
 	}
+}
 
-	BYTE HookID = 0;
+DWORD NumHooks;
 
-	CBMDescriptor.NumRootHooks = 0;
+RootHook Hooks[ 4 ];
+
+void LoadHooks( void )
+{
+	if ( !OpenCBMLoaded )
+	{
+		LoadOpenCBM( );
+	}
+
+	     NumHooks = 0;
+	BYTE HookID   = 0;
 
 	if ( OpenCBMLoaded )
 	{
-		for ( BYTE device=8; device<16; device++ )
+		for ( BYTE device=8; device<=11; device++ )
 		{
 			if ( CBMDeviceBits & ( 1 << device ) )
 			{
-				CBMDescriptor.RootHooks[ HookID ].FriendlyName  = L"OpenCBM/" + std::to_wstring( (long double) device );
-				CBMDescriptor.RootHooks[ HookID ].HookFSID      = FSID_OPENCBM;
-				CBMDescriptor.RootHooks[ HookID ].HookIcon      = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
-				CBMDescriptor.RootHooks[ HookID ].HookData[ 0 ] = device;
+				Hooks[ HookID ].FriendlyName  = L"OpenCBM/" + std::to_wstring( (long double) device );
+				Hooks[ HookID ].Flags         = RHF_CreatesFileSystem;
+				Hooks[ HookID ].HookIcon      = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
+				Hooks[ HookID ].HookData[ 0 ] = device;
 
 				HookID++;
 
-				CBMDescriptor.NumRootHooks++;
+				NumHooks++;
 			}
 		}
 	}
-
-	return &CBMDescriptor;
 }
 
 /* Hook Icon Creds */
@@ -234,7 +195,7 @@ CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	return pFS;
 }
 
-CBMDLL_API int PerformGlobalCommand( HWND hWnd, DWORD CmdIndex )
+int PerformRootCommand( HWND hWnd, DWORD CmdIndex )
 {
 	WCHAR Path[ MAX_PATH + 1 ] = { 0 };
 
@@ -263,4 +224,179 @@ CBMDLL_API int PerformGlobalCommand( HWND hWnd, DWORD CmdIndex )
 	}
 
 	return (int) GC_ResultRootRefresh;
+}
+
+NUTSProvider ProviderCBM = { L"Commdore", 0, 0 };
+
+WCHAR *pPETSCII1FontName = L"PETSCII 1";
+WCHAR *pPETSCII2FontName = L"PETSCII 2";
+
+WCHAR *OpenCBMPathSet = L"Set OpenCBM Path";
+
+CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
+{
+	switch ( cmd->CommandID )
+	{
+	case PC_SetPluginConnectors:
+		pCollector   = (DataSourceCollector *) cmd->InParams[ 0 ].pPtr;
+		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
+		
+		LoadFonts();
+		LoadHooks();
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportProviders:
+		cmd->OutParams[ 0 ].Value = 1;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetProviderDescriptor:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &ProviderCBM;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+		
+	case PC_ReportFileSystems:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].Value = CBM_FSCOUNT;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_DescribeFileSystem:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &CBMFS[ cmd->InParams[ 1 ].Value ];
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_ReportImageExtensions:
+		cmd->OutParams[ 0 ].Value = IMAGE_EXT_COUNT;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetImageExtension:
+		cmd->OutParams[ 0 ].pPtr = (void *) ImageExtensions[ cmd->InParams[ 0 ].Value ].c_str();
+		cmd->OutParams[ 1 ].Value = FT_MiscImage;
+		cmd->OutParams[ 2 ].Value = FT_DiskImage;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_CreateFileSystem:
+		{
+			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
+
+			DWORD ProviderID = cmd->InParams[ 0 ].Value;
+			DWORD FSID       = cmd->InParams[ 1 ].Value;
+
+			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
+
+			void *pFS = (void *) CreateFS( FullFSID, pSource );
+
+			cmd->OutParams[ 0 ].pPtr = pFS;
+
+			if ( pFS == nullptr )
+			{
+				return NUTS_PLUGIN_ERROR;
+			}
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+	case PC_ReportEncodingCount:
+		cmd->OutParams[ 0 ].Value = 1;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_SetEncodingBase:
+		ENCODING_PETSCII  = cmd->InParams[ 0 ].Value + 0;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportFonts:
+		cmd->OutParams[ 0 ].Value = 2;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetFontPointer:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) pPETSCIIs[ 0 ];
+			cmd->OutParams[ 1 ].pPtr  = (void *) pPETSCII1FontName;
+			cmd->OutParams[ 2 ].Value = ENCODING_PETSCII;
+			cmd->OutParams[ 3 ].Value = NULL;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+		if ( cmd->InParams[ 0 ].Value == 1 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) pPETSCIIs[ 1 ];
+			cmd->OutParams[ 1 ].pPtr  = (void *) pPETSCII2FontName;
+			cmd->OutParams[ 2 ].Value = ENCODING_PETSCII;
+			cmd->OutParams[ 3 ].Value = NULL;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_ReportFSFileTypeCount:
+		cmd->OutParams[ 0 ].Value = 2;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_SetFSFileTypeBase:
+		{
+			DWORD Base = cmd->InParams[ 0 ].Value;
+
+			FT_C64      = Base + 0;
+			FT_CBM_TAPE = Base + 1;
+		}
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportRootHooks:
+		cmd->OutParams[ 0 ].Value = NumHooks;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_DescribeRootHook:
+		{
+			BYTE HookID = (BYTE) cmd->InParams[ 0 ].Value;
+			DWORD PID   = cmd->InParams[ 1 ].Value;
+
+			Hooks[ HookID ].HookFSID = MAKEFSID( PID, 0, FSID_OPENCBM );
+
+			cmd->OutParams[ 0 ].pPtr = &Hooks[ HookID ];
+		}
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportRootCommands:
+		cmd->OutParams[ 0 ].Value = 1;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_DescribeRootCommand:
+		cmd->OutParams[ 0 ].pPtr = OpenCBMPathSet;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_PerformRootCommand:
+		cmd->OutParams[ 0 ].Value =	(DWORD) PerformRootCommand(
+			(HWND) cmd->InParams[ 0 ].pPtr,
+			cmd->InParams[ 1 ].Value
+		);
+
+		return NUTS_PLUGIN_SUCCESS;
+	}
+
+	return NUTS_PLUGIN_UNRECOGNISED;
 }

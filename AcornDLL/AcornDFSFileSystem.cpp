@@ -362,12 +362,12 @@ FSHint AcornDFSFileSystem::Offer( BYTE *Extension )
 
 	DWORD sectors = ((SectorBuf[256 + 6 + 0] & 3) << 8) | SectorBuf[256 + 6 + 1];
 
-	if ( ( sectors == 400 ) && ( FSID == FSID_DFS_40 ) )
+	if ( ( sectors == 400 ) && ( MYFSID == FSID_DFS_40 ) )
 	{
 		hint.Confidence += 20;
 	}
 
-	if ( ( sectors == 800 ) && ( FSID == FSID_DFS_80 ) )
+	if ( ( sectors == 800 ) && ( MYFSID == FSID_DFS_80 ) )
 	{
 		hint.Confidence += 20;
 	}
@@ -610,7 +610,7 @@ int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 
 	DWORD MaxTracks = 40;
 
-	if ( FSID == FSID_DFS_80 )
+	if ( MYFSID == FSID_DFS_80 )
 	{
 		MaxTracks = 80;
 	}

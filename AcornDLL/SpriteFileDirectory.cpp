@@ -4,6 +4,7 @@
 #include "Defs.h"
 #include "../nuts/libfuncs.h"
 #include "Sprite.h"
+#include "AcornDLL.h"
 
 int	SpriteFileDirectory::ReadDirectory( void ) {
 

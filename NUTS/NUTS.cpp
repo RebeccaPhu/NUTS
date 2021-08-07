@@ -68,7 +68,7 @@ INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 HWND   FocusPane   = NULL;
 HWND   DragSource  = NULL;
 
-std::map< DWORD, GlobalCommand> GlobalCommandMap;
+std::map< DWORD, RootCommand> RootCommandMap;
 
 DataSourceCollector *pCollector = new DataSourceCollector();
 
@@ -223,8 +223,8 @@ void ConfigureExtrasMenu( void )
 	InsertMenuItem( hMenuBar, (UINT) 2, TRUE, &mii );
 
 	/* Now add the items */
-	GlobalCommandSet menus = FSPlugins.GetGlobalCommands();
-	GlobalCommandSet::iterator iter;
+	RootCommandSet menus = FSPlugins.GetRootCommands();
+	RootCommandSet::iterator iter;
 
 	if ( menus.size() == 0 )
 	{
@@ -239,7 +239,7 @@ void ConfigureExtrasMenu( void )
 	{
 		AppendMenu( hExtraMenu, MF_STRING, (UINT) index, iter->Text.c_str() );
 
-		GlobalCommandMap[ index ] = *iter;
+		RootCommandMap[ index ] = *iter;
 	}
 }
 
@@ -554,7 +554,7 @@ unsigned int DoEnterAs( FSAction *pVars )
 
 	if ( pVars->FSID != FS_Null )
 	{
-		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource, false );
+		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource );
 
 		pSource->Release();
 
@@ -1014,9 +1014,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		if ( ( wmId >= EXTRA_MENU_BASE ) && ( wmId <= EXTRA_MENU_END ) )
 		{
-			if ( GlobalCommandMap.find( wmId ) != GlobalCommandMap.end() )
+			if ( RootCommandMap.find( wmId ) != RootCommandMap.end() )
 			{
-				GlobalCommandResult r = (GlobalCommandResult) FSPlugins.PerformGlobalCommand( hMainWnd, GlobalCommandMap[ wmId ].PUID, GlobalCommandMap[ wmId ].CmdIndex );
+				RootCommandResult r = (RootCommandResult) FSPlugins.PerformRootCommand( hMainWnd, RootCommandMap[ wmId ].PUID, RootCommandMap[ wmId ].CmdIndex );
 
 				if ( r == GC_ResultRefresh )
 				{

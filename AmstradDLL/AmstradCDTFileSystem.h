@@ -11,6 +11,9 @@ class AmstradCDTFileSystem :
 public:
 	AmstradCDTFileSystem( DataSource *pDataSource ) : TZXFileSystem( pDataSource, AmstradPB )
 	{
+		AmstradPB.Encoding = ENCODING_CPC;
+		tzxpb.Encoding     = ENCODING_CPC;
+
 		pAmstradDir = new AmstradCDTDirectory( pDataSource, AmstradPB );
 		pDir        = (TZXDirectory *) pAmstradDir;
 		pDirectory  = (Directory *) pDir;

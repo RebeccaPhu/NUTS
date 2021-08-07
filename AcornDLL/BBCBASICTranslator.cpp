@@ -2,6 +2,7 @@
 #include "BBCBASICTranslator.h"
 #include "../NUTS/libfuncs.h"
 #include "Defs.h"
+#include "AcornDLL.h"
 
 BBCBASICTranslator::BBCBASICTranslator(void)
 {

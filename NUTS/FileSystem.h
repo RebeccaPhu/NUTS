@@ -438,6 +438,7 @@ public:
 	}
 
 	DWORD FSID;
+	DWORD PLID;
 	DWORD EnterIndex;
 	bool  IsRaw;
 	DWORD Flags;

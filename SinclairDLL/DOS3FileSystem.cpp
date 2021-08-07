@@ -25,6 +25,9 @@ DOS3FileSystem::DOS3FileSystem(DataSource *pDataSource) : CPMFileSystem( pDataSo
 	/* Remove the directory object and create a new one */
 	delete pDir;
 
+	DOS3_DPB.Encoding = ENCODING_SINCLAIR;
+	dpb.Encoding      = ENCODING_SINCLAIR;
+
 	pDir = (CPMDirectory *) new DOS3Directory( pDataSource, pMap, DOS3_DPB );
 
 	pDirectory = (Directory *) pDir;

@@ -26,6 +26,9 @@ AMSDOSFileSystem::AMSDOSFileSystem(DataSource *pDataSource) : CPMFileSystem( pDa
 	/* Remove the directory object and create a new one */
 	delete pDir;
 
+	AMSDOS_DPB.Encoding = ENCODING_CPC;
+	dpb.Encoding        = ENCODING_CPC;
+
 	pDir = (CPMDirectory *) new AMSDOSDirectory( pDataSource, pMap, AMSDOS_DPB );
 
 	pDirectory = (Directory *) pDir;

@@ -11,6 +11,9 @@ class SinclairTZXFileSystem :
 public:
 	SinclairTZXFileSystem( DataSource *pDataSource ) : TZXFileSystem( pDataSource, SinclairPB )
 	{
+		SinclairPB.Encoding = ENCODING_SINCLAIR;
+		tzxpb.Encoding      = ENCODING_SINCLAIR;
+
 		pSinclairDir = new SinclairTZXDirectory( pDataSource, SinclairPB );
 		pDir         = (TZXDirectory *) pSinclairDir;
 		pDirectory   = (Directory *) pSinclairDir;

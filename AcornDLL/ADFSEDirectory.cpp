@@ -5,7 +5,7 @@
 #include "../NUTS/NUTSError.h"
 #include "../NUTS/libfuncs.h"
 #include "Defs.h"
-
+#include "AcornDLL.h"
 #include <algorithm>
 
 int	ADFSEDirectory::ReadDirectory( void ) {

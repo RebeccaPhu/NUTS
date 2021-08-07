@@ -3,7 +3,7 @@
 #include "BBCFunctions.h"
 #include "RISCOSIcons.h"
 #include "../NUTS/libfuncs.h"
-
+#include "AcornDLL.h"
 #include <algorithm>
 
 int	ADFSDirectory::ReadDirectory( void ) {
@@ -125,7 +125,7 @@ int	ADFSDirectory::ReadDirectory( void ) {
 		file.XlatorID = NULL;
 		file.HasResolvedIcon = false;
 
-		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
+		if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
 		{
 			file.EncodingID = ENCODING_RISCOS;
 		}
@@ -162,7 +162,7 @@ int	ADFSDirectory::ReadDirectory( void ) {
 
 	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
 	{
-		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
+		if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
 		{
 			TranslateType( &*iFile );
 		}

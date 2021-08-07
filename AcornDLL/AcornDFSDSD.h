@@ -3,6 +3,7 @@
 #include "../NUTS/Directory.h"
 #include "../NUTS/Defs.h"
 #include "Defs.h"
+#include "AcornDLL.h"
 
 class AcornDSDDirectory : public Directory
 {

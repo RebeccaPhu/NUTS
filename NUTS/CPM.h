@@ -124,10 +124,10 @@ public:
 
 protected:
 	CPMBlockMap  *pMap;
+	CPMDPB       dpb;
 	bool         SystemDisk;
 
 private:
-	CPMDPB       dpb;
 
 	DWORD        DirSector;
 
