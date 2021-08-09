@@ -86,7 +86,7 @@ std::wstring ImageExtensions[] = { L"DSK", L"TRD", L"TAP", L"TZX" };
 
 DataTranslator Translators[] = {
 	{ 0, L"ZX Spectrum BASIC", 0, TXTextTranslator },
-	{ 0, L"ZC Spectrum",       0, TXGFXTranslator  }
+	{ 0, L"ZX Spectrum",       0, TXGFXTranslator  }
 };
 
 #define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
@@ -113,9 +113,83 @@ void LoadFonts()
 		LPVOID lpAddress = LockResource(hMemory);
 
 		// Font data starts from character 32
-		pSinclairFont = (BYTE *) malloc( (size_t) dwSize + ( 32 * 8 ) );
+		pSinclairFont = (BYTE *) malloc( 256 * 8 );
+
+		ZeroMemory( pSinclairFont, 256 * 8 );
 
 		memcpy( &pSinclairFont[ 32 * 8 ], lpAddress, dwSize );
+
+		// Now generate some special chars
+
+		// Block Graphics
+		for ( BYTE c=0x80; c<0x90; c++ )
+		{
+			BYTE *pChar = &pSinclairFont[ c * 8 ];
+
+			for (BYTE r=0; r<8; r++ )
+			{
+				BYTE bg = 0;
+
+				if ( ( c & 1 ) && ( r < 4 ) ) { bg |= 0x0F; }
+				if ( ( c & 2 ) && ( r < 4 ) ) { bg |= 0xF0; }
+				if ( ( c & 4 ) && ( r > 3 ) ) { bg |= 0x0F; }
+				if ( ( c & 8 ) && ( r > 3 ) ) { bg |= 0xF0; }
+
+				pChar[ r ] = bg;
+			}
+		}
+
+		// UDGs
+		for ( BYTE c=0x90; c<0xA5; c++ )
+		{
+			BYTE *pChar = &pSinclairFont[ c * 8 ];
+			BYTE *pSrc  = &pSinclairFont[ ( c - 0x4F ) * 8 ];
+
+			for (BYTE r=0; r<8; r++ )
+			{
+				BYTE udg = pSrc[ r ];
+
+				if ( r == 0 ) { udg |= 0x55; }
+				else if ( r == 7 ) { udg |= 0xAA; }
+				else if ( r & 1 ) { udg |= 0x80; }
+				else { udg |= 0x01; }
+
+				pChar[ r ] = udg;
+			}
+		}
+
+		// Keywords
+		for ( BYTE c=0xA5; c!=0x00; c++ )
+		{
+			BYTE *pChar = &pSinclairFont[ c * 8 ];
+			BYTE *pSrc  = &pSinclairFont[ 'K' * 8 ];
+
+			for (BYTE r=0; r<8; r++ )
+			{
+				if ( r == 0 ) { pChar[ 0 ] = 0xFF; }
+				else if ( r == 7 ) { pChar[ 7 ] = 0xFF; }
+				else { pChar[ r ] = pSrc[ r ] | 0x81; }
+			}
+		}
+
+		// Finally, control chars
+		for ( BYTE c=0x00; c!=0x20; c++ )
+		{
+			BYTE *pChar = &pSinclairFont[ c * 8 ];
+			BYTE *pSrc  = &pSinclairFont[ '?' * 8 ];
+
+			for (BYTE r=0; r<8; r++ )
+			{
+				BYTE cc = pSrc[ r ];
+
+				if ( r == 0 ) { cc |= 0x55; }
+				else if ( r == 7 ) { cc |= 0xAA; }
+				else if ( r & 1 ) { cc |= 0x80; }
+				else { cc |= 0x01; }
+
+				pChar[ r ] = cc;
+			}
+		}
 	}
 }
 
@@ -183,9 +257,69 @@ SINCLAIRDLL_API void *CreateTranslator( DWORD TUID )
 	return pXlator;
 }
 
+WCHAR *DescribeChar( BYTE Char )
+{
+	static WCHAR desc[ 256 ];
+
+	std::wstring sd;
+
+	if ( ( Char >= 0 ) && ( Char < 0x20 ) )
+	{
+		static WCHAR *controls[] = {
+			L"None", L"None", L"None", L"None", L"True Video", L"Inverse Video", L"PRINT comma", L"EDIT", L"Cursor Left", L"Cursor Right",
+			L"Cursor down", L"Cursor Up", L"DELETE", L"ENTER", L"number", L"GRAPHICS MODE", L"INK control", L"PAPER control", L"FLASH control",
+			L"BRIGHT control", L"INVERSE control", L"OVER control", L"AT control", L"TAB control", L"None", L"None", L"None", L"None", L"None",
+			L"None", L"None", L"None"
+		};
+
+		sd = L"Control Code: " + std::wstring( controls[ Char ] );
+	}
+	else if ( Char == 0x60 )
+	{
+		sd = L"Pound sign";
+	}
+	else if ( ( Char >= 0x20 ) && ( Char <= 0x7E ) )
+	{
+		WCHAR x[2] = { (WCHAR) Char, 0 };
+
+		sd = L"ASCII Character '" + std::wstring( x ) + L"'";
+	}
+	else if ( Char == 0x7F )
+	{
+		sd = L"Copyright Symbol";
+	}
+	else if ( ( Char >= 0x80 ) && ( Char <= 0x8F ) )
+	{
+		sd = L"Block graphics character " + std::to_wstring( (long double) Char - 0x80 );
+	}
+	else if ( ( Char >= 0x90 ) && ( Char <= 0xA4 ) )
+	{
+		WCHAR x[2] = { (WCHAR) Char - 0x4F, 0 };
+
+		sd = L"User defined graphics character '" + std::wstring( x ) + L"'";
+	}
+	else
+	{
+		static WCHAR *keywords[] = {
+			L"RND", L"INKEY$", L"PI", L"FN", L"POINT", L"SCREEN$", L"ATTR", L"AT", L"TAB", L"VAL$", L"CODE",
+			L"VAL", L"LEN", L"SIN", L"COS", L"TAN", L"ASN", L"ACS", L"ATN", L"LN", L"EXP", L"INT", L"SQR", L"SGN", L"ABS", L"PEEK", L"IN",
+			L"USR", L"STR$", L"CHR$", L"NOT", L"BIN", L"OR", L"AND", L"<=", L">=", L"<>", L"LINE", L"THEN", L"TO", L"STEP", L"DEF FN", L"CAT",
+			L"FORMAT", L"MOVE", L"ERASE", L"OPEN #", L"CLOSE #", L"MERGE", L"VERIFY", L"BEEP", L"CIRCLE", L"INK", L"PAPER", L"FLASH", L"BRIGHT", L"INVERSE", L"OVER", L"OUT",
+			L"LPRINT", L"LLIST", L"STOP", L"READ", L"DATA", L"RESTORE", L"NEW", L"BORDER", L"CONTINUE", L"DIM", L"REM", L"FOR", L"GO TO", L"GO SUB", L"INPUT", L"LOAD",
+			L"LIST", L"LET", L"PAUSE", L"NEXT", L"POKE", L"PRINT", L"PLOT", L"RUN", L"SAVE", L"RANDOMIZE", L"IF", L"CLS", L"DRAW", L"CLEAR", L"RETURN", L"COPY"
+		};
+	
+		sd = L"ZX Spectrum BASIC Keyword '" + std::wstring( keywords[ Char - 0xA5 ])  + L"'";
+	}
+	
+	wcscpy( desc, sd.c_str() );
+
+	return desc;
+}
+
 NUTSProvider ProviderSinclair = { L"Sinclair", 0, 0 };
 
-WCHAR *pSinclairFontName = L"BBC Micro";
+WCHAR *pSinclairFontName = L"Sinclair";
 
 SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 {
@@ -352,6 +486,14 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_CreateTranslator:
 		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
 
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_DescribeChar:
+		{
+			BYTE Char = (BYTE) cmd->InParams[ 1 ].Value;
+
+			cmd->OutParams[ 0 ].pPtr = DescribeChar( Char );
+		}
 		return NUTS_PLUGIN_SUCCESS;
 	}
 

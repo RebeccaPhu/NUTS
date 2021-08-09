@@ -65,6 +65,9 @@ std::wstring ImageExtensions[] = { L"D64", L"T64" };
 
 RootHook RootHooks[ 4 ];
 
+DWORD FontID1 = 0xFFFFFFFF;
+DWORD FontID2 = 0xFFFFFFFF;
+
 void LoadFonts()
 {
 	if ( pPETSCII == nullptr )
@@ -226,6 +229,81 @@ int PerformRootCommand( HWND hWnd, DWORD CmdIndex )
 	return (int) GC_ResultRootRefresh;
 }
 
+WCHAR *DescribeChar( BYTE Char, DWORD FontID )
+{
+	/* This is complicated because of which font is in use */
+	static WCHAR desc[ 256 ];
+
+	std::wstring cd;
+
+	if ( FontID == FontID1 )
+	{
+		if ( ( Char >= 0 ) && ( Char < 0x20 ) )
+		{
+			cd = L"Control character " + std::to_wstring( (long double) Char );
+		}
+		else if ( Char == 0x5C )
+		{
+			cd = L"Pound sign";
+		}
+		else if ( ( Char >= 0x20 ) && ( Char <= 0x5D ) )
+		{
+			WCHAR x[2] = { (WCHAR) Char, 0 };
+
+			cd = L"PETSCII Character '" + std::wstring( x ) + L"'";
+		}
+		else
+		{
+			cd = L"PETSCII Extended Character " + std::to_wstring( (long double) Char );
+		}
+	}
+	else
+	{
+		/* PETSCII 2 has lower case chars where ASCII puts upper case, and vice-versa.
+		   It also duplicates the upper case chars at 0xC1 to 0xDA. */
+		if ( ( Char >= 0 ) && ( Char < 0x20 ) )
+		{
+			cd = L"Control character " + std::to_wstring( (long double) Char );
+		}
+		else if ( Char == 0x5C )
+		{
+			cd = L"Pound sign";
+		}
+		else if ( ( Char >= 0x20 ) && ( Char <= 0x40 ) )
+		{
+			WCHAR x[2] = { (WCHAR) Char, 0 };
+
+			cd = L"PETSCII Character '" + std::wstring( x ) + L"'";
+		}
+		else if ( ( Char >= 0x41 ) && ( Char <= 0x5D ) )
+		{
+			WCHAR x[2] = { (WCHAR) Char + 0x20, 0 };
+
+			cd = L"PETSCII Character '" + std::wstring( x ) + L"'";
+		}
+		else if ( ( Char >= 0x61 ) && ( Char <= 0x7A ) )
+		{
+			WCHAR x[2] = { (WCHAR) Char - 0x20, 0 };
+
+			cd = L"PETSCII Character '" + std::wstring( x ) + L"'";
+		}
+		else if ( ( Char >= 0xC1 ) && ( Char <= 0xDA ) )
+		{
+			WCHAR x[2] = { (WCHAR) Char - 0x80, 0 };
+
+			cd = L"PETSCII Character (high range) '" + std::wstring( x ) + L"'";
+		}
+		else
+		{
+			cd = L"PETSCII Extended Character " + std::to_wstring( (long double) Char );
+		}
+	}
+
+	wcscpy( desc, cd.c_str() );
+
+	return desc;
+}
+
 NUTSProvider ProviderCBM = { L"Commdore", 0, 0 };
 
 WCHAR *pPETSCII1FontName = L"PETSCII 1";
@@ -334,6 +412,8 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 2 ].Value = ENCODING_PETSCII;
 			cmd->OutParams[ 3 ].Value = NULL;
 
+			FontID1 = cmd->InParams[ 1 ].Value;
+
 			return NUTS_PLUGIN_SUCCESS;
 		}
 		if ( cmd->InParams[ 0 ].Value == 1 )
@@ -342,6 +422,8 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 1 ].pPtr  = (void *) pPETSCII2FontName;
 			cmd->OutParams[ 2 ].Value = ENCODING_PETSCII;
 			cmd->OutParams[ 3 ].Value = NULL;
+
+			FontID2 = cmd->InParams[ 1 ].Value;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}
@@ -395,6 +477,15 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->InParams[ 1 ].Value
 		);
 
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_DescribeChar:
+		{
+			BYTE  Char   = (BYTE) cmd->InParams[ 1 ].Value;
+			DWORD FontID =        cmd->InParams[ 0 ].Value;
+
+			cmd->OutParams[ 0 ].pPtr = DescribeChar( Char, FontID );
+		}
 		return NUTS_PLUGIN_SUCCESS;
 	}
 

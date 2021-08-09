@@ -26,6 +26,8 @@ CPlugins::CPlugins()
 	Plugins.clear();
 
 	pPC437Font = nullptr;
+
+	FontNames[ FONTID_PC437 ] = L"PC437";
 }
 
 CPlugins::~CPlugins()
@@ -684,6 +686,11 @@ std::vector<DWORD> CPlugins::FontListForEncoding( DWORD Encoding )
 	return RFontList;
 }
 
+NUTSFontNames CPlugins::FullFontList( void )
+{
+	return FontNames;
+}
+
 void CPlugins::NextFont( DWORD Encoding, BYTE Index )
 {
 	EncodingFontSelectors[ Index ][ Encoding ] =
@@ -889,6 +896,7 @@ void CPlugins::LoadFonts( NUTSPlugin *plugin )
 				{
 					cmd.CommandID = PC_GetFontPointer;
 					cmd.InParams[ 0 ].Value = i;
+					cmd.InParams[ 1 ].Value = FontID;
 
 					if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 					{
@@ -913,12 +921,15 @@ void CPlugins::LoadFonts( NUTSPlugin *plugin )
 
 								EncodingFontSelectors[ 0 ][ Encoding ] = 0;
 								EncodingFontSelectors[ 1 ][ Encoding ] = 0;
+
 							}
 							else
 							{
 								break;
 							}
 						}
+
+						FontMap[ FontID ] = PluginID;
 
 						FontID++;
 					}
@@ -1050,4 +1061,45 @@ void CPlugins::LoadRootCommands( NUTSPlugin *plugin )
 			}
 		}
 	}
+}
+
+std::wstring CPlugins::GetCharacterDescription( DWORD FontID, BYTE Char )
+{
+	std::wstring desc = L"";
+
+	if ( ( FontID != FONTID_PC437 ) &&  ( FontMap.find( FontID ) != FontMap.end() ) )
+	{
+		NUTSPlugin *plugin = GetPlugin( MAKEFSID( FontMap[ FontID ], 0, 0 ) );
+
+		PluginCommand cmd;
+
+		cmd.CommandID = PC_DescribeChar;
+		cmd.InParams[ 0 ].Value = FontID;
+		cmd.InParams[ 1 ].Value = Char;
+
+		if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+		{
+			desc = (WCHAR *) cmd.OutParams[ 0 ].pPtr;
+		}
+	}
+
+	if ( desc == L"" )
+	{
+		WCHAR x[2] = { (WCHAR) Char, 0 };
+
+		if ( ( Char >= 0 ) && ( Char < 0x20 ) )
+		{
+			desc = L"Control code " + std::to_wstring( (long double) Char );
+		}
+		else if ( ( Char >= 0x20 ) && ( Char <= 0x7E ) )
+		{
+			desc = L"ASCII Character '" + std::wstring( x ) + L"'";
+		}
+		else
+		{
+			desc = L"Extended Character " + std::to_wstring( (long double) Char );
+		}
+	}
+
+	return desc;
 }

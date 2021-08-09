@@ -30,6 +30,8 @@ typedef std::map<DWORD, BYTE *> NUTSFontList;
 typedef std::map<DWORD, BYTE *>::iterator FontList_iter;
 typedef std::map<DWORD, std::wstring> NUTSFontNames;
 typedef std::map<DWORD, std::wstring>::iterator FontName_iter;
+typedef std::map<DWORD, DWORD> PluginFontMap;
+typedef std::map<DWORD, DWORD> PluginFontMap_iter;
 typedef std::map< DWORD, std::vector< QWORD > > FSImageOffsets;
 
 typedef struct _FormatMenu {
@@ -62,10 +64,6 @@ public:
 	FileSystem *FindAndLoadFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *LoadFS( DWORD FSID, DataSource *pSource );
 	std::wstring FSName( DWORD FSID );
-	void *LoadFont( DWORD ReqFontID );
-	DWORD FindFont( DWORD Encoding, BYTE Index );
-	void NextFont( DWORD Encoding, BYTE Index );
-	WCHAR *FontName( DWORD ReqFontID );
 	std::vector<FSMenu> GetFSMenu();
 	void *LoadTranslator( DWORD TUID );
 
@@ -76,17 +74,26 @@ public:
 	RootHookList      GetRootHooks();
 	RootCommandSet    GetRootCommands();
 
+	void  *LoadFont( DWORD ReqFontID );
+	DWORD FindFont( DWORD Encoding, BYTE Index );
+	void  NextFont( DWORD Encoding, BYTE Index );
+	WCHAR *FontName( DWORD ReqFontID );
+
 	std::vector<DWORD> FontListForEncoding( DWORD Encoding );
+	NUTSFontNames      FullFontList( void );
 
 	int PerformRootCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex );
 
 	bool TranslateZIPContent( NativeFile *pFile, BYTE *pExtra );
+
+	std::wstring GetCharacterDescription( DWORD FontID, BYTE Char );
 
 private:
 	NUTSProviderList  Providers;
 	FSDescriptorList  FSDescriptors;
 	NUTSFontList      FontList;
 	NUTSFontNames     FontNames;
+	PluginFontMap     FontMap;
 	FSImageOffsets    ImageOffsets;
 	PluginList        Plugins;
 	TranslatorList    Translators;

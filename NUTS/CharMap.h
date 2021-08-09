@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <map>
 
 class CharMap
@@ -30,10 +31,16 @@ private:
 	HDC     hArea;
 	HGDIOBJ hAreaOld;
 	HBITMAP hAreaCanvas;
+	HWND    hFontList;
+	HDC     hCharDesc;
+	HGDIOBJ hCharOld;
+	HBITMAP hCharDescCanvas;
 
 	DWORD   CFontID;
 
 	long    ci;
+
+	std::vector<DWORD> FontMap;
 
 private:
 	void PaintWindow( void );

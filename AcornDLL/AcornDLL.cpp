@@ -425,6 +425,8 @@ void LoadFonts()
 		// Font data starts from character 32
 		pAcornFont = (BYTE *) malloc( 256 * 8 );
 
+		ZeroMemory( pAcornFont, 256 * 8 );
+
 		memcpy( &pAcornFont[ 32 * 8 ], lpAddress, dwSize );
 	}
 
@@ -438,8 +440,30 @@ void LoadFonts()
 		// Font data starts from character 32
 		pTeletextFont = (BYTE *) malloc( 256 * 8 );
 
+		ZeroMemory( pTeletextFont, 256 * 8 );
+
 		memcpy( &pTeletextFont[ 0 * 8   ], lpAddress, dwSize / 2 );
 		memcpy( &pTeletextFont[ 128 * 8 ], lpAddress, dwSize / 2 );
+
+		for ( BYTE c=0x00; c!=0x20; c++ )
+		{
+			BYTE *pChar  = &pTeletextFont[ c * 8 ];
+			BYTE *pTChar = &pTeletextFont[ ( c + 0x80 ) * 8 ];
+			BYTE *pSrc   = &pTeletextFont[ '?' * 8 ];
+
+			for (BYTE r=0; r<8; r++ )
+			{
+				BYTE cc = pSrc[ r ];
+
+				if ( r == 0 ) { cc |= 0x55; }
+				else if ( r == 7 ) { cc |= 0xAA; }
+				else if ( r & 1 ) { cc |= 0x80; }
+				else { cc |= 0x01; }
+
+				pChar[ r ] = cc;
+				pTChar[ r ] = cc;
+			}
+		}
 	}
 
 	if ( pRiscOSFont == nullptr )
@@ -455,10 +479,98 @@ void LoadFonts()
 		BYTE *pFontSrc = ( BYTE * ) lpAddress;
 
 		ZeroMemory( pRiscOSFont, 256 * 8 );
+
 		memcpy( &pRiscOSFont[ 32 * 8  ], &pFontSrc[ 0 ], ( 256 - 32 ) * 8 );
 	}
 
 	AcornSCREENTranslator::pTeletextFont = pTeletextFont;
+}
+
+DWORD FontID1 = 0xFFFFFFFF;
+DWORD FontID2 = 0xFFFFFFFF;
+DWORD FontID3 = 0xFFFFFFFF;
+
+WCHAR *DescribeChar( BYTE Char, DWORD FontID )
+{
+	/* This is complicated because of which font is in use */
+	static WCHAR desc[ 256 ];
+
+	std::wstring cd;
+
+	if ( ( FontID == FontID1 ) && ( Char == 0x60 ) )
+	{
+		cd = L"Pound sign";
+	}
+	else if ( FontID == FontID3 )
+	{
+		/* Teletext */
+		BYTE DChar = Char & 0x7F;
+
+		cd = L"";
+
+		if ( Char & 0x80 ) { cd = L"(Top bit set) "; }
+
+		/* There's a few weird characters that look different in telext */
+		if ( DChar == 0x60 ) { cd += L"Pound Sign"; }
+		if ( DChar == 0x5F ) { cd += L"Long Hyphen"; }
+		if ( DChar == 0x5E ) { cd += L"Up Arrow"; }
+		if ( DChar == 0x5D ) { cd += L"Right Arrow"; }
+		if ( DChar == 0x5C ) { cd += L"Half Fraction"; }
+		if ( DChar == 0x5B ) { cd += L"Left Arrow"; }
+		if ( DChar == 0x7F ) { cd += L"Hard Space"; }
+		if ( DChar == 0x7E ) { cd += L"Division Symbol"; }
+		if ( DChar == 0x7D ) { cd += L"Three Quarter Fraction"; }
+		if ( DChar == 0x7C ) { cd += L"Double Bar"; }
+		if ( DChar == 0x7B ) { cd += L"One Quarter Fraction"; }
+
+		if ( 
+			( ( DChar >= 0x20 ) && ( DChar <= 0x5A ) ) ||
+			( ( DChar >= 0x61 ) && ( DChar <= 0x7A ) ) 
+			)
+		{
+			WCHAR x[2] = { (WCHAR) DChar, 0 };
+
+			cd += L"ASSCII Character '" + std::wstring( x ) + L"'";
+		}
+
+		if ( ( DChar >= 0 ) && ( DChar < 0x20 ) )
+		{
+			static WCHAR *codes[] = {
+				L"No Effect", L"Red Alpha", L"Green Alpha", L"Yellow Alpha", L"Blue Alpha", L"Magenta Alpha", L"Cyan Alpha", L"White Alpha", L"FlashL", L"Steady",
+				L"No Effect", L"No Effect", L"Normal Height", L"Double Height", L"No Effect", L"No Effect", L"No Effect",
+				L"Red Graphics", L"Green Graphics", L"Yellow Graphics", L"Blue Graphics", L"Magenta Graphics", L"Cyan Graphics", L"White Graphics",
+				L"Conceal Display", L"Contiguous Graphics", L"Separated Graphics", L"No Effect", L"Black Background", L"New Background", L"Hold Graphics",
+				L"Release Graphics"
+			};
+
+			cd += L"Control Code: " + std::wstring( codes[ DChar ] );
+		}
+	}
+	else
+	{
+		if ( ( Char >= 0 ) && ( Char < 0x20 ) )
+		{
+			cd = L"Control character " + std::to_wstring( (long double) Char );
+		}
+		else if ( ( Char >= 0x20 ) && ( Char <= 0x7E ) )
+		{
+			WCHAR x[2] = { (WCHAR) Char, 0 };
+
+			cd = L"ASSCII Character '" + std::wstring( x ) + L"'";
+		}
+		else if ( Char == 0x7F )
+		{
+			cd = L"Delete";
+		}
+		else
+		{
+			cd = L"Extended Character " + std::to_wstring( (long double) Char );
+		}
+	}
+
+	wcscpy( desc, cd.c_str() );
+
+	return desc;
 }
 
 NUTSProvider ProviderBBCMicro = { L"BBC Micro", 0, 0 };
@@ -604,6 +716,8 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 2 ].Value = ENCODING_ACORN;
 			cmd->OutParams[ 3 ].Value = NULL;
 
+			FontID1 = cmd->InParams[ 1 ].Value;
+
 			return NUTS_PLUGIN_SUCCESS;
 		}
 		if ( cmd->InParams[ 0 ].Value == 1 )
@@ -612,6 +726,8 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 1 ].pPtr  = (void *) pRiscOSFontName;
 			cmd->OutParams[ 2 ].Value = ENCODING_RISCOS;
 			cmd->OutParams[ 3 ].Value = NULL;
+
+			FontID2 = cmd->InParams[ 1 ].Value;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}
@@ -623,6 +739,8 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 2 ].Value = ENCODING_ACORN;
 			cmd->OutParams[ 3 ].Value = ENCODING_RISCOS;
 			cmd->OutParams[ 4 ].Value = NULL;
+
+			FontID3 = cmd->InParams[ 1 ].Value;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}
@@ -707,6 +825,15 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
 		}
 		
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_DescribeChar:
+		{
+			BYTE  Char   = (BYTE) cmd->InParams[ 1 ].Value;
+			DWORD FontID =        cmd->InParams[ 0 ].Value;
+
+			cmd->OutParams[ 0 ].pPtr = DescribeChar( Char, FontID );
+		}
 		return NUTS_PLUGIN_SUCCESS;
 	}
 

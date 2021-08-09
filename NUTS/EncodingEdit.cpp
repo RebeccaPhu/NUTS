@@ -418,6 +418,8 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 			WORD ascii = LOWORD( wParam );
 
 			ProcessASCII( ascii );
+
+			Invalidate();
 		}
 		break;
 

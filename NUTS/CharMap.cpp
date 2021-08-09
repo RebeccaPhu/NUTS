@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "CharMap.h"
 #include "FontBitmap.h"
+#include "Plugins.h"
 #include "Defs.h"
 
 #include <WindowsX.h>
@@ -15,6 +16,8 @@
 #define MAP_CELL_HEIGHT ( MAP_CHARHEIGHT + ( MAP_CHARPADDING * 2 ) )
 #define MAP_WINDOW_WIDTH ( ( ( MAP_CELL_WIDTH + MAP_CHARBORDER ) * MAP_HCELLS ) + MAP_CHARBORDER )
 #define MAP_WINDOW_HEIGHT ( ( ( MAP_CELL_HEIGHT + MAP_CHARBORDER ) * MAP_VCELLS ) + MAP_CHARBORDER )
+#define MAP_EXTRA_HEIGHT 64
+#define MAP_EXTRA_OFFSET 24
 
 
 bool CharMap::_HasWindowClass = false;
@@ -83,14 +86,14 @@ CharMap::CharMap( HWND hParent, DWORD FontID )
 	);
 
 	/* This merry little dance is apparently needed because even when you take system metrics into account,
-	   the resulting window STILL isn't bigger enough. Despite everything matching up. No I don't know why
+	   the resulting window STILL isn't bigg enough. Despite everything matching up. No I don't know why
 	   either. */
 	RECT r;
 
 	r.top    = 0;
 	r.left   = 0;
 	r.right  = MAP_WINDOW_WIDTH;
-	r.bottom = MAP_WINDOW_HEIGHT;
+	r.bottom = MAP_WINDOW_HEIGHT + MAP_EXTRA_HEIGHT;
 
 	AdjustWindowRect( &r, WS_CLIPSIBLINGS | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU, FALSE );
 
@@ -98,14 +101,51 @@ CharMap::CharMap( HWND hParent, DWORD FontID )
 
 	CharMap::_CharMapClassMap[ hWnd ] = this;
 
-	hArea         = NULL;
-	hAreaOld      = NULL;
-	hAreaCanvas   = NULL;
-	hParentWnd    = hParent;
+	hArea           = NULL;
+	hAreaOld        = NULL;
+	hAreaCanvas     = NULL;
+	hCharDesc       = NULL;
+	hCharOld        = NULL;
+	hCharDescCanvas = NULL;
+	hParentWnd      = hParent;
 
 	CFontID = FontID;
 
 	ci = -1;
+
+	hFontList = CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST|WS_CHILD|WS_VISIBLE, 0, MAP_WINDOW_HEIGHT, MAP_WINDOW_WIDTH, 16, hWnd, NULL, hInst, NULL);
+
+	NUTSFontNames Fonts = FSPlugins.FullFontList();
+
+	FontMap.clear();
+
+	DWORD sfi = 0xFFFFFFFF;
+	DWORD cfi = 0;
+
+	if ( Fonts.size() > 0 )
+	{
+		FontName_iter iFont;
+
+		for ( iFont = Fonts.begin(); iFont != Fonts.end(); iFont++ )
+		{
+			FontMap.push_back( iFont->first );
+
+			if ( iFont->first == FontID )
+			{
+				sfi = cfi;
+			}
+
+			SendMessage(hFontList, CB_ADDSTRING, 0, (LPARAM) iFont->second.c_str() );
+
+			cfi++;
+		}
+
+		SendMessage(hFontList, CB_SETCURSEL, (WPARAM) sfi, 0);
+	}
+	else
+	{
+		EnableWindow( hFontList, FALSE );
+	}
 }
 
 
@@ -118,9 +158,21 @@ CharMap::~CharMap(void)
 
 	NixObject( hAreaCanvas );
 
+	if ( hCharOld )
+	{
+		SelectObject( hCharDesc, hCharOld );
+	}
+
+	NixObject( hCharDescCanvas );
+
 	if ( hArea )
 	{
 		DeleteDC( hArea );
+	}
+
+	if ( hCharDesc )
+	{
+		DeleteDC( hCharDesc );
 	}
 
 	NixWindow( hWnd );
@@ -128,6 +180,21 @@ CharMap::~CharMap(void)
 
 LRESULT CharMap::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
+	if ( ( uMsg == WM_COMMAND ) && ( HIWORD(wParam) == CBN_SELCHANGE ) )
+	{
+		DWORD sfi = SendMessage( hFontList, CB_GETCURSEL, 0, 0 );
+
+		CFontID = FontMap[ sfi ];
+
+		RECT r;
+
+		GetClientRect( hWnd, &r );
+
+		InvalidateRect( hWnd, &r, FALSE );
+
+		return DefWindowProc( hWnd, uMsg, wParam, lParam);
+	}
+
 	switch ( uMsg )
 	{
 		case WM_PAINT:
@@ -162,7 +229,10 @@ LRESULT CharMap::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 		case WM_LBUTTONUP:
 			{
-				::SendMessage( hParentWnd, WM_CHARMAPCHAR, (WPARAM) ci, 0 );
+				if ( ( ci > 0 ) && ( ci <= 255 ) )
+				{
+					::SendMessage( hParentWnd, WM_CHARMAPCHAR, (WPARAM) ci, 0 );
+				}
 			}
 			break;
 	}
@@ -186,6 +256,13 @@ void CharMap::PaintWindow( void )
 		FillRect( hArea, &rc, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
 	}
 
+	if ( hCharDesc == NULL )
+	{
+		hCharDesc       = CreateCompatibleDC( hDC );
+		hCharDescCanvas = CreateCompatibleBitmap( hDC, MAP_WINDOW_WIDTH, MAP_EXTRA_HEIGHT );
+		hCharOld        = SelectObject( hCharDesc, hCharDescCanvas );
+	}
+
 	// TODO: Regenerate this if the font changes, rather than on every paint.
 	BYTE fc[ 2 ] = { 0, 0};
 
@@ -195,7 +272,7 @@ void CharMap::PaintWindow( void )
 	{
 		for ( int x=0; x<MAP_HCELLS; x++ )
 		{
-			FontBitmap *fb = new FontBitmap( CFontID, fc, 1, false, ( ci == (long) fc[0] ) );
+			FontBitmap *fb = new FontBitmap( CFontID, fc, 1, false, ( ( ci == (long) fc[0] ) && ( ci != 0 ) ) );
 
 			fb->DrawText( hArea,
 				( x * (MAP_CELL_WIDTH  + MAP_CHARBORDER ) ) + MAP_CHARBORDER + MAP_CHARPADDING,
@@ -228,6 +305,22 @@ void CharMap::PaintWindow( void )
 	LineTo( hArea, MAP_WINDOW_WIDTH - 1, MAP_WINDOW_HEIGHT );
 
 	BitBlt( hDC, 0, 0, MAP_WINDOW_WIDTH, MAP_WINDOW_HEIGHT, hArea, 0, 0, SRCCOPY );
+
+	rc.left   = 0;
+	rc.top    = 0;
+	rc.right  = MAP_WINDOW_WIDTH;
+	rc.bottom = MAP_EXTRA_HEIGHT;
+
+	FillRect( hCharDesc, &rc, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
+
+	if ( ( ci > 0 ) && ( ci <= 255 ) )\
+	{
+		std::wstring cd = FSPlugins.GetCharacterDescription( CFontID, (BYTE) ci );
+		
+		DrawText( hCharDesc, cd.c_str(), cd.length(), &rc, DT_LEFT | DT_TOP );
+	}
+
+	BitBlt( hDC, 0, MAP_WINDOW_HEIGHT + MAP_EXTRA_OFFSET, MAP_WINDOW_WIDTH, MAP_EXTRA_HEIGHT - MAP_EXTRA_OFFSET, hCharDesc, 0, 0, SRCCOPY );
 
 	ReleaseDC( hWnd, hDC );
 }
