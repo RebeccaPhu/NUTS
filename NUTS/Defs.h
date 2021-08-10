@@ -44,8 +44,6 @@ typedef enum _FileType {
 
 typedef struct _NativeFile {
 	DWORD fileID;          // File index into the pDirectory->Files vector
-//	BYTE  Filename[256];   // Filename, in EncodingID encoding
-//	BYTE  Extension[4];    // Extension (if Flags & FF_Extension)
 	BYTEString  Filename;  // Filename, in EncodingID encoding
 	BYTEString  Extension; // Extension (if Flags & FF_Extension), in EncodingID encoding 
 	DWORD Flags;           // File flags
@@ -90,7 +88,6 @@ typedef enum _FileFlags {
 	FF_NotRenameable    = 0x00000008, /* FS item cannot be renamed */
 	FF_Audio            = 0x00000010, /* FS item contains renderable audio */
 	FF_Pseudo           = 0x40000000, /* FS item is a pseudo item (e.g. Drive in AcornDSD) */
-	FF_Special          = 0x80000000, /* FS item is the "Parent" icon */
 } FileFlags;
 
 typedef enum _BuiltInFSIDs {
@@ -478,6 +475,8 @@ typedef struct _TapeIndex {
 #define WM_REFRESH_PANE     (WM_APP + 30)
 #define WM_FONTCHANGER      (WM_APP + 31)
 #define WM_CHARMAPCHAR      (WM_APP + 32)
+#define WM_RENAME_FILE      (WM_APP + 33)
+#define WM_NEW_DIR          (WM_APP + 34)
 
 #define TUID_TEXT           0x73477347
 
