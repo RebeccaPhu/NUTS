@@ -97,7 +97,7 @@ void SinclairTZXFileSystem::RequestResolvedFileWrite( CTempFile &Output, NativeF
 	BYTE BlkID = 0x10;
 
 	/* Write the header TZX block, but only if it is not an ORPHAN block */
-	if ( pFile->Attributes[ 2 ] != 0xFFFFFFFF )
+	if ( ( pFile->Attributes[ 2 ] != 0xFFFFFFFF ) && ( pFile->Attributes[ 2 ] != 0xFFFFFFFD ) )
 	{
 		WORD Pause   = 1000;
 		WORD DataLen = 19;
@@ -189,6 +189,12 @@ AttrDescriptors SinclairTZXFileSystem::GetAttributeDescriptions( void )
 	opt.Dangerous       = true;
 	opt.EquivalentValue = 0xFFFFFFFF;
 	opt.Name            = L"Orphaned Block";
+
+	Attr.Options.push_back( opt );
+
+	opt.Dangerous       = true;
+	opt.EquivalentValue = 0xFFFFFFFD;
+	opt.Name            = L"Orphaned Header";
 
 	Attr.Options.push_back( opt );
 
@@ -330,10 +336,19 @@ void SinclairTZXFileSystem::DescribeResolvedFile( BYTE *Buffer, NativeFile *pFil
 		}
 		break;
 
-	default:
+	case 0xFFFFFFFF:
 		{
 			rsprintf(
 				Buffer, "Orphaned block (No header) - %04X bytes",
+				(DWORD) pFile->Length
+			);
+		}
+		break;
+
+	case 0xFFFFFFFD:
+		{
+			rsprintf(
+				Buffer, "Orphaned block (No data) - %04X bytes",
 				(DWORD) pFile->Length
 			);
 		}
@@ -813,7 +828,7 @@ void SinclairTZXFileSystem::MakeResolvedAudio( NativeFile *pFile, CTempFile &out
 
 	TapeCue Cue;
 
-	if ( pFile->Attributes[ 2 ] != 0xFFFFFFFF )
+	if ( ( pFile->Attributes[ 2 ] != 0xFFFFFFFF ) && ( pFile->Attributes[ 2] != 0xFFFFFFFD ) )
 	{
 		pSource->ReadRaw( pFile->Attributes[ 15 ], 32, TZXHeader );
 

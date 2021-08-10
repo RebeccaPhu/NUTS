@@ -185,6 +185,8 @@ void SinclairTZXDirectory::ResolveFiles( void )
 				/* Orphan header block - Make a zero-length file */
 
 				iFile->Attributes[ 0 ] = iFile->Attributes[ 15 ] + 0x06;
+				iFile->Attributes[ 2 ] = 0xFFFFFFFD;
+				iFile->Filename        = (BYTE *) "ORPHAN HDR";
 				iFile->Length          = iFile->Length - 0x07; /* Checksum byte */
 
 				iFile++;
