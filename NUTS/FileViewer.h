@@ -141,13 +141,11 @@ private:
 	void  DoSCREENContentViewer( DWORD PrefTUID  = NULL );
 	void  DoTEXTContentViewer( DWORD PrefTUID = NULL );
 	void  DoContentViewer( void );
-	void  RenameFile( void );
 	void  DoSwapFiles( BYTE UpDown );
 	void  DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam );
 	void  DoContextMenu( void );
 	void  DoLocalCommandMenu( HMENU hPopup );
 	void  DoStatusBar( void );
-	void  NewDirectory( void );
 	void  FreeLabels( void );
 	void  DoPlayAudio( void );
 
@@ -183,6 +181,9 @@ public:
 	void ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleComponent> *pTitleStack );
 
 	void UpdateSidePanelFlags();
+
+	void RenameFile( void );
+	void NewDirectory( void );
 };
 
 #define FILESYS_MENU_BASE 43000

@@ -404,7 +404,7 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 				case IDM_REFRESH:
 					{
-						SendMessage( ParentWnd, WM_REFRESH_PANE, (WPARAM) this, (LPARAM) NULL );						
+						SendMessage( ParentWnd, WM_REFRESH_PANE, (WPARAM) hWnd, (LPARAM) NULL );						
 					}
 					break;
 
@@ -529,13 +529,13 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 					{
 						if ( GetSelectionCount() == 0 ) { break; }
 
-						RenameFile();
+						::SendMessage( ParentWnd, WM_RENAME_FILE, (WPARAM) hWnd, 0 );
 					}
 					break;
 
 				case IDM_NEWFOLDER:
 					{
-						NewDirectory();
+						::SendMessage( ParentWnd, WM_NEW_DIR, (WPARAM) hWnd, 0 );
 					}
 					break;
 
@@ -978,20 +978,14 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 
 		FontBitmap *pFileLabel;
 	
-		if ( ! (pFile->Flags & FF_Special) )
-		{
-			pFileLabel = FileLabels[ pFile->fileID ];
-		}
+		pFileLabel = FileLabels[ pFile->fileID ];
 
-		if ( ( pFileLabel == nullptr ) || ( pFile->Flags & FF_Special ) )
+		if ( pFileLabel == nullptr )
 		{
 			pFileLabel = new FontBitmap( FontID, (BYTE *) FullName, rstrnlen( FullName, 64 ), false, Selected );
 		}
 
-		if ( ! (pFile->Flags & FF_Special) )
-		{
-			FileLabels[ pFile->fileID ] = pFileLabel;
-		}
+		FileLabels[ pFile->fileID ] = pFileLabel;
 
 		if ( Displaying == DisplayLargeIcons )
 		{	
@@ -1006,19 +1000,16 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 		{
 			pFileLabel->DrawText( viewDC, x + 48U, y + 30U, DT_LEFT | DT_TOP );
 
-			if ( !(pFile->Flags & FF_Special) )
+			FontBitmap *pDetailString = FileDescs[ pFile->fileID ];
+
+			if ( pDetailString == nullptr )
 			{
-				FontBitmap *pDetailString = FileDescs[ pFile->fileID ];
+				pDetailString = new FontBitmap( FontID, FS->DescribeFile( pFile->fileID  ), 40, false, Selected );
 
-				if ( pDetailString == nullptr )
-				{
-					pDetailString = new FontBitmap( FontID, FS->DescribeFile( pFile->fileID  ), 40, false, Selected );
-
-					FileDescs[ pFile->fileID ] = pDetailString;
-				}
-
-				pDetailString->DrawText( viewDC, x + 48U, y + 48U, DT_LEFT | DT_TOP );
+				FileDescs[ pFile->fileID ] = pDetailString;
 			}
+
+			pDetailString->DrawText( viewDC, x + 48U, y + 48U, DT_LEFT | DT_TOP );
 		}
 
 		SelectObject(hSourceDC, hO);
@@ -2967,13 +2958,6 @@ void CFileViewer::UpdateSidePanelFlags()
 			}
 
 			if ( TheseFiles[Index].Flags & FF_Pseudo )
-			{
-				Delete = false;
-				Rename = false;
-				Copy   = false;
-			}
-
-			if ( TheseFiles[Index].Flags & FF_Special )
 			{
 				Delete = false;
 				Rename = false;

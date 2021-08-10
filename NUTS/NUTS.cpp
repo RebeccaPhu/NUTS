@@ -701,6 +701,14 @@ unsigned int __stdcall FSActionThread(void *param)
 			DoRefresh( &action );
 			break;
 
+		case ActionDoRename:
+			action.pane->RenameFile();
+			break;
+
+		case ActionDoNewDir:
+			action.pane->NewDirectory();
+			break;
+
 		default:
 			break;
 		}
@@ -1351,6 +1359,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (wParam == (WPARAM) rightPane.hWnd)
 		{
 			DoAction( ActionDoBack, &rightPane, &rightFS, &rightTitles, 0 );
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_RENAME_FILE:
+		if (wParam == (WPARAM) leftPane.hWnd)
+		{
+			DoAction( ActionDoRename, &leftPane, &leftFS, &leftTitles, 0 );
+		} 
+		else if (wParam == (WPARAM) rightPane.hWnd)
+		{
+			DoAction( ActionDoRename, &rightPane, &rightFS, &rightTitles, 0 );
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_NEW_DIR:
+		if (wParam == (WPARAM) leftPane.hWnd)
+		{
+			DoAction( ActionDoNewDir, &leftPane, &leftFS, &leftTitles, 0 );
+		} 
+		else if (wParam == (WPARAM) rightPane.hWnd)
+		{
+			DoAction( ActionDoNewDir, &rightPane, &rightFS, &rightTitles, 0 );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
