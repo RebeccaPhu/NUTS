@@ -17,14 +17,28 @@ FSHint AmigaFileSystem::Offer( BYTE *Extension )
 
 	if ( rstrncmp( Sector, (BYTE *) "DOS", 3 ) )
 	{
-		hint.FSID = FSID_AMIGAO;
-
 		if ( ( Sector[ 3 ] & 1 ) && ( MYFSID == FSID_AMIGAF ) )
 		{
-			hint.FSID = FSID_AMIGAF;
+			hint.Confidence = 20;
 		}
 
-		hint.Confidence = 20;
+		if ( ( ( Sector[ 3 ] & 1 ) == 0 ) && ( MYFSID == FSID_AMIGAO ) )
+		{
+			hint.Confidence = 20;
+		}		
+
+		if ( MYFSID ==  FSID_AMIGADMS )
+		{
+			/* If we're here then the DMS extract worked. If the first 3 bytes are "DOS" then that worked too */
+
+			/* But let's not be toooo hasty - bahrum */
+			hint.Confidence = 15;
+
+			if ( ( Extension != nullptr ) && ( rstrncmp( Extension, (BYTE *) "DMS", 3 ) ) )
+			{
+				hint.Confidence += 15;
+			}
+		}
 	}
 
 	return hint;
@@ -251,6 +265,16 @@ void AmigaFileSystem::ResolveIcons( void )
 					iFile->Type     = FT_BASIC;
 					iFile->Icon     = FT_BASIC;
 					iFile->XlatorID = TUID_TEXT;
+				}
+
+				for ( std::vector<BYTE *>::iterator iT = icon.ToolTypes.begin(); iT != icon.ToolTypes.end(); iT++ )
+				{
+					if ( rstrcmp( *iT, (BYTE *) "FILETYPE=ILBM", true ) )
+					{
+						iFile->Type     = FT_Graphic;
+						iFile->Icon     = FT_Graphic;
+						iFile->XlatorID = TUID_ILBM;
+					}
 				}
 			}
 		}

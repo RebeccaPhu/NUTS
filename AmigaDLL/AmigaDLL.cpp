@@ -5,10 +5,13 @@
 #include "AmigaDLL.h"
 
 #include "AmigaFileSystem.h"
+#include "DMS.h"
+#include "ILBMTranslator.h"
 #include "../NUTS/PluginDescriptor.h"
 #include "../NUTS/Defs.h"
 #include "../NUTS/DataSource.h"
 #include "../NUTS/NUTSError.h"
+#include "../NUTS/NestedImageSource.h"
 #include "Defs.h"
 #include "resource.h"
 
@@ -21,31 +24,38 @@ DataSourceCollector *pCollector;
 
 DWORD FILE_AMIGA;
 DWORD ENCODING_AMIGA;
+DWORD TUID_ILBM;
 
 BYTE *NUTSSignature;
 
 FSDescriptor AmigaFS[] = {
 	{
-		/* .FriendlyName = */ L"Commodore Amiga OFS Disk Image",
+		/* .FriendlyName = */ L"Amiga OFS Disk Image",
 		/* .PUID         = */ FSID_AMIGAO,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors,
 		512, 1700
 	},
 	{
-		/* .FriendlyName = */ L"Commodore Amiga FFS Disk Image",
+		/* .FriendlyName = */ L"Amiga FFS Disk Image",
 		/* .PUID         = */ FSID_AMIGAF,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors,
 		512, 1700
+	},
+	{
+		/* .FriendlyName = */ L"Amiga DMS Disk Archive",
+		/* .PUID         = */ FSID_AMIGADMS,
+		/* .Flags        = */ FSF_Supports_Spaces | FSF_Supports_Dirs,
+		0, 0
 	}
 };
 
 #define AMIGAFS_COUNT ( sizeof(AmigaFS) / sizeof(FSDescriptor) )
 
-std::wstring ImageExtensions[] = { L"ADF" };
+std::wstring ImageExtensions[] = { L"ADF", L"DMS" };
 
 #define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
 
-AMIGADLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
+void *CreateFS( DWORD PUID, DataSource *pSource )
 {
 	FileSystem *pFS = NULL;
 
@@ -55,9 +65,39 @@ AMIGADLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 	case FSID_AMIGAF:
 		pFS = new AmigaFileSystem( pSource );
 		break;
+
+	case FSID_AMIGADMS:
+		{
+			CTempFile nestObj;
+
+			nestObj.Keep();
+
+			BYTE sig[4];
+
+			if ( pSource->ReadRaw( 0, 4, sig ) != DS_SUCCESS )
+			{
+				return nullptr;
+			}
+
+			if ( !rstrncmp( sig, (BYTE *) "DMS!", 4 ) )
+			{
+				return nullptr;
+			}
+
+			if ( ExtractDMS( pSource, nestObj ) == NUTS_SUCCESS )
+			{
+				NestedImageSource *pNest = new NestedImageSource( nullptr, nullptr, nestObj.Name() );
+
+				pFS = new AmigaFileSystem( pNest );
+			}
+		}
+		break;
 	}
 
-	pFS->FSID = PUID;
+	if ( pFS != nullptr )
+	{
+		pFS->FSID = PUID;
+	}
 
 	return (void *) pFS;
 }
@@ -101,6 +141,23 @@ void LoadFonts()
 	}
 }
 
+DataTranslator Translators[] = {
+	{ 0, L"Interleaved Bitmap",   0, TXGFXTranslator },
+};
+
+#define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
+
+void *CreateTranslator( DWORD TUID )
+{
+	void *pXlator = nullptr;
+
+	if ( TUID == TUID_ILBM )
+	{
+		pXlator = (void *) new ILBMTranslator();
+	}
+
+	return pXlator;
+}
 
 AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 {
@@ -227,6 +284,31 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 			FILE_AMIGA = Base + 0;
 		}
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportTranslators:
+		cmd->OutParams[ 0 ].Value = TRANSLATOR_COUNT;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_DescribeTranslator:
+		{
+			BYTE tx = (BYTE) cmd->InParams[ 0 ].Value;
+
+			Translators[ tx ].TUID = cmd->InParams[ 1 ].Value;
+
+			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
+			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
+			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
+
+			TUID_ILBM = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 0 ].TUID );
+		}
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_CreateTranslator:
+		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
 
 		return NUTS_PLUGIN_SUCCESS;
 
