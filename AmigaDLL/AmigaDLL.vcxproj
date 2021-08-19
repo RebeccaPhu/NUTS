@@ -151,10 +151,25 @@
     <ClInclude Include="AmigaDLL.h" />
     <ClInclude Include="AmigaFileSystem.h" />
     <ClInclude Include="Defs.h" />
+    <ClInclude Include="DMS.h" />
+    <ClInclude Include="ILBMTranslator.h" />
     <ClInclude Include="InfoIcon.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="xDMS\cdata.h" />
+    <ClInclude Include="xDMS\crc_csum.h" />
+    <ClInclude Include="xDMS\getbits.h" />
+    <ClInclude Include="xDMS\maketbl.h" />
+    <ClInclude Include="xDMS\pfile.h" />
+    <ClInclude Include="xDMS\stdafx.h" />
+    <ClInclude Include="xDMS\tables.h" />
+    <ClInclude Include="xDMS\u_deep.h" />
+    <ClInclude Include="xDMS\u_heavy.h" />
+    <ClInclude Include="xDMS\u_init.h" />
+    <ClInclude Include="xDMS\u_medium.h" />
+    <ClInclude Include="xDMS\u_quick.h" />
+    <ClInclude Include="xDMS\u_rle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\NUTS\DataSource.cpp" />
@@ -162,6 +177,7 @@
     <ClCompile Include="..\NUTS\libfuncs.cpp" />
     <ClCompile Include="..\NUTS\NestedImageSource.cpp" />
     <ClCompile Include="..\NUTS\NUTSError.cpp" />
+    <ClCompile Include="..\NUTS\SourceFunctions.cpp" />
     <ClCompile Include="..\NUTS\TempFile.cpp" />
     <ClCompile Include="AmigaDirectory.cpp" />
     <ClCompile Include="AmigaDLL.cpp" />
@@ -180,6 +196,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="DMS.cpp" />
+    <ClCompile Include="ILBMTranslator.cpp" />
     <ClCompile Include="InfoIcon.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -187,6 +205,17 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="xDMS\crc_csum.cpp" />
+    <ClCompile Include="xDMS\getbits.cpp" />
+    <ClCompile Include="xDMS\maketbl.cpp" />
+    <ClCompile Include="xDMS\pfile.cpp" />
+    <ClCompile Include="xDMS\tables.cpp" />
+    <ClCompile Include="xDMS\u_deep.cpp" />
+    <ClCompile Include="xDMS\u_heavy.cpp" />
+    <ClCompile Include="xDMS\u_init.cpp" />
+    <ClCompile Include="xDMS\u_medium.cpp" />
+    <ClCompile Include="xDMS\u_quick.cpp" />
+    <ClCompile Include="xDMS\u_rle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="AmigaDLL.rc" />

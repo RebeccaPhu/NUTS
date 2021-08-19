@@ -19,6 +19,18 @@ InfoIcon::InfoIcon( CTempFile &fileObj )
 
 InfoIcon::InfoIcon( BYTE *pIconData, DWORD DataLength )
 {
+	if ( pIcon != nullptr )
+	{
+		free( pIcon );
+	}
+
+	for ( std::vector<BYTE *>::iterator i = ToolTypes.begin(); i != ToolTypes.end(); i++ )
+	{
+		free( *i );
+	}
+
+	ToolTypes.clear();
+
 	pIcon     = nullptr;
 	pIconTool = none;
 
@@ -139,6 +151,34 @@ void InfoIcon::LoadIcon( BYTE *pIconData, DWORD DataLength )
 	if ( ToolPosition < ( DataLength - 5 ) )
 	{
 		pIconTool = rstrndup( &pToolLocation[4], BEDWORD( pToolLocation ) );
+
+		ToolPosition  += 4 + BEDWORD( pToolLocation );
+		pToolLocation += 4 + BEDWORD( pToolLocation );
+	}
+
+	if ( ToolPosition < ( DataLength - 5 ) )
+	{
+		/* Just. WAT. */
+		DWORD NumTools = BEDWORD( pToolLocation );
+
+		NumTools /= 4;
+		NumTools --;
+
+		pToolLocation += 4;
+		ToolPosition  += 4;
+
+		for ( DWORD t=0; t<NumTools; t++ )
+		{
+			if ( ToolPosition < ( DataLength -5 ) ) 
+			{
+				BYTE *pToolType = rstrndup( &pToolLocation[ 4 ], BEDWORD( pToolLocation ) );
+
+				ToolTypes.push_back( pToolType );
+
+				ToolPosition  += 4 + BEDWORD( pToolLocation );
+				pToolLocation += 4 + BEDWORD( pToolLocation );
+			}
+		}
 	}
 }
 

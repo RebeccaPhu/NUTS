@@ -26,6 +26,8 @@ public:
 
 	BYTE *pIconTool;
 
+	std::vector<BYTE *> ToolTypes;
+
 private:
 	void LoadIcon( BYTE *pIconData, DWORD DataLength );
 

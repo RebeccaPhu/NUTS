@@ -16,6 +16,12 @@
     <Filter Include="Source Files\Imported Source">
       <UniqueIdentifier>{1b2035c3-709d-4fa9-acb6-21c300b40b1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\xDMS">
+      <UniqueIdentifier>{744ff445-ad19-40b9-aae1-d7fb40a77fe6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\xDMS">
+      <UniqueIdentifier>{df7a4a0a-de12-4920-965d-193bd0418c3b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -57,6 +63,51 @@
     <ClInclude Include="InfoIcon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="xDMS\cdata.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\crc_csum.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\getbits.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\maketbl.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\pfile.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\tables.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\u_deep.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\u_heavy.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\u_init.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\u_medium.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\u_quick.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\u_rle.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="xDMS\stdafx.h">
+      <Filter>Header Files\xDMS</Filter>
+    </ClInclude>
+    <ClInclude Include="DMS.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ILBMTranslator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -94,6 +145,48 @@
     </ClCompile>
     <ClCompile Include="..\NUTS\ImageDataSource.cpp">
       <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\crc_csum.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\getbits.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\maketbl.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\pfile.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\tables.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\u_deep.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\u_heavy.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\u_init.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\u_medium.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\u_quick.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="xDMS\u_rle.cpp">
+      <Filter>Source Files\xDMS</Filter>
+    </ClCompile>
+    <ClCompile Include="DMS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\NUTS\SourceFunctions.cpp">
+      <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ILBMTranslator.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
