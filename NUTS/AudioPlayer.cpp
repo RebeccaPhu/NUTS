@@ -730,6 +730,12 @@ void AudioPlayer::PaintPlayer( void )
 		while ( !Done )
 		{
 			RECT r3 = r2;
+
+			if ( TapeFont1 != NULL )
+			{
+				NixObject( TapeFont1 );
+			}
+
 			TapeFont1  = CreateFont(FontSize,FontSize/2,0,0,FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"Arial");
 
 			SelectObject( hCanvas, TapeFont1 );
@@ -754,7 +760,7 @@ void AudioPlayer::PaintPlayer( void )
 		}
 	}
 
-	if ( TapeFont1 == NULL )
+	if ( TapeFont2 == NULL )
 	{
 		int FontSize = 28;
 
@@ -763,6 +769,12 @@ void AudioPlayer::PaintPlayer( void )
 		while ( !Done )
 		{
 			RECT r3 = r2;
+
+			if ( TapeFont2 != NULL )
+			{
+				NixObject( TapeFont2 );
+			}
+
 			TapeFont2  = CreateFont(FontSize,FontSize/2,0,0,FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"Arial");
 
 			SelectObject( hCanvas, TapeFont2 );
