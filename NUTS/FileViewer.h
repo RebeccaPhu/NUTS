@@ -5,6 +5,7 @@
 #include "TEXTContentViewer.h"
 #include "SCREENContentViewer.h"
 #include "EncodingEdit.h"
+#include "EncodingToolTip.h"
 #include "FontBitmap.h"
 #include "DropSite.h"
 #include "SidePanel.h"
@@ -98,10 +99,19 @@ private:
 	DWORD   dragX,dragY;
 	bool    Dragging;
 	bool    Bounding;
+	bool    Tracking;
 	int     DragType;
 	bool    SelectionAtMouseDown;
 	bool    MouseDown;
 	WORD    DIndex;
+
+	QWORD   TooltipMoving;
+	bool    TooltipPresent;
+	long    tooltipx;
+	long    tooltipy;
+	QWORD   tooltipclock;
+	
+	EncodingToolTip *tooltip;
 
 	DWORD   ItemWidth;
 	DWORD   ItemHeight;
@@ -128,7 +138,7 @@ private:
 	void  ToggleItem(int x, int y);
 	void  ActivateItem(int x, int y);
 	void  ClearItems( bool DoUpdate );
-	DWORD GetItem(DWORD x, DWORD y);
+	int   GetItem(DWORD x, DWORD y);
 	bool  CheckClick();
 	void  CheckDragType(long dragX, long dragY);
 	void  DoScroll(WPARAM wParam, LPARAM lParam);
@@ -148,6 +158,9 @@ private:
 	void  DoStatusBar( void );
 	void  FreeLabels( void );
 	void  DoPlayAudio( void );
+	void  DoFileToolTip();
+	void  DoTitleBarToolTip();
+
 
 	std::map<UINT, DWORD> MenuFSMap;
 	std::map<UINT, DWORD> MenuXlatorMap;

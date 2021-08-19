@@ -70,6 +70,7 @@ CFileViewer::CFileViewer(void) {
 	LastClick      = 0;
 	Dragging       = false;
 	Bounding       = false;
+	Tracking       = false;
 	MouseDown      = false;
 	IsSearching    = false;
 	HasFocus       = false;
@@ -121,6 +122,13 @@ CFileViewer::CFileViewer(void) {
 	LastItemIndex = 0x7FFFFFFF;
 
 	pDropSite = nullptr;
+
+	TooltipMoving  = 0;
+	TooltipPresent = false;
+	tooltip        = nullptr;
+	tooltipx       = 0;
+	tooltipy       = 0;
+	tooltipclock   = 0;
 }
 
 CFileViewer::~CFileViewer(void) {
@@ -184,6 +192,9 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	SideBar.Create( hWnd, hInst );
 
 	Refresh();
+
+	/* Set the tooltip timer */
+	SetTimer( hWnd, 0x7171, 500, NULL );
 
 	return 0;
 }
@@ -658,10 +669,22 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 			{
 				Redraw();
 			}
+			
+			if ( wParam == 0x7171 )
+			{
+				/* Tooltip timer */
+				tooltipclock++;
+
+				DoFileToolTip();
+				DoTitleBarToolTip();
+			}
 
 			return DefWindowProc( hSourceWnd, message, wParam, lParam );
 
 		case WM_MOUSELEAVE:
+			TooltipPresent = false;
+			Tracking       = false;
+
 			if ( Bounding )
 			{
 				Bounding  = false;
@@ -760,6 +783,7 @@ void CFileViewer::DrawBasicLayout() {
 
 	GetClientRect(hWnd, &rect);
 
+	// Draw the edge around the whole file viewer
 	rect.top	+= 22;
 
 	rect.right -= 15;
@@ -781,9 +805,12 @@ void CFileViewer::DrawBasicLayout() {
 		hViewerBrush = CreateSolidBrush( BColour );
 	}
 
+	// Draw the title bar
 	rect.left -= 128;
 
 	rect.bottom	= rect.top + 24;
+
+	rect.right += 24;
 
 	FillRect(viewDC, &rect, hViewerBrush);
 
@@ -1236,7 +1263,7 @@ void CFileViewer::RecalculateDimensions( RECT &wndRect )
 	IconsPerWindow  = IconsPerLine * LinesPerWindow;
 }
 
-DWORD CFileViewer::GetItem(DWORD x, DWORD y) {
+int CFileViewer::GetItem(DWORD x, DWORD y) {
 	// Adjusted y position (accounting for scroll)
 	DWORD ay = ( y + ScrollStartY - 30U);
 
@@ -1245,7 +1272,7 @@ DWORD CFileViewer::GetItem(DWORD x, DWORD y) {
 	if ( rx > ( ItemWidth * IconsPerLine ) )
 	{
 		// Outside of horizontally valid area
-		return -2;
+		return -1;
 	}
 
 	DWORD Index = ( (ay / ItemHeight) * IconsPerLine ) + ( rx / ItemWidth );
@@ -1255,7 +1282,7 @@ DWORD CFileViewer::GetItem(DWORD x, DWORD y) {
 		return Index;
 	}
 
-	return -2;
+	return -1;
 }
 
 void CFileViewer::ActivateItem(int x, int y) {
@@ -1339,9 +1366,9 @@ void CFileViewer::ToggleItem(int x, int y) {
 	if (!FS)
 		return;
 
-	DWORD ix = GetItem(x,y);
+	int ix = GetItem(x,y);
 
-	if ( ( ix > 0x80000000 ) || ( ix >= TheseFiles.size() ) ) {
+	if ( ( ix < 0 ) || ( ix >= TheseFiles.size() ) ) {
 		ClearItems();
 
 		return;
@@ -1682,9 +1709,7 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 			{
 				for ( DWORD yi = ys; yi < ye; yi += ItemHeight )
 				{
-					DWORD ii = GetItem( xi, yi );
-
-					if ( ( FS->FSID != FS_Root ) && ( ii > 0 ) ) { ii--; }
+					int ii = GetItem( xi, yi );
 
 					if ( ( ii < FileSelections.size() ) && ( ii >= 0 ) )
 					{
@@ -1715,8 +1740,34 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 
 	if ( Msg == WM_MOUSEMOVE )
 	{
-		mouseX	= GET_X_LPARAM(lParam);
-		mouseY	= GET_Y_LPARAM(lParam);
+		if ( ( tooltip != nullptr ) && ( TooltipMoving != tooltipclock ) )
+		{
+			delete tooltip;
+
+			tooltip = nullptr;
+		}
+
+		TooltipPresent = true;
+		TooltipMoving  = tooltipclock;
+
+		mouseX	= GET_X_LPARAM(lParam); tooltipx = mouseX;
+		mouseY	= GET_Y_LPARAM(lParam); tooltipy = mouseY;
+
+		if ( !Tracking )
+		{
+			TRACKMOUSEEVENT tme;
+
+			tme.cbSize      = sizeof( TRACKMOUSEEVENT );
+			tme.dwFlags     = TME_LEAVE;
+			tme.dwHoverTime = HOVER_DEFAULT;
+			tme.hwndTrack   = hWnd;
+
+			TrackMouseEvent( &tme );
+
+			OutputDebugStringA( "Bounding leave detect start!\n" );
+
+			Tracking = true;
+		}
 
 		if ((dragX != -1) && (dragY != -1))
 		{
@@ -1730,17 +1781,6 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 				{
 					if ( !Bounding )
 					{
-						TRACKMOUSEEVENT tme;
-
-						tme.cbSize      = sizeof( TRACKMOUSEEVENT );
-						tme.dwFlags     = TME_LEAVE;
-						tme.dwHoverTime = HOVER_DEFAULT;
-						tme.hwndTrack   = hWnd;
-
-						TrackMouseEvent( &tme );
-
-						OutputDebugStringA( "Bounding leave detect start!\n" );
-
 						SetTimer( hWnd, 0xB011D, 80, NULL );
 					}
 
@@ -1751,8 +1791,11 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 
 		if ( ( mouseY < 24 ) || ( mouseX > ( WindowWidth + 8 ) ) )
 		{
-			// Bounding in the title bar or scroll bar? tut tut.
-			PostMessage( hWnd, WM_MOUSELEAVE, 0, 0 );
+			if ( Bounding )
+			{
+				// Bounding in the title bar or scroll bar? tut tut.
+				PostMessage( hWnd, WM_MOUSELEAVE, 0, 0 );
+			}
 		}
 	
 		if (Dragging)
@@ -1779,7 +1822,7 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 		DWORD n = GetSelectedIndex();
 		DWORD i = GetItem( dragX, dragY );
 
-		DWORD sc = GetSelectionCount();
+		int  sc = GetSelectionCount();
 
 		if ( sc == 1 )
 		{
@@ -2988,4 +3031,62 @@ void CFileViewer::UpdateSidePanelFlags()
 	LeaveCriticalSection( &CacheLock );
 
 	SideBar.SetFlags( f );
+}
+
+void CFileViewer::DoFileToolTip()
+{
+	if ( ( ( tooltipclock - TooltipMoving ) > 1 ) && ( TooltipPresent ) && ( tooltip == nullptr ) && ( GetItem( tooltipx, tooltipy ) >= 0 ) )
+	{
+		tooltip = new EncodingToolTip();
+
+		TooltipDef tip;
+		TooltipRow tiprow;
+
+		NativeFile *pFile = &FS->pDirectory->Files[ GetItem( tooltipx, tooltipy ) ];
+
+		tiprow.FontID = FSPlugins.FindFont( pFile->EncodingID, PaneIndex );
+
+		WORD limit = (WORD) ( rstrnlen( pFile->Filename, 512 ) + 2 + rstrnlen( pFile->Extension, 512 ) );
+
+		tiprow.Text = BYTEString( limit );
+
+		rstrncpy( tiprow.Text, pFile->Filename, limit );
+
+		if ( pFile->Flags & FF_Extension )
+		{
+			rstrncat( tiprow.Text, (BYTE *) ".", limit );
+			rstrncat( tiprow.Text, pFile->Extension, limit );
+		}
+
+		tip.push_back( tiprow );
+
+		tooltip->Create( hWnd, hInst, tooltipx + 12, tooltipy, tip );
+
+		TooltipMoving = tooltipclock;
+	}
+}
+
+void CFileViewer::DoTitleBarToolTip()
+{
+	if ( ( ( tooltipclock - TooltipMoving ) > 1 ) && ( TooltipPresent ) && ( tooltip == nullptr ) && ( tooltipy < 24 ) )
+	{
+		tooltip = new EncodingToolTip();
+
+		TooltipDef tip;
+		TooltipRow tiprow;
+
+		std::vector<TitleComponent>::iterator iStack;
+
+		for ( iStack = TitleStack.begin(); iStack != TitleStack.end(); iStack++ )
+		{
+			tiprow.FontID = FSPlugins.FindFont( iStack->Encoding, PaneIndex );
+			tiprow.Text   = BYTEString( iStack->String );
+
+			tip.push_back( tiprow );
+		}
+
+		tooltip->Create( hWnd, hInst, tooltipx + 12, tooltipy, tip );
+
+		TooltipMoving = tooltipclock;
+	}
 }

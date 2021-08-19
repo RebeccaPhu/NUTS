@@ -11,6 +11,7 @@ public:
 	void DrawText( HDC hDC, DWORD x, DWORD y, DWORD Displace );
 
 	void SetButtonColor( BYTE r, BYTE g, BYTE b );
+	void SetTextColor( BYTE r, BYTE g, BYTE b );
 
 private:
 	WORD w;
