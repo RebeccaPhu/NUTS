@@ -203,9 +203,11 @@ public:
 #define GFX_MENU_BASE     43400
 #define TXT_MENU_BASE     43600
 #define LC_MENU_BASE      43800
+#define AUD_MENU_BASE     44000
 
 #define FILESYS_MENU_END  ( FILESYS_MENU_BASE + 399 )
 #define GFX_MENU_END      ( GFX_MENU_BASE + 199 )
 #define TXT_MENU_END      ( TXT_MENU_BASE + 199 )
 #define LC_MENU_END       ( LC_MENU_BASE + 199 )
+#define AUD_MENU_END      ( AUD_MENU_BASE + 199 )
 

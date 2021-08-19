@@ -267,6 +267,9 @@
     <ClCompile Include="EncodingToolTip.cpp">
       <Filter>Source Files\UI\Elements</Filter>
     </ClCompile>
+    <ClCompile Include="BuiltIns.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -481,6 +484,9 @@
     </ClInclude>
     <ClInclude Include="EncodingToolTip.h">
       <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="BuiltIns.h">
+      <Filter>Header Files\File Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

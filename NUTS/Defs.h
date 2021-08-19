@@ -216,6 +216,7 @@ typedef enum _TXFlags {
 	TXGFXTranslator   = 0x00000002,
 	GFXLogicalPalette = 0x00000004,
 	GFXMultipleModes  = 0x00000008,
+	TXAUDTranslator   = 0x00000010,
 } TXFlags;
 
 typedef enum _RootHookFlags {
@@ -478,7 +479,9 @@ typedef struct _TapeIndex {
 #define WM_RENAME_FILE      (WM_APP + 33)
 #define WM_NEW_DIR          (WM_APP + 34)
 
-#define TUID_TEXT           0x73477347
+#define TUID_TEXT           0x80000001
+#define TUID_MOD_MUSIC      0x80000002
+
 
 
 #define IDM_MOVEUP    44001

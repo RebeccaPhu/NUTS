@@ -6,6 +6,7 @@
 #include "libfuncs.h"
 #include "IconRatio.h"
 #include "AudioPlayer.h"
+#include "BuiltIns.h"
 
 #include <CommCtrl.h>
 
@@ -1492,7 +1493,7 @@ void CFileViewer::PopulateXlatorMenus( HMENU hPopup )
 	mii.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU ;
 	mii.wID = 42998;
 	mii.hSubMenu = hProviderMenu;
-	mii.dwTypeData = _T( "View As" );
+	mii.dwTypeData = _T( "Translate" );
 
 	InsertMenuItem( hSubMenu, (UINT) 9, TRUE, &mii );
 
@@ -1527,17 +1528,56 @@ void CFileViewer::PopulateXlatorMenus( HMENU hPopup )
 	InsertMenuItem( hProviderMenu, (UINT) 2, TRUE, &mii );
 
 
+	HMENU hAudioMenu = CreatePopupMenu();
+
+	mii.cbSize = sizeof( MENUITEMINFO );
+	mii.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU ;
+	mii.wID = 43502;
+	mii.hSubMenu = hAudioMenu;
+	mii.dwTypeData = (WCHAR *) L"Audio";
+
+	InsertMenuItem( hProviderMenu, (UINT) 3, TRUE, &mii );
+
 
 	NUTSProviderList Providers = FSPlugins.GetProviders();
 
 	UINT GFXindex = GFX_MENU_BASE;
 	UINT TXTindex = TXT_MENU_BASE;
+	UINT AUDindex = AUD_MENU_BASE;
 
-	AppendMenu( hTextMenu, MF_STRING, (UINT) TXTindex, L"Text File" );
+	BuiltInTranslators bits = NUTSBuiltIns.GetBuiltInTranslators();
 
-	MenuXlatorMap[ TXTindex ] = TUID_TEXT;
+	BuiltInTranslator_iter iT;
 
-	TXTindex++;
+	for ( iT = bits.begin(); iT != bits.end(); iT++ )
+	{
+		if ( iT->TXFlags & TXTextTranslator )
+		{
+			AppendMenu( hTextMenu, MF_STRING, (UINT) TXTindex, iT->FriendlyName.c_str() );
+
+			MenuXlatorMap[ TXTindex ] = iT->TUID;
+
+			TXTindex++;
+		}
+
+		if ( iT->TXFlags & TXAUDTranslator )
+		{
+			AppendMenu( hAudioMenu, MF_STRING, (UINT) AUDindex, iT->FriendlyName.c_str() );
+
+			MenuXlatorMap[ AUDindex ] = iT->TUID;
+
+			AUDindex++;
+		}
+
+		if ( iT->TXFlags & TXGFXTranslator )
+		{
+			AppendMenu( hGraphixMenu, MF_STRING, (UINT) GFXindex, iT->FriendlyName.c_str() );
+
+			MenuXlatorMap[ GFXindex ] = iT->TUID;
+
+			GFXindex++;
+		}
+	}
 
 	NUTSProvider_iter iter;
 
@@ -2000,51 +2040,73 @@ void CFileViewer::DoContentViewer( void )
 			return;
 		}
 
-		TranslatorIterator iTx;
+		BuiltInTranslator_iter iT;
+		BuiltInTranslators bits = NUTSBuiltIns.GetBuiltInTranslators();
 
-		if ( iter->XlatorID == TUID_TEXT )
+		bool FoundTX = false;
+
+		for ( iT = bits.begin(); iT != bits.end(); iT++ )
 		{
-			CTEXTContentViewer *pTXViewer;
-
-			pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
-
-			pTXViewer->FSEncodingID = iter->EncodingID;
-
-			/* Ah, but some things (e.g. TZX description files) should be PC437! */
-			if ( iter->Flags & FF_EncodingOverride )
+			if ( iter->XlatorID == iT->TUID )
 			{
-				pTXViewer->FSEncodingID = ENCODING_ASCII;
+				FoundTX = true;
+
+				if ( iT->TXFlags & TXTextTranslator )
+				{
+					CTEXTContentViewer *pTXViewer;
+
+					pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
+
+					pTXViewer->FSEncodingID = iter->EncodingID;
+
+					/* Ah, but some things (e.g. TZX description files) should be PC437! */
+					if ( iter->Flags & FF_EncodingOverride )
+					{
+						pTXViewer->FSEncodingID = ENCODING_ASCII;
+					}
+
+					pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
+
+					wInd++;
+				}
 			}
-
-			pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
-
-			wInd++;
 		}
 
-		for ( iTx = TXList.begin(); iTx != TXList.end(); iTx++ )
+		if ( !FoundTX )
 		{
-			if ( ( iter->XlatorID == iTx->ProviderID ) && ( iTx->Flags & TXTextTranslator ) )
+			TranslatorIterator iTx;
+
+			for ( iTx = TXList.begin(); iTx != TXList.end(); iTx++ )
 			{
-				CTEXTContentViewer *pTXViewer;
+				if ( ( iter->XlatorID == iTx->ProviderID ) && ( iTx->Flags & TXTextTranslator ) )
+				{
+					CTEXTContentViewer *pTXViewer;
 
-				pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
+					pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
 
-				pTXViewer->FSEncodingID = iter->EncodingID;
+					pTXViewer->FSEncodingID = iter->EncodingID;
 
-				pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
+					/* Ah, but some things (e.g. TZX description files) should be PC437! */
+					if ( iter->Flags & FF_EncodingOverride )
+					{
+						pTXViewer->FSEncodingID = ENCODING_ASCII;
+					}
 
-				wInd++;
-			}
+					pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
 
-			if ( ( iter->XlatorID == iTx->ProviderID ) && ( iTx->Flags & TXGFXTranslator ) )
-			{
-				CSCREENContentViewer *pSCViewer;
+					wInd++;
+				}
 
-				pSCViewer = new CSCREENContentViewer( FileObj, iter->XlatorID );
+				if ( ( iter->XlatorID == iTx->ProviderID ) && ( iTx->Flags & TXGFXTranslator ) )
+				{
+					CSCREENContentViewer *pSCViewer;
 
-				pSCViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
+					pSCViewer = new CSCREENContentViewer( FileObj, iter->XlatorID );
 
-				wInd++;
+					pSCViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
+
+					wInd++;
+				}
 			}
 		}
 	}

@@ -4,6 +4,7 @@
 #include "NUTSError.h"
 #include "Preference.h"
 #include "FileDialogs.h"
+#include "BuiltIns.h"
 
 #include <richedit.h>
 #include <CommCtrl.h>
@@ -55,7 +56,14 @@ CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, DWORD TUID )
 	}
 
 	XlatorID = TUID;
-	pXlator  = (TEXTTranslator *) FSPlugins.LoadTranslator( TUID );
+
+	pXlator = (TEXTTranslator *) NUTSBuiltIns.LoadTranslator( TUID );
+
+	if ( pXlator == nullptr )
+	{
+		pXlator  = (TEXTTranslator *) FSPlugins.LoadTranslator( TUID );
+	}
+
 	TempPath = FileObj.Name();
 
 	FileObj.Keep();

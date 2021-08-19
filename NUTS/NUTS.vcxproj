@@ -172,6 +172,7 @@
     <ClCompile Include="AppAction.cpp" />
     <ClCompile Include="AudioPlayer.cpp" />
     <ClCompile Include="BlockMap.cpp" />
+    <ClCompile Include="BuiltIns.cpp" />
     <ClCompile Include="CharMap.cpp" />
     <ClCompile Include="CPM.cpp" />
     <ClCompile Include="CPMDirectory.cpp" />
@@ -244,6 +245,7 @@
     <ClInclude Include="AppAction.h" />
     <ClInclude Include="AudioPlayer.h" />
     <ClInclude Include="BlockMap.h" />
+    <ClInclude Include="BuiltIns.h" />
     <ClInclude Include="BYTEString.h" />
     <ClInclude Include="CharMap.h" />
     <ClInclude Include="CPM.h" />

@@ -764,25 +764,16 @@ void *CPlugins::LoadTranslator( DWORD TUID )
 {
 	void *pXlator = nullptr;
 	
-	if ( TUID == TUID_TEXT )
+	NUTSPlugin *plugin = GetPlugin( TUID );
+
+	PluginCommand cmd;
+
+	cmd.CommandID = PC_CreateTranslator;
+	cmd.InParams[ 0 ].Value = TUID;
+
+	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 	{
-		pXlator = new TextFileTranslator();
-
-		return pXlator;
-	}
-	else
-	{
-		NUTSPlugin *plugin = GetPlugin( TUID );
-
-		PluginCommand cmd;
-
-		cmd.CommandID = PC_CreateTranslator;
-		cmd.InParams[ 0 ].Value = TUID;
-
-		if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
-		{
-			pXlator = cmd.OutParams[ 0 ].pPtr;
-		}
+		pXlator = cmd.OutParams[ 0 ].pPtr;
 	}
 
 	return pXlator;
