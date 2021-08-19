@@ -42,6 +42,8 @@ IDI_AUDIO:      "Sound Icon", FatCow Hosting Icons, FatCow, CC Attribution 3.0 U
 IDI_ROOTFS:     "Actions Top Icon", Glaze Icons, Marco Martin, GNU Lesser General Public LIcense
 IDI_REFRESH:    "Refresh Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
 IDI_BACK:       "Back Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
+
+IDI_CHARMAP:    "Apps Accessories Character Map Icon", Discovery Icon Theme, Hyike Bons, CC Attribution-ShareAlike 3.0 Unported
 */
 
 void CBitmapCache::LoadBitmaps() {

@@ -62,3 +62,33 @@ int CopyContent( CTempFile &srcObj, CTempFile &destObj )
 
 	return 0;
 }
+
+int SourceToTemp( DataSource *pSource, CTempFile &destObj )
+{
+	BYTE Buffer[ 131072 ];
+
+	QWORD BytesToGo    = pSource->PhysicalDiskSize;
+	QWORD SourceOffset = 0;
+
+	while ( BytesToGo > 0 )
+	{
+		QWORD BytesRead = BytesToGo;
+
+		if ( BytesRead > 131072 )
+		{
+			BytesRead = 131072;
+		}
+
+		if ( pSource->ReadRaw( SourceOffset, (DWORD) BytesRead, Buffer ) != DS_SUCCESS )
+		{
+			return -1;
+		}
+
+		destObj.Write( Buffer, BytesRead );
+
+		BytesToGo    -= BytesRead;
+		SourceOffset += BytesRead;
+	}
+
+	return 0;
+}

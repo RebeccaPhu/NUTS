@@ -8,13 +8,20 @@ NestedImageSource::NestedImageSource( void *pFS, NativeFile *pSource, std::wstri
 {
 	pSourceFS    = pFS;
 	TempPath     = Path;
-	SourceObject = *pSource;
 	Dirty        = false;
+
+	if ( pSource != nullptr )
+	{
+		SourceObject = *pSource;
+	}
 }
 
 NestedImageSource::~NestedImageSource(void)
 {
 	FlushNest();
+
+	/* This will delete the unwanted temp file */
+	CTempFile FileObj( TempPath.c_str() );
 }
 
 void NestedImageSource::FlushNest( void )
@@ -23,16 +30,19 @@ void NestedImageSource::FlushNest( void )
 
 	if ( ( ( Now - DirtyTime ) > 1 ) && ( Dirty ) )
 	{
-		FileSystem *pFS = (FileSystem *) pSourceFS;
+		if ( pSourceFS != nullptr )
+		{
+			FileSystem *pFS = (FileSystem *) pSourceFS;
 
-		CTempFile FileObj( TempPath.c_str() );
+			CTempFile FileObj( TempPath.c_str() );
 
-		FileObj.Keep();
+			FileObj.Keep();
 
-		pFS->ReplaceFile( &SourceObject, FileObj );
+			pFS->ReplaceFile( &SourceObject, FileObj );
 
-		DirtyTime = time( NULL );
-		Dirty     = false;
+			DirtyTime = time( NULL );
+			Dirty     = false;
+		}
 	}
 }
 

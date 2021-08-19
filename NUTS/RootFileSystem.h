@@ -16,6 +16,8 @@ public:
 		FSID = FS_Root;
 
 		TopicIcon = FT_System;
+
+		Flags = FSF_Prohibit_Nesting;
 	}
 
 	~RootFileSystem(void) {

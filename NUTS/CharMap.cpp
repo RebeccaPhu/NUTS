@@ -4,6 +4,8 @@
 #include "Plugins.h"
 #include "Defs.h"
 
+#include "resource.h"
+
 #include <WindowsX.h>
 
 #define MAP_CHARWIDTH  8
@@ -69,6 +71,7 @@ CharMap::CharMap( HWND hParent, DWORD FontID )
 		wc.hInstance     = hInst;
 		wc.lpszClassName = CharMapClass;
 		wc.hCursor       = LoadCursor( NULL, IDC_ARROW );
+		wc.hIcon         = LoadIcon( hInst, MAKEINTRESOURCE( IDI_CHARMAP ) );
 
 		ATOM atom = RegisterClass(&wc);
 

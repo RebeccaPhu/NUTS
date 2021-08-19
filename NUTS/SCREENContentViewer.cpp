@@ -508,6 +508,10 @@ int CSCREENContentViewer::TranslateThread( void )
 				ShowWindow( hProgress, SW_SHOW );
 
 				Translate();
+				
+				PhysicalPalette = pXlator->GetPhysicalPalette();
+				LogicalPalette  = pXlator->GetLogicalPalette( Mode );
+				PhysicalColours = pXlator->GetPhysicalColours( );
 
 				ShowWindow( hProgress, SW_HIDE );
 

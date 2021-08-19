@@ -35,6 +35,13 @@ BYTE *ZIPFile::GetTitleString( NativeFile *pFile )
 
 		rstrncat( Title, (BYTE *) "/", 384 );
 		rstrncat( Title, pFile->Filename,384 );
+
+		if ( pFile->Flags & FF_Extension )
+		{
+			rstrncat( Title, (BYTE *) ".", 384 );
+			rstrncat( Title, pFile->Extension, 384 );
+		}
+
 		rstrncat( Title, chevron, 384 );
 	}
 

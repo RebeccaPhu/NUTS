@@ -184,6 +184,7 @@
     <ClCompile Include="EncodingEdit.cpp" />
     <ClCompile Include="EncodingStatusBar.cpp" />
     <ClCompile Include="EncodingTextArea.cpp" />
+    <ClCompile Include="EncodingToolTip.cpp" />
     <ClCompile Include="ExtensionRegistry.cpp" />
     <ClCompile Include="FileDialogs.cpp" />
     <ClCompile Include="FileOps.cpp" />
@@ -257,6 +258,7 @@
     <ClInclude Include="EncodingEdit.h" />
     <ClInclude Include="EncodingStatusBar.h" />
     <ClInclude Include="EncodingTextArea.h" />
+    <ClInclude Include="EncodingToolTip.h" />
     <ClInclude Include="ExtensionRegistry.h" />
     <ClInclude Include="FileDialogs.h" />
     <ClInclude Include="FileOps.h" />
@@ -328,6 +330,7 @@
     <None Include="..\blank2.bmp" />
     <None Include="..\bmp00001.bmp" />
     <None Include="..\cdrom.bmp" />
+    <None Include="..\charmap.ico" />
     <None Include="..\copy.ico" />
     <None Include="..\copyfile.ico" />
     <None Include="..\data.bmp" />

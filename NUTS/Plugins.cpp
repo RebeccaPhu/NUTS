@@ -347,14 +347,14 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 
 		FileSystem *pFS = LoadFS( iter->PUID, pSource );
 
-		pFS->FSID = iter->PUID;
-
 		if ( pFS == nullptr )
 		{
 			iter++;
 
 			continue;
 		}
+
+		pFS->FSID = iter->PUID;
 
 		if ( pFile == nullptr )
 		{

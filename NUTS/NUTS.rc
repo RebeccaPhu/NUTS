@@ -327,6 +327,7 @@ IDI_AUDIO               ICON                    "..\\audio.ico"
 IDI_REFRESH             ICON                    "..\\refresh.ico"
 IDI_BACK                ICON                    "..\\back.ico"
 IDI_SMFS                ICON                    "..\\smfontswitch.ico"
+IDI_CHARMAP             ICON                    "..\\charmap.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //

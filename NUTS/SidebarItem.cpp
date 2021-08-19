@@ -98,10 +98,6 @@ int SidebarItem::Create(  HWND Parent, HINSTANCE hInstance, int Icon, std::wstri
 	hFont	= CreateFont( 16,0,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
 		CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY, VARIABLE_PITCH,TEXT("MS Shell Dlg"));
 
-	HDC hDC = GetDC( hWnd );
-
-	ReleaseDC( hWnd, hDC );
-
 	LOGBRUSH brsh;
 
 	brsh.lbColor = 0x00FFF0F0;
