@@ -148,9 +148,7 @@ private:
 	void  GetCliRect( RECT &client );
 	void  DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam );
 	DWORD GetSelectionCount( void );
-	void  DoSCREENContentViewer( DWORD PrefTUID  = NULL );
-	void  DoTEXTContentViewer( DWORD PrefTUID = NULL );
-	void  DoContentViewer( void );
+	void  DoContentViewer( DWORD PrefTUID = NULL );
 	void  DoSwapFiles( BYTE UpDown );
 	void  DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam );
 	void  DoContextMenu( void );

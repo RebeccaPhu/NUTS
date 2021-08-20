@@ -369,12 +369,17 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 			if ( ( LOWORD(wParam) >= GFX_MENU_BASE ) && ( LOWORD(wParam) <= GFX_MENU_END ) )
 			{
-				DoSCREENContentViewer( MenuXlatorMap[ LOWORD( wParam ) ] );
+				DoContentViewer( MenuXlatorMap[ LOWORD( wParam ) ] );
 			}
 
 			if ( ( LOWORD(wParam) >= TXT_MENU_BASE ) && ( LOWORD(wParam) <= TXT_MENU_END ) )
 			{
-				DoTEXTContentViewer( MenuXlatorMap[ LOWORD( wParam ) ] );
+				DoContentViewer( MenuXlatorMap[ LOWORD( wParam ) ] );
+			}
+
+			if ( ( LOWORD(wParam) >= AUD_MENU_BASE ) && ( LOWORD(wParam) <= AUD_MENU_END ) )
+			{
+				DoContentViewer( MenuXlatorMap[ LOWORD( wParam ) ] );
 			}
 
 			switch ( LOWORD(wParam) ) {
@@ -1915,103 +1920,7 @@ std::vector<TitleComponent> CFileViewer::GetTitleStack( void )
 	return TitleStack;
 }
 
-void CFileViewer::DoSCREENContentViewer( DWORD PrefTUID )
-{
-	RECT rect;
-	NativeFileIterator iter;
-
-	std::vector<NativeFile> Selection = GetSelection();
-
-	if ( DIndex != 0xFFFF )
-	{
-		Selection.push_back( TheseFiles[ DIndex ] );
-	}
-
-	int wInd = 1;
-
-	for ( iter = Selection.begin(); iter != Selection.end(); iter++ )
-	{
-		CTempFile FileObj;
-
-		if ( FS->ReadFile( iter->fileID, FileObj ) != NUTS_SUCCESS )
-		{
-			NUTSError::Report( L"Read File", ParentWnd );
-
-			return;
-		}
-
-		CSCREENContentViewer *pSCViewer;
-
-		if ( PrefTUID == NULL )
-		{
-			pSCViewer = new CSCREENContentViewer( FileObj, iter->XlatorID );
-		}
-		else
-		{
-			pSCViewer = new CSCREENContentViewer( FileObj, PrefTUID );
-		}
-
-		GetWindowRect(ParentWnd, &rect);
-
-		pSCViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
-
-		wInd++;
-	}
-}
-
-void CFileViewer::DoTEXTContentViewer( DWORD PrefTUID )
-{
-	RECT rect;
-	NativeFileIterator iter;
-
-	std::vector<NativeFile> Selection = GetSelection();
-
-	if ( DIndex != 0xFFFF )
-	{
-		Selection.push_back( TheseFiles[ DIndex ] );
-	}
-
-	int wInd = 1;
-
-	for ( iter = Selection.begin(); iter != Selection.end(); iter++ )
-	{
-		CTempFile FileObj;
-
-		if ( FS->ReadFile( iter->fileID, FileObj ) != NUTS_SUCCESS )
-		{
-			NUTSError::Report( L"Read File", ParentWnd );
-
-			return;
-		}
-
-		CTEXTContentViewer *pTXViewer;
-
-		if ( PrefTUID == NULL )
-		{
-			pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
-		}
-		else
-		{
-			pTXViewer = new CTEXTContentViewer( FileObj, PrefTUID );
-		}
-
-		pTXViewer->FSEncodingID = iter->EncodingID;
-
-		/* Ah, but some things (e.g. TZX description files) should be PC437! */
-		if ( iter->Flags & FF_EncodingOverride )
-		{
-			pTXViewer->FSEncodingID = ENCODING_ASCII;
-		}
-
-		GetWindowRect(ParentWnd, &rect);
-
-		pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
-
-		wInd++;
-	}
-}
-
-void CFileViewer::DoContentViewer( void )
+void CFileViewer::DoContentViewer( DWORD PrefTUID )
 {
 	RECT rect;
 	NativeFileIterator iter;
@@ -2027,10 +1936,16 @@ void CFileViewer::DoContentViewer( void )
 
 	GetWindowRect(ParentWnd, &rect);
 
-	int wInd = 1;
+	int    wInd   = 1;
+	DWORD TXFlags = 0;
+	
+
+	void *pXv = nullptr;
 
 	for ( iter = Selection.begin(); iter != Selection.end(); iter++ )
 	{
+		DWORD UseID = ((PrefTUID != NULL)?PrefTUID: ( iter->XlatorID ) );
+
 		CTempFile FileObj;
 
 		if ( FS->ReadFile( iter->fileID, FileObj ) != NUTS_SUCCESS )
@@ -2047,27 +1962,20 @@ void CFileViewer::DoContentViewer( void )
 
 		for ( iT = bits.begin(); iT != bits.end(); iT++ )
 		{
-			if ( iter->XlatorID == iT->TUID )
+			if ( UseID == iT->TUID )
 			{
 				FoundTX = true;
 
+				TXFlags = iT->TXFlags;
+
 				if ( iT->TXFlags & TXTextTranslator )
 				{
-					CTEXTContentViewer *pTXViewer;
+					pXv = new CTEXTContentViewer( FileObj, UseID );
+				}
 
-					pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
-
-					pTXViewer->FSEncodingID = iter->EncodingID;
-
-					/* Ah, but some things (e.g. TZX description files) should be PC437! */
-					if ( iter->Flags & FF_EncodingOverride )
-					{
-						pTXViewer->FSEncodingID = ENCODING_ASCII;
-					}
-
-					pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
-
-					wInd++;
+				if ( iT->TXFlags & TXGFXTranslator )
+				{
+					pXv = new CSCREENContentViewer( FileObj, UseID );
 				}
 			}
 		}
@@ -2078,35 +1986,50 @@ void CFileViewer::DoContentViewer( void )
 
 			for ( iTx = TXList.begin(); iTx != TXList.end(); iTx++ )
 			{
-				if ( ( iter->XlatorID == iTx->ProviderID ) && ( iTx->Flags & TXTextTranslator ) )
+				if ( ( UseID == iTx->ProviderID ) && ( iTx->Flags & TXTextTranslator ) )
 				{
-					CTEXTContentViewer *pTXViewer;
+					TXFlags = iTx->Flags;
 
-					pTXViewer = new CTEXTContentViewer( FileObj, iter->XlatorID );
+					pXv = new CTEXTContentViewer( FileObj, UseID );
+				}
 
-					pTXViewer->FSEncodingID = iter->EncodingID;
+				if ( ( UseID == iTx->ProviderID ) && ( iTx->Flags & TXGFXTranslator ) )
+				{
+					TXFlags = iTx->Flags;
 
-					/* Ah, but some things (e.g. TZX description files) should be PC437! */
-					if ( iter->Flags & FF_EncodingOverride )
-					{
-						pTXViewer->FSEncodingID = ENCODING_ASCII;
-					}
-
-					pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
+					pXv = new CSCREENContentViewer( FileObj, UseID );
 
 					wInd++;
 				}
+			}
+		}
 
-				if ( ( iter->XlatorID == iTx->ProviderID ) && ( iTx->Flags & TXGFXTranslator ) )
+		if ( pXv != nullptr )
+		{
+			if ( TXFlags & TXTextTranslator )
+			{
+				CTEXTContentViewer *pTXViewer = (CTEXTContentViewer *) pXv;
+
+				pTXViewer->FSEncodingID = iter->EncodingID;
+
+				/* Ah, but some things (e.g. TZX description files) should be PC437! */
+				if ( iter->Flags & FF_EncodingOverride )
 				{
-					CSCREENContentViewer *pSCViewer;
-
-					pSCViewer = new CSCREENContentViewer( FileObj, iter->XlatorID );
-
-					pSCViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
-
-					wInd++;
+					pTXViewer->FSEncodingID = ENCODING_ASCII;
 				}
+
+				pTXViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
+
+				wInd++;
+			}
+
+			if ( TXFlags & TXGFXTranslator )
+			{
+				CSCREENContentViewer * pSCViewer = ( CSCREENContentViewer *) pXv;
+
+				pSCViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
+
+				wInd++;
 			}
 		}
 	}
