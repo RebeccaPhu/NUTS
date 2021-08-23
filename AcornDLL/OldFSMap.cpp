@@ -309,7 +309,14 @@ int OldFSMap::WriteFSMap() {
 
 	* (DWORD *) &FSBytes[0x0fc]	= TotalSectors;
 
-	memcpy( &FSBytes[ 0x0F7 ], DiscName0, 5 );
+	if ( UseDFormat )
+	{
+		memcpy( &FSBytes[ 0x0F7 ], DiscName0, 5 );
+	}
+	else
+	{
+		memset( &FSBytes[ 0x0F7 ], 0, 5 );
+	}
 
 	int	sum = 0;
 	int c   = 0;
@@ -335,7 +342,14 @@ int OldFSMap::WriteFSMap() {
 	FSBytes[0x1fd]	= BootOption;
 	FSBytes[0x1fe]	= NS * 3;
 
-	memcpy( &FSBytes[ 0x1F6 ], DiscName1, 5 );
+	if ( UseDFormat )
+	{
+		memcpy( &FSBytes[ 0x1F6 ], DiscName1, 5 );
+	}
+	else
+	{
+		memset( &FSBytes[ 0x1F6 ], 0, 5 );
+	}
 
 	sum = 0;
 	c   = 0;
