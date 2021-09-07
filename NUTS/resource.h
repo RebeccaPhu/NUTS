@@ -69,7 +69,6 @@
 #define IDI_REFRESH                     153
 #define IDI_BACK                        154
 #define IDI_SMFS                        155
-#define IDI_ICON1                       156
 #define IDI_CHARMAP                     156
 #define IDB_CDROM                       158
 #define IDB_PROGRAM                     159
@@ -90,7 +89,10 @@
 #define IDB_PLAYER_EJECT                168
 #define IDB_PLAYER_FIRST                169
 #define IDD_FORMAT                      170
+#define IDB_AUDIOBUTTONS                170
 #define IDC_WIZ_WELCOME                 171
+#define IDB_BITMAP4                     171
+#define IDB_MUSICFILE                   171
 #define IDD_WIZ_DIALOG2                 172
 #define IDD_WIZ_DIALOG3                 173
 #define IDD_WIZ_DIALOG4                 174
@@ -720,7 +722,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        157
+#define _APS_NEXT_RESOURCE_VALUE        172
 #define _APS_NEXT_COMMAND_VALUE         40074
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101

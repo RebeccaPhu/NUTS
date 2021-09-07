@@ -87,9 +87,9 @@ void DXAudio::Init( HWND hWnd, DXAudioCallback *pSource )
     memset( &wfx, 0, sizeof( WAVEFORMATEX ) ); 
 
     wfx.wFormatTag      = WAVE_FORMAT_PCM; 
-    wfx.nChannels       = 1; 
+    wfx.nChannels       = NumChans; 
     wfx.nSamplesPerSec  = 44100; 
-    wfx.wBitsPerSample  = 8; 
+    wfx.wBitsPerSample  = ((WideBits)?2:1)*8; 
     wfx.nBlockAlign     = wfx.wBitsPerSample / 8 * wfx.nChannels;
     wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
  
@@ -303,4 +303,10 @@ void DXAudio::SetVolume( BYTE Volume )
 	v += DSBVOLUME_MIN + ( ( 0 - DSBVOLUME_MIN) / 2 );
 
 	HRESULT hr = lpdsb->SetVolume( (LONG) v );
+}
+
+void DXAudio::SetFormat( BYTE Chans, bool Wide )
+{
+	NumChans = Chans;
+	WideBits = Wide;
 }

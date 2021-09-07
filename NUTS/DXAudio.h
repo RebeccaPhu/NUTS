@@ -29,6 +29,7 @@ public:
 	void Play( void );
 	void PositionReset( void );
 	void SetVolume( BYTE Volume );
+	void SetFormat( BYTE Chans, bool Wide );
 
 private:
 	HWND SoundWnd;
@@ -50,5 +51,8 @@ private:
 	bool IgnoreFirstReach;
 
 	BYTE PlayVolume;
+
+	bool WideBits;
+	BYTE NumChans;
 };
 

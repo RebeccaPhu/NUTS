@@ -2,8 +2,6 @@
 
 #include "BitmapCache.h"
 #include "FileSystem.h"
-#include "TEXTContentViewer.h"
-#include "SCREENContentViewer.h"
 #include "EncodingEdit.h"
 #include "EncodingToolTip.h"
 #include "FontBitmap.h"

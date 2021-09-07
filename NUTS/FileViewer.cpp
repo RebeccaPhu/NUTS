@@ -6,6 +6,9 @@
 #include "libfuncs.h"
 #include "IconRatio.h"
 #include "AudioPlayer.h"
+#include "TEXTContentViewer.h"
+#include "SCREENContentViewer.h"
+#include "AUDIOContentViewer.h"
 #include "BuiltIns.h"
 
 #include <CommCtrl.h>
@@ -1938,7 +1941,6 @@ void CFileViewer::DoContentViewer( DWORD PrefTUID )
 
 	int    wInd   = 1;
 	DWORD TXFlags = 0;
-	
 
 	void *pXv = nullptr;
 
@@ -1977,6 +1979,11 @@ void CFileViewer::DoContentViewer( DWORD PrefTUID )
 				{
 					pXv = new CSCREENContentViewer( FileObj, UseID );
 				}
+
+				if ( iT->TXFlags & TXAUDTranslator )
+				{
+					pXv = new AUDIOContentViewer( FileObj, UseID );
+				}
 			}
 		}
 
@@ -1998,6 +2005,15 @@ void CFileViewer::DoContentViewer( DWORD PrefTUID )
 					TXFlags = iTx->Flags;
 
 					pXv = new CSCREENContentViewer( FileObj, UseID );
+
+					wInd++;
+				}
+
+				if ( ( UseID == iTx->ProviderID ) && ( iTx->Flags & TXAUDTranslator ) )
+				{
+					TXFlags = iTx->Flags;
+
+					pXv = new AUDIOContentViewer( FileObj, UseID );
 
 					wInd++;
 				}
@@ -2028,6 +2044,15 @@ void CFileViewer::DoContentViewer( DWORD PrefTUID )
 				CSCREENContentViewer * pSCViewer = ( CSCREENContentViewer *) pXv;
 
 				pSCViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ), 500 );
+
+				wInd++;
+			}
+
+			if ( TXFlags & TXAUDTranslator )
+			{
+				AUDIOContentViewer * pAuViewer = ( AUDIOContentViewer *) pXv;
+
+				pAuViewer->Create( hWnd, hInst, rect.left + (32 * wInd), rect.top + ( 32 * wInd ) );
 
 				wInd++;
 			}

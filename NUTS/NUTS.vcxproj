@@ -74,12 +74,14 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedManifest>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedManifest>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\Debug\;$(SolutionDir)$(Configuration)</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32;$(SolutionDir)\..\mikmod</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\Debug\;$(SolutionDir)$(Configuration);$(SolutionDir)\..\mikmod</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration)</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\mikmod</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(SolutionDir)\..\mikmod</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -93,7 +95,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);libmikmod32.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -101,6 +103,9 @@
     <Manifest>
       <AdditionalOptions>/validate_manifest %(AdditionalOptions)</AdditionalOptions>
     </Manifest>
+    <PostBuildEvent>
+      <Command>copy /y $(SolutionDir)\..\mikmod\libmikmod64.dll $(OutDir)\libmikmod.dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -113,13 +118,16 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib;libmikmod64.lib</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
     </Link>
     <Manifest>
       <AdditionalOptions>/validate_manifest %(AdditionalOptions)</AdditionalOptions>
     </Manifest>
+    <PostBuildEvent>
+      <Command>copy /y $(SolutionDir)\..\mikmod\libmikmod64.dll $(OutDir)\libmikmod.dll</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -170,7 +178,10 @@
     <ClCompile Include="..\TZXConfig\TZXHardware.cpp" />
     <ClCompile Include="AboutBox.cpp" />
     <ClCompile Include="AppAction.cpp" />
+    <ClCompile Include="AUDIOContentViewer.cpp" />
     <ClCompile Include="AudioPlayer.cpp" />
+    <ClCompile Include="AudioPlayerElement.cpp" />
+    <ClCompile Include="AUDIOTranslator.cpp" />
     <ClCompile Include="BlockMap.cpp" />
     <ClCompile Include="BuiltIns.cpp" />
     <ClCompile Include="CharMap.cpp" />
@@ -194,6 +205,8 @@
     <ClCompile Include="IconRatio.cpp" />
     <ClCompile Include="ImageWizard.cpp" />
     <ClCompile Include="MemorySource.cpp" />
+    <ClCompile Include="MikModNUTSRawDrv.cpp" />
+    <ClCompile Include="MODTranslator.cpp" />
     <ClCompile Include="NestedImageSource.cpp" />
     <ClCompile Include="NUTSError.cpp" />
     <ClCompile Include="OffsetDataSource.cpp" />
@@ -243,7 +256,10 @@
   <ItemGroup>
     <ClInclude Include="AboutBox.h" />
     <ClInclude Include="AppAction.h" />
+    <ClInclude Include="AUDIOContentViewer.h" />
     <ClInclude Include="AudioPlayer.h" />
+    <ClInclude Include="AudioPlayerElement.h" />
+    <ClInclude Include="AUDIOTranslator.h" />
     <ClInclude Include="BlockMap.h" />
     <ClInclude Include="BuiltIns.h" />
     <ClInclude Include="BYTEString.h" />
@@ -268,6 +284,8 @@
     <ClInclude Include="FontBitmap.h" />
     <ClInclude Include="IconRatio.h" />
     <ClInclude Include="MemorySource.h" />
+    <ClInclude Include="MikModNUTSRawDrv.h" />
+    <ClInclude Include="MODTranslator.h" />
     <ClInclude Include="SidebarItem.h" />
     <ClInclude Include="SidePanel.h" />
     <ClInclude Include="SourceFunctions.h" />
@@ -320,6 +338,7 @@
     <None Include="..\app2.bmp" />
     <None Include="..\archive.bmp" />
     <None Include="..\audio.ico" />
+    <None Include="..\AudioControls.bmp" />
     <None Include="..\avi1.bin" />
     <None Include="..\back.ico" />
     <None Include="..\basic.bmp" />
@@ -327,6 +346,7 @@
     <None Include="..\binary.bmp" />
     <None Include="..\bitmap1.bmp" />
     <None Include="..\bitmap2.bmp" />
+    <None Include="..\bitmap4.bmp" />
     <None Include="..\blank.bmp" />
     <None Include="..\blank1.bmp" />
     <None Include="..\blank2.bmp" />
@@ -360,6 +380,7 @@
     <None Include="..\icon2.ico" />
     <None Include="..\jpeg.bmp" />
     <None Include="..\module.bmp" />
+    <None Include="..\musicfile.bmp" />
     <None Include="..\newdir.ico" />
     <None Include="..\obey.bmp" />
     <None Include="..\palette.ico" />

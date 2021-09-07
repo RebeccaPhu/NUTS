@@ -270,6 +270,21 @@
     <ClCompile Include="BuiltIns.cpp">
       <Filter>Source Files\File Systems</Filter>
     </ClCompile>
+    <ClCompile Include="AUDIOContentViewer.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="AUDIOTranslator.cpp">
+      <Filter>Source Files\Translators</Filter>
+    </ClCompile>
+    <ClCompile Include="AudioPlayerElement.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
+    <ClCompile Include="MODTranslator.cpp">
+      <Filter>Source Files\Translators</Filter>
+    </ClCompile>
+    <ClCompile Include="MikModNUTSRawDrv.cpp">
+      <Filter>Source Files\Translators</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -487,6 +502,21 @@
     </ClInclude>
     <ClInclude Include="BuiltIns.h">
       <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="AUDIOContentViewer.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="AUDIOTranslator.h">
+      <Filter>Header Files\Translators</Filter>
+    </ClInclude>
+    <ClInclude Include="AudioPlayerElement.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="MODTranslator.h">
+      <Filter>Header Files\Translators</Filter>
+    </ClInclude>
+    <ClInclude Include="MikModNUTSRawDrv.h">
+      <Filter>Header Files\Translators</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -714,6 +744,15 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\charmap.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\bitmap4.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\AudioControls.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\musicfile.bmp">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

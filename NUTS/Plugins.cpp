@@ -766,14 +766,17 @@ void *CPlugins::LoadTranslator( DWORD TUID )
 	
 	NUTSPlugin *plugin = GetPlugin( TUID );
 
-	PluginCommand cmd;
-
-	cmd.CommandID = PC_CreateTranslator;
-	cmd.InParams[ 0 ].Value = TUID;
-
-	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+	if ( plugin != nullptr )
 	{
-		pXlator = cmd.OutParams[ 0 ].pPtr;
+		PluginCommand cmd;
+
+		cmd.CommandID = PC_CreateTranslator;
+		cmd.InParams[ 0 ].Value = TUID;
+
+		if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+		{
+			pXlator = cmd.OutParams[ 0 ].pPtr;
+		}
 	}
 
 	return pXlator;

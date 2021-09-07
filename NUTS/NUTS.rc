@@ -348,6 +348,8 @@ IDB_VOLUME              BITMAP                  "..\\volume.bmp"
 IDB_SIDEBARCORNER       BITMAP                  "E:\\NUTS\\SidebarCorner.bmp"
 IDB_SYSTEM              BITMAP                  "E:\\NUTS\\System.bmp"
 IDB_WINDOWS             BITMAP                  "E:\\NUTS\\Windows.bmp"
+IDB_AUDIOBUTTONS        BITMAP                  "E:\\NUTS\\AudioControls.bmp"
+IDB_MUSICFILE           BITMAP                  "..\\musicfile.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
