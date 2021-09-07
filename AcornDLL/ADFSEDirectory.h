@@ -96,6 +96,5 @@ public:
 	}
 
 private:
-	void TranslateType( NativeFile *file );
 };
 

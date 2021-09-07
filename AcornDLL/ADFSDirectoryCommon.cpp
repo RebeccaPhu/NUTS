@@ -59,6 +59,14 @@ void ADFSDirectoryCommon::TranslateType( NativeFile *file )
 			file->Icon = RISCOSIcons::GetIconForType( 0xA00 );
 		}
 	}
+	else
+	{
+		if ( ( file->RISCTYPE == 0xCC5 ) || ( file->RISCTYPE == 0xCB6 ) )
+		{
+			file->Icon = FT_Sound;
+			file->Type = FT_Sound;
+		}
+	}
 
 	switch ( file->RISCTYPE )
 	{
@@ -73,6 +81,13 @@ void ADFSDirectoryCommon::TranslateType( NativeFile *file )
 		case 0xFFB: // BASIC
 			{
 				file->XlatorID = BBCBASIC;
+			}
+			break;
+
+		case 0xCC5: // MusMod2 Tracker file
+		case 0xCB6: // ProTracker (?) file
+			{
+				file->XlatorID = TUID_MOD_MUSIC;
 			}
 			break;
 	}
