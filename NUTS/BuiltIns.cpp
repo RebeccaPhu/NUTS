@@ -2,6 +2,7 @@
 #include "BuiltIns.h"
 
 #include "TextFileTranslator.h"
+#include "MODTranslator.h"
 
 #include "Defs.h"
 
@@ -42,6 +43,11 @@ void *BuiltIns::LoadTranslator( DWORD TUID )
 	if ( TUID == TUID_TEXT )
 	{
 		pXlator = new TextFileTranslator();
+	}
+
+	if ( TUID == TUID_MOD_MUSIC )
+	{
+		pXlator = new MODTranslator();
 	}
 
 	return pXlator;
