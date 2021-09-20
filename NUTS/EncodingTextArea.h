@@ -38,6 +38,8 @@ private:
 
 	std::vector<DWORD> LinePointers;
 
+	CRITICAL_SECTION cs;
+
 private:
 	void  PaintTextArea( void );
 	void  DoScroll(WPARAM wParam, LPARAM lParam);

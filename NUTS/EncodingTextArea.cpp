@@ -40,6 +40,8 @@ EncodingTextArea::EncodingTextArea( HWND hParent, int x, int y, int w, int h )
 		_HasWindowClass = true;
 	}
 
+	InitializeCriticalSection( &cs );
+
 	hWnd = CreateWindowEx(
 		0,
 		EncodingTextAreaClass,
@@ -74,6 +76,8 @@ EncodingTextArea::~EncodingTextArea(void)
 {
 	NixWindow( hScrollBar );
 	NixWindow( hWnd );
+
+	DeleteCriticalSection( &cs );
 }
 
 LRESULT EncodingTextArea::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
@@ -140,6 +144,8 @@ LRESULT EncodingTextArea::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 void EncodingTextArea::PaintTextArea( void )
 {
+	EnterCriticalSection( &cs );
+
 	RECT r;
 
 	GetClientRect( hWnd, &r );
@@ -157,30 +163,67 @@ void EncodingTextArea::PaintTextArea( void )
 	FillRect( hArea, &r, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
 
 	/* Draw out the text body */
-	std::vector<DWORD>::iterator iLinePtr;
+	std::vector<DWORD>::iterator iLinePtr, iNextLine;
 
-	iLinePtr      = LinePointers.begin();
 	DWORD TextPtr = 0;
 	DWORD LineLen = 0;
 	DWORD LineNum = 0;
 	DWORD MaxChars = ( r.right - r.left - 16 ) / 8;
 	DWORD MaxLines = ( r.bottom - r.top ) / 16;
 
-	if ( MaxChars > 255 ) { MaxChars = 255; }
+	// Calculate the number of actual lines, taking into account line wrap
+	iLinePtr  = LinePointers.begin();
+	iNextLine = LinePointers.begin()++;
 
-	for ( DWORD SkipLine = 0; SkipLine<StartLine; SkipLine++ )
-	{
-		if ( iLinePtr == LinePointers.end() )
+	DWORD RealLines = 0;
+	DWORD ThisPos   = 0;
+
+	do {
+		if ( RealLines >= StartLine )
 		{
-			LineLen = lTextBody - TextPtr;
+			break;
+		}
+
+		DWORD NextPos;
+
+		if ( iNextLine == LinePointers.end() )
+		{
+			NextPos = lTextBody;
 		}
 		else
 		{
-			LineLen = *iLinePtr - TextPtr;
-			iLinePtr++;
-			TextPtr += LineLen;
+			NextPos = *iNextLine;
 		}
-	}
+
+		while ( ( NextPos - ThisPos ) > MaxChars )
+		{
+			RealLines++;
+
+			ThisPos += MaxChars;
+
+			if ( RealLines >= StartLine )
+			{
+				break;
+			}
+		}
+
+		if ( RealLines >= StartLine )
+		{
+			break;
+		}
+
+		iLinePtr++;
+		RealLines++;
+			
+		if ( iNextLine != LinePointers.end() )
+		{
+			iNextLine++;
+		}
+
+		ThisPos = NextPos;
+	} while ( iNextLine != LinePointers.end() );
+
+	TextPtr = ThisPos;
 
 	DWORD DisplayedLines = 0;
 
@@ -227,8 +270,7 @@ void EncodingTextArea::PaintTextArea( void )
 
 			iLinePtr++;
 		}
-
-		if ( iLinePtr == LinePointers.end() )
+		else if ( iLinePtr == LinePointers.end() )
 		{
 			break;
 		}
@@ -247,6 +289,8 @@ void EncodingTextArea::PaintTextArea( void )
 	ValidateRect( hWnd, &r );
 
 	ReleaseDC( hWnd, hDC );
+
+	LeaveCriticalSection( &cs );
 }
 
 int EncodingTextArea::PrintText( HDC hDC, int pw, int ph )
@@ -405,6 +449,8 @@ int EncodingTextArea::SetTextBody( DWORD FontID, BYTE *pBody, DWORD lBody, std::
 	lTextBody = lBody;
 	Font      = FontID;
 
+	EnterCriticalSection( &cs );
+
 	LinePointers = rLinePointers;
 
 	RECT r;
@@ -412,15 +458,55 @@ int EncodingTextArea::SetTextBody( DWORD FontID, BYTE *pBody, DWORD lBody, std::
 	GetClientRect( hWnd, &r );
 
 	DWORD MaxLines = ( r.bottom - r.top - 8 ) / 18;
-	DWORD LastLine = LinePointers.size() + 1;
+	DWORD MaxChars = ( r.right - r.left - 16 ) / 8;
 
-	if ( LastLine > MaxLines )
+
+	// Calculate the number of actual lines, taking into account line wrap
+	std::vector<DWORD>::iterator iLine, iNextLine;
+
+	iLine = LinePointers.begin();
+	iNextLine = LinePointers.begin()++;
+
+	DWORD RealLines = 0;
+	DWORD ThisPos   = 0;
+
+	do {
+		DWORD NextPos;
+
+		if ( iNextLine == LinePointers.end() )
+		{
+			NextPos = lBody;
+		}
+		else
+		{
+			NextPos = *iNextLine;
+		}
+
+		while ( ( NextPos - ThisPos ) > MaxChars )
+		{
+			RealLines++;
+
+			ThisPos += MaxChars;
+		}
+
+		iLine++;
+		RealLines++;
+			
+		if ( iNextLine != LinePointers.end() )
+		{
+			iNextLine++;
+		}
+
+		ThisPos = NextPos;
+	} while ( iNextLine != LinePointers.end() );
+
+	if ( RealLines > MaxLines )
 	{
-		MaxLine = LastLine - MaxLines;
+		MaxLine = RealLines - MaxLines;
 	}
 	else
 	{
-		MaxLine = LastLine;
+		MaxLine = RealLines;
 	}
 
 	SCROLLINFO si;
@@ -428,13 +514,13 @@ int EncodingTextArea::SetTextBody( DWORD FontID, BYTE *pBody, DWORD lBody, std::
 	si.cbSize = sizeof( SCROLLINFO );
 	si.fMask  = SIF_PAGE | SIF_POS | SIF_RANGE;
 	si.nMin   = 0;
-	si.nMax   = MaxLine;
-	si.nPage  = 4;
+	si.nMax   = RealLines - 1;
+	si.nPage  = MaxLines;
 	si.nPos   = 0;
 
 	SetScrollInfo( hScrollBar, SB_CTL, &si, TRUE );
 
-	if ( MaxLine < LastLine )
+	if ( MaxLine < RealLines )
 	{
 		EnableWindow( hScrollBar, TRUE );
 	}
@@ -442,6 +528,8 @@ int EncodingTextArea::SetTextBody( DWORD FontID, BYTE *pBody, DWORD lBody, std::
 	{
 		EnableWindow( hScrollBar, FALSE );
 	}
+
+	LeaveCriticalSection( &cs );
 
 	return 0;
 }
@@ -469,6 +557,8 @@ void EncodingTextArea::DoScroll(WPARAM wParam, LPARAM lParam)
 {
 	if (LOWORD(wParam) == SB_THUMBTRACK) {
 		StartLine = HIWORD(wParam);
+
+		SetScrollPos(hScrollBar, SB_CTL, StartLine, TRUE);
 
 		Update();
 	}
