@@ -71,9 +71,12 @@ CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, DWORD TUID )
 	pTextBuffer = nullptr;
 
 	Translating      = true;
+	Retranslate      = false;
 	hTranslateThread = NULL;
 	hStopEvent       = CreateEvent( NULL, TRUE, FALSE, NULL );
 	hProgress        = NULL;
+
+	ResizeTime       = 0;
 }
 
 CTEXTContentViewer::~CTEXTContentViewer(void) {
@@ -90,13 +93,15 @@ CTEXTContentViewer::~CTEXTContentViewer(void) {
 		CloseHandle( hStopEvent );
 	}
 
+	KillTimer( hWnd, 0x7e7 );
+
 	NixWindow( hCopy );
 	NixWindow( hSave );
 	NixWindow( hPrint );
 	NixWindow( hChanger );
 	NixWindow( hProgress );
 
-	DestroyWindow( hWnd );
+	NixWindow( hWnd );
 
 	delete pTextArea;
 	delete pStatusBar;
@@ -161,12 +166,25 @@ int CTEXTContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, i
 
 	DoResize();
 
+	opts.RetranslateOnResize = false;
+
 	hTranslateThread = (HANDLE) _beginthreadex(NULL, NULL, TranslateThread, this, NULL, (unsigned int *) &dwthreadid);
 
 	ShowWindow(hWnd, TRUE);
 	UpdateWindow( hWnd );
 
+	SetTimer( hWnd, 0x7e7, 1000, NULL );
+
 	return 0;
+}
+
+void CTEXTContentViewer::BeginTranslate( void )
+{
+	Retranslate = false;
+
+	ShowWindow( hProgress, TRUE );
+
+	hTranslateThread = (HANDLE) _beginthreadex(NULL, NULL, TranslateThread, this, NULL, (unsigned int *) &dwthreadid);
 }
 
 LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -178,6 +196,10 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 				PaintToolBar();
 			}
 		break;
+
+		case WM_TIMER:
+			RetranslateCheck();
+			break;
 
 		case WM_SIZE:
 			{
@@ -235,12 +257,20 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 void CTEXTContentViewer::Translate( void )
 {
-	TXTTranslateOptions opts;
-
 	opts.EncodingID  = ENCODING_ASCII;
 	opts.pTextBuffer = &pTextBuffer;
 	opts.ProgressWnd = hWnd;
 	opts.hStop       = hStopEvent;
+
+	RECT r;
+
+	GetClientRect( hWnd, &r );
+
+	WORD width = r.right - r.left;
+
+	if ( width > 24 ) { width -= 24; }
+	
+	opts.CharacterWidth = width / 8;
 
 	opts.LinePointers.clear();
 
@@ -273,10 +303,11 @@ void CTEXTContentViewer::Translate( void )
 		pTextBuffer = *opts.pTextBuffer;
 
 		ShowWindow( hProgress, SW_HIDE );
-		ShowWindow( pTextArea->hWnd, SW_SHOW );
-
-		Translating = false;
+		ShowWindow( pTextArea->hWnd, SW_SHOW );	
 	}
+
+	Translating = false;
+	Retranslate = false;
 }
 
 void CTEXTContentViewer::DoResize()
@@ -299,6 +330,47 @@ void CTEXTContentViewer::DoResize()
 
 	Preference( L"TextTranslatorWidth" )  = (DWORD) ( r.right - r.left );
 	Preference( L"TextTranslatorHeight" ) = (DWORD) ( r.bottom - r.top );
+
+	Retranslate = true;
+
+	ResizeTime = GetTickCount();
+}
+
+void CTEXTContentViewer::RetranslateCheck( void )
+{
+	if ( ( !Retranslate ) || ( Translating ) || ( !opts.RetranslateOnResize ) )
+	{
+		return;
+	}
+
+	if ( hTranslateThread != NULL )
+	{
+		if ( WaitForSingleObject( hTranslateThread, 500 ) == WAIT_TIMEOUT )
+		{
+			TerminateThread( hTranslateThread, 500 );
+
+			CloseHandle( hTranslateThread );
+		}
+
+		hTranslateThread = NULL;
+	}
+
+	DWORD now = GetTickCount();
+
+	if ( ResizeTime != 0 )
+	{
+		DWORD diff = now - ResizeTime;
+
+		if ( ResizeTime > now )
+		{
+			diff = ( 0 - ResizeTime ) + now;
+		}
+
+		if ( diff > 250 )
+		{
+			BeginTranslate();
+		}
+	}
 }
 
 int CTEXTContentViewer::CreateToolbar( void ) {

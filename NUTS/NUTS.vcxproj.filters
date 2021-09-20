@@ -285,6 +285,9 @@
     <ClCompile Include="MikModNUTSRawDrv.cpp">
       <Filter>Source Files\Translators</Filter>
     </ClCompile>
+    <ClCompile Include="HEXDumpTranslator.cpp">
+      <Filter>Source Files\Translators</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -516,6 +519,9 @@
       <Filter>Header Files\Translators</Filter>
     </ClInclude>
     <ClInclude Include="MikModNUTSRawDrv.h">
+      <Filter>Header Files\Translators</Filter>
+    </ClInclude>
+    <ClInclude Include="HEXDumpTranslator.h">
       <Filter>Header Files\Translators</Filter>
     </ClInclude>
   </ItemGroup>

@@ -62,6 +62,11 @@ private:
 	HWND   hProgress;
 
 	bool   Translating;
+	bool   Retranslate;
+
+	DWORD  ResizeTime;
+
+	TXTTranslateOptions opts;
 
 private:
 	void Translate( void );
@@ -70,4 +75,6 @@ private:
 	int  PaintToolBar( void );
 	void DoSave( void );
 	void DoPrint( void );
+	void BeginTranslate( void );
+	void RetranslateCheck( void );
 };

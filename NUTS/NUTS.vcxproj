@@ -202,6 +202,7 @@
     <ClCompile Include="FileOps.cpp" />
     <ClCompile Include="FloppyDataSource.cpp" />
     <ClCompile Include="FontBitmap.cpp" />
+    <ClCompile Include="HEXDumpTranslator.cpp" />
     <ClCompile Include="IconRatio.cpp" />
     <ClCompile Include="ImageWizard.cpp" />
     <ClCompile Include="MemorySource.cpp" />
@@ -282,6 +283,7 @@
     <ClInclude Include="FileOps.h" />
     <ClInclude Include="FloppyDataSource.h" />
     <ClInclude Include="FontBitmap.h" />
+    <ClInclude Include="HEXDumpTranslator.h" />
     <ClInclude Include="IconRatio.h" />
     <ClInclude Include="MemorySource.h" />
     <ClInclude Include="MikModNUTSRawDrv.h" />

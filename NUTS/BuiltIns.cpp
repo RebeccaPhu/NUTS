@@ -2,6 +2,7 @@
 #include "BuiltIns.h"
 
 #include "TextFileTranslator.h"
+#include "HEXDumpTranslator.h"
 #include "MODTranslator.h"
 
 #include "Defs.h"
@@ -33,6 +34,12 @@ BuiltInTranslators BuiltIns::GetBuiltInTranslators( void )
 
 	tx.push_back( t );
 
+	t.TUID         = TUID_HEX;
+	t.TXFlags      = TXTextTranslator;
+	t.FriendlyName = L"Hex Dump";
+
+	tx.push_back( t );
+
 	return tx;
 }
 
@@ -48,6 +55,11 @@ void *BuiltIns::LoadTranslator( DWORD TUID )
 	if ( TUID == TUID_MOD_MUSIC )
 	{
 		pXlator = new MODTranslator();
+	}
+
+	if ( TUID == TUID_HEX )
+	{
+		pXlator = new HEXDumpTranslator();
 	}
 
 	return pXlator;

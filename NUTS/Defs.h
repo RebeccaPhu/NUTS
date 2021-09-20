@@ -289,6 +289,8 @@ typedef struct _TXTTranslateOptions {
 	DWORD EncodingID;
 	HWND  ProgressWnd;
 	HANDLE hStop;
+	WORD  CharacterWidth;
+	bool  RetranslateOnResize;
 } TXTTranslateOptions;
 
 typedef struct _IconDef {
@@ -482,6 +484,7 @@ typedef struct _TapeIndex {
 
 #define TUID_TEXT           0x80000001
 #define TUID_MOD_MUSIC      0x80000002
+#define TUID_HEX            0x80000003
 
 
 
