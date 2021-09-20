@@ -22,6 +22,12 @@ ADFSCommon::ADFSCommon(void)
 
 ADFSCommon::~ADFSCommon(void)
 {
+	std::map<WORD, IconDef>::iterator iIcon;
+
+	for ( iIcon = ResolvedFileTypes.begin(); iIcon != ResolvedFileTypes.end(); iIcon++ )
+	{
+		free( iIcon->second.pImage );
+	}
 }
 
 
