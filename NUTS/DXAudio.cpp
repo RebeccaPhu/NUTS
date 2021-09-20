@@ -29,6 +29,8 @@ DXAudio::DXAudio()
 	IgnoreFirstReach = true;
 
 	PlayVolume = 127;
+	NumChans   = 1;
+	WideBits   = false;
 }
 
 DXAudio::~DXAudio(void)
@@ -301,8 +303,11 @@ void DXAudio::SetVolume( BYTE Volume )
 
 	v *= (double) PlayVolume;
 	v += DSBVOLUME_MIN + ( ( 0 - DSBVOLUME_MIN) / 2 );
-
-	HRESULT hr = lpdsb->SetVolume( (LONG) v );
+	
+	if ( lpdsb != NULL )
+	{
+		HRESULT hr = lpdsb->SetVolume( (LONG) v );
+	}
 }
 
 void DXAudio::SetFormat( BYTE Chans, bool Wide )
