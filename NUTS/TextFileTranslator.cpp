@@ -26,8 +26,6 @@ int TextFileTranslator::TranslateText( CTempFile &FileObj, TXTTranslateOptions *
 
 	BYTE LineBuf[ 1024 ];
 
-	bool CRLF = false;
-
 	opts->LinePointers.clear();
 
 	while ( TextFilePtr < TextFileLen )
@@ -51,14 +49,9 @@ int TextFileTranslator::TranslateText( CTempFile &FileObj, TXTTranslateOptions *
 		{
 			if ( ( LineBuf[ i ] == 0xA ) || ( LineBuf[ i ] == 0x0D ) )
 			{
-				if ( !CRLF )
-				{
-					opts->LinePointers.push_back( TextBodyPtr );
+				opts->LinePointers.push_back( TextBodyPtr );
 
-					CRLF = true;
-
-					::PostMessage( opts->ProgressWnd, WM_TEXT_PROGRESS, (WPARAM) Percent( 0, 1, TextFilePtr, TextFileLen, true ), 0 );
-				}
+				::PostMessage( opts->ProgressWnd, WM_TEXT_PROGRESS, (WPARAM) Percent( 0, 1, TextFilePtr, TextFileLen, true ), 0 );
 			}
 			else
 			{
@@ -74,8 +67,6 @@ int TextFileTranslator::TranslateText( CTempFile &FileObj, TXTTranslateOptions *
 				pTextBody[ TextBodyPtr ] = LineBuf[ i ];
 
 				TextBodyPtr++;
-
-				CRLF = false;
 			}
 		}
 
