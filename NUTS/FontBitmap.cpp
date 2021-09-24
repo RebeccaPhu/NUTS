@@ -1,31 +1,29 @@
 #include "StdAfx.h"
 #include "FontBitmap.h"
 
+#include <assert.h>
 
-FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const BYTE MaxLen, const bool Ellipsis, const bool Selected )
+FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Ellipsis, const bool Selected )
 {
-	std::string s = std::string( (char *) pText );
+	pData = nullptr;
+	bmi   = nullptr;
 
-	if ( s.length() > (size_t) MaxLen )
+	WORD sl = MaxLen;
+	TextLen = MaxLen;
+
+	if ( MaxLen == 0 )
 	{
-		s = s.substr( 0, (size_t) MaxLen );
+		w = 0;
 
-		if ( Ellipsis )
-		{
-			s += "...";
-		}
+		return;
 	}
 
-	size_t l = s.length();
-	BYTE *pC = (BYTE *) s.c_str();
-	WORD sl = l & 0xFC;
+	// 4-byte alignment
+	while ( sl % 4 ) { sl++; }
 
-	if ( sl < l ) { sl += 4; }
+	w = sl * 8;
 
-	w = l * 8;
-	h = 8;
-
-	pData = malloc( sl * h );
+	pData = malloc( sl * 8 * 8 );
 	bmi   = (BITMAPINFO *) malloc( sizeof(BITMAPINFOHEADER) + ( sizeof( RGBQUAD ) * 2U ) );
 
 	BYTE *pBitmap = (BYTE *) pData;
@@ -34,9 +32,9 @@ FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const BYTE MaxLen, cons
 
 	for ( BYTE r=0; r<8; r++ )
 	{
-		for ( BYTE b=0; b<l; b++ )
+		for ( WORD b=0; b<MaxLen; b++ )
 		{
-			pBitmap[ (r * sl) + b ] = pFontData[ ( pC[ b ] * 8 ) + r ];
+			pBitmap[ (r * sl) + b ] = pFontData[ ( pText[ b ] * 8 ) + r ];
 		}
 	}
 
@@ -69,10 +67,10 @@ FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const BYTE MaxLen, cons
 	bmi->bmiHeader.biClrImportant  = 0;
 	bmi->bmiHeader.biClrUsed       = 2U;
 	bmi->bmiHeader.biCompression   = BI_RGB;
-	bmi->bmiHeader.biHeight        = 0 - h;
+	bmi->bmiHeader.biHeight        = 0 - 8;
 	bmi->bmiHeader.biPlanes        = 1U;
 	bmi->bmiHeader.biSize          = sizeof( BITMAPINFOHEADER );
-	bmi->bmiHeader.biSizeImage     = sl * h;
+	bmi->bmiHeader.biSizeImage     = sl * 8;
 	bmi->bmiHeader.biWidth         = w;
 	bmi->bmiHeader.biXPelsPerMeter = 0U;
 	bmi->bmiHeader.biYPelsPerMeter = 0U;
@@ -80,6 +78,8 @@ FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const BYTE MaxLen, cons
 
 void FontBitmap::SetButtonColor( BYTE r, BYTE g, BYTE b )
 {
+	if ( w == 0 ) { return; }
+
 	bmi->bmiColors[ 0 ].rgbBlue  = b;
 	bmi->bmiColors[ 0 ].rgbGreen = g;
 	bmi->bmiColors[ 0 ].rgbRed   = r;
@@ -87,6 +87,8 @@ void FontBitmap::SetButtonColor( BYTE r, BYTE g, BYTE b )
 
 void FontBitmap::SetTextColor( BYTE r, BYTE g, BYTE b )
 {
+	if ( w == 0 ) { return; }
+
 	bmi->bmiColors[ 1 ].rgbBlue  = b;
 	bmi->bmiColors[ 1 ].rgbGreen = g;
 	bmi->bmiColors[ 1 ].rgbRed   = r;
@@ -94,6 +96,8 @@ void FontBitmap::SetTextColor( BYTE r, BYTE g, BYTE b )
 
 void FontBitmap::SetGrayed( bool grayed = true )
 {
+	if ( w == 0 ) { return; }
+
 	if ( grayed )
 	{
 		bmi->bmiColors[ 1 ].rgbBlue  = 0xAA;
@@ -121,28 +125,31 @@ FontBitmap::~FontBitmap(void)
 
 void FontBitmap::DrawText( HDC hDC, DWORD x, DWORD y, DWORD Displace )
 {
+	if ( w == 0 ) { return; }
+
+	DWORD rw = TextLen * 8;
 	DWORD dx = x;
 	DWORD dy = y;
 
 	if ( Displace & DT_CENTER )
 	{
-		dx -= w / 2U;
+		dx -= rw / 2U;
 	}
 
 	if ( Displace & DT_RIGHT )
 	{
-		dx -= w;
+		dx -= rw;
 	}
 
 	if ( Displace & DT_VCENTER )
 	{
-		dy -= h;
+		dy -= 8;
 	}
 
 	if ( Displace & DT_TOP )
 	{
-		dy -= h * 2U;
+		dy -= 8 * 2U;
 	}
 
-	StretchDIBits( hDC, dx, dy, w, h * 2, 0, 0, w, h, pData, bmi, DIB_RGB_COLORS, SRCCOPY );
+	StretchDIBits( hDC, dx, dy, TextLen * 8, 8 * 2, 0, 0, TextLen * 8, 8, pData, bmi, DIB_RGB_COLORS, SRCCOPY );
 }

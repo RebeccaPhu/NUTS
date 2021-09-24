@@ -5,7 +5,7 @@
 class FontBitmap
 {
 public:
-	FontBitmap( DWORD FontID, const BYTE *pText, const BYTE MaxLen, const bool Ellipsis, const bool Selected );
+	FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Ellipsis, const bool Selected );
 	~FontBitmap(void);
 
 	void DrawText( HDC hDC, DWORD x, DWORD y, DWORD Displace );
@@ -15,7 +15,7 @@ public:
 
 private:
 	WORD w;
-	WORD h;
+	WORD TextLen;
 
 	BITMAPINFO *bmi;
 

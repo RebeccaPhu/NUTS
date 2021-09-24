@@ -4,6 +4,12 @@
 
 #include <vector>
 
+typedef struct _LineDef
+{
+	DWORD StartPos;
+	DWORD NumChars;
+} LineDef;
+
 class EncodingTextArea
 {
 public:
@@ -23,6 +29,7 @@ public:
 	int     SetFont( DWORD FontID );
 	int     SaveText( FILE *fFile );
 	int     PrintText( HDC hDC, int pw, int ph );
+	int     CopySelection( void );
 
 public:
 	HWND  hWnd;
@@ -30,19 +37,51 @@ public:
 private:
 	HWND  Parent;
 	HWND  hScrollBar;
+	HPEN  hCursor;
+	HDC   hArea;
+	HBITMAP hAreaCanvas;
+	HGDIOBJ hAreaOld;
 	BYTE  *pTextBody;
 	DWORD lTextBody;
 	DWORD Font;
-	DWORD MaxLine;
-	DWORD StartLine;
 
-	std::vector<DWORD> LinePointers;
+	DWORD StartLine;
+	DWORD MaxWinLines;
+	DWORD MaxWinChars;
+
+	std::vector<LineDef> LineDefs;
+	std::vector<DWORD>   LinePointers;
 
 	CRITICAL_SECTION cs;
+
+	DWORD TextPtrStart;
+	DWORD TextPtrEnd;
+
+	DWORD SelStart;
+	DWORD SelEnd;
+
+	LPARAM MouseParam;
+
+	bool  Selecting;
+
+	bool  Blink;
+	bool  Shift;
+	bool  Ctrl;
+	bool  Focus;
 
 private:
 	void  PaintTextArea( void );
 	void  DoScroll(WPARAM wParam, LPARAM lParam);
 	void  Update( void );
+	DWORD GetMouseTextPtr( LPARAM lParam );
+	void  SafeByteCopy( BYTE *dest, BYTE *src, DWORD len );
+	void  DoKey( const int virtualKey, const int scanCode, bool Down );
+	void  SetPtrs();
+	void  ScrollToLine( int CLine );
+	DWORD GetCursorLine( void );
+	void  SetCursorLine( DWORD cline, DWORD line );
+
+	void  ReGenerateLineDefs( void );
+	void  SetScrollbar( DWORD Max, DWORD Page );
 };
 
