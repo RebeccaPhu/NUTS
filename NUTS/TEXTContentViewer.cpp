@@ -246,7 +246,7 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 				if ( lParam == (LPARAM) hCopy )
 				{
-					// TODO: When EncodingTextArea supports copying
+					pTextArea->CopySelection();
 				}
 			}
 			break;

@@ -386,6 +386,14 @@ BEGIN
     END
 END
 
+IDR_TEA MENU
+BEGIN
+    POPUP " "
+    BEGIN
+        MENUITEM "&Copy\tCtrl-C",               IDM_COPY
+    END
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

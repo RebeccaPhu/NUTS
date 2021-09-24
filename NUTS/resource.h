@@ -91,10 +91,11 @@
 #define IDD_FORMAT                      170
 #define IDB_AUDIOBUTTONS                170
 #define IDC_WIZ_WELCOME                 171
-#define IDB_BITMAP4                     171
 #define IDB_MUSICFILE                   171
 #define IDD_WIZ_DIALOG2                 172
+#define IDR_MENU1                       172
 #define IDD_WIZ_DIALOG3                 173
+#define IDR_TEA                         173
 #define IDD_WIZ_DIALOG4                 174
 #define IDD_WIZ_DIALOG5                 176
 #define IDD_FSATTRS                     177
@@ -320,6 +321,7 @@
 #define ID_OPTIO                        40071
 #define ID_EDITMENU_CHARACTERMAP        40072
 #define ID_EDITMENU_                    40073
+#define ID__COPY                        40074
 #define IDM_VIEW_BBCSCREEN              41001
 #define IDM_VIEW_ZXSSCREEN              41002
 #define IDM_VIEW_BBCBASIC               42001
@@ -722,8 +724,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        172
-#define _APS_NEXT_COMMAND_VALUE         40074
+#define _APS_NEXT_RESOURCE_VALUE        174
+#define _APS_NEXT_COMMAND_VALUE         40075
 #define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

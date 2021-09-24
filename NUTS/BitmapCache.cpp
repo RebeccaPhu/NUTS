@@ -34,6 +34,9 @@ IDB_MUSICFILE:  "File Music Icon", Phuzion Icons, kyo-tux, CC Attribution-Noncom
 
 IDI_NEWDIR:     "New Folder Graphite Icon", Aqua Candy Revolution Icons, McDo Design, Free for non-commercial use
 IDI_FONTSWITCH: "Font Icon", FatCow Hosting Icons, FatCow, CC Attribution 3.0 US
+IDI_PRINT:      "Print Icon", 12x12 Free Toolbar Icons, Aha-Soft, CC Attribution 3.0 US
+IDI_SAVE:       "Save Icon", 12x12 Free Toolbar Icons, Aha-Soft, CC Attribution 3.0 US
+IDI_COPY:       "Copy Icon", Mini Icons 2, Brand Spanking New, CC Attribution-ShareAlike 2.5 Generic
 IDI_UPFILE:     "Move File Up Icon", Blue Bits Icons, Icojam, Freeware
 IDI_DOWNFILE:   "Move File Down Icon", Blue Bits Icons, Icojam, Freeware
 IDI_RENAME:     "Text Field Rename Icon", Web Design Icon Set, SEM Labs, Freeware
@@ -43,6 +46,7 @@ IDI_AUDIO:      "Sound Icon", FatCow Hosting Icons, FatCow, CC Attribution 3.0 U
 IDI_ROOTFS:     "Actions Top Icon", Glaze Icons, Marco Martin, GNU Lesser General Public LIcense
 IDI_REFRESH:    "Refresh Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
 IDI_BACK:       "Back Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
+IDI_BASIC:      "Text Icon", Simply Icons 32px, Carlos Quintana, CC Attribution 3.0 Unported
 
 IDI_CHARMAP:    "Apps Accessories Character Map Icon", Discovery Icon Theme, Hyike Bons, CC Attribution-ShareAlike 3.0 Unported
 */
