@@ -154,7 +154,7 @@ int SpectrumBASICTranslator::TranslateText( CTempFile &FileObj, TXTTranslateOpti
 						IsQuoted = !IsQuoted;
 					}
 
-					if ( ( InChar > 0xA5) && ( !IsQuoted ) ) {
+					if ( InChar > 0xA5)  {
 
 						if ( !IsKeyword )
 						{
