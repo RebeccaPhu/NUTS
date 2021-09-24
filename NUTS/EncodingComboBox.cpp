@@ -280,13 +280,13 @@ int EncodingComboBox::DoPaint( HWND wnd )
 
 	if ( wnd == hWnd )
 	{
-		std::map<WORD, BYTE*>::iterator iItem;
+		std::map<WORD, BYTEString>::iterator iItem;
 
 		DWORD y = 0;
 	
 		for ( iItem = ListEntries.begin(); iItem != ListEntries.end(); iItem++ )
 		{
-			FontBitmap Item( FONTID_PC437, iItem->second, 64, false, ( y == HoverID ) );
+			FontBitmap Item( FONTID_PC437, iItem->second, iItem->second.length(), false, ( y == HoverID ) );
 
 			Item.DrawText( hDC, 4, 8 + y * 20, DT_LEFT | DT_TOP );
 
@@ -305,7 +305,7 @@ int EncodingComboBox::DoDropdown( void )
 {
 	HoverID = 0x7FFFFFFF;
 
-	std::map<WORD, BYTE*>::iterator iItem;
+	std::map<WORD, BYTEString>::iterator iItem;
 	
 	DWORD ww = 16;
 

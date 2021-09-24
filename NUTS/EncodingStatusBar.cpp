@@ -111,7 +111,7 @@ int EncodingStatusBar::DoPaint( void )
 
 		DrawEdge( hDC, &r, EDGE_SUNKEN, BF_RECT );
 
-		FontBitmap text( iPanel->second.FontID, iPanel->second.Text, 255, false, false );
+		FontBitmap text( iPanel->second.FontID, iPanel->second.Text, rstrnlen( iPanel->second.Text, 255 ), false, false );
 
 		text.SetButtonColor( GetRValue( brsh.lbColor ), GetGValue( brsh.lbColor ), GetBValue( brsh.lbColor ) );
 

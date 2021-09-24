@@ -47,7 +47,7 @@ public:
 
 	void AddTextItem( BYTE *pItem )
 	{
-		ListEntries[ iIndex++ ] = rstrndup( pItem, 64 );
+		ListEntries[ iIndex++ ] = pItem;
 	}
 
 	void EnableCombo( void )
@@ -95,6 +95,6 @@ private:
 	DWORD wy;
 	DWORD ww;
 
-	std::map< WORD, BYTE *> ListEntries;
+	std::map< WORD, BYTEString> ListEntries;
 };
 
