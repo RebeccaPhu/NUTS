@@ -14,6 +14,8 @@ public:
 		SinclairPB.Encoding = ENCODING_SINCLAIR;
 		tzxpb.Encoding      = ENCODING_SINCLAIR;
 
+		delete pDir;
+
 		pSinclairDir = new SinclairTZXDirectory( pDataSource, SinclairPB );
 		pDir         = (TZXDirectory *) pSinclairDir;
 		pDirectory   = (Directory *) pSinclairDir;

@@ -4,6 +4,7 @@
 //#pragma comment(linker,"\"/manifestdependency:type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include "stdafx.h"
+
 #include "NUTS.h"
 #include "FormatWizard.h"
 #include "Plugins.h"
@@ -50,7 +51,8 @@ bool UseResolvedIcons = Preference( L"UseResolvedIcons" );
 bool HideSidecars     = Preference( L"HideSidecars" );
 
 //	File viewer window classes:
-CFileViewer	leftPane,rightPane;
+CFileViewer	*leftPane;
+CFileViewer *rightPane;
 
 // FileSystem Breadcrumbs:
 std::vector<FileSystem *> leftFS;
@@ -108,6 +110,30 @@ void StopFSActions( void )
 	DeleteCriticalSection( &FSActionLock );
 }
 
+void UnloadStacks( void )
+{
+	while ( leftFS.size() > 0 )
+	{
+		FileSystem *fs = leftFS.back();
+
+		delete fs;
+
+		leftFS.pop_back();
+	}
+
+	while ( rightFS.size() > 0 )
+	{
+		FileSystem *fs = rightFS.back();
+
+		delete fs;
+
+		rightFS.pop_back();
+	}
+
+	leftTitles.clear();
+	rightTitles.clear();
+}
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
@@ -121,8 +147,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	MSG msg;
 	HACCEL hAccelTable;
 
-	leftPane.PaneIndex  = 0;
-	rightPane.PaneIndex = 1;
+	leftPane = new CFileViewer();
+	rightPane = new CFileViewer();
+
+	leftPane->PaneIndex  = 0;
+	rightPane->PaneIndex = 1;
 
 	/* This is used by the drop target mechanism */
 	OleInitialize( NULL );
@@ -155,8 +184,23 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		}
 	}
 
+	DestroyWindow( hMainWnd );
+
 	StopAppActions();
 	StopFSActions();
+
+	delete leftPane;
+	delete rightPane;
+
+	UnloadStacks();
+
+	delete pCollector;
+
+	FSPlugins.UnloadPlugins();
+
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
 
 	return (int) msg.wParam;
 }
@@ -311,25 +355,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 	ConfigureExtrasMenu();
 
-	leftPane.FS  = new RootFileSystem(); 
-	rightPane.FS = new RootFileSystem(); 
+	leftPane->FS  = new RootFileSystem(); 
+	rightPane->FS = new RootFileSystem(); 
 
-	leftFS.push_back( leftPane.FS );
-	rightFS.push_back( rightPane.FS );
+	leftFS.push_back( leftPane->FS );
+	rightFS.push_back( rightPane->FS );
 
-	leftPane.Update();
-	rightPane.Update();
+	leftPane->Update();
+	rightPane->Update();
 
-	ReCalculateTitleStack( &leftFS, &leftTitles, &leftPane );
-	ReCalculateTitleStack( &rightFS, &rightTitles, &rightPane );
+	ReCalculateTitleStack( &leftFS, &leftTitles, leftPane );
+	ReCalculateTitleStack( &rightFS, &rightTitles, rightPane );
 
 	ShowWindow(hWnd, nCmdShow);
 
 	UpdateWindow(hWnd);
 
-	SetFocus( leftPane.hWnd );
+	SetFocus( leftPane->hWnd );
 
-	FocusPane = leftPane.hWnd;
+	FocusPane = leftPane->hWnd;
 
 	return TRUE;
 }
@@ -736,11 +780,11 @@ void DoResizeWindow(HWND hWnd) {
 	paneWidth -= 8;
 	paneHeight -= 2;
 
-	SetWindowPos(leftPane.hWnd, NULL, 4, 0, paneWidth, paneHeight, NULL);
-	SetWindowPos(rightPane.hWnd, NULL, paneWidth + 12, 0, paneWidth, paneHeight, NULL);
+	SetWindowPos(leftPane->hWnd, NULL, 4, 0, paneWidth, paneHeight, NULL);
+	SetWindowPos(rightPane->hWnd, NULL, paneWidth + 12, 0, paneWidth, paneHeight, NULL);
 
-	leftPane.Resize( paneWidth, paneHeight );
-	rightPane.Resize( paneWidth, paneHeight );
+	leftPane->Resize( paneWidth, paneHeight );
+	rightPane->Resize( paneWidth, paneHeight );
 
 	pStatusBar->NotifyWindowSizeChanged();
 
@@ -788,11 +832,11 @@ void DoExternalDrop( HWND hDroppedWindow, void *pPaths )
 	/* Prepare some vars for the AppAction */
 	AppAction action;
 
-	CFileViewer *pane = &leftPane;
+	CFileViewer *pane = leftPane;
 
-	if ( hDroppedWindow == rightPane.hWnd )
+	if ( hDroppedWindow == rightPane->hWnd )
 	{
-		pane = &rightPane;
+		pane = rightPane;
 	}
 
 	action.Action = AA_COPY;
@@ -923,19 +967,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_UPDATESTATUS:
 		if (wParam == (WPARAM) &leftPane)
 		{
-			pStatusBar->SetPanelText( PANELID_LEFT_STATUS, FSPlugins.FindFont( leftPane.FS->GetEncoding(), 0 ), (BYTE *) lParam );
+			pStatusBar->SetPanelText( PANELID_LEFT_STATUS, FSPlugins.FindFont( leftPane->FS->GetEncoding(), 0 ), (BYTE *) lParam );
 		}
 		else
 		{
-			pStatusBar->SetPanelText( PANELID_RIGHT_STATUS, FSPlugins.FindFont( rightPane.FS->GetEncoding(), 1 ), (BYTE *) lParam );
+			pStatusBar->SetPanelText( PANELID_RIGHT_STATUS, FSPlugins.FindFont( rightPane->FS->GetEncoding(), 1 ), (BYTE *) lParam );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_CREATE:
 		{
-			leftPane.Create(hWnd, hInst, 0, 480, 640);
-			rightPane.Create(hWnd, hInst, 480, 520, 640);
+			leftPane->Create(hWnd, hInst, 0, 480, 640);
+			rightPane->Create(hWnd, hInst, 480, 520, 640);
 
 			CreateStatusBar(hWnd);
 
@@ -970,7 +1014,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			CFileViewer *pane = (CFileViewer *) wParam;
 
-			if ( pane == &rightPane )
+			if ( pane == rightPane )
 			{
 				Panel  = PANELID_RIGHT_FONT;
 				SPanel = PANELID_RIGHT_STATUS;
@@ -990,13 +1034,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_ROOTFS:
 		{
-			if (wParam == (WPARAM) leftPane.hWnd)
+			if (wParam == (WPARAM) leftPane->hWnd)
 			{
-				DoAction( ActionDoRoot, &leftPane, &leftFS, &leftTitles, lParam );
+				DoAction( ActionDoRoot, leftPane, &leftFS, &leftTitles, lParam );
 			} 
-			else if (wParam == (WPARAM) rightPane.hWnd)
+			else if (wParam == (WPARAM) rightPane->hWnd)
 			{
-				DoAction( ActionDoRoot, &rightPane, &rightFS, &rightTitles, lParam );
+				DoAction( ActionDoRoot, rightPane, &rightFS, &rightTitles, lParam );
 			}
 		}
 
@@ -1004,13 +1048,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_REFRESH_PANE:
 		{
-			if (wParam == (WPARAM) leftPane.hWnd)
+			if (wParam == (WPARAM) leftPane->hWnd)
 			{
-				DoAction( ActionDoRefresh, &leftPane, &leftFS, &leftTitles, lParam );
+				DoAction( ActionDoRefresh, leftPane, &leftFS, &leftTitles, lParam );
 			} 
-			else if (wParam == (WPARAM) rightPane.hWnd)
+			else if (wParam == (WPARAM) rightPane->hWnd)
 			{
-				DoAction( ActionDoRefresh, &rightPane, &rightFS, &rightTitles, lParam );
+				DoAction( ActionDoRefresh, rightPane, &rightFS, &rightTitles, lParam );
 			}
 		}
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -1028,20 +1072,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 				if ( r == GC_ResultRefresh )
 				{
-					DoAction( ActionDoRefresh, &leftPane, &leftFS, &leftTitles, lParam );
-					DoAction( ActionDoRefresh, &rightPane, &leftFS, &leftTitles, lParam );
+					DoAction( ActionDoRefresh, leftPane, &leftFS, &leftTitles, lParam );
+					DoAction( ActionDoRefresh, rightPane, &leftFS, &leftTitles, lParam );
 				}
 
 				if ( r == GC_ResultRootRefresh )
 				{
-					if ( leftPane.FS->FSID == FS_Root )
+					if ( leftPane->FS->FSID == FS_Root )
 					{
-						DoAction( ActionDoRefresh, &leftPane, &leftFS, &leftTitles, lParam );
+						DoAction( ActionDoRefresh, leftPane, &leftFS, &leftTitles, lParam );
 					}
 
-					if ( rightPane.FS->FSID == FS_Root )
+					if ( rightPane->FS->FSID == FS_Root )
 					{
-						DoAction( ActionDoRefresh, &rightPane, &leftFS, &leftTitles, lParam );
+						DoAction( ActionDoRefresh, rightPane, &leftFS, &leftTitles, lParam );
 					}
 				}
 			}
@@ -1123,8 +1167,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					(*iStack)->Refresh();
 				}
 
-				leftPane.Updated = true;
-				leftPane.Redraw();
+				leftPane->Updated = true;
+				leftPane->Redraw();
 
 				for ( iStack = rightFS.begin(); iStack != rightFS.end(); iStack++ )
 				{
@@ -1133,8 +1177,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					(*iStack)->Refresh();
 				}
 
-				rightPane.Updated = true;
-				rightPane.Redraw();
+				rightPane->Updated = true;
+				rightPane->Redraw();
 
 				HMENU hMainMenu = GetMenu( hWnd );
 
@@ -1157,8 +1201,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					(*iStack)->Refresh();
 				}
 
-				leftPane.Updated = true;
-				leftPane.Redraw();
+				leftPane->Updated = true;
+				leftPane->Redraw();
 
 				for ( iStack = rightFS.begin(); iStack != rightFS.end(); iStack++ )
 				{
@@ -1167,8 +1211,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					(*iStack)->Refresh();
 				}
 
-				rightPane.Updated = true;
-				rightPane.Redraw();
+				rightPane->Updated = true;
+				rightPane->Redraw();
 
 				HMENU hMainMenu = GetMenu( hWnd );
 
@@ -1264,13 +1308,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_DOENTERAS:
 		{
-			if (wParam == (WPARAM) leftPane.hWnd)
+			if (wParam == (WPARAM) leftPane->hWnd)
 			{
-				DoAction( ActionDoEnterAs, &leftPane, &leftFS, &leftTitles, 0, lParam );
+				DoAction( ActionDoEnterAs, leftPane, &leftFS, &leftTitles, 0, lParam );
 			} 
-			else if (wParam == (WPARAM) rightPane.hWnd)
+			else if (wParam == (WPARAM) rightPane->hWnd)
 			{
-				DoAction( ActionDoEnterAs, &rightPane, &rightFS, &rightTitles, 0, lParam );
+				DoAction( ActionDoEnterAs, rightPane, &rightFS, &rightTitles, 0, lParam );
 			}
 		}
 
@@ -1280,13 +1324,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			OutputDebugString(L"Double click\n");
 
-			if (wParam == (WPARAM) leftPane.hWnd)
+			if (wParam == (WPARAM) leftPane->hWnd)
 			{
-				DoAction( ActionDoEnter, &leftPane, &leftFS, &leftTitles, lParam );
+				DoAction( ActionDoEnter, leftPane, &leftFS, &leftTitles, lParam );
 			} 
-			else if (wParam == (WPARAM) rightPane.hWnd)
+			else if (wParam == (WPARAM) rightPane->hWnd)
 			{
-				DoAction( ActionDoEnter, &rightPane, &rightFS, &rightTitles, lParam );
+				DoAction( ActionDoEnter, rightPane, &rightFS, &rightTitles, lParam );
 			}
 		}
 
@@ -1294,13 +1338,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_COPYOBJECT:
 		{
-			CFileViewer *pane   = &leftPane;
-			CFileViewer *target = &rightPane;
+			CFileViewer *pane   = leftPane;
+			CFileViewer *target = rightPane;
 
-			if ( wParam == (WPARAM) rightPane.hWnd )
+			if ( wParam == (WPARAM) rightPane->hWnd )
 			{
-				pane   = &rightPane;
-				target = &leftPane;
+				pane   = rightPane;
+				target = leftPane;
 			}
 
 			AppAction Action;
@@ -1320,13 +1364,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_INSTALLOBJECT:
 		{
-			CFileViewer *pane   = &leftPane;
-			CFileViewer *target = &rightPane;
+			CFileViewer *pane   = leftPane;
+			CFileViewer *target = rightPane;
 
-			if ( wParam == (WPARAM) rightPane.hWnd )
+			if ( wParam == (WPARAM) rightPane->hWnd )
 			{
-				pane   = &rightPane;
-				target = &leftPane;
+				pane   = rightPane;
+				target = leftPane;
 			}
 
 			if ( ! (target->FS->Flags & FSF_Supports_Dirs ) )
@@ -1352,37 +1396,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_GOTOPARENT:
-		if (wParam == (WPARAM) leftPane.hWnd)
+		if (wParam == (WPARAM) leftPane->hWnd)
 		{
-			DoAction( ActionDoBack, &leftPane, &leftFS, &leftTitles, 0 );
+			DoAction( ActionDoBack, leftPane, &leftFS, &leftTitles, 0 );
 		} 
-		else if (wParam == (WPARAM) rightPane.hWnd)
+		else if (wParam == (WPARAM) rightPane->hWnd)
 		{
-			DoAction( ActionDoBack, &rightPane, &rightFS, &rightTitles, 0 );
+			DoAction( ActionDoBack, rightPane, &rightFS, &rightTitles, 0 );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_RENAME_FILE:
-		if (wParam == (WPARAM) leftPane.hWnd)
+		if (wParam == (WPARAM) leftPane->hWnd)
 		{
-			DoAction( ActionDoRename, &leftPane, &leftFS, &leftTitles, 0 );
+			DoAction( ActionDoRename, leftPane, &leftFS, &leftTitles, 0 );
 		} 
-		else if (wParam == (WPARAM) rightPane.hWnd)
+		else if (wParam == (WPARAM) rightPane->hWnd)
 		{
-			DoAction( ActionDoRename, &rightPane, &rightFS, &rightTitles, 0 );
+			DoAction( ActionDoRename, rightPane, &rightFS, &rightTitles, 0 );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_NEW_DIR:
-		if (wParam == (WPARAM) leftPane.hWnd)
+		if (wParam == (WPARAM) leftPane->hWnd)
 		{
-			DoAction( ActionDoNewDir, &leftPane, &leftFS, &leftTitles, 0 );
+			DoAction( ActionDoNewDir, leftPane, &leftFS, &leftTitles, 0 );
 		} 
-		else if (wParam == (WPARAM) rightPane.hWnd)
+		else if (wParam == (WPARAM) rightPane->hWnd)
 		{
-			DoAction( ActionDoNewDir, &rightPane, &rightFS, &rightTitles, 0 );
+			DoAction( ActionDoNewDir, rightPane, &rightFS, &rightTitles, 0 );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -1395,11 +1439,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_FVSTARTDRAG:
 		if ( DragSource == NULL )
 		{
-			leftPane.StartDragging();
-			rightPane.StartDragging();
+			leftPane->StartDragging();
+			rightPane->StartDragging();
 
 			char smeg[256];
-			sprintf(smeg, "Start drag from %08X, left is %08X, right is %08X\n", wParam, leftPane.hWnd, rightPane.hWnd );
+			sprintf(smeg, "Start drag from %08X, left is %08X, right is %08X\n", wParam, leftPane->hWnd, rightPane->hWnd );
 			OutputDebugStringA( smeg );
 
 			SetCursor(LoadCursor(hInst, MAKEINTRESOURCE(IDI_SINGLEFILE)));
@@ -1418,11 +1462,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		Tracking = false;
 		OutputDebugStringA( "Left!\n" );
 	case WM_FVENDDRAG:
-		leftPane.EndDragging();
-		rightPane.EndDragging();
+		leftPane->EndDragging();
+		rightPane->EndDragging();
 
 		char smeg[256];
-		sprintf(smeg, "End drag from %08X, left is %08X, right is %08X\n", wParam, leftPane.hWnd, rightPane.hWnd );
+		sprintf(smeg, "End drag from %08X, left is %08X, right is %08X\n", wParam, leftPane->hWnd, rightPane->hWnd );
 		OutputDebugStringA( smeg );
 
 		SetCursor(LoadCursor(NULL, IDC_ARROW));
@@ -1441,8 +1485,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return DefWindowProc(hWnd, message, wParam, lParam);
 
 	case WM_SETDRAGTYPE:
-		leftPane.SetDragType(wParam);
-		rightPane.SetDragType(wParam);
+		leftPane->SetDragType(wParam);
+		rightPane->SetDragType(wParam);
 
 		return DefWindowProc(hWnd, message, wParam, lParam);
 

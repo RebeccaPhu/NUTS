@@ -6,6 +6,14 @@
 
 #include <vector>
 
+#if 1
+#define DS_RETAIN( x )  char err[256]; sprintf( err, "DS %016X Retain  %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( err ); x->Retain()
+#define DS_RELEASE( x ) char err[256]; sprintf( err, "DS %016X Release %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( err ); x->Release()
+#else
+#define DS_RETAIN( x )  x->Retain();
+#define DS_RELEASE( x ) x->Release();
+#endif
+
 typedef struct _DS_TrackDef {
 	DWORD Sectors;
 	DWORD Sector1;

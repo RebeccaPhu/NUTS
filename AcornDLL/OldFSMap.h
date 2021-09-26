@@ -10,7 +10,7 @@ public:
 	OldFSMap(DataSource *pDataSource) {
 		pSource	= pDataSource;
 
-		pSource->Retain();
+		DS_RETAIN( pSource );
 
 		FloppyFormat = false;
 		UseDFormat   = false;
@@ -18,7 +18,7 @@ public:
 
 	~OldFSMap( void )
 	{
-		pSource->Release();
+		DS_RELEASE( pSource );
 	}
 
 	int	GetStartSector(FreeSpace &space);

@@ -10,7 +10,7 @@ public:
 	{
 		pSource = pDataSource;
 
-		pSource->Retain();
+		DS_RETAIN( pSource );
 
 		pBlocks   = nullptr;
 		NumBlocks = 0;
@@ -18,7 +18,7 @@ public:
 
 	~CPMBlockMap(void)
 	{
-		pSource->Release();
+		DS_RELEASE( pSource );
 
 		if ( pBlocks != nullptr )
 		{

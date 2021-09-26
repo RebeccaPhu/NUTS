@@ -10,7 +10,7 @@ public:
 	NewFSMap(DataSource *pDataSource) {
 		pSource	= pDataSource;
 
-		pSource->Retain();
+		DS_RETAIN( pSource );
 
 		RootLoc = 0;
 
@@ -22,7 +22,7 @@ public:
 
 	~NewFSMap( void )
 	{
-		pSource->Release();
+		DS_RELEASE( pSource );
 	}
 
 	int	ReadFSMap();

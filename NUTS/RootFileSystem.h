@@ -21,6 +21,7 @@ public:
 	}
 
 	~RootFileSystem(void) {
+		delete pRootDirectory;
 	}
 
 	bool	IsRoot() {

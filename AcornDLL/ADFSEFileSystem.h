@@ -50,6 +50,11 @@ public:
 	}
 
 	~ADFSEFileSystem(void) {
+		if ( pDirectory != nullptr )
+		{
+			FreeAppIcons( pDirectory );
+		}
+
 		if ( pEDirectory != nullptr )
 		{
 			delete pEDirectory;

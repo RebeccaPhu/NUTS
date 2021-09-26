@@ -27,6 +27,7 @@ public:
 
 	~T64FileSystem(void)
 	{
+		delete pDir;
 	}
 
 public:

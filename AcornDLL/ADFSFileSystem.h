@@ -82,6 +82,11 @@ public:
 	}
 
 	~ADFSFileSystem(void) {
+		if ( pDirectory != nullptr )
+		{
+			FreeAppIcons( pDirectory );
+		}
+
 		if ( pADFSDirectory != nullptr )
 		{
 			delete pADFSDirectory;

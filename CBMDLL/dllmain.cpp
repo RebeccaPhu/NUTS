@@ -4,6 +4,13 @@
 #include "CBMDLL.h"
 #include "OpenCBMPlugin.h"
 
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
+
 BYTE *sig = (BYTE *) "NUTS Plugin Signature";
 
 BOOL APIENTRY DllMain( HMODULE hModule,

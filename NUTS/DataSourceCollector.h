@@ -17,6 +17,33 @@ public:
 
 	~DataSourceCollector(void)
 	{
+		int fail = 0;
+
+		while ( 1 )
+		{
+			size_t c = sources.size();
+
+			ReleaseSources();
+			
+			if ( sources.size() == 0 )
+			{
+				break;
+			}
+
+			if ( sources.size() == c )
+			{
+				fail++;
+			}
+
+			if( fail == 5 )
+			{
+#ifdef _DEBUG
+				MessageBoxA( NULL, "DATA SOURCES DID NOT UNLOAD", "DATA SOURCES DID NOT UNLOAD", MB_ICONERROR | MB_OK );
+#endif
+				abort();
+			}
+		}
+
 		DeleteCriticalSection( &StupidLock );
 	}
 
@@ -31,7 +58,7 @@ public:
 
 	void ReleaseSources( void )
 	{
-		/* Nobody cares MS */
+		/* Nobody cares, Microsoft */
 #pragma warning( disable : 4996 )
 
 #ifdef _DEBUG

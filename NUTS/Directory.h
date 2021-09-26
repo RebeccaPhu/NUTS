@@ -11,11 +11,19 @@ public:
 	Directory(DataSource *pDataSource) {
 		pSource	= pDataSource;
 		
-		if ( pSource != nullptr ) { pSource->Retain(); }
+		if ( pSource != nullptr )
+		{
+			DS_RETAIN( pSource );
+		}
 	}
 
 	virtual ~Directory(void) {
-		if ( pSource != nullptr ) { pSource->Release(); }
+		if ( pSource != nullptr )
+		{
+			DS_RELEASE( pSource );
+		}
+
+		Files.clear();
 	}
 
 	virtual	int	ReadDirectory(void) = 0;

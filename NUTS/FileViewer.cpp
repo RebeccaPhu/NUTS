@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+
 #include "FileViewer.h"
 #include "FormatWizard.h"
 #include "FontBitmap.h"
@@ -14,6 +15,7 @@
 #include <CommCtrl.h>
 
 #include <WindowsX.h>
+
 
 std::map<HWND, CFileViewer *> CFileViewer::viewers;
 
@@ -161,6 +163,16 @@ CFileViewer::~CFileViewer(void) {
 	}
 
 	FreeLabels();
+
+	TheseFiles.clear();
+	TheseIcons.clear();
+
+	std::vector<FontBitmap *>::iterator iFont;
+
+	for ( iFont = FileLabels.begin(); iFont != FileLabels.end(); iFont++ ) { delete *iFont; }
+	for ( iFont = FileDescs.begin(); iFont != FileDescs.end(); iFont++ ) { delete *iFont; }
+
+	TitleStack.clear();
 
 	DeleteCriticalSection( &CacheLock );
 }
@@ -827,7 +839,7 @@ void CFileViewer::DrawBasicLayout() {
 
 	if ( IsSearching )
 	{
-		FontBitmap TitleString( FONTID_PC437, (BYTE *) "Loading...", (BYTE) ( ( rect.right - rect.left ) / 8 ), false, false );
+		FontBitmap TitleString( FONTID_PC437, (BYTE *) "Loading...", (WORD) min( ( ( rect.right - rect.left ) / 8 ), 10 ), false, false );
 
 		TitleString.SetButtonColor( GetRValue( BColour ), GetGValue( BColour ), GetBValue( BColour ) );
 
@@ -1413,6 +1425,8 @@ void CFileViewer::Update() {
 		TheseFiles.clear();
 		TheseIcons.clear();
 	}
+
+	FreeLabels();
 
 	FileEntries	   = TheseFiles.size();
 	FileSelections = std::vector<bool>( FileEntries, false );

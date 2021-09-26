@@ -458,7 +458,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <PreprocessorDefinitions>WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CRTDBG_MAP_ALLOC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Win32_LIB_Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Win32_LIB_Debug\zlib.pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeader>

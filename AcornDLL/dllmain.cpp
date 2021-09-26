@@ -4,6 +4,13 @@
 #include "AcornDLL.h"
 #include "../NUTS/libfuncs.h"
 
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif
+
+
 BYTE *sig = (BYTE *) "NUTS Plugin Signature";
 
 BOOL APIENTRY DllMain( HMODULE hModule,

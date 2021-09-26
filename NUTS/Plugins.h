@@ -88,6 +88,8 @@ public:
 
 	std::wstring GetCharacterDescription( DWORD FontID, BYTE Char );
 
+	void UnloadPlugins();
+
 private:
 	NUTSProviderList  Providers;
 	FSDescriptorList  FSDescriptors;

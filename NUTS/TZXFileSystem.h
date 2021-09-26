@@ -34,6 +34,7 @@ public:
 
 	~TZXFileSystem(void)
 	{
+		delete pDir;
 	}
 
 	virtual FSHint Offer( BYTE *Extension );

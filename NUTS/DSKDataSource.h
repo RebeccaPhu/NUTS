@@ -57,7 +57,7 @@ public:
 	{
 		pSource = pSrc;
 
-		pSource->Retain();
+		DS_RETAIN( pSource );
 
 		ReadDiskData();
 
@@ -66,7 +66,7 @@ public:
 
 	~DSKDataSource(void)
 	{
-		pSource->Release();
+		DS_RELEASE( pSource );
 	}
 
 public:

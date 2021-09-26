@@ -17,6 +17,7 @@ public:
 	};
 
 	~RootDirectory(void) {
+		HookPairs.clear();
 	}
 
 	int	ReadDirectory(void);

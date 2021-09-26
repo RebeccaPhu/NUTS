@@ -13,11 +13,13 @@
 
 #include <commctrl.h>
 
-extern	CFileViewer	leftPane,rightPane;
+//extern  CFileViewer	*leftPane;
+//extern  CFileViewer *rightPane;
+
 extern  std::vector<FileSystem *> leftFS;
 extern  std::vector<FileSystem *> rightFS;
 
-extern	HWND	hStatusWnd;
+extern  HWND hStatusWnd;
 
 #define EXTRA_MENU_BASE     43900
 #define EXTRA_MENU_END      ( EXTRA_MENU_BASE + 199 )

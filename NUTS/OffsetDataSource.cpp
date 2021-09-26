@@ -10,13 +10,13 @@ OffsetDataSource::OffsetDataSource( DWORD Offset, DataSource *pSource )
 
 	PhysicalDiskSize = pSrc->PhysicalDiskSize;
 
-	pSrc->Retain();
+	DS_RETAIN( pSrc );
 }
 
 
 OffsetDataSource::~OffsetDataSource(void)
 {
-	pSrc->Release();
+	DS_RELEASE( pSrc );
 }
 
 int	OffsetDataSource::ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize )

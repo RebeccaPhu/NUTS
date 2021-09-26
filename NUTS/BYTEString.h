@@ -16,6 +16,8 @@ public:
 
 	BYTEString( const size_t sz )
 	{
+		if ( sz == 0 ) { bytes = 0; pMem = empty; empty[ 0 ] = 0; return; }
+
 		bytes = sz;
 
 		pMem  = ( BYTE * ) malloc( sz );
@@ -56,6 +58,8 @@ public:
 
 	BYTEString( const BYTEString &source )
 	{
+		if ( source.bytes == 0 ) { bytes = 0; pMem = empty; empty[ 0 ] = 0; return; }
+
 		pMem = (BYTE *) malloc( source.bytes );
 
 		memcpy( pMem, source.pMem, source.bytes );
@@ -93,6 +97,8 @@ public:
 		{
 			free( (void *) pMem );
 		}
+
+		if ( source.bytes == 0 ) { bytes = 0; pMem = empty; empty[ 0 ] = 0; return *this; }
 
 		pMem = (BYTE *) malloc( source.bytes );
 

@@ -17,6 +17,8 @@
 
 #include <string>
 
+
+
 extern DataSourceCollector *pCollector;
 
 CPlugins FSPlugins;
@@ -373,6 +375,10 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 		}
 
 		iter++;
+
+		delete pFS;
+
+		pCollector->ReleaseSources();
 	}
 
 	FSHint hint = { 0, 0 };
@@ -394,6 +400,8 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 	}
 
 	hints.push_back( hint );
+
+	DataSourceCollector *px = pCollector;
 
 	return hints;
 }
@@ -500,6 +508,10 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 					if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 					{
 						pFS = (FileSystem *) cmd.OutParams[ 0 ].pPtr;
+
+						OutputDebugStringA( "Created " );
+						OutputDebugString( FSName( FSID ).c_str() );
+						OutputDebugStringA( "\r\n" );
 					}
 				}
 
@@ -568,7 +580,7 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 
 		iter++;
 	}
-	
+
 	return nullptr;
 }
 
@@ -1096,4 +1108,29 @@ std::wstring CPlugins::GetCharacterDescription( DWORD FontID, BYTE Char )
 	}
 
 	return desc;
+}
+
+void CPlugins::UnloadPlugins()
+{
+	PluginList::iterator iPlugin;
+
+	for ( iPlugin = Plugins.begin(); iPlugin != Plugins.end(); iPlugin++ )
+	{
+		FreeLibrary( iPlugin->Handle );
+	}
+
+	Providers.clear();
+	FSDescriptors.clear();
+	FontList.clear();
+	FontNames.clear();
+	FontMap.clear();
+	ImageOffsets.clear();
+	Plugins.clear();
+	Translators.clear();
+	RootHooks.clear();
+	RootCommands.clear();
+
+	free( pPC437Font );
+
+	pPC437Font = nullptr;
 }

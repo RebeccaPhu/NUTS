@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+
 #include "ADFSCommon.h"
 
 #include "Defs.h"

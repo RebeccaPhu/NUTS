@@ -20,6 +20,7 @@ WindowsFileSystem::WindowsFileSystem( std::wstring rootDrive ) : FileSystem(NULL
 }
 
 WindowsFileSystem::~WindowsFileSystem(void) {
+	delete pWindowsDirectory;
 }
 
 int	WindowsFileSystem::ReadFile(DWORD FileID, CTempFile &store)

@@ -14,6 +14,8 @@ public:
 		AmstradPB.Encoding = ENCODING_CPC;
 		tzxpb.Encoding     = ENCODING_CPC;
 
+		delete pDir;
+
 		pAmstradDir = new AmstradCDTDirectory( pDataSource, AmstradPB );
 		pDir        = (TZXDirectory *) pAmstradDir;
 		pDirectory  = (Directory *) pDir;

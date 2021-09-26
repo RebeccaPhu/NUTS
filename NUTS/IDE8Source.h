@@ -8,7 +8,7 @@ public:
 
 		if ( pSource != nullptr )
 		{
-			pSource->Retain();
+			DS_RETAIN( pSource );
 		}
 
 		PhysicalDiskSize	= pSource->PhysicalDiskSize /2;
@@ -17,7 +17,7 @@ public:
 	virtual ~IDE8Source(void) {
 		if ( pSource != nullptr )
 		{
-			pSource->Release();
+			DS_RELEASE( pSource );
 		}
 	}
 

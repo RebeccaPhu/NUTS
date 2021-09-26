@@ -72,6 +72,7 @@ typedef std::map<BYTE, AttrWnd>::iterator AttrWnd_iter;
 
 FileSystem *pHostFS;
 FileSystem *pTargetFS;
+FileSystem *pLoadedFS = nullptr;
 EncodingEdit *pFilenameEdit = nullptr;
 
 NativeFile *pFSPropsFile;
@@ -1837,6 +1838,9 @@ int PropsPage_Handler( AppAction Action )
 			if ( pTargetFS != nullptr )
 			{
 				pTargetFS->Init();
+
+				// To free later
+				pLoadedFS = pTargetFS;
 			}
 		}
 	}
@@ -2077,6 +2081,14 @@ int PropsPage_Handler( AppAction Action )
 	Combos.clear();
 	
 	RunButtons.clear();
+
+	// Delete any extra-loaded FS
+	if ( pLoadedFS != nullptr )
+	{
+		delete pLoadedFS;
+	}
+
+	pLoadedFS = nullptr;
 
 	return 0;
 }

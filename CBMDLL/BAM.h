@@ -15,7 +15,7 @@ public:
 	{
 		pSource = pSrc;
 
-		pSource->Retain();
+		DS_RETAIN( pSource );
 
 		DiskName[ 0 ] = 0;
 		DiskID[ 0 ]  = '0';
@@ -32,7 +32,7 @@ public:
 
 	~BAM(void)
 	{
-		pSource->Release();
+		DS_RELEASE( pSource );
 	}
 
 public:

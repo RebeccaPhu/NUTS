@@ -35,7 +35,10 @@ public:
 
 		pSource	= pDataSource;
 
-		if ( pSource != nullptr ) { pSource->Retain(); }
+		if ( pSource != nullptr )
+		{
+			DS_RETAIN( pSource );
+		}
 
 		FSID = FS_Null;
 
@@ -62,7 +65,10 @@ public:
 
 		free( pBlockMap );
 
-		if ( pSource != nullptr ) { pSource->Release(); }
+		if ( pSource != nullptr )
+		{
+			DS_RELEASE( pSource );
+		}
 	}
 
 	virtual int ReadFile(DWORD FileID, CTempFile &store) {
