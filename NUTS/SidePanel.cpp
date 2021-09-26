@@ -64,6 +64,8 @@ SidePanel::~SidePanel(void)
 		delete *item;
 	}
 
+	items.shrink_to_fit();
+
 	NixObject( hCorner );
 
 	if ( hOldTopic != NULL )
@@ -73,6 +75,8 @@ SidePanel::~SidePanel(void)
 
 	NixObject( hTopic );
 	NixObject( hTopicFont );
+
+	SidePanel::panels.erase( hWnd );
 
 	NixWindow( hWnd );
 

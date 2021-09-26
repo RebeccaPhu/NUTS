@@ -58,6 +58,8 @@ SidebarItem::~SidebarItem(void)
 	NixObject( ClickBrush );
 	NixObject( FocusPen );
 
+	SidebarItem::items.erase( hWnd );
+
 	NixWindow( hWnd );
 }
 

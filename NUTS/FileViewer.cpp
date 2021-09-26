@@ -140,6 +140,9 @@ CFileViewer::CFileViewer(void) {
 CFileViewer::~CFileViewer(void) {
 	NixWindow( hProgress );
 	NixWindow( hScrollBar );
+
+	CFileViewer::viewers.erase( hWnd );
+
 	NixWindow( hWnd );
 
 	if ( hViewerBrush != NULL )
@@ -590,15 +593,6 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 			}
 
 			return DefWindowProc(hSourceWnd, message, wParam, lParam);
-
-		case WM_SCCLOSED:
-			{
-				CSCREENContentViewer *pClass = (CSCREENContentViewer *) lParam;
-
-				delete pClass;
-			}
-
-			return 0;
 
 		case WM_VSCROLL:
 			DoScroll(wParam, lParam);

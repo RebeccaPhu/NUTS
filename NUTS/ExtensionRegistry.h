@@ -17,6 +17,7 @@ private:
 public:
 	void RegisterExtension( std::wstring Ext, FileType Type, FileType Icon );
 	ExtDef GetTypes( std::wstring Ext );
+	void UnloadExtensions(void);
 };
 
 

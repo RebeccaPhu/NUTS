@@ -446,9 +446,7 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 		/* Nix this from the window map so we don't get further messages */
 		viewers.erase( hWnd );
 
-		DestroyWindows();
-
-		::PostMessage( ParentWnd, WM_SCCLOSED, 0, (LPARAM) this );
+		delete this;
 	}
 
 	return DefWindowProc( hWnd, message, wParam, lParam);

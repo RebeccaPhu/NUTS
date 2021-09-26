@@ -107,4 +107,14 @@ HBITMAP	CBitmapCache::GetBitmap(const DWORD ID) {
 	return bitmaps[ID];
 }
 
+void CBitmapCache::Unload( void )
+{
+	std::map<DWORD, HBITMAP>::iterator iBitmap;
 
+	for ( iBitmap = bitmaps.begin(); iBitmap != bitmaps.end(); iBitmap++ )
+	{
+		DeleteObject( iBitmap->second );
+	}
+
+	bitmaps.clear();
+}

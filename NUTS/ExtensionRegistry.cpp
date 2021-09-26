@@ -41,3 +41,8 @@ ExtDef ExtensionRegistry::GetTypes( std::wstring Ext )
 
 	return Mappings[ ExtUC ];
 }
+
+void ExtensionRegistry::UnloadExtensions(void)
+{
+	Mappings.clear();
+}

@@ -108,6 +108,9 @@ void StopFSActions( void )
 	CloseHandle( hActionEvent );
 
 	DeleteCriticalSection( &FSActionLock );
+
+	ActionQueue.clear();
+	ActionQueue.shrink_to_fit();
 }
 
 void UnloadStacks( void )
@@ -130,8 +133,18 @@ void UnloadStacks( void )
 		rightFS.pop_back();
 	}
 
+	leftFS.shrink_to_fit();
+	rightFS.shrink_to_fit();
+
 	leftTitles.clear();
+	leftTitles.shrink_to_fit();
 	rightTitles.clear();
+	rightTitles.shrink_to_fit();
+
+	RootCommandMap.clear();
+
+	BitmapCache.Unload();
+	ExtReg.UnloadExtensions();
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
@@ -139,6 +152,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
+//	_CrtSetBreakAlloc( 1437 );
 	pGlobalError = new NUTSError( 0, L"" );
 
 	UNREFERENCED_PARAMETER(hPrevInstance);
@@ -191,12 +205,15 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	delete leftPane;
 	delete rightPane;
+	delete pStatusBar;
 
 	UnloadStacks();
 
 	delete pCollector;
 
 	FSPlugins.UnloadPlugins();
+
+	delete pGlobalError;
 
 #ifdef _DEBUG
 	_CrtDumpMemoryLeaks();

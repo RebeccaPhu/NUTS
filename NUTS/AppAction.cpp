@@ -121,4 +121,7 @@ void StopAppActions( void )
 	CloseHandle(hActionTrigger);
 
 	DeleteCriticalSection(&ActionLock);
+
+	AppActions.clear();
+	AppActions.shrink_to_fit();
 }

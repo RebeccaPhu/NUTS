@@ -61,6 +61,10 @@ EncodingStatusBar::EncodingStatusBar( HWND hParent )
 
 EncodingStatusBar::~EncodingStatusBar(void)
 {
+	Panels.clear();
+
+	StatusBars.erase( hWnd );
+
 	NixWindow( hWnd );
 }
 

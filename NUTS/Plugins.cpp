@@ -1120,15 +1120,24 @@ void CPlugins::UnloadPlugins()
 	}
 
 	Providers.clear();
+	Providers.shrink_to_fit();
 	FSDescriptors.clear();
+	FSDescriptors.shrink_to_fit();
 	FontList.clear();
 	FontNames.clear();
 	FontMap.clear();
 	ImageOffsets.clear();
 	Plugins.clear();
+	Plugins.shrink_to_fit();
 	Translators.clear();
+	Translators.shrink_to_fit();
 	RootHooks.clear();
+	RootHooks.shrink_to_fit();
 	RootCommands.clear();
+	RootCommands.shrink_to_fit();
+	EncodingFontMap.clear();
+	EncodingFontSelectors[0].clear();
+	EncodingFontSelectors[1].clear();
 
 	free( pPC437Font );
 

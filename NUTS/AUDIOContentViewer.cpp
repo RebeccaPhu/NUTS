@@ -261,6 +261,8 @@ LRESULT	AUDIOContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 	switch (message )
 	{
 	case WM_CLOSE:
+		viewers.erase( hWnd );
+
 		delete this;
 
 		break;
