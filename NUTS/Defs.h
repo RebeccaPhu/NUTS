@@ -488,8 +488,8 @@ typedef struct _TapeIndex {
 
 
 
-#define IDM_MOVEUP    44001
-#define IDM_MOVEDOWN  44002
-#define IDM_ROOTFS    44003
-#define IDM_FONTSW    44004
-#define IDM_PARENT    44005
+#define IDM_MOVEUP    54001
+#define IDM_MOVEDOWN  54002
+#define IDM_ROOTFS    54003
+#define IDM_FONTSW    54004
+#define IDM_PARENT    54005
