@@ -623,7 +623,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 				pTargetPane->Update();
 			}
 			
-			if ( ( CurrentAction.Action == AA_DELETE ) || ( CurrentAction.Action == AA_SET_PROPS ) )
+			// Install cannot change the source pane, because the source is an FS loaded in isolation - the source pane knows nothing about it.
+			if ( ( CurrentAction.Action == AA_DELETE ) || ( CurrentAction.Action == AA_SET_PROPS ) || ( CurrentAction.Action == AA_COPY ) )
 			{
 				if ( pSourcePane != nullptr )
 				{
@@ -1080,7 +1081,7 @@ void DrawFilename( HWND hWnd, NativeFile *pFile )
 
 			rsprintf( HuntingText, "Found %d objects...", HuntCount );
 		
-			FontBitmap HuntText( FONTID_PC437, HuntingText, 63, false, false );
+			FontBitmap HuntText( FONTID_PC437, HuntingText, rstrnlen( HuntingText, 64 ), false, false );
 
 			HuntText.DrawText( hDC, FNLeft, FNTop, DT_LEFT | DT_TOP );
 		}

@@ -90,7 +90,7 @@ CFileViewer::CFileViewer(void) {
 	SelectionAtMouseDown = false;
 
 	MenuFSMap.clear();
-	ControlButtons.clear();
+//	ControlButtons.clear();
 	FileSelections.clear();
 	FileLabels.clear();
 	FileDescs.clear();
@@ -768,7 +768,7 @@ void CFileViewer::Resize(int w, int h)
 	RECT ThisRect;
 
 	GetCliRect( ThisRect );
-
+/*
 	DWORD s = ( ThisRect.right + 16 ) - ThisRect.left;
 
 	s -= ControlButtons.size() * 24;
@@ -782,7 +782,7 @@ void CFileViewer::Resize(int w, int h)
 
 		s+= 24;
 	}
-
+*/
 	ThisRect.right -= 16;
 	ThisRect.top   += 24;
 
@@ -1232,8 +1232,8 @@ void CFileViewer::Redraw() {
 		CurrentPen = ( CurrentPen + 1 ) % 3;
 	}
 
-	BitBlt(hDC, 128,24,KnownX-128,KnownY, viewDC,128,24,SRCCOPY);
-	BitBlt(hDC, 0,0,(KnownX - (ControlButtons.size() * 21)) + 15,24, viewDC, 0, 0, SRCCOPY);
+	BitBlt(hDC, 128, 24, KnownX-128,  KnownY, viewDC, 128, 24, SRCCOPY);
+	BitBlt(hDC, 0,   0,  KnownX + 15, 24,     viewDC, 0,   0,  SRCCOPY);
 
 	ReleaseDC(hWnd, hDC);
 
@@ -1430,6 +1430,8 @@ void CFileViewer::Update() {
 	Updated = true;
 
 	LeaveCriticalSection( &CacheLock );
+
+	ReCalculateTitleStack();
 
 	SideBar.SetTopic( FS->TopicIcon, FSPlugins.FSName( FS->FSID ) );
 
@@ -1922,8 +1924,6 @@ void CFileViewer::DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam )
 void CFileViewer::SetTitleStack( std::vector<TitleComponent> NewTitleStack )
 {
 	TitleStack = NewTitleStack;
-
-	Redraw();
 }
 
 std::vector<TitleComponent> CFileViewer::GetTitleStack( void )
@@ -2811,7 +2811,7 @@ void CFileViewer::DoStatusBar( void )
 
 	BYTE *pStatus = status;
 	
-	if ( FS != nullptr )
+	if ( ( FS != nullptr ) && ( !IsSearching ) )
 	{
 		pStatus = FS->GetStatusString( GetSelectedIndex(), GetSelectionCount() );
 	}
@@ -2932,7 +2932,7 @@ void CFileViewer::DoPlayAudio( void )
 	player->Create( hWnd, hInst );
 }
 
-void CFileViewer::ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleComponent> *pTitleStack )
+void CFileViewer::ReCalculateTitleStack( )
 {
 	EnterCriticalSection( &CacheLock );
 
@@ -2940,15 +2940,15 @@ void CFileViewer::ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::ve
 	
 	pTitleStack->clear();
 
-	iStack = pFS->begin();
+	iStack = pFSStack->begin();
 
 	// Skip over the root if we have more than 1 FS deep 
-	if ( pFS->size() > 1U )
+	if ( pFSStack->size() > 1U )
 	{
 		iStack++;
 	}
 
-	while ( iStack != pFS->end() )
+	while ( iStack != pFSStack->end() )
 	{
 		TitleComponent t;
 

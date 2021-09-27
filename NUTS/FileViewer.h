@@ -61,7 +61,9 @@ public:
 	DWORD      CurrentFSID;
 	BYTE       PaneIndex;
 
-	std::vector<HWND> ControlButtons;
+	std::vector<FileSystem *> *pFSStack;
+
+	std::vector<TitleComponent> *pTitleStack;
 
 private:
 	HWND    ParentWnd;
@@ -187,12 +189,15 @@ public:
 
 	void  Refresh();
 
-	void ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleComponent> *pTitleStack );
+	void ReCalculateTitleStack( );
 
 	void UpdateSidePanelFlags();
 
 	void RenameFile( void );
 	void NewDirectory( void );
+
+	void LockDisplay() { EnterCriticalSection( &CacheLock ); }
+	void UnlockDisplay() { EnterCriticalSection( &CacheLock ); }
 };
 
 #define FILESYS_MENU_BASE 43000

@@ -167,6 +167,11 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	leftPane->PaneIndex  = 0;
 	rightPane->PaneIndex = 1;
 
+	leftPane->pTitleStack  = &leftTitles;
+	rightPane->pTitleStack = &rightTitles;
+	leftPane->pFSStack     = &leftFS;
+	rightPane->pFSStack    = &rightFS;
+
 	/* This is used by the drop target mechanism */
 	OleInitialize( NULL );
 
@@ -260,9 +265,9 @@ LRESULT CALLBACK DummyWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPa
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-void ReCalculateTitleStack( std::vector<FileSystem *> *pFS, std::vector<TitleComponent> *pTitleStack, CFileViewer *pPane )
+void ReCalculateTitleStack( CFileViewer *pPane )
 {
-	pPane->ReCalculateTitleStack( pFS, pTitleStack );
+	pPane->ReCalculateTitleStack( );
 }
 
 void ConfigureExtrasMenu( void )
@@ -381,8 +386,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	leftPane->Update();
 	rightPane->Update();
 
-	ReCalculateTitleStack( &leftFS, &leftTitles, leftPane );
-	ReCalculateTitleStack( &rightFS, &rightTitles, rightPane );
+	ReCalculateTitleStack( leftPane );
+	ReCalculateTitleStack( rightPane );
 
 	ShowWindow(hWnd, nCmdShow);
 
@@ -424,7 +429,7 @@ unsigned int DoParent( FSAction *pVars )
 
 	pVars->pane->FS->EnterIndex = 0xFFFFFFFF;
 
-	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+	ReCalculateTitleStack( pVars->pane );
 
 	pVars->pane->SetSearching( false );
 	pVars->pane->Updated = true;
@@ -451,7 +456,7 @@ unsigned int DoEnter( FSAction *pVars )
 			pVars->pane->SelectionStack.push_back( -1 );
 			pCurrentFS->EnterIndex = 0xFFFFFFFF;
 
-			ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+			ReCalculateTitleStack( pVars->pane );
 		}
 
 		pVars->pane->SetSearching( false );
@@ -563,7 +568,7 @@ unsigned int DoEnter( FSAction *pVars )
 
 	pCurrentFS->EnterIndex = pVars->EnterIndex;
 
-	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+	ReCalculateTitleStack( pVars->pane );
 
 	pVars->pane->SetSearching( false );
 	pVars->pane->Updated = true;
@@ -653,7 +658,7 @@ unsigned int DoEnterAs( FSAction *pVars )
 		}
 	}
 
-	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+	ReCalculateTitleStack( pVars->pane );
 
 	pVars->pane->SetSearching( false );
 
@@ -690,7 +695,7 @@ void DoRootFS( FSAction *pVars )
 
 	pVars->pane->Update();
 
-	ReCalculateTitleStack( pVars->pStack, pVars->pTitleStack, pVars->pane );
+	ReCalculateTitleStack( pVars->pane );
 }
 
 void DoRefresh( FSAction *pVars )
@@ -982,7 +987,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_UPDATESTATUS:
-		if (wParam == (WPARAM) &leftPane)
+		if (wParam == (WPARAM) leftPane)
 		{
 			pStatusBar->SetPanelText( PANELID_LEFT_STATUS, FSPlugins.FindFont( leftPane->FS->GetEncoding(), 0 ), (BYTE *) lParam );
 		}

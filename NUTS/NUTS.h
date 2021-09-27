@@ -19,6 +19,9 @@
 extern  std::vector<FileSystem *> leftFS;
 extern  std::vector<FileSystem *> rightFS;
 
+extern std::vector<TitleComponent> leftTitles;
+extern std::vector<TitleComponent> rightTitles;
+
 extern  HWND hStatusWnd;
 
 #define EXTRA_MENU_BASE     43900
