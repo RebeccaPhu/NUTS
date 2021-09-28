@@ -186,7 +186,7 @@ CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 
 			pFS = (void *) newFS;
 
-			pOpenCBMSource->Release();
+			DS_RELEASE( pOpenCBMSource );
 
 		}
 		break;

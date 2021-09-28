@@ -122,7 +122,7 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 					pFormatter = FSPlugins.LoadFS( FormatFSID, pSource );
 
-					pSource->Release();
+					DS_RELEASE( pSource );
 
 					if ( pFormatter == nullptr )
 					{

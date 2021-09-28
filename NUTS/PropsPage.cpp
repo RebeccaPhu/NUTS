@@ -1802,7 +1802,7 @@ FileSystem *GetFSHandler()
 		{
 			Ptr = FSPlugins.FindAndLoadFS( pSource, &CurrentAction.Selection[ 0 ] );
 
-			pSource->Release();
+			DS_RELEASE( pSource );
 		}
 	}
 

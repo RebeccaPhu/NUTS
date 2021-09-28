@@ -252,7 +252,7 @@ ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 
 				pFS = pADFS;
 
-				pIDE8->Release();
+				DS_RELEASE( pIDE8 );
 			}
 			else
 			{

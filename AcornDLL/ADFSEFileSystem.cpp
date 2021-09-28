@@ -640,9 +640,19 @@ FileSystem *ADFSEFileSystem::FileFilesystem( DWORD FileID )
 		/* Sprite file. These are quite difficult to detect, so we'll offer a ready made FS here. */
 		DataSource *pSource = FileDataSource( FileID );
 
+		if ( pSource == nullptr )
+		{
+			return nullptr;
+		}
+
 		FileSystem *pSpriteFS = new SpriteFile( pSource );
 
-		pSpriteFS->FSID = MAKEFSID( PLID, 0x01, 0x0A );
+		DS_RELEASE( pSource );
+
+		if ( pSpriteFS != nullptr )
+		{
+			pSpriteFS->FSID = MAKEFSID( PLID, 0x01, 0x0A );
+		}
 
 		return pSpriteFS;
 	}
@@ -1556,7 +1566,7 @@ int ADFSEFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
 	{
 		OffsetDataSource *pWrapper = new OffsetDataSource( 0x200, pSource);
 
-		pSource->Release();
+		DS_RELEASE( pSource );
 
 		pSource = pWrapper;
 

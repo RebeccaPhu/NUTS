@@ -148,7 +148,7 @@ FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )
 		newFS->hPaneWindow      = hPaneWindow;
 		newFS->IsRaw            = false;
 
-		pSource->Release();
+		DS_RELEASE( pSource );
 
 		return newFS;
 	}

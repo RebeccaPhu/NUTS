@@ -174,7 +174,7 @@ protected:
 						}
 					}
 
-					pSpriteSource->Release();
+					DS_RELEASE( pSpriteSource );
 				}
 			}
 

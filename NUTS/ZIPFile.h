@@ -73,7 +73,7 @@ public:
 
 	~ZIPFromTemp( )
 	{
-		pSource->Release();
+		DS_RELEASE( pSource );
 	}
 
 	DataSource *GetSource()

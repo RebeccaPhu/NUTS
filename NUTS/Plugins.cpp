@@ -528,7 +528,7 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 
 				if ( pAuxSource != nullptr )
 				{
-					pAuxSource->Release();
+					DS_RELEASE( pAuxSource );
 				}
 
 				rhint = pFS->Offer( nullptr );

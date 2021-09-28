@@ -511,7 +511,7 @@ unsigned int DoEnter( FSAction *pVars )
 		{
 			pNewFS = FSPlugins.FindAndLoadFS( pSource, &pCurrentFS->pDirectory->Files[ pVars->EnterIndex ] );
 
-			pSource->Release();
+			DS_RELEASE( pSource );
 
 			if ( pNewFS != nullptr )
 			{
@@ -622,7 +622,7 @@ unsigned int DoEnterAs( FSAction *pVars )
 	{
 		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource );
 
-		pSource->Release();
+		DS_RELEASE( pSource );
 
 		if (newFS) {
 			newFS->EnterIndex       = 0xFFFFFFFF;

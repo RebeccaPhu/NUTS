@@ -273,7 +273,7 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 			{
 				pFS = FSPlugins.FindAndLoadFS( pSource, &*iFile );
 
-				pSource->Release(); // The FS has this now.
+				DS_RELEASE( pSource ); // The FS has this now.
 
 				if ( pFS != nullptr )
 				{

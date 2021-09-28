@@ -1707,7 +1707,7 @@ FileSystem *ADFSFileSystem::FileFilesystem( DWORD FileID )
 
 		pNewFS->FSID = MAKEFSID( PLID, 0x01, 0x0A );
 
-		pSource->Release();
+		DS_RELEASE( pSource );
 
 		return pNewFS;
 	}

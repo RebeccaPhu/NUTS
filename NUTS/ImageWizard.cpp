@@ -333,7 +333,7 @@ unsigned int __stdcall CreationThread(void *param)
 	{
 		FileSystem *FS = (FileSystem *) FSPlugins.LoadFS( ChosenFS.FUID, pSource );
 
-		pSource->Release();
+		DS_RELEASE( pSource );
 
 		if ( FS->Format_PreCheck( FormatType_Quick, hProgressWnd ) != 0 )
 		{
