@@ -443,21 +443,13 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 	
 	FSDescriptor_iter iter = FSDescriptors.begin();
 
+	DataSource *pAuxSource   = nullptr;
+	DataSource *pCloneSource = pSource;
+
 	while ( iter != FSDescriptors.end() )
 	{
 		if ( iter->PUID == FSID )
 		{
-			/* Need a DSK? */
-			DSKDataSource *pDSK = nullptr;
-
-			if ( iter->Flags & FSF_Uses_DSK )
-			{
-				/* Need a DSK, so create a source and wrap it around */
-				pDSK = new DSKDataSource( pSource );
-					
-				pSource = pDSK;
-			}
-
 			std::vector<QWORD> Offsets;
 
 			if ( ImageOffsets.find( FSID ) != ImageOffsets.end() )
@@ -485,11 +477,22 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 			{
 				QWORD Offset = *iOffset;
 
-				DataSource *pCloneSource = pSource;
-
 				if ( Offset != 0 )
 				{
-					pCloneSource = new OffsetDataSource( (DWORD) Offset, pSource );
+					pAuxSource = new OffsetDataSource( (DWORD) Offset, pSource );
+
+					pCloneSource = pAuxSource;
+				}
+				else
+				{
+					/* Need a DSK? */
+					if ( iter->Flags & FSF_Uses_DSK )
+					{
+						/* Need a DSK, so create a source and wrap it around */
+						pAuxSource = new DSKDataSource( pSource );
+
+						pCloneSource = pAuxSource;
+					}
 				}
 
 				pFS = nullptr;
@@ -523,9 +526,9 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 				pFS->FSID = FSID;
 				pFS->PLID = PLUGINID( FSID );
 
-				if ( Offset != 0 )
+				if ( pAuxSource != nullptr )
 				{
-					pCloneSource->Release();
+					pAuxSource->Release();
 				}
 
 				rhint = pFS->Offer( nullptr );
@@ -541,17 +544,15 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 
 					hint.Confidence = rhint.Confidence;
 				}
+				else
+				{
+					delete pFS;
+				}
 
 				iOffset++;
 			}
 
 			pFS = fav;
-
-			if ( pDSK != nullptr )
-			{
-				/* FS has ownership of this now */
-				pDSK->Release();
-			}
 
 			return pFS;
 		}
