@@ -692,6 +692,11 @@ void EncodingTextArea::ReGenerateLineDefs( void )
 			ThisPos = NextPos;
 		} while ( iNextLine != LinePointers.end() );
 	}
+
+	while ( ( ( StartLine + MaxWinLines ) > LineDefs.size() ) && ( StartLine > 0 ) )
+	{
+		StartLine--;
+	}
 }
 
 int EncodingTextArea::DoResize( int w, int h )
@@ -707,6 +712,18 @@ int EncodingTextArea::DoResize( int w, int h )
 	DWORD Page = MaxWinLines;
 
 	LeaveCriticalSection( &cs );
+
+	if ( hArea != NULL )
+	{
+		SelectObject( hArea, hAreaOld );
+
+		NixObject( hAreaCanvas );
+		NixObject( hArea );
+	}
+
+	hArea       = NULL;
+	hAreaCanvas = NULL;
+	hAreaOld    = NULL;
 
 	SetScrollbar( Max, Page );
 
