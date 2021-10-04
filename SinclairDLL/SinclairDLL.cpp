@@ -373,7 +373,7 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_GetImageExtension:
 		cmd->OutParams[ 0 ].pPtr = (void *) ImageExtensions[ cmd->InParams[ 0 ].Value ].c_str();
 		cmd->OutParams[ 1 ].Value = FT_MiscImage;
-		cmd->OutParams[ 2 ].Value = FT_DiskImage;
+		cmd->OutParams[ 2 ].Value = ( cmd->InParams[ 0 ].Value > 1 )?FT_TapeImage:FT_DiskImage;
 
 		return NUTS_PLUGIN_SUCCESS;
 
