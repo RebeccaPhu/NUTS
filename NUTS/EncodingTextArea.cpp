@@ -692,6 +692,28 @@ void EncodingTextArea::ReGenerateLineDefs( void )
 			ThisPos = NextPos;
 		} while ( iNextLine != LinePointers.end() );
 	}
+	else
+	{
+		if ( lTextBody > 0 )
+		{
+			DWORD lSize = lTextBody;
+			DWORD pOff  = 0;
+
+			while ( lSize > MaxWinChars )
+			{
+				LineDef l = { pOff, lSize };
+
+				LineDefs.push_back( l );
+
+				pOff  += MaxWinChars;
+				lSize -= MaxWinChars;
+			}
+
+			LineDef l = { pOff, lSize };
+
+			LineDefs.push_back( l ) ;
+		}
+	}
 
 	while ( ( ( StartLine + MaxWinLines ) > LineDefs.size() ) && ( StartLine > 0 ) )
 	{
