@@ -374,6 +374,7 @@
     <None Include="..\graphic.bmp" />
     <None Include="..\harddisc.bmp" />
     <None Include="..\harddisk.bmp" />
+    <None Include="..\hardimage.bmp" />
     <None Include="..\ico00001.ico" />
     <None Include="..\ico00002.ico" />
     <None Include="..\ico00003.ico" />

@@ -1067,6 +1067,15 @@ int ADFSFileSystem::Init(void) {
 		pADFSDirectory->SetSector( 4 );
 	}
 
+	if ( ( MYFSID==FSID_ADFS_H ) || ( MYFSID==FSID_ADFS_H8 ) )
+	{
+		TopicIcon = FT_HardImage;
+	}
+	else
+	{
+		TopicIcon = FT_DiskImage;
+	}
+
 	pFSMap  = new OldFSMap( pSource );
 
 	if ( pFSMap->ReadFSMap() != DS_SUCCESS )

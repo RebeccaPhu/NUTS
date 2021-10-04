@@ -93,7 +93,8 @@
 #define IDC_WIZ_WELCOME                 171
 #define IDB_MUSICFILE                   171
 #define IDD_WIZ_DIALOG2                 172
-#define IDR_MENU1                       172
+#define IDB_DISKIMAGE1                  172
+#define IDB_HARDIMAGE                   172
 #define IDD_WIZ_DIALOG3                 173
 #define IDR_TEA                         173
 #define IDD_WIZ_DIALOG4                 174

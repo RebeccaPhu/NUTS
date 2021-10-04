@@ -41,6 +41,15 @@ int ADFSEFileSystem::Init(void) {
 
 	ResolveAppIcons<ADFSEFileSystem>( this );
 
+	if ( ( MYFSID==FSID_ADFS_HO ) || ( MYFSID==FSID_ADFS_HN ) || ( MYFSID==FSID_ADFS_HP ) )
+	{
+		TopicIcon = FT_HardImage;
+	}
+	else
+	{
+		TopicIcon = FT_DiskImage;
+	}
+
 	return 0;
 }
 

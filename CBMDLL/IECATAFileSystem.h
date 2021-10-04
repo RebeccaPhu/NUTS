@@ -25,6 +25,8 @@ public:
 			FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity |
 			FSF_Supports_Dirs | FSF_Supports_Spaces |
 			FSF_Uses_Extensions | FSF_Fake_Extensions | FSF_NoDir_Extensions;
+
+		TopicIcon = FT_HardImage;
 	}
 
 	~IECATAFileSystem(void) {

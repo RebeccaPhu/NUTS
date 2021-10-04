@@ -676,6 +676,11 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		cmd->OutParams[ 1 ].Value = FT_MiscImage;
 		cmd->OutParams[ 2 ].Value = FT_DiskImage;
 
+		if ( cmd->InParams[ 0 ].Value == IMAGE_EXT_COUNT - 1 )
+		{
+			cmd->OutParams[ 2 ].Value = FT_HardImage;
+		}
+
 		return NUTS_PLUGIN_SUCCESS;
 
 	case PC_CreateFileSystem:

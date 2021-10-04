@@ -25,21 +25,22 @@ typedef enum _FileType {
 	FT_Spool     =  5, // Text that can be spooled as if typed ( e.g. Acorn *SPOOL file)
 	FT_Text      =  6, // Plain text. 'Nuff said.
 	FT_BASIC     =  7, // Some kind of BASIC program. Doesn't imply whose.
-	FT_Data      =  8, // Arbitrary data, as distinct from Code, BASIC, SCript or Spool.
+	FT_Data      =  8, // Arbitrary data, as distinct from Code, BASIC, Script or Spool.
 	FT_Graphic   =  9, // Graphical data in some way.
 	FT_Sound     = 10, // Audio data in some way.
 	FT_Pref      = 11, // Some kind of settings file
 	FT_App       = 12, // Application (e.g. RiscOS application)
 	FT_DiskImage = 13, // Image of a disk
 	FT_TapeImage = 14, // Image of government red tape
-	FT_MiscImage = 15, // Image of something else
-	FT_CDROM     = 16, // CDROM Drive
-	FT_HardDisc  = 17, // Hard Drive
-	FT_Floppy    = 18, // Floppy Drive
-	FT_Directory = 19, // Directory (J, R, Hartley)
-	FT_Archive   = 20, // Archive (ZIP, LHA, etc)
-	FT_System    = 21, // System (the top level)
-	FT_Windows   = 22, // Windows Volume
+	FT_HardImage = 15, // Image of the Portsmouth Dockyard
+	FT_MiscImage = 16, // Image of something else
+	FT_CDROM     = 17, // CDROM Drive
+	FT_HardDisc  = 18, // Hard Drive
+	FT_Floppy    = 19, // Floppy Drive
+	FT_Directory = 20, // Directory (J, R, Hartley)
+	FT_Archive   = 21, // Archive (ZIP, LHA, etc)
+	FT_System    = 22, // System (the top level)
+	FT_Windows   = 23, // Windows Volume
 } FileType;
 
 typedef struct _NativeFile {
