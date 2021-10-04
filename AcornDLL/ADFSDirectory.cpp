@@ -230,9 +230,9 @@ int	ADFSDirectory::ReadDirectory( void ) {
 				iFile->Icon = iFile->Type;
 			}
 
-			if ( iFile->Type == FT_Graphic )
+			if ( ( iFile->Type == FT_Script ) || ( iFile->Type == FT_Spool ) )
 			{
-				iFile->XlatorID = GRAPHIC_ACORN;
+				iFile->XlatorID = TUID_TEXT;
 			}
 
 			if ( iFile->Type == FT_BASIC )

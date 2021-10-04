@@ -119,6 +119,7 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 			)
 		{
 			file.Type = FT_Spool;
+			file.XlatorID = TUID_TEXT;
 		}
 
 		if (
