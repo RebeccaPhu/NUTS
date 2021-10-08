@@ -24,6 +24,8 @@ public:
 
 			fclose(f);
 		}
+
+		Flags = DS_SlowAccess | DS_SupportsLLF | DS_AlwaysLLF | DS_RawDevice;
 	}
 
 	~FloppyDataSource(void) {

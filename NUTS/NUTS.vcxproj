@@ -398,6 +398,7 @@
     <None Include="..\rename.ico" />
     <None Include="..\reset.ico" />
     <None Include="..\rewind.bmp" />
+    <None Include="..\romdisk.bmp" />
     <None Include="..\rootfs.ico" />
     <None Include="..\SidebarCorner.bmp" />
     <None Include="..\smfontswitch.ico" />

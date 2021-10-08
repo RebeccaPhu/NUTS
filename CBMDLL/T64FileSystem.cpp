@@ -565,7 +565,7 @@ int T64FileSystem::SwapFile( DWORD FileID1, DWORD FileID2 )
 	return RegenerateSource( FileID1, FileID2, nullptr, nullptr, T64_REGEN_SWAP );
 }
 
-int T64FileSystem::Format_Process( FormatType FT, HWND hWnd )
+int T64FileSystem::Format_Process( DWORD FT, HWND hWnd )
 {
 	PostMessage( hWnd, WM_FORMATPROGRESS, 0, (LPARAM) L"Creating header..." );
 

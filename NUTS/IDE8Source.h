@@ -9,6 +9,8 @@ public:
 		if ( pSource != nullptr )
 		{
 			DS_RETAIN( pSource );
+
+			Flags = pSource->Flags;
 		}
 
 		PhysicalDiskSize	= pSource->PhysicalDiskSize /2;

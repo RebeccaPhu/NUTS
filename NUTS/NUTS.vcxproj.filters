@@ -764,6 +764,9 @@
     <None Include="..\hardimage.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\romdisk.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NUTS.rc">

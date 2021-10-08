@@ -61,7 +61,7 @@ public:
 
 		ReadDiskData();
 
-		Flags = 0;
+		Flags = DS_SupportsTruncate;
 	}
 
 	~DSKDataSource(void)

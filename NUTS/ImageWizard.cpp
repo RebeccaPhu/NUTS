@@ -335,7 +335,7 @@ unsigned int __stdcall CreationThread(void *param)
 
 		DS_RELEASE( pSource );
 
-		if ( FS->Format_PreCheck( FormatType_Quick, hProgressWnd ) != 0 )
+		if ( FS->Format_PreCheck( FTF_Initialise, hProgressWnd ) != 0 )
 		{
 			::SendMessage( hWizard, PSM_SETCURSEL, (WPARAM) 4, (LPARAM) NULL );
 
@@ -344,7 +344,7 @@ unsigned int __stdcall CreationThread(void *param)
 			return -1;
 		}
 	
-		Result = FS->Format_Process( FormatType_Quick, hProgressWnd );
+		Result = FS->Format_Process( FTF_Initialise, hProgressWnd );
 
 		delete FS;
 	}

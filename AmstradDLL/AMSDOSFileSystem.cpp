@@ -97,7 +97,7 @@ FSHint AMSDOSFileSystem::Offer( BYTE *Extension )
 	return hint;
 }
 
-int AMSDOSFileSystem::Format_Process( FormatType FT, HWND hWnd )
+int AMSDOSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 {
 	WCHAR FormatMsg[ 256 ];
 

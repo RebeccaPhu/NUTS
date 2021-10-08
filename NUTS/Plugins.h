@@ -63,6 +63,7 @@ public:
 	FSHints FindFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *FindAndLoadFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *LoadFS( DWORD FSID, DataSource *pSource );
+	std::wstring ProviderName( DWORD PRID );
 	std::wstring FSName( DWORD FSID );
 	std::vector<FSMenu> GetFSMenu();
 	void *LoadTranslator( DWORD TUID );

@@ -115,6 +115,27 @@ int	RootDirectory::ReadDirectory(void) {
 		fIndex++;
 	}
 
+	/* Add the ROMDisk */
+	{
+		NativeFile file;
+
+		file.EncodingID      = ENCODING_ASCII;
+		file.fileID          = FileID;
+		file.Flags           = FF_NotRenameable;
+		file.FSFileType      = NULL;
+		file.HasResolvedIcon = false;
+		file.Icon            = FT_ROMDisk;
+		file.Type            = FT_MiscImage;
+		file.Length          = 0;
+		file.XlatorID        = NULL;
+
+		file.Filename = BYTEString( (BYTE *) "ROM Disk", 8 );
+
+		Files.push_back( file );
+
+		FileID++;
+	}
+
 	/* Add root hooks */
 	RootHookList hooks = FSPlugins.GetRootHooks();
 
@@ -127,7 +148,7 @@ int	RootDirectory::ReadDirectory(void) {
 		file.Attributes[ 0 ] = fIndex;
 		file.EncodingID      = ENCODING_ASCII;
 		file.fileID          = FileID;
-		file.Flags           = FF_NotRenameable;
+		file.Flags           = FF_NotRenameable | FF_Pseudo;
 		file.FSFileType      = NULL;
 		file.HasResolvedIcon = false;
 		file.Icon            = FT_Arbitrary;

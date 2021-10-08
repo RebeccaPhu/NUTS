@@ -41,6 +41,7 @@ typedef enum _FileType {
 	FT_Archive   = 21, // Archive (ZIP, LHA, etc)
 	FT_System    = 22, // System (the top level)
 	FT_Windows   = 23, // Windows Volume
+	FT_ROMDisk   = 24, // ROMDisk
 } FileType;
 
 typedef struct _NativeFile {
@@ -135,14 +136,17 @@ typedef enum _FSFlags {
 } FSFlags;
 
 typedef enum _DSFlags {
-	DS_RawDevice         = 0x00000001,
-	DS_FloppyDisk        = 0x00000002,
-	DS_SlowAccess        = 0x00000004,
+	DS_RawDevice         = 0x00000001, /* The data source is attached to a raw device, e.g. CF card, floppy drive, etc. */
+	DS_SupportsLLF       = 0x00000002, /* The data source is attached to a device that supports Low Level Formatting. */
+	DS_AlwaysLLF         = 0x00000004, /* The data source is attached to a device that requires Low Level Formatting every time */
+	DS_SupportsTruncate  = 0x00000008, /* The data source does not require the extent to match the capacity */
+	DS_SlowAccess        = 0x00000010, /* The data source is slow to respond, so enhanced interrogation processes should not be used */
 } DSFlags;
 
 typedef struct _FormatDesc {
 	std::wstring Format;
 	DWORD        FUID;
+	DWORD        PUID;
 	DWORD        Flags;
 	QWORD        MaxSize;
 	DWORD        SectorSize;
@@ -151,9 +155,11 @@ typedef struct _FormatDesc {
 typedef std::vector<FormatDesc> FormatList;
 typedef std::vector<FormatDesc>::iterator FormatDesc_iter;
 
-typedef enum _FormatTypes {
-	FormatType_Quick = 1,
-	FormatType_Full  = 2,
+typedef enum _FormatFlags {
+	FTF_LLF          = 0x00000001,
+	FTF_Blank        = 0x00000002,
+	FTF_Initialise   = 0x00000004,
+	FTF_Truncate     = 0x00000008
 } FormatType;
 
 typedef struct _FSSpace {

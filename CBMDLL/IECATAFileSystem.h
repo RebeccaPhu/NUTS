@@ -52,7 +52,7 @@ public:
 	int DeleteFile( DWORD FileID );
 
 	int Format_PreCheck(int FormatType, HWND hWnd);
-	int Format_Process( FormatType FT, HWND hWnd );
+	int Format_Process( DWORD FT, HWND hWnd );
 	int CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 
 	int MakeASCIIFilename( NativeFile *pFile );

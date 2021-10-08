@@ -1224,7 +1224,7 @@ int ADFSFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
 	return 0;
 }
 
-int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
+int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 {
 	static WCHAR * const InitMsg  = L"Initialising";
 	static WCHAR * const EraseMsg = L"Erasing";
@@ -1239,7 +1239,7 @@ int ADFSFileSystem::Format_Process( FormatType FT, HWND hWnd )
 	/* This will hold two sectors later, for setting up the disc name for D format discs */
 	BYTE SectorBuf[ 1024 ];
 
-	if ( FT == FormatType_Full )
+	if ( FT & FTF_Blank )
 	{
 		ZeroMemory( SectorBuf, 256 );
 

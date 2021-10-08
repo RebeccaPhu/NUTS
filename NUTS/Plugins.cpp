@@ -300,12 +300,13 @@ FormatList CPlugins::GetFormats( DWORD PUID )
 
 	for ( iFS = FSDescriptors.begin(); iFS != FSDescriptors.end(); iFS++ )
 	{
-		if ( PLUGINID( iFS->PUID ) == PUID )
+		if ( PROVID( iFS->PUID ) == PUID )
 		{
 			FormatDesc Format;
 
 			Format.Format     = iFS->FriendlyName;
 			Format.FUID       = iFS->PUID;
+			Format.PUID       = PROVID( iFS->PUID );
 			Format.Flags      = iFS->Flags;
 			Format.MaxSize    = iFS->MaxSize;
 			Format.SectorSize = iFS->SectorSize;
@@ -596,6 +597,38 @@ NUTSPlugin *CPlugins::GetPlugin( DWORD FSID )
 	}
 
 	return nullptr;
+}
+
+std::wstring CPlugins::ProviderName( DWORD PRID )
+{
+	if( PRID == FSID_ZIP )
+	{
+		return L"PKWare";
+	}
+	else if ( PRID == FS_Windows )
+	{
+		return L"Microsoft";
+	}
+	else if ( PRID == FS_Root )
+	{
+		return L"NUTS";
+	}
+
+	std::wstring name = L"Unknown Provider";
+
+	FSDescriptor_iter fi;
+
+	for ( NUTSProvider_iter iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
+	{
+		if ( iProvider->ProviderID == PRID )
+		{
+			name = iProvider->FriendlyName;
+
+			return name;
+		}
+	}
+
+	return name;
 }
 
 std::wstring CPlugins::FSName( DWORD FSID )

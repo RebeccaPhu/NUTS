@@ -439,7 +439,7 @@ int TZXFileSystem::ReadTextBlock( NativeFile *pFile, CTempFile &store )
 	return 0;
 }
 
-int TZXFileSystem::Format_Process( FormatType FT, HWND hWnd )
+int TZXFileSystem::Format_Process( DWORD FT, HWND hWnd )
 {
 	BYTE Glue[] = { "ZXTape!\x1A\x01\x01" };
 

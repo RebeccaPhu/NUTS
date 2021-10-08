@@ -37,6 +37,8 @@ public:
 			PhysicalDiskSize	*=	disk.TracksPerCylinder;
 			PhysicalDiskSize	*=	disk.Cylinders.QuadPart;
 		}
+
+		Flags = DS_RawDevice;
 	}
 
 	~RawDataSource(void) {

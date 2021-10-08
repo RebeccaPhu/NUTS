@@ -53,7 +53,7 @@ public:
 
 	int    RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming, CTempFile *pStore, int Reason );
 
-	int    Format_Process( FormatType FT, HWND hWnd );
+	int    Format_Process( DWORD FT, HWND hWnd );
 
 	int    MakeAudio( std::vector<NativeFile> &Selection, TapeIndex &indexes, CTempFile &store );
 

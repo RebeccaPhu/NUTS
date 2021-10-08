@@ -11,6 +11,8 @@ OffsetDataSource::OffsetDataSource( DWORD Offset, DataSource *pSource )
 	PhysicalDiskSize = pSrc->PhysicalDiskSize;
 
 	DS_RETAIN( pSrc );
+
+	Flags = pSrc->Flags;
 }
 
 

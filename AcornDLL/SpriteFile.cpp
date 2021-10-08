@@ -287,7 +287,7 @@ AttrDescriptors SpriteFile::GetAttributeDescriptions( void )
 }
 
 /* Simplest formatter ever */
-int SpriteFile::Format_Process( FormatType FT, HWND hWnd ) {
+int SpriteFile::Format_Process( DWORD FT, HWND hWnd ) {
 	DWORD Header[ 4 ] = { 0, 20, 20, 0 };
 
 	int r = pSource->WriteRaw( 0, 16, (BYTE *) Header );

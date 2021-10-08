@@ -46,7 +46,7 @@ public:
 	virtual int DeleteFile( DWORD FileID );
 	virtual int Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 
-	virtual	int Format_Process( FormatType FT, HWND hWnd );
+	virtual	int Format_Process( DWORD FT, HWND hWnd );
 
 	virtual int SwapFile( DWORD FileID1, DWORD FileID2 );
 

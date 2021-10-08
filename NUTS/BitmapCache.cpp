@@ -32,6 +32,7 @@ IDB_ARCHIVE:    "Light Brown ZIP Icon", Cats Icons 2, McDo Design, Free for non-
 IDB_SYSTEM:     "Computer Icon", Aero Icons, Lokas Software, CC Attribution 3.0 Unported.
 IDB_WINDOWS:    "Windows Icon", Crystal Intense Icons, Tatice, CC Attribution-Noncommercial-NoDervis 3.0
 IDB_MUSICFILE:  "File Music Icon", Phuzion Icons, kyo-tux, CC Attribution-Noncommerical-ShareALike 3.0
+IDB_ROMDISK:    "Chip Icon", Diagram Old Icons, Double-J Design, CC Attribution 3.0 Unported
 
 IDI_NEWDIR:     "New Folder Graphite Icon", Aqua Candy Revolution Icons, McDo Design, Free for non-commercial use
 IDI_FONTSWITCH: "Font Icon", FatCow Hosting Icons, FatCow, CC Attribution 3.0 US
@@ -79,6 +80,7 @@ void CBitmapCache::LoadBitmaps() {
 		{ FT_System,    IDB_SYSTEM     },
 		{ FT_Windows,   IDB_WINDOWS    },
 		{ FT_Sound,     IDB_MUSICFILE  },
+		{ FT_ROMDisk,   IDB_ROMDISK    },
 		{ FT_None,      NULL },
 	};
 

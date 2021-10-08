@@ -243,7 +243,7 @@ int DOS3FileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	return 0;
 }
 
-int DOS3FileSystem::Format_Process( FormatType FT, HWND hWnd )
+int DOS3FileSystem::Format_Process( DWORD FT, HWND hWnd )
 {
 	WCHAR FormatMsg[ 256 ];
 

@@ -82,7 +82,7 @@ public:
 
 	AttrDescriptors GetAttributeDescriptions( void );
 
-	int Format_Process( FormatType FT, HWND hWnd );
+	int Format_Process( DWORD FT, HWND hWnd );
 
 private:
 	SpriteFileDirectory *pSpriteDirectory;

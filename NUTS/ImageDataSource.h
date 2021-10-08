@@ -26,6 +26,8 @@ public:
 
 			fclose(f);
 		}
+
+		Flags = DS_SupportsTruncate;
 	}
 
 	~ImageDataSource(void) {

@@ -604,7 +604,7 @@ AttrDescriptors AcornDFSFileSystem::GetAttributeDescriptions( void )
 	return Attrs;
 }
 
-int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
+int AcornDFSFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 
 	int Stages = 1;
 
@@ -615,7 +615,7 @@ int AcornDFSFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 		MaxTracks = 80;
 	}
 
-	if ( FT = FormatType_Full )
+	if ( FT & FTF_Blank )
 	{
 		Stages++;
 

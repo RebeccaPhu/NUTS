@@ -5,22 +5,93 @@
 #include "FileSystem.h"
 #include "AppAction.h"
 #include "Plugins.h"
+#include "FontBitmap.h"
 #include "libfuncs.h"
+#include "resource.h"
 
 #include <process.h>
 #include <commctrl.h>
+#include <WindowsX.h>
 
 FileSystem	*pFormatter = NULL;
-FormatType Format_FT    = FormatType_Quick;
+DataSource  *pSource    = NULL;
+
+DWORD   Format_FT = 0;
 HANDLE	hFormatEvent;
 HANDLE	hFormatThread;
 HWND	hFormatWindow;
 DWORD   FormatFSID      = FS_Null;
 bool    Formatting      = false;
 
+FontBitmap *srcName = nullptr;
+
 static DWORD dwthreadid;
 
 std::vector<DWORD> AvailableFSIDs;
+
+static FormatList   Formats;
+static DWORD        Encoding;
+static FormatDesc   ChosenFS;
+static bool         FormatSet;
+
+static NUTSProviderList Providers;
+static std::vector<FormatDesc> FSList;
+
+BOOL EN1,EN2,EN3,EN4;
+
+void SetOptions( HWND hwndDlg, DWORD FSFlags )
+{
+	if ( pSource->Flags & DS_SupportsLLF )
+	{
+		if ( pSource->Flags & DS_AlwaysLLF )
+		{
+			Button_SetCheck( GetDlgItem( hwndDlg, IDC_LLF ), BST_CHECKED );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_LLF ),    FALSE );
+			EN1 = FALSE;
+		}
+		else
+		{
+			Button_SetCheck( GetDlgItem( hwndDlg, IDC_LLF ), BST_UNCHECKED );
+			EnableWindow( GetDlgItem( hwndDlg, IDC_LLF ),    TRUE );
+			EN1 = TRUE;
+		}
+	}
+	else
+	{
+		Button_SetCheck( GetDlgItem( hwndDlg, IDC_LLF ), BST_UNCHECKED );
+		EnableWindow( GetDlgItem( hwndDlg, IDC_LLF ),    FALSE );
+		EN1 = FALSE;
+	}
+
+	EnableWindow( GetDlgItem( hwndDlg, IDC_BLANKSECTS  ),  TRUE );
+	EnableWindow( GetDlgItem( hwndDlg, IDC_FINITIALISE  ), TRUE );
+
+	EN2 = TRUE;
+	EN3 = TRUE;
+
+	if ( pSource->Flags & DS_SupportsTruncate )
+	{
+		EnableWindow( GetDlgItem( hwndDlg, IDC_TRUNCATE ), TRUE );
+
+		EN4 = TRUE;
+	}
+	else
+	{
+		EnableWindow( GetDlgItem( hwndDlg, IDC_TRUNCATE ), FALSE );
+
+		EN4 = FALSE;
+	}
+
+	EnableWindow( GetDlgItem(hwndDlg, IDC_FORMAT_START), TRUE );
+}
+
+void ResetOptions( HWND hwndDlg )
+{
+	EnableWindow( GetDlgItem( hwndDlg, IDC_LLF ), EN1 );
+	EnableWindow( GetDlgItem( hwndDlg, IDC_BLANKSECTS  ), EN2 );
+	EnableWindow( GetDlgItem( hwndDlg, IDC_FINITIALISE  ), EN3 );
+	EnableWindow( GetDlgItem( hwndDlg, IDC_TRUNCATE ), EN4 );
+}
 
 unsigned int __stdcall FormatThread(void *param) {
 	if (!pFormatter) {
@@ -29,16 +100,118 @@ unsigned int __stdcall FormatThread(void *param) {
 		return 0;
 	}
 
+	if ( Button_GetCheck( GetDlgItem( hFormatWindow, IDC_LLF ) ) == BST_CHECKED ) { Format_FT |= FTF_LLF; }
+	if ( Button_GetCheck( GetDlgItem( hFormatWindow, IDC_BLANKSECTS ) ) == BST_CHECKED ) { Format_FT |= FTF_Blank; }
+	if ( Button_GetCheck( GetDlgItem( hFormatWindow, IDC_FINITIALISE ) ) == BST_CHECKED ) { Format_FT |= FTF_Initialise; }
+	if ( Button_GetCheck( GetDlgItem( hFormatWindow, IDC_TRUNCATE ) ) == BST_CHECKED ) { Format_FT |= FTF_Truncate; }
+
 	unsigned int Result = pFormatter->Format_Process( Format_FT, hFormatWindow );
 
 	Formatting = false;
 
-	EnableWindow( GetDlgItem( hFormatWindow, IDC_QUICK_FORMAT ), TRUE );
-	EnableWindow( GetDlgItem( hFormatWindow, IDC_FULL_FORMAT  ), TRUE );
-	EnableWindow( GetDlgItem( hFormatWindow, IDC_FORMAT_LIST  ), TRUE );
-	EnableWindow( GetDlgItem( hFormatWindow, IDC_FORMAT_START ), TRUE );
+	ResetOptions( hFormatWindow );
 
 	return Result;
+}
+
+INT_PTR CALLBACK FormatSelectWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch ( uMsg )
+	{
+		case WM_INITDIALOG:
+			{
+				::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_RESETCONTENT, 0, 0 );
+				::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_FORMAT ), LB_RESETCONTENT, 0, 0 );
+
+				Providers = FSPlugins.GetProviders();
+
+				for ( NUTSProvider_iter iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
+				{
+					::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_ADDSTRING, 0, (LPARAM) iProvider->FriendlyName.c_str() );
+				}
+
+				FormatSet = false;
+			}
+
+			break;
+
+		case WM_COMMAND:
+			{
+				switch ( LOWORD( wParam ) )
+				{
+				case IDC_WIZ_PROVIDER:
+					{
+						if ( HIWORD( wParam ) == LBN_SELCHANGE )
+						{
+							::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_FORMAT ), LB_RESETCONTENT, 0, 0 );
+
+							WORD Index = (WORD) ::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_GETCURSEL, 0, 0 );
+
+							if ( Index != 0xFFFF )
+							{
+								FSList.clear();
+
+								Formats = FSPlugins.GetFormats( Providers[ Index ].ProviderID );
+
+								for ( FormatDesc_iter iFormat = Formats.begin(); iFormat != Formats.end(); iFormat++ )
+								{
+									// Need to filter this list according to where we're looking.
+									if ( pSource->Flags & DS_RawDevice )
+									{
+										if ( !( iFormat->Flags & FSF_Formats_Raw ) )
+										{
+											continue;
+										}
+									}
+
+									if ( !( iFormat->Flags & FSF_Formats_Image ) )
+									{
+										continue;
+									}
+									
+									::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_FORMAT ), LB_ADDSTRING, 0, (LPARAM) iFormat->Format.c_str() );
+
+									FSList.push_back( *iFormat );
+								}
+							}
+						}
+					}
+					break;
+
+				case IDC_WIZ_FORMAT:
+					{
+						if ( HIWORD( wParam ) == LBN_SELCHANGE )
+						{
+							WORD FSNum = (WORD) ::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_FORMAT ), LB_GETCURSEL, 0, 0 );
+
+							if ( FSNum != 0xFFFF )
+							{
+								ChosenFS = FSList[ FSNum ];
+							}
+						}
+					}
+					break;
+
+				case IDCANCEL:
+					FormatSet = false;
+
+					EndDialog( hwndDlg, 0 );
+					
+					break;
+
+				case IDOK:
+					FormatSet = true;
+
+					EndDialog( hwndDlg, 0 );
+
+					break;
+				}
+
+				return FALSE;
+			}
+			break;
+	}
+
+	return FALSE;
 }
 
 INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -60,10 +233,52 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			break;
 
 		case WM_COMMAND:
+			if ( (LOWORD(wParam) == IDC_SELECT_FORMAT ) && (HIWORD(wParam) == BN_CLICKED ) )
+			{
+				DialogBox( hInst, MAKEINTRESOURCE( IDD_WIZ_FORMAT ), hwndDlg, FormatSelectWindowProc );
+
+				if ( FormatSet )
+				{
+					SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_PROVIDER), WM_SETTEXT, 0, (LPARAM) FSPlugins.ProviderName( ChosenFS.PUID ).c_str() );
+					SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_FORMAT), WM_SETTEXT, 0, (LPARAM) FSPlugins.FSName( ChosenFS.FUID ).c_str() );
+
+					SetOptions( hwndDlg, ChosenFS.Flags );
+				}
+
+				return 0;
+			}
+
+			if ( (LOWORD(wParam) == IDC_BLANKSECTS ) && ( HIWORD(wParam) == BN_CLICKED ) )
+			{
+				if ( Button_GetCheck( GetDlgItem( hwndDlg, IDC_BLANKSECTS ) ) == BST_CHECKED )
+				{
+					EnableWindow( GetDlgItem( hwndDlg, IDC_TRUNCATE ), FALSE );
+				}
+				else
+				{
+					if ( pSource->Flags & DS_SupportsTruncate )
+					{
+						EnableWindow( GetDlgItem( hwndDlg, IDC_TRUNCATE ), TRUE );
+					}
+				}
+			}
+
 			if ((LOWORD(wParam) == IDC_FORMAT_CANCEL) && (HIWORD(wParam) == BN_CLICKED)) {
 				if ( Formatting == false ) {
 					//	Not started the format yet, so just cancel the dialog.
+					if ( pFormatter != nullptr )
+					{
+						delete pFormatter;
+
+						pFormatter = NULL;
+					}
+
 					EndDialog(hwndDlg, 0);
+
+					if ( pSource != nullptr )
+					{
+						DS_RELEASE( pSource );
+					}
 
 					return TRUE;
 				} else {
@@ -76,28 +291,18 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 						pFormatter->CancelFormat();
 
 						::SendMessage( GetDlgItem( hwndDlg, IDC_FORMAT_CANCEL), WM_SETTEXT, 0, (LPARAM) L"Close" );
+
+						ResetOptions( hwndDlg );
 					}
 
 					ResumeThread( hFormatThread );
 				}
 			}
 
-			if (LOWORD(wParam) == IDC_QUICK_FORMAT)
-				Format_FT = FormatType_Quick;
-
-			if (LOWORD(wParam) == IDC_FULL_FORMAT)
-				Format_FT = FormatType_Full;
-
-			if ((HIWORD(wParam) == LBN_SELCHANGE) && (LOWORD(wParam) == IDC_FORMAT_LIST)) {
-				FormatFSID = AvailableFSIDs[
-					(DWORD) SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_LIST), LB_GETCURSEL, 0, 0)
-				];
-			}
-
 			if ((LOWORD(wParam) == IDC_FORMAT_START) && (HIWORD(wParam) == BN_CLICKED)) {
 				//	Check the user is really OK with this...
 				if (MessageBox(hwndDlg,
-					L"Formatting this disk or image will completely erase its contents and replace them "
+					L"Formatting this device or image will completely erase its contents and replace them "
 					L"with a blank filing system.\n\n"
 					L"This operation can not be undone in any way whatsoever.\n\n"
 					L"Are you sure you wish to continue formatting?",
@@ -106,23 +311,8 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 				} else {
 					::SendMessage( GetDlgItem( hwndDlg, IDC_FORMAT_CANCEL), WM_SETTEXT, 0, (LPARAM) L"Cancel" );
 
-					int   pos  = SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_LIST), LB_GETCURSEL, 0, 0);
-					FormatFSID = (DWORD) SendMessage( GetDlgItem(hwndDlg, IDC_FORMAT_LIST), LB_GETITEMDATA, pos, 0 );
-
-					FileSystem *pFS = (FileSystem *) CurrentAction.FS;
-
-					DataSource *pSource = pFS->FileDataSource( CurrentAction.Selection[ 0 ].fileID );
-
-					if ( pSource == nullptr )
-					{
-						MessageBox( hwndDlg, L"Could not get data source for selected item.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
-
-						break;
-					}
-
-					pFormatter = FSPlugins.LoadFS( FormatFSID, pSource );
-
-					DS_RELEASE( pSource );
+					// PUID here is both plugin and provider ID.
+					pFormatter = FSPlugins.LoadFS( ChosenFS.FUID, pSource );
 
 					if ( pFormatter == nullptr )
 					{
@@ -139,10 +329,10 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					hFormatWindow	= hwndDlg;
 					hFormatEvent	= CreateEvent(NULL, TRUE, FALSE, NULL);
 
-					EnableWindow( GetDlgItem( hwndDlg, IDC_QUICK_FORMAT ), FALSE);
-					EnableWindow( GetDlgItem( hwndDlg, IDC_FULL_FORMAT  ), FALSE);
-					EnableWindow( GetDlgItem( hwndDlg, IDC_FORMAT_LIST  ), FALSE);
-					EnableWindow( GetDlgItem( hwndDlg, IDC_FORMAT_START ), FALSE);
+					EnableWindow( GetDlgItem( hwndDlg, IDC_LLF ),          FALSE );
+					EnableWindow( GetDlgItem( hwndDlg, IDC_BLANKSECTS  ),  FALSE );
+					EnableWindow( GetDlgItem( hwndDlg, IDC_FINITIALISE  ), FALSE );
+					EnableWindow( GetDlgItem( hwndDlg, IDC_TRUNCATE ),     FALSE );
 
 					hFormatThread	= (HANDLE) _beginthreadex(NULL, NULL, FormatThread, NULL, NULL, (unsigned int *) &dwthreadid);
 
@@ -163,6 +353,30 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 			break;
 
+		case WM_PAINT:
+			if ( srcName != nullptr )
+			{
+				HDC hDC = GetDC( hwndDlg );
+
+				RECT r;
+
+				GetClientRect( hwndDlg, &r );
+
+				r.top += 24;
+				r.bottom = r.top + 24;
+
+				FillRect( hDC, &r, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
+
+				r.top = r.bottom;
+
+				DrawEdge( hDC, &r, EDGE_SUNKEN, BF_BOTTOM );
+
+				srcName->DrawText( hDC, 12, 28, DT_LEFT | DT_TOP );
+
+				ReleaseDC( hwndDlg, hDC );
+			}
+			break;
+
 		case WM_INITDIALOG:
 			if (!hFont) {
 				hFont	= CreateFont(24,0,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
@@ -170,58 +384,54 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			}
 
 			{
-				AvailableFSIDs.clear();
+				FileSystem *pFS = (FileSystem *) CurrentAction.FS;
+
+				pSource = pFS->FileDataSource( CurrentAction.Selection[ 0 ].fileID );
+
+				if ( pSource == nullptr )
+				{
+					MessageBox( hwndDlg, L"Could not get data source for selected item.", L"NUTS", MB_ICONEXCLAMATION | MB_OK );
+
+					EndDialog( hwndDlg, 0 );
+				}
 
 				SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_TITLE), WM_SETFONT, (WPARAM) hFont, 0);
 
-				FileSystem	*pFS	= (FileSystem *) CurrentAction.FS;
+				SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_TITLE), WM_SETTEXT, 0, (LPARAM) L"  Format Device or Image" );
+				SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_PROVIDER), WM_SETTEXT, 0, (LPARAM) L"None" );
+				SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_FORMAT), WM_SETTEXT, 0, (LPARAM) L"None" );
 
-				wsprintf(title, L"  Format disk or image:\n  %s", UString( (char *) CurrentAction.Selection[0].Filename ) );
+				EnableWindow( GetDlgItem( hwndDlg, IDC_LLF ),          FALSE );
+				EnableWindow( GetDlgItem( hwndDlg, IDC_BLANKSECTS  ),  FALSE );
+				EnableWindow( GetDlgItem( hwndDlg, IDC_FINITIALISE  ), FALSE );
+				EnableWindow( GetDlgItem( hwndDlg, IDC_TRUNCATE ),     FALSE );
 
-				SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_TITLE), WM_SETTEXT, 0, (LPARAM) title);
+				BYTEString src = BYTEString( CurrentAction.Selection[0].Filename, CurrentAction.Selection[0].Filename.length() );
 
-				HWND	hList	= GetDlgItem(hwndDlg, IDC_FORMAT_LIST);
-
-				SendMessage(GetDlgItem(hwndDlg, IDC_QUICK_FORMAT), BM_SETCHECK, (WPARAM) BST_CHECKED, 0);
-
-				NUTSProviderList Providers = FSPlugins.GetProviders();
-				NUTSProvider_iter iProvider;
-
-				for ( iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
+				if ( CurrentAction.Selection[0].Flags & FF_Extension )
 				{
-					FSDescriptorList FSDescriptors = FSPlugins.GetFilesystems( iProvider->ProviderID );
+					size_t l = CurrentAction.Selection[0].Filename.length();
 
-					for ( FSDescriptor_iter iFS = FSDescriptors.begin(); iFS != FSDescriptors.end(); iFS++ )
-					{
-						if ( iFS->Flags & FSF_Formats_Image )
-						{
-							int pos = SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iFS->FriendlyName.c_str() );
+					src = BYTEString( CurrentAction.Selection[0].Filename, l + 5 );
 
-							SendMessage( hList, LB_SETITEMDATA, pos, (LPARAM) iFS->PUID );
+					BYTE *pSrc = src;
 
-							AvailableFSIDs.push_back( iFS->PUID );
-						}
-						else if ( iFS->Flags & FSF_Formats_Raw )
-						{
-							int pos = SendMessage(hList, LB_ADDSTRING, 0, (LPARAM) iFS->FriendlyName.c_str() );
+					pSrc[ l ] = (BYTE) '.';
 
-							SendMessage( hList, LB_SETITEMDATA, pos, (LPARAM) iFS->PUID );
-
-							AvailableFSIDs.push_back( iFS->PUID );
-						}
-					}
+					rstrncpy( &pSrc[ l + 1 ], CurrentAction.Selection[0].Extension, CurrentAction.Selection[0].Extension.length() );
 				}
 
-				if ( AvailableFSIDs.size() > 0 )
+				if ( srcName != nullptr )
 				{
-					EnableWindow( GetDlgItem(hwndDlg, IDC_FORMAT_START), TRUE );
+					delete srcName;
 				}
 
-				SendMessage(hList, LB_SETCURSEL, 0, 0);
+				srcName = new FontBitmap( FSPlugins.FindFont( CurrentAction.Selection[0].EncodingID, 0 ), src, src.length(), false, false );
+
+				EnableWindow( GetDlgItem(hwndDlg, IDC_FORMAT_START), FALSE );
 
 				Formatting = false;
 				pFormatter = nullptr;
-				Format_FT  = FormatType_Quick;
 
 				SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_PROGRESS), PBM_SETRANGE32, 0, 100);
 				SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_PROGRESS), PBM_SETPOS, 0, 0);
@@ -230,6 +440,11 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			return FALSE;
 
 		case WM_CLOSE:
+			if ( pSource != nullptr )
+			{
+				DS_RELEASE( pSource );
+			}
+
 			EndDialog(hwndDlg,0);
 
 			return TRUE;
@@ -250,11 +465,12 @@ int	Format_Handler(AppAction &Action) {
 		return -1;
 	}
 
-	FileSystem	*pFS	= (FileSystem *) Action.FS;
+	FileSystem *pFS = (FileSystem *) Action.FS;
 
-	CurrentAction	= Action;
+	CurrentAction = Action;
 
-	if (pFS->FSID == FS_Root) {
+	if (pFS->FSID == FS_Root)
+	{
 		//	A drive is being formatted
 
 		if (!IsRawFS( UString( (char *) Action.Selection[0].Filename ) ) ) {
@@ -271,3 +487,4 @@ int	Format_Handler(AppAction &Action) {
 
 	return 0;
 }
+

@@ -94,7 +94,7 @@ public:
 
 	FSHint Offer( BYTE *Extension );
 
-	int Format_Process( FormatType FT, HWND hWnd );
+	int Format_Process( DWORD FT, HWND hWnd );
 
 	int SetProps( DWORD FileID, NativeFile *Changes )
 	{

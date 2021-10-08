@@ -93,14 +93,16 @@
 #define IDC_WIZ_WELCOME                 171
 #define IDB_MUSICFILE                   171
 #define IDD_WIZ_DIALOG2                 172
-#define IDB_DISKIMAGE1                  172
 #define IDB_HARDIMAGE                   172
 #define IDD_WIZ_DIALOG3                 173
 #define IDR_TEA                         173
 #define IDD_WIZ_DIALOG4                 174
+#define IDB_BITMAP4                     174
+#define IDB_ROMDISK                     174
 #define IDD_WIZ_DIALOG5                 176
 #define IDD_FSATTRS                     177
 #define IDD_NEWDIR                      178
+#define IDD_WIZ_FORMAT                  179
 #define AFX_IDC_PRINT_DOCNAME           201
 #define AFX_IDC_PRINT_PRINTERNAME       202
 #define AFX_IDC_PRINT_PORTNAME          203
@@ -163,6 +165,13 @@
 #define IDC_TOOL_OPERATION              1044
 #define IDC_TOOL_ICON                   1045
 #define IDC_LICENSE                     1046
+#define IDC_LLF                         1047
+#define IDC_FINITIALISE                 1048
+#define IDC_TRUNCATE                    1049
+#define IDC_BLANKSECTS                  1050
+#define IDC_FORMAT_PROVIDER             1051
+#define IDC_FORMAT_FORMAT               1052
+#define IDC_SELECT_FORMAT               1054
 #define AFX_IDC_COLOR_BLACK             1100
 #define AFX_IDC_COLOR_WHITE             1101
 #define AFX_IDC_COLOR_RED               1102
@@ -725,9 +734,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        174
+#define _APS_NEXT_RESOURCE_VALUE        175
 #define _APS_NEXT_COMMAND_VALUE         40075
-#define _APS_NEXT_CONTROL_VALUE         1047
+#define _APS_NEXT_CONTROL_VALUE         1057
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

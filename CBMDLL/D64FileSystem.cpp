@@ -683,7 +683,7 @@ int D64FileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
 	return r;
 }
 
-int D64FileSystem::Format_Process( FormatType FT, HWND hWnd )
+int D64FileSystem::Format_Process( DWORD FT, HWND hWnd )
 {
 	static WCHAR * const InitMsg  = L"Initialising";
 	static WCHAR * const EraseMsg = L"Erasing";
@@ -697,7 +697,7 @@ int D64FileSystem::Format_Process( FormatType FT, HWND hWnd )
 
 	BYTE Buffer[ 256 ];
 
-	if ( FT == FormatType_Full )
+	if ( FT & FTF_Blank )
 	{
 		ZeroMemory( Buffer, 256 );
 

@@ -363,7 +363,7 @@ int IECATAFileSystem::Format_PreCheck(int FormatType, HWND hWnd) {
 	return 0;
 }
 
-int IECATAFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
+int IECATAFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 	ResetEvent( hCancelFormat );
 
 	static WCHAR ProgressText[512];
@@ -378,7 +378,7 @@ int IECATAFileSystem::Format_Process( FormatType FT, HWND hWnd ) {
 	unsigned char blank[512];
 	int Stages = 2;
 
-	if ( FT == FormatType_Full ) {
+	if ( FT & FTF_Blank ) {
 		Stages = 3;
 
 		//	Blank sectors

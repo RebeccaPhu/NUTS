@@ -113,7 +113,8 @@ END
 //
 
 IDD_FORMAT DIALOGEX 0, 0, 328, 179
-STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_CONTEXTHELP
 CAPTION "Format disk or image"
 FONT 8, "Ms Shell Dlg", 0, 0, 0x0
 BEGIN
@@ -122,12 +123,18 @@ BEGIN
     LTEXT           "All Your Base Are Belong To Us",IDC_FORMAT_TITLE,0,0,328,16
     GROUPBOX        "Format Options",IDC_STATIC,3,60,158,70
     GROUPBOX        "Disk Format",IDC_STATIC,166,60,158,70
-    LISTBOX         IDC_FORMAT_LIST,170,69,150,58,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "&Quick Format (Structure Only)",IDC_QUICK_FORMAT,"Button",BS_AUTORADIOBUTTON,9,72,113,8
-    CONTROL         "&Full Format (Clear Sectors)",IDC_FULL_FORMAT,"Button",BS_AUTORADIOBUTTON,9,86,102,8
     GROUPBOX        "Format Progress",IDC_PROGRESS_TEXT,4,134,321,26
     CONTROL         "",IDC_FORMAT_PROGRESS,"msctls_progress32",WS_BORDER,7,144,315,12
     LTEXT           "The disk or image selected will be formatted with the following parameters. Please note that not all formats may be suitable for the selected disk or image, and using them in such a way may render them unreadable by native hardware.",IDC_STATIC,4,32,318,27
+    CONTROL         "&Low Level Format",IDC_LLF,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,69,141,15
+    CONTROL         "&Initialise",IDC_FINITIALISE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,99,141,15
+    CONTROL         "&Truncate",IDC_TRUNCATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,114,141,15
+    CONTROL         "&Blank Sectors",IDC_BLANKSECTS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,84,141,15
+    LTEXT           "Provider:",IDC_STATIC,171,71,36,10
+    LTEXT           "A Great Fibre Provider",IDC_FORMAT_PROVIDER,215,71,96,11,0,WS_EX_RIGHT
+    LTEXT           "Format:",IDC_STATIC,171,82,36,10
+    LTEXT           "Or Not For Mat",IDC_FORMAT_FORMAT,215,82,96,17,0,WS_EX_RIGHT
+    PUSHBUTTON      "&Select...",IDC_SELECT_FORMAT,207,107,76,17
 END
 
 IDD_FILEOPS DIALOGEX 0, 0, 339, 120
@@ -351,6 +358,7 @@ IDB_SYSTEM              BITMAP                  "E:\\NUTS\\System.bmp"
 IDB_WINDOWS             BITMAP                  "E:\\NUTS\\Windows.bmp"
 IDB_AUDIOBUTTONS        BITMAP                  "E:\\NUTS\\AudioControls.bmp"
 IDB_MUSICFILE           BITMAP                  "..\\musicfile.bmp"
+IDB_ROMDISK             BITMAP                  "..\\romdisk.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -620,6 +628,20 @@ BEGIN
     CONTROL         "",IDC_LICENSE,"RichEdit20W",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_NUMBER | WS_BORDER | WS_VSCROLL | WS_TABSTOP,7,7,369,240
 END
 
+IDD_WIZ_FORMAT DIALOGEX 0, 0, 318, 154
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Select Format"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Format Provider",IDC_STATIC,6,39,142,95
+    GROUPBOX        "Format",IDC_STATIC,163,39,142,95
+    LTEXT           "Select the image format provider and container format from the list below. Note that not all formats may be available for formatting the selected target.",IDC_STATIC,10,9,293,26
+    LISTBOX         IDC_WIZ_PROVIDER,11,49,132,80,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_WIZ_FORMAT,168,49,132,80,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&OK",IDOK,199,137,50,14
+    PUSHBUTTON      "&Cancel",IDCANCEL,255,137,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -759,6 +781,12 @@ BEGIN
         RIGHTMARGIN, 376
         TOPMARGIN, 7
         BOTTOMMARGIN, 247
+    END
+
+    IDD_WIZ_FORMAT, DIALOG
+    BEGIN
+        RIGHTMARGIN, 317
+        BOTTOMMARGIN, 143
     END
 END
 #endif    // APSTUDIO_INVOKED

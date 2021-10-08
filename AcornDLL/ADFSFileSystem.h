@@ -129,7 +129,7 @@ public:
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	WCHAR *Identify( DWORD FileID );
 
-	int Format_Process( FormatType FT, HWND hWnd );
+	int Format_Process( DWORD FT, HWND hWnd );
 	int Format_PreCheck( int FormatType, HWND hWnd );
 	
 	OldFSMap *pFSMap;

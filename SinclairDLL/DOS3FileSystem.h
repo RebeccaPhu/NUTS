@@ -22,7 +22,7 @@ public:
 	bool GetCPMHeader( NativeFile *pFile, BYTE *pHeader );
 	int  SetProps( DWORD FileID, NativeFile *Changes );
 
-	int  Format_Process( FormatType FT, HWND hWnd );
+	int  Format_Process( DWORD FT, HWND hWnd );
 
 	int EnhanceFileData( NativeFile *pFile );
 

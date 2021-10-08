@@ -14,6 +14,8 @@ NestedImageSource::NestedImageSource( void *pFS, NativeFile *pSource, std::wstri
 	{
 		SourceObject = *pSource;
 	}
+
+	Flags = DS_SupportsTruncate;
 }
 
 NestedImageSource::~NestedImageSource(void)

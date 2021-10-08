@@ -75,7 +75,7 @@ public:
 
 	int  SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );
 
-	int  Format_Process( FormatType FT, HWND hWnd );
+	int  Format_Process( DWORD FT, HWND hWnd );
 
 	DWORD GetEncoding(void )
 	{

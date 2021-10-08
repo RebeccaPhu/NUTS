@@ -55,25 +55,25 @@ FSDescriptor SinclairFS[] = {
 	{
 		/* .FriendlyName = */ L"TR-DOS 80T Double Sided",
 		/* .PUID         = */ FSID_TRD_80DS,
-		/* .Flags        = */ FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_DynamicSize | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_DynamicSize | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
 		256, 256 * 16 * 80 * 2
 	},
 	{
 		/* .FriendlyName = */ L"TR-DOS 40T Double Sided",
 		/* .PUID         = */ FSID_TRD_40DS,
-		/* .Flags        = */ FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_DynamicSize | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_DynamicSize | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
 		256, 256 * 16 * 40 * 2
 	},
 	{
 		/* .FriendlyName = */ L"TR-DOS 80T Single Sided",
 		/* .PUID         = */ FSID_TRD_80SS,
-		/* .Flags        = */ FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_DynamicSize | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_DynamicSize | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
 		256, 256 * 16 * 80 * 1
 	},
 	{
 		/* .FriendlyName = */ L"TR-DOS 40T Single Sided",
 		/* .PUID         = */ FSID_TRD_40SS,
-		/* .Flags        = */ FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_DynamicSize | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_DynamicSize | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
 		256, 256 * 16 * 40 * 1
 	}
 };

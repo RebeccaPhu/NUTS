@@ -41,7 +41,7 @@ FSDescriptor CBMFS[] = {
 	{
 		/* .FriendlyName = */ L"D64 Commodore Disk Image",
 		/* .PUID         = */ FSID_D64,
-		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces,
 		256, 1700
 	},
 	{
