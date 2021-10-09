@@ -27,6 +27,8 @@ public:
 			FSF_Uses_Extensions | FSF_Fake_Extensions | FSF_NoDir_Extensions;
 
 		TopicIcon = FT_HardImage;
+
+		PreferredArbitraryExtension = (BYTE *) "PRG";
 	}
 
 	~IECATAFileSystem(void) {

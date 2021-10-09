@@ -23,6 +23,8 @@ public:
 
 		FSID  = FSID_T64;
 		Flags = FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_DynamicSize | FSF_Reorderable | FSF_Prohibit_Nesting | FSF_Uses_Extensions | FSF_Fake_Extensions;
+
+		PreferredArbitraryExtension = (BYTE *) "PRG";
 	}
 
 	~T64FileSystem(void)

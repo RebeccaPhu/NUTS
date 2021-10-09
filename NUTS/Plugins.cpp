@@ -291,6 +291,9 @@ FormatList CPlugins::GetFormats( DWORD PUID )
 		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
 		Format.FUID   = PUID_ZIP;
 		Format.Format = L"ZIP File";
+
+		Format.PreferredExtension = (BYTE *) "ZIP";
+
 		Formats.push_back( Format );
 
 		return Formats;
@@ -310,6 +313,8 @@ FormatList CPlugins::GetFormats( DWORD PUID )
 			Format.Flags      = iFS->Flags;
 			Format.MaxSize    = iFS->MaxSize;
 			Format.SectorSize = iFS->SectorSize;
+
+			Format.PreferredExtension = iFS->FavouredExtension;
 
 			Formats.push_back( Format );
 		}

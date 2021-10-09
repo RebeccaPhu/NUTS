@@ -34,13 +34,15 @@ FSDescriptor AmstradFS[] = {
 		/* .FriendlyName = */ L"Amstrad AMSDOS",
 		/* .PUID         = */ FSID_AMSDOS,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_FixedSize | FSF_UseSectors | FSF_Uses_DSK | FSF_No_Quick_Format,
-		512, 40 * 9 * 512
+		512, 40 * 9 * 512,
+		(BYTE *) "DSK"
 	},
 	{
 		/* .FriendlyName = */ L"Amstrad CPC CDT Tape Image",
 		/* .PUID         = */ FSID_AMSTRAD_CDT,
 		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_DynamicSize,
-		0
+		0, 0,
+		(BYTE *) "CDT"
 	}
 };
 

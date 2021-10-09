@@ -412,6 +412,7 @@
     <None Include="..\volume.bmp" />
     <None Include="..\Windows.bmp" />
     <None Include="..\WizBanner.bmp" />
+    <None Include="..\WizMark.bmp" />
     <None Include="ClassDiagram1.cd" />
     <None Include="NUTS.ico" />
     <None Include="SingleFile.cur" />

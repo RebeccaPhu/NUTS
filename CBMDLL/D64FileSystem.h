@@ -48,6 +48,8 @@ public:
 		Shape.Tracks = 35; // Only for D64!
 
 		pDataSource->SetComplexDiskShape( Shape );
+
+		PreferredArbitraryExtension = (BYTE *) "PRG";
 	}
 
 	~D64FileSystem(void) {

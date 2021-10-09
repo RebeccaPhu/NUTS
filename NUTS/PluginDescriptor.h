@@ -1,6 +1,8 @@
 #ifndef PLUGIN_DESCRIPTOR_
 #define PLUGIN_DESCRIPTOR_
 
+#include "BYTEString.h"
+
 #include <string>
 #include <list>
 
@@ -71,6 +73,7 @@ typedef struct _FileDescriptor {
 	DWORD Flags;
 	DWORD SectorSize;
 	QWORD MaxSize;
+	BYTEString FavouredExtension;
 } FSDescriptor;
 
 typedef struct _DataTranslator {

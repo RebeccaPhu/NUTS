@@ -145,6 +145,7 @@ typedef enum _DSFlags {
 
 typedef struct _FormatDesc {
 	std::wstring Format;
+	BYTEString   PreferredExtension;
 	DWORD        FUID;
 	DWORD        PUID;
 	DWORD        Flags;

@@ -33,13 +33,15 @@ FSDescriptor AmigaFS[] = {
 		/* .FriendlyName = */ L"Amiga OFS Disk Image",
 		/* .PUID         = */ FSID_AMIGAO,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors,
-		512, 1700
+		512, 1700,
+		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"Amiga FFS Disk Image",
 		/* .PUID         = */ FSID_AMIGAF,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors,
-		512, 1700
+		512, 1700,
+		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"Amiga DMS Disk Archive",

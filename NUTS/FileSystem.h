@@ -3,7 +3,6 @@
 #include "Directory.h"
 #include "Defs.h"
 #include "libfuncs.h"
-#include "FormatWizard.h"
 #include "TempFile.h"
 #include "NUTSError.h"
 #include "NestedImageSource.h"
@@ -56,6 +55,8 @@ public:
 		UseResolvedIcons = false;
 		HideSidecars     = false;
 		pParentFS        = nullptr;
+
+		PreferredArbitraryExtension = (BYTE *) "IMG";
 	}
 
 	virtual ~FileSystem(void) {
@@ -148,6 +149,22 @@ public:
 
 	virtual int DeleteFile( DWORD FileID ) {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
+	}
+
+	virtual int DeleteFile( NativeFile *pFile )
+	{
+		if ( pDirectory != nullptr )
+		{
+			for ( NativeFileIterator iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+			{
+				if ( FilenameCmp( pFile, &*iFile ) )
+				{
+					return DeleteFile( iFile->fileID );
+				}
+			}
+		}
+
+		return NUTSError( 400, L"Couldn't find find to delete (software bug)" );
 	}
 
 	virtual int Init(void) {
@@ -459,6 +476,8 @@ public:
 	HWND hPaneWindow;
 
 	std::deque<DWORD> AlternateOffsets;
+
+	BYTEString PreferredArbitraryExtension;
 
 protected:
 	HANDLE hCancelFormat;

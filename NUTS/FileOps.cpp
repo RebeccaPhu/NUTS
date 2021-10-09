@@ -685,7 +685,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 						/* File exists and the user doesn't care */
 						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-						pTargetFS->DeleteFile( iStep->Object.fileID );
+						pTargetFS->DeleteFile( &iStep->Object );
 
 						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
@@ -700,7 +700,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 							/* User already agreed to this */
 							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-							pTargetFS->DeleteFile( iStep->Object.fileID );
+							pTargetFS->DeleteFile( &iStep->Object );
 
 							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
@@ -728,7 +728,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 							{
 								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-								pTargetFS->DeleteFile( iStep->Object.fileID );
+								pTargetFS->DeleteFile( &iStep->Object );
 
 								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 

@@ -15,6 +15,12 @@
 #include <process.h>
 #include <commctrl.h>
 
+// ICON CREDS
+
+// "Floppy Icon", NX10 Icon set, MazeNL77, CC Attributon 3.0 Unported
+// "B Side Icon", Cassette Tape Icons, barkerbaggies, CC Attribution-NonCommercial-ShareAlike 3.0 Unported
+// "Devices 5.25 Floppy Unmount Icon", Glaze Icons, Marco Martin, LGPL
+
 HWND  hWizard = NULL;
 
 static HFONT hFont = NULL;
@@ -28,6 +34,8 @@ FormatDesc   ChosenFS;
 std::vector<FormatDesc> FSList;
 
 EncodingEdit *pFilename = nullptr;
+EncodingEdit *pExtn     = nullptr;
+FileSystem   *pContain  = nullptr;
 
 bool FormatSet = false;
 
@@ -53,6 +61,19 @@ INT_PTR CALLBACK Wiz1WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			}
 			break;
 
+		case WM_NOTIFY:
+			{
+				NMHDR *pNM = (NMHDR *) lParam;
+
+				if ( pNM->code ==  PSN_SETACTIVE )
+				{
+					::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, (LPARAM) PSWIZB_NEXT );
+
+					FormatSet = false;
+				}
+			}
+			break;
+
 		case WM_COMMAND:
 			{
 				return FALSE;
@@ -66,19 +87,28 @@ INT_PTR CALLBACK Wiz1WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 INT_PTR CALLBACK Wiz2WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch ( uMsg )
 	{
-		case WM_INITDIALOG:
+		case WM_NOTIFY:
 			{
-				::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_RESETCONTENT, 0, 0 );
-				::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_FORMAT ), LB_RESETCONTENT, 0, 0 );
+				NMHDR *pNM = (NMHDR *) lParam;
 
-				Providers = FSPlugins.GetProviders();
-
-				for ( NUTSProvider_iter iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
+				if ( pNM->code ==  PSN_SETACTIVE )
 				{
-					::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_ADDSTRING, 0, (LPARAM) iProvider->FriendlyName.c_str() );
+					::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, (LPARAM) PSWIZB_BACK );
+
+					if ( !FormatSet )
+					{
+						::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_RESETCONTENT, 0, 0 );
+						::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_FORMAT ), LB_RESETCONTENT, 0, 0 );
+
+						Providers = FSPlugins.GetProviders();
+
+						for ( NUTSProvider_iter iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
+						{
+							::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_ADDSTRING, 0, (LPARAM) iProvider->FriendlyName.c_str() );
+						}
+					}
 				}
 			}
-
 			break;
 
 		case WM_SHOWWINDOW:
@@ -117,7 +147,7 @@ INT_PTR CALLBACK Wiz2WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 							{
 								FSList.clear();
 
-								Formats = FSPlugins.GetFormats( Providers[ Index ].PluginID );
+								Formats = FSPlugins.GetFormats( Providers[ Index ].ProviderID );
 
 								for ( FormatDesc_iter iFormat = Formats.begin(); iFormat != Formats.end(); iFormat++ )
 								{
@@ -177,7 +207,48 @@ INT_PTR CALLBACK Wiz3WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 				ScreenToClient( hwndDlg, &p );
 
-				pFilename = new EncodingEdit( hwndDlg, p.x + 8, p.y + 16, 304, true );
+				if ( pExtn != nullptr )
+				{
+					delete pExtn;
+
+					pExtn = nullptr;
+				}
+
+				if ( pFilename != nullptr )
+				{
+					delete pFilename;
+
+					pFilename = nullptr;
+				}
+
+				DWORD FNW = 304;
+				DWORD EXW = 75;
+
+				if ( pContain->Flags & FSF_Uses_Extensions )
+				{
+					FNW -= ( EXW + 4 );
+
+					pExtn = new EncodingEdit( hwndDlg, p.x + 8 + FNW, p.y + 16, EXW, true );
+				}
+
+				pFilename = new EncodingEdit( hwndDlg, p.x + 8, p.y + 16, FNW, (pExtn == nullptr ) );
+
+				if ( pExtn != nullptr )
+				{
+					pExtn->SetBuddy( pFilename );
+					pExtn->Encoding = Encoding;
+					pExtn->AllowedChars = EncodingEdit::textInputAny;
+
+					if ( pContain->Flags & FSF_Fake_Extensions )
+					{
+						pExtn->Disabled = true;
+						pExtn->SetText( pContain->PreferredArbitraryExtension );
+					}
+					else
+					{
+						pExtn->SetText( ChosenFS.PreferredExtension );
+					}
+				}
 
 				pFilename->Encoding     = Encoding;
 				pFilename->AllowedChars = EncodingEdit::textInputAny;
@@ -349,14 +420,11 @@ unsigned int __stdcall CreationThread(void *param)
 		delete FS;
 	}
 
-	FileSystem *ContainerFS = (FileSystem *) CurrentAction.FS;
-
-	if ( ContainerFS != nullptr )
+	if ( pContain != nullptr )
 	{
 		NativeFile file;
 
-		file.EncodingID   = ContainerFS->GetEncoding();
-		file.Extension[0] = 0;
+		file.EncodingID   = pContain->GetEncoding();
 		file.fileID       = 0;
 		file.Flags        = 0;
 		file.FSFileType   = 0;
@@ -368,12 +436,41 @@ unsigned int __stdcall CreationThread(void *param)
 
 		file.Filename = pF;
 
-		ContainerFS->WriteFile( &file, NewImage );
+		if ( pContain->Flags & FSF_Uses_Extensions )
+		{
+			BYTE *pE = pExtn->GetText();
+
+			file.Extension = pE;
+
+			file.Flags |= FF_Extension;
+		}
+
+		if ( pContain->WriteFile( &file, NewImage ) == FILEOP_EXISTS )
+		{
+			if ( MessageBox( hWizard,
+				L"A file with the specified name already exists. This operation cannot be undone. If you overwrite this file the original data will be lost.\r\n\r\nOverwrite?",
+				L"NUTS New Image Wizard",
+				MB_ICONEXCLAMATION | MB_YESNO
+				) == IDYES )
+			{
+				pContain->DeleteFile( &file );
+
+				if ( pContain->WriteFile( &file, NewImage ) != NUTS_SUCCESS )
+				{
+					NUTSError::Report( L"Creating new image", hWizard );
+				}
+			}
+			else
+			{
+				::SendMessage( hWizard, PSM_SETCURSEL, (WPARAM) 2, (LPARAM) NULL );
+
+				return 0;
+			}
+		}
 		
 		CFileViewer *pPane = (CFileViewer *) CurrentAction.Pane;
 
-		pPane->Updated = true;
-		pPane->Refresh();
+		pPane->Update();
 	}
 
 	/* This is here purely to make the "and I'm spent" moment visible to the user */
@@ -460,6 +557,8 @@ int ImageWiz_Handler( AppAction Action )
 
 	DWORD *pEncoding = (DWORD *) Action.pData;
 
+	pContain = (FileSystem *) Action.FS;
+
 	Encoding = *pEncoding;
 
 	PROPSHEETPAGE psp[ 5 ];
@@ -539,6 +638,15 @@ int ImageWiz_Handler( AppAction Action )
 	if ( pFilename )
 	{
 		delete pFilename;
+
+		pFilename = nullptr;
+	}
+
+	if ( pExtn )
+	{
+		delete pExtn;
+
+		pExtn = nullptr;
 	}
     
 	return 0;
