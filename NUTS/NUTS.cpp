@@ -795,6 +795,12 @@ void DoResizeWindow(HWND hWnd) {
 	if (placement.showCmd == SW_MINIMIZE)
 		return;
 
+	if (placement.showCmd == SW_SHOWMINIMIZED)
+		return;
+
+	if (placement.showCmd == SW_FORCEMINIMIZE)
+		return;
+
 	GetClientRect(hWnd, &rect);
 
 	int	paneWidth	= (rect.right - rect.left) / 2;
