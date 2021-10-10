@@ -3,6 +3,7 @@
 #include "DXAudio.h"
 #include "TempFile.h"
 #include "TapeKey.h"
+#include "TapeBrowser.h"
 #include "../NUTS/Defs.h"
 #include <map>
 
@@ -40,6 +41,8 @@ private:
 	HWND hParent;
 
 	TapeKey *Keys[ 6 ];
+
+	TapeBrowser *pBrowser;
 
 	HDC hCanvas;
 	HBITMAP hCanvasBitmap;

@@ -291,6 +291,9 @@
     <ClCompile Include="TapeKey.cpp">
       <Filter>Source Files\UI\Elements</Filter>
     </ClCompile>
+    <ClCompile Include="TapeBrowser.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -528,6 +531,9 @@
       <Filter>Header Files\Translators</Filter>
     </ClInclude>
     <ClInclude Include="TapeKey.h">
+      <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="TapeBrowser.h">
       <Filter>Header Files\UI\Elements</Filter>
     </ClInclude>
   </ItemGroup>

@@ -111,6 +111,7 @@ AudioPlayer::AudioPlayer( CTempFile &FileObj, TapeIndex &SourceIndexes ) {
 	TC         = GetTickCount();
 	WasPlaying = false;
 	Playing    = false;
+	pBrowser   = nullptr;
 }
 
 
@@ -119,6 +120,13 @@ AudioPlayer::~AudioPlayer(void)
 	DeleteCriticalSection( &cs );
 
 	SoundPlayer.Stop();
+
+	if ( pBrowser != nullptr )
+	{
+		delete pBrowser;
+
+		pBrowser = nullptr;
+	}
 
 	for ( int i=0;i<6;i++ )
 	{
@@ -154,7 +162,7 @@ int AudioPlayer::Create( HWND Parent, HINSTANCE hInstance )
 		NULL,
 		L"NUTS Cassette Image Player",
 		L"NUTS Cassette Image Player",
-		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED | WS_TABSTOP | WS_GROUP,
+		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
 		CW_USEDEFAULT, CW_USEDEFAULT, APW, APH,
 		Parent, NULL, hInstance, NULL
 	);
@@ -430,6 +438,14 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 		}
 		break;
 
+	case WM_TBCLOSED:
+		if ( pBrowser != nullptr )
+		{
+			// Browser has already deleted itself
+			pBrowser = nullptr;
+		}
+		break;
+
 	case WM_COMMAND:
 		if ( lParam == (LPARAM) hOptions )
 		{
@@ -443,24 +459,46 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 			{
 				DoSaveAudio();
 			}
-			else if ( i >= IDM_CUEJUMP )
+			else if ( i == IDM_CUEJUMP )
 			{
-				SoundPlayer.Pause();
+				if ( pBrowser == nullptr )
+				{
+					pBrowser = new TapeBrowser();
 
-				std::vector<TapeCue>::iterator iCue = Indexes.Cues.begin() + ( i - IDM_CUEJUMP );
+					RECT r;
 
-				TapePtr = iCue->IndexPtr;
+					GetWindowRect( hWnd, &r );
 
-				SoundPlayer.PositionReset();
-
-				PlayCursor = TapePtr;
-				BackCursor = TapePtr;
-
-				SoundPlayer.Play();
+					pBrowser->Create( hWnd, r.left + APW + 16, r.top, &Indexes.Cues );
+				}
 			}
 		}		
 
 		break;
+
+	case WM_CUEINDEX_JUMP:
+		{
+			::SendMessage( hWnd, WM_TAPEKEY_DOWN, (WPARAM) TapeKeyStop, 0 );
+			::SendMessage( hWnd, WM_TAPEKEY_UP, (WPARAM) TapeKeyStop, 0 );
+
+			std::vector<TapeCue>::iterator iCue = Indexes.Cues.begin() + lParam;
+
+			EnterCriticalSection( &cs );
+
+			TapePtr    = iCue->IndexPtr;
+			PlayCursor = iCue->IndexPtr;
+			BackCursor = iCue->IndexPtr;
+
+			LeaveCriticalSection( &cs );
+
+			Keys[ 2 ]->Press();
+
+			::SendMessage( hWnd, WM_TAPEKEY_DOWN, (WPARAM) TapeKeyPlay, 0 );
+			::SendMessage( hWnd, WM_TAPEKEY_UP, (WPARAM) TapeKeyPlay, 0 );
+
+			Refresh();
+		}
+		return 0;
 	}
 
 	return DefWindowProc(hWnd, message, wParam, lParam);
@@ -1067,17 +1105,7 @@ void AudioPlayer::DoOptionsPopup( void )
 
 	AppendMenu( hOpts, MF_STRING, IDM_SAVEAUDIO, L"&Save Audio" );
 	AppendMenu( hOpts, MF_SEPARATOR, 0, L"" );
-
-	std::vector<TapeCue>::iterator iCue;
-
-	DWORD i = 0;
-
-	for ( iCue = Indexes.Cues.begin(); iCue != Indexes.Cues.end(); iCue++ )
-	{
-		AppendMenu( hOpts, MF_STRING, IDM_CUEJUMP + i, iCue->IndexName.c_str() );
-
-		i++;
-	}
+	AppendMenu( hOpts, MF_STRING, IDM_CUEJUMP, L"Tape &Browser" );
 
 	RECT r;
 

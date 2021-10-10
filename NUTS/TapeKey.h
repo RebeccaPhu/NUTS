@@ -29,6 +29,7 @@ public:
 
 public:
 	void Reset(void);
+	void Press(void);
 	bool IsPressed(void);
 
 public:

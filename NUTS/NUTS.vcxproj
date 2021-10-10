@@ -231,6 +231,7 @@
     <ClCompile Include="Plugins.cpp" />
     <ClCompile Include="RootDirectory.cpp" />
     <ClCompile Include="RootFileSystem.cpp" />
+    <ClCompile Include="TapeBrowser.cpp" />
     <ClCompile Include="TapeKey.cpp" />
     <ClCompile Include="TempFile.cpp" />
     <ClCompile Include="TextFileTranslator.cpp" />
@@ -304,6 +305,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="SCREENTranslator.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TapeBrowser.h" />
     <ClInclude Include="TapeKey.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Directory.h" />

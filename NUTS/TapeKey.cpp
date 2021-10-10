@@ -282,6 +282,13 @@ void TapeKey::Reset(void)
 	Refresh();
 }
 
+void TapeKey::Press(void)
+{
+	Pressed = true;
+
+	Refresh();
+}
+
 bool TapeKey::IsPressed(void)
 {
 	return Pressed;
