@@ -2,6 +2,7 @@
 
 #include "DXAudio.h"
 #include "TempFile.h"
+#include "TapeKey.h"
 #include "../NUTS/Defs.h"
 #include <map>
 
@@ -38,16 +39,7 @@ private:
 
 	HWND hParent;
 
-	/* Button images */
-	HBITMAP hFirst;
-	HBITMAP hRewind;
-	HBITMAP hPlay;
-	HBITMAP hForward;
-	HBITMAP hStop;
-	HBITMAP hEject;
-	HBITMAP hVolume;
-
-	bool ButtonStates[ 6 ];
+	TapeKey *Keys[ 6 ];
 
 	HDC hCanvas;
 	HBITMAP hCanvasBitmap;
@@ -60,6 +52,7 @@ private:
 	HFONT   TapeFont1;
 	HFONT   TapeFont2;
 	HFONT   IndexFont;
+	HBITMAP hVolume;
 	HWND    hVolumeControl;
 	HWND    hOptions;
 
@@ -94,5 +87,6 @@ private:
 	void DrawIndex( void );
 	void DoOptionsPopup( void );
 	void DoSaveAudio( void );
+	void Refresh();
 };
 

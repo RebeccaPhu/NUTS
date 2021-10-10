@@ -288,6 +288,9 @@
     <ClCompile Include="HEXDumpTranslator.cpp">
       <Filter>Source Files\Translators</Filter>
     </ClCompile>
+    <ClCompile Include="TapeKey.cpp">
+      <Filter>Source Files\UI\Elements</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -523,6 +526,9 @@
     </ClInclude>
     <ClInclude Include="HEXDumpTranslator.h">
       <Filter>Header Files\Translators</Filter>
+    </ClInclude>
+    <ClInclude Include="TapeKey.h">
+      <Filter>Header Files\UI\Elements</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

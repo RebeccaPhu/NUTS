@@ -489,6 +489,8 @@ typedef struct _TapeIndex {
 #define WM_RENAME_FILE      (WM_APP + 33)
 #define WM_NEW_DIR          (WM_APP + 34)
 #define WM_AUDIOELEMENT     (WM_APP + 35)
+#define WM_TAPEKEY_DOWN     (WM_APP + 36)
+#define WM_TAPEKEY_UP       (WM_APP + 37)
 
 #define TUID_TEXT           0x80000001
 #define TUID_MOD_MUSIC      0x80000002

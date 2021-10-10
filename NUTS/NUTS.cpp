@@ -31,6 +31,7 @@
 
 // Global Variables:
 HINSTANCE hInst;                     // current instance
+HWND      hActiveWnd   = NULL;
 bool      FSChangeLock = false;
 
 TCHAR szTitle[MAX_LOADSTRING];       // The title bar text
@@ -195,7 +196,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	while (GetMessage(&msg, NULL, 0, 0)) {
 		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
 		{
-			if ( !IsDialogMessage( msg.hwnd, &msg ) )
+			if ( ( hActiveWnd == NULL ) || ( !IsDialogMessage( hActiveWnd, &msg ) ) )
 			{
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
@@ -361,7 +362,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 		WS_EX_CONTROLPARENT,
 		szWindowClass,
 		szTitle,
-		WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS,
+		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
 		CW_USEDEFAULT, 0, WindowWidth, WindowHeight,
 		NULL, NULL, hInstance, NULL
 	);
@@ -1516,18 +1517,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		FocusPane = (HWND) wParam;
 		return 0;
 
-	case WM_ACTIVATEAPP:
+//	case WM_ACTIVATEAPP:
 	case WM_ACTIVATE:
 		{
-			BOOL fActivate = (BOOL) wParam;
-
-			if ( fActivate )
+			if ( wParam == 0 )
 			{
-				char a[256];
-				sprintf(a, "Activating window %08X\n", FocusPane );
-				OutputDebugStringA( a );
-				SetFocus( FocusPane );
+				hActiveWnd = 0;
 			}
+			else
+			{
+				hActiveWnd = hWnd;
+			}
+
+			SetFocus( FocusPane );
 		}
 		return 0;
 

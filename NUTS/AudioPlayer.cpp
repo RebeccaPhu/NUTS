@@ -2,6 +2,7 @@
 #include "AudioPlayer.h"
 #include "Preference.h"
 #include "FileDialogs.h"
+#include "TapeKey.h"
 #include "resource.h"
 
 #include <math.h>
@@ -53,12 +54,11 @@ AudioPlayer::AudioPlayer( CTempFile &FileObj, TapeIndex &SourceIndexes ) {
 
 	Indexes = SourceIndexes;
 
-	hFirst    = NULL;
-	hRewind   = NULL;
-	hPlay     = NULL;
-	hForward  = NULL;
-	hStop     = NULL;
-	hEject    = NULL;
+	for ( int i = 0; i<6; i++ )
+	{
+		Keys[ i ] = nullptr;
+	}
+
 	hTape     = NULL;
 	VLtGPen   = NULL;
 	LtGPen    = NULL;
@@ -120,12 +120,14 @@ AudioPlayer::~AudioPlayer(void)
 
 	SoundPlayer.Stop();
 
-	NixObject( hFirst );
-	NixObject( hRewind );
-	NixObject( hPlay );
-	NixObject( hForward );
-	NixObject( hStop );
-	NixObject( hEject );
+	for ( int i=0;i<6;i++ )
+	{
+		if ( Keys[i] != nullptr )
+		{
+			delete Keys[i];
+		}
+	}
+
 	NixObject( hCanvasBitmap );
 	NixObject( hTape );
 	NixObject( VLtGPen );
@@ -152,7 +154,7 @@ int AudioPlayer::Create( HWND Parent, HINSTANCE hInstance )
 		NULL,
 		L"NUTS Cassette Image Player",
 		L"NUTS Cassette Image Player",
-		WS_SYSMENU | WS_CLIPSIBLINGS | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED | WS_TABSTOP | WS_GROUP,
+		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED | WS_TABSTOP | WS_GROUP,
 		CW_USEDEFAULT, CW_USEDEFAULT, APW, APH,
 		Parent, NULL, hInstance, NULL
 	);
@@ -161,20 +163,7 @@ int AudioPlayer::Create( HWND Parent, HINSTANCE hInstance )
 
 	hParent = Parent;
 
-	hFirst    = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_PLAYER_FIRST ) );
-	hRewind   = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_PLAYER_REWIND ) );
-	hPlay     = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_PLAYER_PLAY ) );
-	hForward  = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_PLAYER_FORWARD ) );
-	hStop     = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_PLAYER_STOP ) );
-	hEject    = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_PLAYER_EJECT ) );
 	hVolume   = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_VOLUME ) );
-
-	ButtonStates[ 0 ] = false;
-	ButtonStates[ 1 ] = false;
-	ButtonStates[ 2 ] = false;
-	ButtonStates[ 3 ] = false;
-	ButtonStates[ 4 ] = false;
-	ButtonStates[ 5 ] = false;
 
 	HDC hDC = GetDC( hWnd );
 
@@ -210,6 +199,15 @@ int AudioPlayer::Create( HWND Parent, HINSTANCE hInstance )
 		hWnd, NULL, hInst, NULL
 	);
 
+	DWORD APKT = r.bottom - 48;
+
+	Keys[ 0 ] = new TapeKey( hWnd, TapeKeyStart,   1,   APKT, true );
+	Keys[ 1 ] = new TapeKey( hWnd, TapeKeyBack,    51,  APKT, false );
+	Keys[ 2 ] = new TapeKey( hWnd, TapeKeyPlay,    101, APKT, false );
+	Keys[ 3 ] = new TapeKey( hWnd, TapeKeyForward, 151, APKT, false );
+	Keys[ 4 ] = new TapeKey( hWnd, TapeKeyStop,    201, APKT, true );
+	Keys[ 5 ] = new TapeKey( hWnd, TapeKeyEject,   251, APKT, true );
+
 	TapeVolume = Preference( L"TapePlayerVolume", (DWORD) 64 );
 
 	::SendMessage( hOptions, WM_SETTEXT, 0, (LPARAM) L"▼" );
@@ -226,6 +224,17 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 {
 	switch (message)
 	{
+	case WM_ACTIVATE:
+		if ( wParam == 0 )
+		{
+			hActiveWnd = NULL;
+		}
+		else
+		{
+			hActiveWnd = hWindow;
+		}
+		break;
+
 	case WM_PAINT:
 		{
 			PaintPlayer();
@@ -248,88 +257,79 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 		}
 		break;
 
-	case WM_LBUTTONDOWN:
-	case WM_LBUTTONUP:
+	case WM_TAPEKEY_DOWN:
+	case WM_TAPEKEY_UP:
 		{
-			WORD x = LOWORD( lParam );
-			WORD y = HIWORD( lParam );
+			TapeKeyID b = (TapeKeyID) wParam;
 
-			RECT r;
+			if ( message == WM_TAPEKEY_DOWN ) {
+				if ( b == 2 ) {
+					WasPlaying = Playing;
+				}
 
-			GetClientRect( hWnd, &r );
-
-			if ( y > (r.bottom - 50) )
-			{
-				int b = (x - 2) / 50;
-
-				if ( ( b >= 0 ) && ( b <= 5 ) )
+				for ( int i=0; i<6; i++ )
 				{
-					if ( message == WM_LBUTTONDOWN ) {
-						if ( b == 2 ) {
-							WasPlaying = Playing;
-						}
-
-						for ( int i=0; i<6; i++ ) { ButtonStates[ i ] = false; }
-
-						ButtonStates[ b ] = true;
-					}
-
-					if ( message == WM_LBUTTONUP )   {
-						if ( b >= 4 ) /* Stop and eject buttons */
-						{
-							ButtonStates[ b ] = false;
-						}
-
-						if ( b == 0 ) /* First button */
-						{
-							ButtonStates[ b ] = false;
-						}
-
-						if ( b == 5 ) /* Eject button */
-						{
-							PostMessage( hWnd, WM_CLOSE, 0, 0 );
-						}
-
-						if ( ButtonStates[ 2 ] )
-						{
-							if ( !WasPlaying )
-							{
-								TapePtr    = PlayCursor;
-								BackCursor = PlayCursor;
-
-								SoundPlayer.PositionReset();
-								SoundPlayer.Play();
-
-								TC = GetTickCount();
-							}
-
-							Playing = true;
-						}
-						else
-						{
-							WasPlaying = false;
-							Playing    = false;
-
-							SoundPlayer.Pause();
-						}
-
-						if ( b == 0 )
-						{
-							EnterCriticalSection( &cs );
-
-							TapePtr    = 0;
-							PlayCursor = 0;
-							BackCursor = 0;
-
-							LeaveCriticalSection( &cs );
-
-							SoundPlayer.PositionReset();
-						}
+					if ( i != (int) b )
+					{
+						Keys[i]->Reset();
 					}
 				}
 			}
 
-			InvalidateRect( hWnd, &r, FALSE );
+			if ( message == WM_TAPEKEY_UP )   {
+				if ( (int) b >= 4 ) /* Stop and eject buttons */
+				{
+					Keys[b]->Reset();;
+				}
+
+				if ( b == TapeKeyStart ) /* First button */
+				{
+					Keys[b]->Reset();
+				}
+
+				if ( b == TapeKeyEject ) /* Eject button */
+				{
+					PostMessage( hWnd, WM_CLOSE, 0, 0 );
+				}
+
+				if ( Keys[2]->IsPressed() )
+				{
+					if ( !WasPlaying )
+					{
+						TapePtr    = PlayCursor;
+						BackCursor = PlayCursor;
+
+						SoundPlayer.PositionReset();
+						SoundPlayer.Play();
+
+						TC = GetTickCount();
+					}
+
+					Playing = true;
+				}
+				else
+				{
+					WasPlaying = false;
+					Playing    = false;
+
+					SoundPlayer.Pause();
+				}
+
+				if ( b == 0 )
+				{
+					EnterCriticalSection( &cs );
+
+					TapePtr    = 0;
+					PlayCursor = 0;
+					BackCursor = 0;
+
+					LeaveCriticalSection( &cs );
+
+					SoundPlayer.PositionReset();
+				}
+			}
+
+			Refresh();
 		}
 		return 0;
 
@@ -337,12 +337,12 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 		{
 			if ( wParam == 0xA110 )
 			{
-				if ( ( Playing ) || ( ButtonStates[ 1 ] ) || ( ButtonStates[ 3 ] ) )
+				if ( ( Playing ) || ( Keys[1]->IsPressed() ) || ( Keys[3]->IsPressed() ) )
 				{
 					EnterCriticalSection( &cs );
 					
 					/* Actually do the wind here */
-					if ( ButtonStates[ 1 ] )
+					if ( Keys[1]->IsPressed() )
 					{
 						TapePtr -= min( TapePtr, 88200 );
 
@@ -350,14 +350,14 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 
 						if ( TapePtr == 0 )
 						{
-							ButtonStates[ 1 ] = false;
+							Keys[1]->Reset();
 						}
 
 						PlayCursor = TapePtr;
 						BackCursor = TapePtr;
 					}
 
-					if ( ButtonStates[ 3 ] )
+					if ( Keys[3]->IsPressed() )
 					{
 						TapePtr += min( (TapeExt - TapePtr), 88200 );
 
@@ -365,7 +365,7 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 
 						if ( TapePtr >= TapeExt )
 						{
-							ButtonStates[ 3 ] = false;
+							Keys[3]->Reset();
 						}
 
 						PlayCursor = TapePtr;
@@ -385,8 +385,9 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 
 						if ( PlayCursor > TapeExt )
 						{
-							ButtonStates[ 2 ] = false;
-							Playing           = false;
+							Keys[2]->Reset();
+
+							Playing = false;
 						}
 
 						TC = now;
@@ -400,13 +401,13 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 					LReelSpeed = 2.0 + ( 6.0 * LSpd );
 					RReelSpeed = 2.0 + ( 6.0 * RSpd );
 
-					if ( ( ButtonStates[ 1 ] ) || ( ButtonStates[ 3 ] ) )
+					if ( ( Keys[ 1 ]->IsPressed() ) || ( Keys[ 3 ]->IsPressed() ) )
 					{
 						LReelSpeed *= 10.0;
 						RReelSpeed *= 10.0;
 					}
 
-					if ( ButtonStates[ 1 ] )
+					if ( Keys[ 1 ]->IsPressed() )
 					{
 						LReelSpeed = 0.0 - LReelSpeed;
 						RReelSpeed = 0.0 - RReelSpeed;
@@ -810,29 +811,18 @@ void AudioPlayer::PaintPlayer( void )
 	
 	DrawText( hCanvas, Indexes.Publisher.c_str(), -1, &r2, DT_CENTER | DT_VCENTER | DT_SINGLELINE );
 
-	/* Blit the transport buttons on */
-	const HBITMAP Buttons[6] = { hFirst, hRewind, hPlay, hForward, hStop, hEject };
-
+	/* Draw the extended controls */
 	HDC hDC    = GetDC( hWnd );
 	HDC hMemDC = CreateCompatibleDC( hDC );
-
-	for ( int i=0; i<6; i++ )
-	{
-		HGDIOBJ hOld = SelectObject( hMemDC, Buttons[ i ] );
-
-		BitBlt( hCanvas, 1 + i * 50, (r.bottom - 50) + ( ButtonStates[ i ]?2:0 ), 48, 48, hMemDC, 0, 0, SRCCOPY );
-
-		SelectObject( hMemDC, hOld );
-	}
 
 	SelectObject( hMemDC, hVolume );
 
 	StretchBlt( hCanvas, r.right - 16, r.top, 16, 16, hMemDC, 0, 0, 32, 32, SRCCOPY );
 
-	/* Draw the extended controls */
 	DrawIndex();
 
 	/* Blit the canvas to the real DC */
+
 	BitBlt( hDC, r.left, r.top, r.right - r.left - 16, r.bottom - r.top, hCanvas, 0, 0, SRCCOPY );
 	BitBlt( hDC, r.left + ( r.right - r.left - 16 ), r.bottom - 50, 16, 50, hCanvas, r.right - r.left - 16, r.bottom - 50, SRCCOPY );
 	BitBlt( hDC, r.right - 16, r.top, 16, 16, hCanvas, r.right - 16, r.top, SRCCOPY );
@@ -847,7 +837,7 @@ int AudioPlayer::GetBuffer( BYTE *pBuffer, DWORD lBuffer )
 {
 	EnterCriticalSection( &cs );
 
-	if ( ( TapePtr == TapeExt ) || ( !ButtonStates[ 2 ] ) )
+	if ( ( TapePtr == TapeExt ) || ( !Keys[2]->IsPressed() ) )
 	{
 		memset( pBuffer, 127, lBuffer );
 
@@ -1162,4 +1152,13 @@ void AudioPlayer::DoSaveAudio( void )
 
 		fclose( wavefile );
 	}
+}
+
+void AudioPlayer::Refresh()
+{
+	RECT r;
+
+	GetClientRect( hWnd, &r );
+
+	InvalidateRect( hWnd, &r, FALSE );
 }
