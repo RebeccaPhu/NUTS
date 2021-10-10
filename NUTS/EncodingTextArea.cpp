@@ -386,7 +386,7 @@ void EncodingTextArea::PaintTextArea( void )
 			if ( ( TextPtrStart >= CLinePtr ) && ( TextPtrStart < ELinePtr ) && ( TextPtrEnd >= CLinePtr ) && ( TextPtrEnd < ELinePtr ) )
 			{
 				// Part of this line selected
-				FontBitmap textline1( Font, &pTextBody[ CLinePtr ], (WORD) ( ThisLineLen - ( TextPtrStart - CLinePtr ) ), false, false );
+				FontBitmap textline1( Font, &pTextBody[ CLinePtr ], (WORD) ( TextPtrStart - CLinePtr ), false, false );
 
 				textline1.DrawText( hArea, 8, 8 + ( i - StartLine ) * 16, DT_LEFT | DT_TOP );
 
