@@ -10,6 +10,7 @@
 #include "TEXTContentViewer.h"
 #include "SCREENContentViewer.h"
 #include "AUDIOContentViewer.h"
+#include "Preference.h"
 #include "BuiltIns.h"
 
 #include <CommCtrl.h>
@@ -194,6 +195,8 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	pDropSite = new DropSite( hWnd );
 
 	int tw = w - 140;
+
+	Displaying = (DisplayType) (DWORD) Preference( L"PaneDisplay" + std::to_wstring( (long double) PaneIndex ), (DWORD) DisplayLargeIcons );
 
 	hScrollBar	= CreateWindowEx(NULL, L"SCROLLBAR", L"", WS_CHILD|WS_VISIBLE|SBS_VERT|WS_DISABLED, w - 24, 24, 16, h, hWnd, NULL, hInst, NULL);
 
@@ -577,16 +580,22 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 				case IDM_LARGEICONS:
 					Displaying = DisplayLargeIcons;
 
+					Preference( L"PaneDisplay" + std::to_wstring( (long double) PaneIndex ) ) = (DWORD) DisplayLargeIcons;
+
 					Update();
 					break;
 
 				case IDM_DETAILS:
 					Displaying = DisplayDetails;
 
+					Preference( L"PaneDisplay" + std::to_wstring( (long double) PaneIndex ) ) = (DWORD) DisplayDetails;
+
 					Update();
 					break;
 				case IDM_FILELIST:
 					Displaying = DisplayList;
+
+					Preference( L"PaneDisplay" + std::to_wstring( (long double) PaneIndex ) ) = (DWORD) DisplayList;
 
 					Update();
 					break;
@@ -1274,6 +1283,9 @@ void CFileViewer::RecalculateDimensions( RECT &wndRect )
 	default:
 		break;
 	}
+
+	IconsPerLine   = max( IconsPerLine, 1 );
+	LinesPerWindow = max( LinesPerWindow, 1 );
 
 	IconsPerWindow  = IconsPerLine * LinesPerWindow;
 }
