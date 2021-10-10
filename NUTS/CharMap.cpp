@@ -82,7 +82,7 @@ CharMap::CharMap( HWND hParent, DWORD FontID )
 		0,
 		CharMapClass,
 		L"NUTS Character Map",
-		WS_CLIPSIBLINGS | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU,
+		WS_CLIPCHILDREN | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU,
 		CW_USEDEFAULT, CW_USEDEFAULT, MAP_WINDOW_WIDTH, MAP_WINDOW_HEIGHT,
 
 		hMainWnd, NULL, hInst, NULL
@@ -98,7 +98,7 @@ CharMap::CharMap( HWND hParent, DWORD FontID )
 	r.right  = MAP_WINDOW_WIDTH;
 	r.bottom = MAP_WINDOW_HEIGHT + MAP_EXTRA_HEIGHT;
 
-	AdjustWindowRect( &r, WS_CLIPSIBLINGS | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU, FALSE );
+	AdjustWindowRect( &r, WS_CLIPCHILDREN | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU, FALSE );
 
 	SetWindowPos( hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOREPOSITION | SWP_NOMOVE | SWP_NOZORDER );
 
@@ -200,6 +200,17 @@ LRESULT CharMap::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 	switch ( uMsg )
 	{
+		case WM_ACTIVATE:
+			if ( wParam == 0 )
+			{
+				hActiveWnd = NULL;
+			}
+			else
+			{
+				hActiveWnd = hWnd;
+			}
+			break;
+
 		case WM_PAINT:
 			PaintWindow();
 			break;

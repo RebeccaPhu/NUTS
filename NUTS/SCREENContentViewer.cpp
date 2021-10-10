@@ -134,7 +134,7 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 
 	int		h = 4;
 
-	hModeList	= CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST|WS_CHILD|WS_VISIBLE, h, 4, 200, 250, hWnd, NULL, hInst, NULL);	h += 208;
+	hModeList	= CreateWindowEx(NULL, L"COMBOBOX", L"", CBS_DROPDOWNLIST|WS_CHILD|WS_VISIBLE|WS_TABSTOP, h, 4, 200, 250, hWnd, NULL, hInst, NULL); h += 208;
 
 	if ( pXlator != nullptr )
 	{
@@ -174,28 +174,28 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 	SendMessage(hPaletteButton, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hPaletteIcon);
 
 
-	hCopy = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
+	hCopy = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
 
 	HICON hCopyIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_COPY) );
 
 	SendMessage(hCopy, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hCopyIcon);
 
 
-	hSave = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
+	hSave = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
 
 	HICON hSaveIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_SAVE) );
 
 	SendMessage(hSave, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hSaveIcon);
 
 
-	hPrint = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
+	hPrint = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
 
 	HICON hPrintIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_PRINT) );
 
 	SendMessage(hPrint, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hPrintIcon);
 
 
-	hEffects = CreateWindowEx(NULL, L"BUTTON", L"Effects ▼", WS_CHILD|WS_VISIBLE,h,6,100,20,hWnd,NULL,hInst,NULL);	h += 104;
+	hEffects = CreateWindowEx(NULL, L"BUTTON", L"Effects ▼", WS_CHILD|WS_VISIBLE|WS_TABSTOP,h,6,100,20,hWnd,NULL,hInst,NULL); h += 104;
 
 
 	hOffsetPrompt = CreateWindowEx( NULL, L"STATIC", L"Offset:", WS_VISIBLE|WS_CHILD,h,8,50,20, hWnd, NULL, hInst, NULL ); h += 44;
@@ -236,7 +236,7 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 		NULL,
 		L"NUTS Graphic Viewer",
 		L"NUTS Graphic Viewer",
-		WS_SYSMENU | WS_CLIPSIBLINGS | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
+		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
 		CW_USEDEFAULT,
 		0, wx + (2 * frmx), wy + (2 * frmy) + tity + 32,
 		Parent, NULL, hInstance, NULL
@@ -295,6 +295,18 @@ void CSCREENContentViewer::DestroyWindows( void )
 }
 
 LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+	if ( message == WM_ACTIVATE )
+	{
+		if ( wParam == 0 )
+		{
+			hActiveWnd = NULL;
+		}
+		else
+		{
+			hActiveWnd = hWnd;
+		}
+	}
 
 	if (message == WM_PAINT) {
 		PaintToolBar();

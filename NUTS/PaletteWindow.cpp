@@ -69,6 +69,18 @@ INT_PTR CALLBACK CPaletteWindow::LogWindowProc(HWND hwndDlg, UINT uMsg, WPARAM w
 }
 
 LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LPARAM lParam) {
+	if ( message ==  WM_ACTIVATE )
+	{
+		if ( wParam == 0 )
+		{
+			hActiveWnd = NULL;
+		}
+		else
+		{
+			hActiveWnd = hWnd;
+		}
+	}
+
 	if ( (message == WM_PAINT) && ( hTarget == hColourArea ) )
 	{
 		PaintColours();
@@ -428,7 +440,7 @@ void CPaletteWindow::Create(int x, int y, HWND ParentWnd, LogPalette *pLog, Phys
 		WS_EX_TOOLWINDOW,
 		L"NUTS Palette Controls",
 		L"Palette",
-		WS_CLIPSIBLINGS | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU,
+		WS_CLIPCHILDREN | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU,
 		x, y, 100, 100,
 		Parent, NULL, hInst, NULL
 	);

@@ -26,4 +26,5 @@
 #include <tchar.h>
 
 extern	HINSTANCE	hInst;
+extern  HWND        hActiveWnd;
 extern  bool        FSChangeLock;

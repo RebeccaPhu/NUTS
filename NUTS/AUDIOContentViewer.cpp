@@ -152,7 +152,7 @@ int AUDIOContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int y ) 
 		NULL,
 		L"NUTS Audio Player",
 		L"NUTS Audio Player",
-		WS_SYSMENU | WS_CLIPSIBLINGS | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
+		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
 		x, y, PlayerW, PlayerH,
 		Parent, NULL, hInstance, NULL
 	);
@@ -178,7 +178,7 @@ int AUDIOContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int y ) 
 	r.right = r.left + PlayerW;
 	r.bottom = r.top + 96;
 
-	AdjustWindowRect( &r, WS_SYSMENU | WS_CLIPSIBLINGS | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED, FALSE );
+	AdjustWindowRect( &r, WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED, FALSE );
 
 	SetWindowPos( hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOREPOSITION | SWP_NOMOVE );
 
@@ -260,6 +260,17 @@ LRESULT	AUDIOContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 	switch (message )
 	{
+	case WM_ACTIVATE:
+		if ( wParam == 0 )
+		{
+			hActiveWnd = NULL;
+		}
+		else
+		{
+			hActiveWnd = hWnd;
+		}
+		break;
+
 	case WM_CLOSE:
 		viewers.erase( hWnd );
 
@@ -296,7 +307,7 @@ LRESULT	AUDIOContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 					r.right = r.left + PlayerW;
 					r.bottom = r.top + PlayerH;
 
-					AdjustWindowRect( &r, WS_SYSMENU | WS_CLIPSIBLINGS | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED, FALSE );
+					AdjustWindowRect( &r, WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED, FALSE );
 
 					SetWindowPos( hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOZORDER | SWP_NOREPOSITION | SWP_NOMOVE );
 				}

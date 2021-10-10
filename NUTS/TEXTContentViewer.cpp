@@ -129,7 +129,7 @@ int CTEXTContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, i
 		NULL,
 		L"NUTS Text Content Renderer",
 		L"NUTS Text Content Renderer",
-		WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_VISIBLE,
+		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_VISIBLE,
 		CW_USEDEFAULT, 0, ww, wh,
 		Parent, NULL, hInstance, NULL
 	);
@@ -191,6 +191,17 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 	switch ( message )
 	{
+		case WM_ACTIVATE:
+			if ( wParam == 0 )
+			{
+				hActiveWnd = NULL;
+			}
+			else
+			{
+				hActiveWnd = hWnd;
+			}
+			break;
+
 		case WM_PAINT:
 			{
 				PaintToolBar();
