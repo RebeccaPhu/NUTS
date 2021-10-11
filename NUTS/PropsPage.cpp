@@ -2016,7 +2016,7 @@ int PropsPage_Handler( AppAction Action )
 	}
     
 	psh.dwSize      = sizeof(PROPSHEETHEADER);
-	psh.dwFlags     = PSH_USEICONID | PSH_PROPSHEETPAGE | PSH_USECALLBACK;
+	psh.dwFlags     = PSH_USEICONID | PSH_PROPSHEETPAGE | PSH_USECALLBACK | PSH_NOAPPLYNOW;
 	psh.hwndParent  = Action.hWnd;
 	psh.hInstance   = hInst;
 	psh.pszIcon     = MAKEINTRESOURCE(IDI_SMALL);
@@ -2048,6 +2048,8 @@ int PropsPage_Handler( AppAction Action )
 		}
 
 		static std::map<DWORD, DWORD> Changes;
+
+		Changes.clear();
 
 		for ( iAttr = AttrWnds.begin(); iAttr != AttrWnds.end(); iAttr++ )
 		{

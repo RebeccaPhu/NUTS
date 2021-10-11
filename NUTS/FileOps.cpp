@@ -1228,15 +1228,18 @@ WCHAR *ExplainAttrs( void )
 
 	if ( Warnings.size() > 0 )
 	{
-		Explanation = L"Changing ";
+		Explanation += L"Changing ";
 
 		for ( std::vector<std::wstring>::iterator iWarn = Warnings.begin(); iWarn != Warnings.end(); iWarn++ )
 		{
-			Explanation += L"'" + *iWarn + L"'";;
+			Explanation += L"'" + *iWarn + L"'";
 
-			if ( WarnIndex < Warnings.size() - 1 ) { Explanation += L", "; }
+			if ( ( Warnings.size() > 2 ) && ( WarnIndex < Warnings.size() - 2 ) )
+			{
+				Explanation += L", ";
+			}
 
-			if ( ( WarnIndex == Warnings.size() - 1 ) && ( Warnings.size() > 1 ) )
+			if ( ( Warnings.size() > 1 ) && ( WarnIndex == Warnings.size() - 2 ) )
 			{
 				Explanation += L" or ";
 			}
@@ -1244,22 +1247,25 @@ WCHAR *ExplainAttrs( void )
 			WarnIndex++;
 		}
 
-		Explanation += L" may cause the file to behave incorrectly. Continue? ";
+		Explanation += L" may cause the file to behave incorrectly. ";
 	}
 
 	WarnIndex = 0;
 
 	if ( Dangers.size() > 0 )
 	{
-		Explanation = L"Changing ";
+		Explanation += L"Changing ";
 
 		for ( std::vector<std::wstring>::iterator iWarn = Dangers.begin(); iWarn != Dangers.end(); iWarn++ )
 		{
 			Explanation += L"'" + *iWarn + L"'";;
 
-			if ( WarnIndex < Warnings.size() - 1 ) { Explanation += L", "; }
+			if ( ( Dangers.size() > 2 ) && ( WarnIndex < Dangers.size() - 2 ) )
+			{
+				Explanation += L", ";
+			}
 
-			if ( ( WarnIndex == Warnings.size() - 1 ) && ( Warnings.size() > 1 ) )
+			if ( ( Dangers.size() > 1 ) && ( WarnIndex == Dangers.size() - 2 ) )
 			{
 				Explanation += L" or ";
 			}
@@ -1267,22 +1273,25 @@ WCHAR *ExplainAttrs( void )
 			WarnIndex++;
 		}
 
-		Explanation += L" may cause serious file system malfunction. Continue? ";
+		Explanation += L" may cause serious file system malfunction. ";
 	}
 
 	WarnIndex = 0;
 
 	if ( DangerousOptions.size() > 0 )
 	{
-		Explanation = L"Changing ";
+		Explanation += L"Changing ";
 
 		for ( std::vector<std::pair<std::wstring,std::wstring>>::iterator iWarn = DangerousOptions.begin(); iWarn != DangerousOptions.end(); iWarn++ )
 		{
 			Explanation += L"'" + iWarn->first + L"' to '" + iWarn->second + L"'";
 			
-			if ( WarnIndex < Warnings.size() - 1 ) { Explanation += L", "; }
+			if ( ( DangerousOptions.size() > 2 ) && ( WarnIndex < DangerousOptions.size() - 2 ) )
+			{
+				Explanation += L", ";
+			}
 
-			if ( ( WarnIndex == Warnings.size() - 1 ) && ( Warnings.size() > 1 ) )
+			if ( ( DangerousOptions.size() > 1 ) && ( WarnIndex == DangerousOptions.size() - 2 ) )
 			{
 				Explanation += L" or ";
 			}
@@ -1290,8 +1299,10 @@ WCHAR *ExplainAttrs( void )
 			WarnIndex++;
 		}
 
-		Explanation += L" may cause serious file system malfunction. Continue? ";
+		Explanation += L" may cause serious file system malfunction. ";
 	}
+
+	Explanation += L"Continue?";
 
 	swprintf( explain, 512, Explanation.c_str() );
 
