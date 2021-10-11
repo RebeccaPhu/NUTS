@@ -10,8 +10,8 @@
 #define FT_ROOT        0x00000000
 #define FT_ZIP         0xC0000000
 #define FT_UNSET       0xFFFFFFFF
-#define PUID_ZIP       0x0000021D
-#define FSID_ZIP       0x0000021D
+#define PUID_ZIP       0xF000021D
+#define FSID_ZIP       0xF000021D
 
 typedef unsigned long long QWORD;
 

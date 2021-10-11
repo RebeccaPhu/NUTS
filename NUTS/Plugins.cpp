@@ -59,6 +59,14 @@ void CPlugins::LoadPlugins()
 	EncodingFontSelectors[ 0 ][ ENCODING_ASCII ] = 0;
 	EncodingFontSelectors[ 1 ][ ENCODING_ASCII ] = 0;
 
+	NUTSProvider ZIPProvider;
+
+	ZIPProvider.FriendlyName = L"PKWare";
+	ZIPProvider.PluginID     = PUID_ZIP;
+	ZIPProvider.ProviderID   = PUID_ZIP;
+
+	Providers.push_back( ZIPProvider );
+
 	PluginID   = 0x0001;
 	EncodingID = 0x01000000;
 	FontID     = 0x01000000;

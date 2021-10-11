@@ -2,6 +2,7 @@
 #include "ZIPCommon.h"
 
 #include "libfuncs.h"
+#include "SourceFunctions.h"
 
 #include "zip.h"
 
@@ -9,49 +10,14 @@ ZIPCommon::ZIPCommon(void)
 {
 	ReadPtr  = 0;
 	WritePtr = 0;
-	CachePtr = 0;
 
-	Blobs.clear();
+	pWriteClone = nullptr;
 }
 
 
 ZIPCommon::~ZIPCommon(void)
 {
-	Blobs.clear();
-}
-
-void ZIPCommon::CopyFromCache( QWORD SourceOffset, QWORD DestOffset, QWORD Len )
-{
-	QWORD BytesToGo = Len;
-	QWORD WPtr      = DestOffset;
-
-	Backing.Seek( SourceOffset );
-
-	BYTE Buffer[ 10240 ];
-
-	DataSource *pSource = GetSource();
-
-	while ( BytesToGo > 0 )
-	{
-		DWORD CopyLen;
-
-		if ( BytesToGo > 10240 )
-		{
-			CopyLen = 10240;
-		}
-		else
-		{
-			CopyLen = (DWORD) BytesToGo;
-		}
-
-		Backing.Read( Buffer, CopyLen );
-
-		pSource->WriteRaw( WPtr, CopyLen, Buffer );
-
-		WPtr += CopyLen;
-
-		BytesToGo -= CopyLen;
-	}
+	NixClone();
 }
 
 zip_uint64_t ZIPCommon::NUTSZipCallback( void *data, zip_uint64_t len, zip_source_cmd_t cmd )
@@ -65,20 +31,26 @@ zip_uint64_t ZIPCommon::NUTSZipCallback( void *data, zip_uint64_t len, zip_sourc
 	switch (cmd)
 	{
 	case ZIP_SOURCE_BEGIN_WRITE:
-		CachePtr = 0;
+		NixClone();
 
-		Blobs.clear();
+		pWriteClone = new CTempFile();
+
+		SourceToTemp( pSource, *pWriteClone );
+
+		WritePtr = 0;
 
 		return 0;
 
 	case ZIP_SOURCE_BEGIN_WRITE_CLONING:
 		WritePtr = len;
 
-		pSource->PhysicalDiskSize = WritePtr;
+		NixClone();
 
-		CachePtr = 0;
+		pWriteClone = new CTempFile();
 
-		Blobs.clear();
+		SourceToTemp( pSource, *pWriteClone );
+
+		pWriteClone->SetExt( len );
 
 		return 0;
 
@@ -86,24 +58,9 @@ zip_uint64_t ZIPCommon::NUTSZipCallback( void *data, zip_uint64_t len, zip_sourc
 		return 0;
 
 	case ZIP_SOURCE_COMMIT_WRITE:
-		{
-			
-			std::vector<WriteBlob>::iterator iBlob;
+		ReplaceSourceContent( pSource, *pWriteClone );
 
-			for ( iBlob = Blobs.begin(); iBlob != Blobs.end(); iBlob++ )
-			{
-				CopyFromCache( iBlob->StoragePtr, iBlob->WritePtr, iBlob->DataLen );
-
-				if ( ( iBlob->WritePtr + iBlob->DataLen ) > pSource->PhysicalDiskSize )
-				{
-					pSource->PhysicalDiskSize = iBlob->WritePtr + iBlob->DataLen;
-				}
-			}
-
-			Blobs.clear();
-
-			CachePtr = 0;
-		}
+		NixClone();
 
 		return 0;
 
@@ -111,6 +68,8 @@ zip_uint64_t ZIPCommon::NUTSZipCallback( void *data, zip_uint64_t len, zip_sourc
 		return 2 * sizeof(int);
 
 	case ZIP_SOURCE_FREE:
+		NixClone();
+
 		return 0;
 
 	case ZIP_SOURCE_OPEN:
@@ -139,11 +98,7 @@ zip_uint64_t ZIPCommon::NUTSZipCallback( void *data, zip_uint64_t len, zip_sourc
 		return 0;
 
 	case ZIP_SOURCE_ROLLBACK_WRITE:
-		{
-			CachePtr = 0;
-
-			Blobs.clear();
-		}
+		NixClone();
 
 		return 0;
 
@@ -239,20 +194,8 @@ zip_uint64_t ZIPCommon::NUTSZipCallback( void *data, zip_uint64_t len, zip_sourc
 		return WritePtr;
 
 	case ZIP_SOURCE_WRITE:
-		{
-			WriteBlob blob;
-
-			blob.WritePtr   = WritePtr;
-			blob.StoragePtr = CachePtr;
-			blob.DataLen    = len;
-
-			Backing.Seek( CachePtr );
-			Backing.Write( data, (DWORD) len );
-
-			CachePtr += len;
-
-			Blobs.push_back( blob );
-		}
+		pWriteClone->Seek( WritePtr );
+		pWriteClone->Write( data, (DWORD) len );
 
 		WritePtr += len;
 

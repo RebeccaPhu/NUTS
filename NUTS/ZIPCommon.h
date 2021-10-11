@@ -7,13 +7,6 @@
 
 #include <vector>
 
-typedef struct _WriteBlob
-{
-	QWORD WritePtr;
-	QWORD StoragePtr;
-	QWORD DataLen;
-} WriteBlob;
-
 class ZIPCommon
 {
 public:
@@ -36,12 +29,19 @@ public:
 	zip_uint64_t WritePtr;
 
 private:
-	std::vector<WriteBlob> Blobs;
+	void NixClone()
+	{
+		if ( pWriteClone != nullptr )
+		{
+			/* This wipes out the temp file */
+			CTempFile Fudger( pWriteClone->Name() );
 
-	QWORD CachePtr;
+			delete pWriteClone;
+		}
 
-	CTempFile Backing;
+		pWriteClone = nullptr;
+	}
 
-	void CopyFromCache( QWORD SourceOffset, QWORD DestOffset, QWORD Len );
+	CTempFile *pWriteClone;
 };
 

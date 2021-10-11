@@ -52,6 +52,8 @@ public:
 	int  Parent();
 	bool IsRoot();
 
+	int  Format_Process( DWORD FT, HWND hWnd );
+
 	DataSource *GetSource()
 	{
 		return pSource;

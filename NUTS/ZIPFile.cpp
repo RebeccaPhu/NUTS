@@ -448,3 +448,21 @@ int ZIPFile::ReplaceFile(NativeFile *pFile, CTempFile &store)
 	
 	return 0;
 }
+
+int ZIPFile::Format_Process( DWORD FT, HWND hWnd )
+{
+	BYTE EmptyZIP[] = {
+		'P', 'K', 0x05, 0x06,
+		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+		0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+		0x00,0x00
+	};
+
+	pSource->WriteRaw( 0, sizeof( EmptyZIP ), EmptyZIP );
+
+	pSource->Truncate( sizeof( EmptyZIP ) );
+
+	PostMessage( hWnd, WM_FORMATPROGRESS, 100, 0);
+
+	return 0;
+}
