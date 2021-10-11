@@ -94,6 +94,8 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 		MessageBox( hFileWnd, L"Too many levels deep. Some objects have been omitted.", L"NUTS File Operations", MB_ICONWARNING | MB_OK );
 
 		RecurseSteps--;
+
+		return;
 	}
 
 	CFileViewer *pPane    = (CFileViewer *) CurrentAction.Pane;
@@ -112,6 +114,11 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 
 	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
 	{
+		if ( WaitForSingleObject( hFileCancel, 0 ) == WAIT_OBJECT_0 )
+		{
+			return;
+		}
+
 		if ( iFile->Flags & FF_Directory )
 		{
 			HuntCount++;
@@ -157,6 +164,11 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 	/* Re-iterate the selection and add files */
 	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
 	{
+		if ( WaitForSingleObject( hFileCancel, 0 ) == WAIT_OBJECT_0 )
+		{
+			return;
+		}
+
 		if ( ( ! (iFile->Flags & FF_Directory) ) || ( CurrentAction.Action == AA_DELETE ) || ( CurrentAction.Action == AA_SET_PROPS ) )
 		{
 			HuntCount++;
@@ -215,6 +227,11 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 
 	for ( iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
 	{
+		if ( WaitForSingleObject( hFileCancel, 0 ) == WAIT_OBJECT_0 )
+		{
+			return;
+		}
+
 		HuntCount++;
 
 		::PostMessage( hFileWnd, WM_FILEOP_NOTICE, 0, (LPARAM) HuntCount );
@@ -444,11 +461,20 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 	Hunting = false;
 
+	// Test if the cancel was set
+	if ( WaitForSingleObject( hFileCancel, 0 ) == WAIT_OBJECT_0 )
+	{
+		// Game's up boys.
+
+		return 0;
+	}
+
 	::PostMessage( hFileWnd, WM_FILEOP_NOTICE, 0, (LPARAM) HuntCount );
 
 	std::vector<FileOpStep>::iterator iStep;
 
 	bool IsInstall = false;
+	bool OpError   = false;
 
 	for ( iStep = OpSteps.begin(); iStep != OpSteps.end(); iStep++ )
 	{
@@ -457,7 +483,15 @@ unsigned int __stdcall FileOpThread(void *param) {
 			break;
 		}
 
-		bool Redraw = false;
+		// User cancelled?
+		if ( WaitForSingleObject( hFileCancel, 0 ) == WAIT_OBJECT_0 )
+		{
+			OpError = true;
+
+			break;
+		}
+
+		bool Redraw  = false;
 
 		::PostMessage( hFileWnd, WM_FILEOP_PROGRESS, (WPARAM) Percent( 0, 1, CurrentOp, TotalOps, true ), 0 );
 
@@ -487,8 +521,12 @@ unsigned int __stdcall FileOpThread(void *param) {
 			{
 				NUTSError::Report( L"Change Directory (Source)", hFileWnd );
 
+				OpError = true;
+
 				break;
 			}
+		
+			// CASE RUN-ON INTENTIONAL!
 
 		case Op_CDirectory:
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
@@ -578,12 +616,15 @@ unsigned int __stdcall FileOpThread(void *param) {
 					/* Attempt to overwrite file with directory. That ain't working. */
 					::PostMessageA( hFileWnd, WM_FILEOP_SUSPEND, FILEOP_ISFILE, 0 );
 
-					return 0;
-				}
+					OpError = true;
 
-				if ( FileResult != NUTS_SUCCESS )
+					break;
+				}
+				else if ( ( FileResult != NUTS_SUCCESS ) && ( FileResult != FILEOP_EXISTS ) )
 				{
 					NUTSError::Report( L"Create Directory (Target)", hFileWnd );
+
+					OpError = true;
 
 					break;
 				}
@@ -597,8 +638,13 @@ unsigned int __stdcall FileOpThread(void *param) {
 			if ( pSourceFS->Parent() != NUTS_SUCCESS )
 			{
 				NUTSError::Report( L"Parent Directory (Source)", hFileWnd );
+
+				OpError = true;
+
+				break;
 			}
-			break;
+			
+			// CASE RUN-ON INTENTIONAL!
 
 		case Op_CParent:
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
@@ -606,6 +652,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 				if ( pTargetFS->Parent() != NUTS_SUCCESS )
 				{
 					NUTSError::Report( L"Parent Directory (Target)", hFileWnd );
+
+					OpError = true;
 
 					break;
 				}
@@ -659,6 +707,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 				if ( pSourceFS->ReadFile( iStep->Object.fileID, FileObj ) != NUTS_SUCCESS )
 				{
 					NUTSError::Report( L"File Read (Source)", hFileWnd );
+
+					OpError = true;
 
 					break;
 				}
@@ -752,19 +802,21 @@ unsigned int __stdcall FileOpThread(void *param) {
 					/* Attempt to overwrite directory with file. That ain't working. */
 					::PostMessageA( hFileWnd, WM_FILEOP_SUSPEND, FILEOP_ISDIR, 0 );
 
-					return 0;
+					OpError = true;
 				}
-
-				if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
+				else if ( pGlobalError->GlobalCode != NUTS_SUCCESS )
 				{
 					NUTSError::Report( L"File Write (Target)", hFileWnd );
 
+					OpError = true;
+
 					break;
 				}
-
-				if ( FileResult != NUTS_SUCCESS )
+				else if ( ( FileResult != NUTS_SUCCESS ) && ( FileResult != FILEOP_EXISTS ) )
 				{
 					NUTSError::Report( L"Copy file", hFileWnd );
+
+					OpError = true;
 
 					break;
 				}
@@ -782,6 +834,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 					{
 						NUTSError::Report( L"File Delete", hFileWnd );
 
+						OpError = true;
+
 						break;
 					}
 				}
@@ -793,6 +847,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 						if ( pSourceFS->DeleteFile( iStep->Object.fileID ) != NUTS_SUCCESS )
 						{
 							NUTSError::Report( L"File Delete", hFileWnd );
+
+							OpError = true;
 
 							break;
 						}
@@ -818,6 +874,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 							if ( pSourceFS->DeleteFile( iStep->Object.fileID ) != NUTS_SUCCESS )
 							{
 								NUTSError::Report( L"Delete File", hFileWnd );
+
+								OpError = true;
 
 								break;
 							}
@@ -866,6 +924,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 					if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
 					{
 						NUTSError::Report( L"Set File Properties", hFileWnd );
+
+						OpError = true;
 					}
 
 					break;
@@ -878,6 +938,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 					{
 						NUTSError::Report( L"Set File Properties", hFileWnd );
 
+						OpError = true;
+
 						break;
 					}
 				}
@@ -889,6 +951,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 						if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
 						{
 							NUTSError::Report( L"Set File Properties", hFileWnd );
+
+							OpError = true;
 
 							break;
 						}
@@ -914,6 +978,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 							if ( pSourceFS->SetProps( iStep->Object.fileID, &Rework ) != NUTS_SUCCESS )
 							{
 								NUTSError::Report( L"Set File Properties", hFileWnd );
+
+								OpError = true;
 
 								break;
 							}
@@ -942,9 +1008,17 @@ unsigned int __stdcall FileOpThread(void *param) {
 		}
 
 		CurrentOp++;
+
+		if ( OpError )
+		{
+			break;
+		}
 	}
 
-	::PostMessage( hFileWnd, WM_CLOSE, 0, 0 );
+	if ( !OpError )
+	{
+		::PostMessage( hFileWnd, WM_CLOSE, 0, 0 );
+	}
 
 	return 0;
 }
@@ -1228,6 +1302,9 @@ void StopOps( void )
 {
 	SetEvent( hFileCancel );
 
+	// In case it was suspended
+	ResumeThread( hFileThread );
+
 	if ( WaitForSingleObject( hFileThread, 500 ) == WAIT_TIMEOUT )
 	{
 		TerminateThread( hFileThread, 500 );
@@ -1430,6 +1507,8 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			MergeAll  = false;
 			RenameAll = false;
 
+			NixObject( hFileCancel );
+
 			hFileCancel = CreateEvent( NULL, TRUE, FALSE, NULL );
 			hFileThread = (HANDLE) _beginthreadex(NULL, NULL, FileOpThread, NULL, NULL, (unsigned int *) &dwthreadid);
 
@@ -1441,6 +1520,9 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			EndDialog(hwndDlg,0);
 
 			hFileWnd = NULL;
+
+			NixObject( hFileCancel );
+			NixObject( hFileThread );
 
 			return TRUE;
 

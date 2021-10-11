@@ -89,7 +89,14 @@ int	WindowsFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	{
 		if ( FilenameCmp( pFile, &*iFile ) )
 		{
-			return FILEOP_EXISTS;
+			if ( iFile->Flags & FF_Directory )
+			{
+				return FILEOP_ISDIR;
+			}
+			else
+			{
+				return FILEOP_EXISTS;
+			}
 		}
 	}
 
