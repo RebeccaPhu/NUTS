@@ -80,6 +80,13 @@ int	RootDirectory::ReadDirectory(void) {
 
 		file.Type = FT_MiscImage;
 
+		// Get some disk sizes
+		ULARGE_INTEGER CapacityBytes,FreeBytes,CallerBytes;
+
+		GetDiskFreeSpaceExA( file.Filename, &CallerBytes, &CapacityBytes, &FreeBytes );
+
+		file.Length = CapacityBytes.QuadPart;
+
 		Files.push_back(file);
 	}
 

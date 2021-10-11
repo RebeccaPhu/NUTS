@@ -544,7 +544,7 @@ INT_PTR CALLBACK FreeSpaceWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPA
 		{
 			FSSpace *Map = (FSSpace *) wParam;
 
-			DWORD FreeSpace = Map->Capacity - Map->UsedBytes;
+			QWORD FreeSpace = Map->Capacity - Map->UsedBytes;
 
 			double p = ( (double) Map->UsedBytes / (double) Map->Capacity ) * 100.0;
 
