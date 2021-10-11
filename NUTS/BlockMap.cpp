@@ -31,6 +31,11 @@ BlockMap::~BlockMap(void)
 
 void BlockMap::CreateBlockMap( HWND hWnd, BYTE *pMap )
 {
+	if ( pMap == nullptr )
+	{
+		return;
+	}
+
 	if ( hBlockDC == NULL )
 	{
 		HDC hDC  = GetDC( hWnd );

@@ -49,8 +49,22 @@ public:
 		return status;
 	}
 
+	int DeleteFile( DWORD FileID );
+
+	std::vector<AttrDesc> GetAttributeDescriptions( void );
+
+	WCHAR *Identify( DWORD FileID );
+	BYTE *DescribeFile( DWORD FileIndex );
+
+	int CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
+
 private:
 	std::wstring folderPath;
+
+private:
+	int RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory );
+
+	BYTE *DisplayNumber( QWORD val );
 
 public:
 	WindowsDirectory *pWindowsDirectory;

@@ -299,9 +299,21 @@ void DisplayNumber( HWND hDlgItem, UINT64 val, bool Human )
 	   remove the last 3 digits */
 
 	std::wstring str( OutString );
+
+	/*
+	// I've left this hear for historical curiosity. Looking for "." seems sensible
+	// but of course, some locales (e.g. France) will use a comma, rendering this
+	// useless. It's safe to say that LOCALE wants to add two digits and a seperator,
+	// so we'll actually just lop off 3 chars.
 	size_t p = str.find_last_of( L"." );
 
 	if ( p != std::wstring::npos ) { str = str.substr( 0, p ); }
+	*/
+
+	if ( str.length() >= 3 )
+	{
+		str = str.substr( 0, str.length() - 3 );
+	}
 
 	if ( !Human )
 	{
@@ -1369,7 +1381,7 @@ void HandleFSAttributeMessage( HWND hSourceWnd, UINT uMsg, UINT v )
 			iAttr->second.CurrentValue = iAttr->second.StartingValue;
 		}
 
-		SetupAttributes( hFSAttrsWnd, false );
+		SetupFSAttributes( hFSAttrsWnd, false );
 
 		PropSheet_UnChanged( hPropSheet, hFSAttrsWnd );
 

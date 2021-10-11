@@ -164,8 +164,8 @@ typedef enum _FormatFlags {
 } FormatType;
 
 typedef struct _FSSpace {
-	DWORD UsedBytes;
-	DWORD Capacity;
+	QWORD UsedBytes;
+	QWORD Capacity;
 	BYTE *pBlockMap;
 } FSSpace;
 

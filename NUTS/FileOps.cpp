@@ -597,9 +597,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 			if ( pSourceFS->Parent() != NUTS_SUCCESS )
 			{
 				NUTSError::Report( L"Parent Directory (Source)", hFileWnd );
-
-				break;
 			}
+			break;
 
 		case Op_CParent:
 			if ( ( pTargetFS != nullptr ) && ( pTargetFS->Flags & FSF_Supports_Dirs ) )
@@ -976,7 +975,7 @@ void DrawClippedTitleStack( std::vector<TitleComponent> *pStack, HDC hWindowDC, 
 	{
 		BYTE *pString = iStack->String;
 
-		if ( i == pStack->size() )
+		if ( ( i == pStack->size() ) && ( pFile->fileID < pSourceFS->pDirectory->Files.size() ) )
 		{
 			pString = pSourceFS->GetTitleString( pFile );
 		}
@@ -1017,7 +1016,7 @@ void DrawClippedTitleStack( std::vector<TitleComponent> *pStack, HDC hWindowDC, 
 	{
 		BYTE *pString = iStack->String;
 
-		if ( i == pStack->size() )
+		if ( ( i == pStack->size() ) && ( pFile->fileID < pSourceFS->pDirectory->Files.size() ) )
 		{
 			pString = pSourceFS->GetTitleString( pFile );
 		}
@@ -1570,7 +1569,8 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 int	FileOP_Handler(AppAction &Action) {
 
-	CurrentAction	= Action;
+	CurrentAction = Action;
+	CurrentObject = Action.Selection[ 0 ];
 
 	Confirm = Preference( L"Confirm", true );
 

@@ -25,6 +25,8 @@ private:
 
 	void TranslateFileType(NativeFile *file);
 
+	DWORD FileTimeToUnixTime( FILETIME *ft );
+
 public:
 	std::vector<std::wstring> WindowsFiles;
 };

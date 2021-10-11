@@ -1055,7 +1055,9 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 
 			if ( pDetailString == nullptr )
 			{
-				pDetailString = new FontBitmap( FontID, FS->DescribeFile( pFile->fileID  ), 40, false, Selected );
+				BYTE *pDetail = FS->DescribeFile( pFile->fileID  );
+
+				pDetailString = new FontBitmap( FontID, pDetail, rstrnlen( pDetail, 40 ), false, Selected );
 
 				FileDescs[ pFile->fileID ] = pDetailString;
 			}
@@ -2160,16 +2162,26 @@ void CFileViewer::NewDirectory( void )
 			Dir.EncodingID = StaticEncoding;
 			Dir.FSFileType = FT_UNSET;
 			Dir.Filename   = pNewDir;
+			Dir.Flags      = FF_Directory;
 
 			if ( ( StaticFlags & FSF_Uses_Extensions ) && ( ! ( StaticFlags & FSF_NoDir_Extensions ) ) )
 			{
-				Dir.Extension = pNewDirX;
+				if ( rstrnlen( pNewDirX, 3 ) != 0 )
+				{
+					Dir.Extension = pNewDirX;
+					Dir.Flags     |= FF_Extension;
+				}
 			}
 
-			Dir.Flags = FF_Directory;
 			Dir.Type  = FT_Directory;
 
-			if ( FS->CreateDirectory( &Dir, CDF_MANUAL_OP ) != NUTS_SUCCESS )
+			int RCode = FS->CreateDirectory( &Dir, CDF_MANUAL_OP );
+			
+			if ( ( RCode == FILEOP_EXISTS ) || ( RCode == FILEOP_ISFILE ) )
+			{
+				MessageBox( hWnd, L"A file object with the specified name already exists.", L"Create Directory", MB_ICONERROR | MB_OK );
+			}
+			else if ( RCode != NUTS_SUCCESS )
 			{
 				NUTSError::Report( L"Create Directory", ParentWnd );
 			}

@@ -2,6 +2,9 @@
 #include "WindowsFileSystem.h"
 #include "ImageDataSource.h"
 #include "ZIPFile.h"
+#include "NUTSError.h"
+
+#include <direct.h>
 
 WindowsFileSystem::WindowsFileSystem( std::wstring rootDrive ) : FileSystem(NULL) {
 	pWindowsDirectory	= new WindowsDirectory(rootDrive);
@@ -16,7 +19,7 @@ WindowsFileSystem::WindowsFileSystem( std::wstring rootDrive ) : FileSystem(NULL
 
 	TopicIcon = FT_Windows;
 
-	Flags = FSF_Uses_Extensions | FSF_Supports_Dirs;
+	Flags = FSF_Uses_Extensions | FSF_Supports_Dirs | FSF_SupportFreeSpace | FSF_Capacity;
 }
 
 WindowsFileSystem::~WindowsFileSystem(void) {
@@ -80,6 +83,14 @@ int	WindowsFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	if ( pFile->EncodingID != ENCODING_ASCII )
 	{
 		return FILEOP_NEEDS_ASCII;
+	}
+
+	for ( NativeFileIterator iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( FilenameCmp( pFile, &*iFile ) )
+		{
+			return FILEOP_EXISTS;
+		}
 	}
 
 	std::wstring destFile = folderPath;
@@ -178,6 +189,96 @@ int	WindowsFileSystem::Parent() {
 }
 
 int	WindowsFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
+	if ( pDir->EncodingID != ENCODING_ASCII )
+	{
+		return FILEOP_NEEDS_ASCII;
+	}
+
+	NativeFile SourceDir = *pDir;
+
+	for ( NativeFileIterator iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		if ( FilenameCmp( pDir, &*iFile ) )
+		{
+			if ( ( CreateFlags & ( CDF_MERGE_DIR | CDF_RENAME_DIR ) ) == 0 )
+			{
+				if ( iFile->Flags & FF_Directory )
+				{
+					return FILEOP_EXISTS;
+				}
+				else
+				{
+					return FILEOP_ISFILE;
+				}
+			}
+			else if ( CreateFlags & CDF_MERGE_DIR )
+			{
+				return ChangeDirectory( iFile->fileID );
+			}
+			else if ( CreateFlags & CDF_RENAME_DIR )
+			{
+				/* No old map FSes use big directories, so all filenames are max. 10 chars */
+				if ( RenameIncomingDirectory( &SourceDir, pDirectory ) != NUTS_SUCCESS )
+				{
+					return -1;
+				}
+			}
+		}
+	}
+
+	std::wstring newPath = folderPath;
+
+	if ( newPath.substr( newPath.length() - 1 ) != L"\\" )
+	{
+		newPath += L"\\";
+	}
+
+	newPath += UString( SourceDir.Filename );
+
+	if ( SourceDir.Extension.length() > 0 )
+	{
+		newPath += L".";
+
+		newPath += UString( SourceDir.Extension );
+	}
+
+	_wmkdir( newPath.c_str() );
+
+	if ( CreateFlags & CDF_ENTER_AFTER )
+	{
+		delete pWindowsDirectory;
+
+		pWindowsDirectory	= new WindowsDirectory(folderPath);
+
+		pDirectory = (Directory *) pWindowsDirectory;
+	}
+
+	pWindowsDirectory->ReadDirectory();
+
+	return 0;
+}
+
+int WindowsFileSystem::DeleteFile( DWORD FileID )
+{
+	std::wstring newPath = folderPath;
+
+	if ( newPath.substr( newPath.length() - 1 ) != L"\\" )
+	{
+		newPath += L"\\";
+	}
+
+	newPath += pWindowsDirectory->WindowsFiles[ FileID ];
+
+	if ( pDirectory->Files[ FileID ].Flags & FF_Directory )
+	{
+		_wrmdir( newPath.c_str() );
+	}
+	else
+	{
+		_wunlink( newPath.c_str() );
+	}
+
+	pWindowsDirectory->ReadDirectory();
 
 	return 0;
 }
@@ -228,4 +329,208 @@ BYTE *WindowsFileSystem::GetTitleString( NativeFile *pFile )
 	strncpy_s( (char *) Title, 512, (char *) pPath, 511 );
 
 	return Title;
+}
+
+int WindowsFileSystem::RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory )
+{
+	bool Done = false;
+
+	BYTEString CurrentFilename( pDir->Filename, pDir->Filename.length() + 11 );
+	BYTEString ProposedFilename( pDir->Filename.length() + 11 );
+
+	size_t InitialLen = CurrentFilename.length();
+
+	DWORD ProposedIndex = 1;
+
+	BYTE ProposedSuffix[ 11 ];
+
+	while ( !Done )
+	{
+		rstrncpy( ProposedFilename, CurrentFilename, InitialLen );
+
+		rsprintf( ProposedSuffix, "_%d", ProposedIndex );
+
+		WORD SuffixLen = rstrnlen( ProposedSuffix, 9 );
+		
+		rstrcpy( &ProposedFilename[ InitialLen ], ProposedSuffix );
+
+		/* Now see if that's unique */
+		NativeFileIterator iFile;
+
+		bool Unique = true;
+
+		for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+		{
+			if ( rstricmp( iFile->Filename, ProposedFilename ) )
+			{
+				Unique = false;
+
+				break;
+			}
+		}
+
+		Done = Unique;
+
+		ProposedIndex++;
+
+		if ( ProposedIndex == 0 )
+		{
+			/* EEP - Ran out */
+			return NUTSError( 208, L"Unable to find unique name for incoming directory" );
+		}
+	}
+
+	pDir->Filename = ProposedFilename;
+
+	return 0;
+}
+
+std::vector<AttrDesc> WindowsFileSystem::GetAttributeDescriptions( void )
+{
+	static std::vector<AttrDesc> Attrs;
+
+	Attrs.clear();
+
+	AttrDesc Attr;
+
+	/* Read-Only */
+	Attr.Index = 0;
+	Attr.Type  = AttrVisible | AttrBool | AttrFile | AttrDir;
+	Attr.Name  = L"Read Only";
+	Attrs.push_back( Attr );
+
+	/* Archive */
+	Attr.Index = 1;
+	Attr.Type  = AttrVisible | AttrBool | AttrFile | AttrDir;
+	Attr.Name  = L"Archive";
+	Attrs.push_back( Attr );
+
+	/* System */
+	Attr.Index = 2;
+	Attr.Type  = AttrVisible | AttrBool | AttrFile | AttrDir;
+	Attr.Name  = L"System";
+	Attrs.push_back( Attr );
+
+	/* Hidden */
+	Attr.Index = 3;
+	Attr.Type  = AttrVisible | AttrBool | AttrFile | AttrDir;
+	Attr.Name  = L"Hidden";
+	Attrs.push_back( Attr );
+
+	/* Creation Time */
+	Attr.Index = 4;
+	Attr.Type  = AttrVisible | AttrTime | AttrFile | AttrDir;
+	Attr.Name  = L"Creation Time";
+	Attrs.push_back( Attr );
+
+	/* Last Access Time */
+	Attr.Index = 5;
+	Attr.Type  = AttrVisible | AttrTime | AttrFile | AttrDir;
+	Attr.Name  = L"Last Access Time";
+	Attrs.push_back( Attr );
+
+	/* Last Write Time */
+	Attr.Index = 6;
+	Attr.Type  = AttrVisible | AttrTime | AttrFile | AttrDir;
+	Attr.Name  = L"Last Write Time";
+	Attrs.push_back( Attr );
+
+	return Attrs;
+}
+
+WCHAR *WindowsFileSystem::Identify( DWORD FileID )
+{
+	// Use the base class first.
+	WCHAR *pOrig = FileSystem::Identify( FileID );
+
+	WCHAR *pIdent = pOrig;
+
+	static WCHAR *DiskImage = L"Disk Image";
+	static WCHAR *TapeImage = L"Casette Image";
+	static WCHAR *HardImage = L"Hard Drive Image";
+
+	// See if we can enhance this.
+	NativeFile *pFile = &pDirectory->Files[ FileID ];
+
+	if ( pFile->Icon == FT_DiskImage )
+	{
+		pIdent = DiskImage;
+	}
+	else if ( pFile->Icon == FT_TapeImage )
+	{
+		pIdent = TapeImage;
+	}
+	else if ( pFile->Icon == FT_HardImage )
+	{
+		pIdent = HardImage;
+	}
+
+	return pIdent;
+}
+
+BYTE *WindowsFileSystem::DescribeFile( DWORD FileIndex )
+{
+	BYTE desc[1024];
+
+	NativeFile *pFile = &pDirectory->Files[ FileIndex ];
+
+	if ( pFile->Flags & FF_Extension )
+	{
+		rstrncpy( desc, pFile->Extension, pFile->Extension.length() );
+
+		rsprintf( &desc[ pFile->Extension.length() ], " File, %s bytes", DisplayNumber( pFile->Length ) );
+	}
+	else
+	{
+		rsprintf( desc, "File, %s bytes", DisplayNumber( pFile->Length ) );
+	}
+
+	return desc;
+}
+
+BYTE *WindowsFileSystem::DisplayNumber( QWORD val )
+{
+	static BYTE NumString[ 64 ];
+	static BYTE OutString[ 64 ];
+
+	UINT64 v;
+	int    s;
+
+	rsprintf( NumString, "%llu", val );
+
+	GetNumberFormatA(LOCALE_USER_DEFAULT, 0, (char *) NumString, NULL, (char *) OutString, 64 );  
+
+	/* GetNumberFormat adds .00 to the end of this. Getting to not do so involves
+	   arsing about with 400 GetLocaleInfo calls. Sod that. It's easier to just
+	   remove the last 3 digits */
+
+	WORD l = rstrnlen( OutString, 64 );
+
+	if ( l >= 3 )
+	{
+		OutString[ l - 3 ] = 0;
+	}
+
+	return OutString;
+}
+
+int WindowsFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
+{
+	ResetEvent( hCancelFree );
+
+	ULARGE_INTEGER CapacityBytes;
+	ULARGE_INTEGER FreeBytes;
+	ULARGE_INTEGER CallerBytes; // We don't use this
+
+	GetDiskFreeSpaceEx( folderPath.c_str(), &CallerBytes, &CapacityBytes, &FreeBytes );
+
+	static FSSpace Map;
+
+	Map.Capacity  = CapacityBytes.QuadPart;
+	Map.pBlockMap = nullptr;
+	Map.UsedBytes = CapacityBytes.QuadPart - FreeBytes.QuadPart;
+
+	SendMessage( hSpaceWnd, WM_NOTIFY_FREE, (WPARAM) &Map, 0 );
+
+	return 0;
 }

@@ -213,6 +213,7 @@ public:
 		static WCHAR *BASICFile     = (WCHAR *) L"BASIC Program";
 		static WCHAR *DiskFile      = (WCHAR *) L"Disk Image";
 		static WCHAR *TapeFile      = (WCHAR *) L"Cassette Image";
+		static WCHAR *HardFile      = (WCHAR *) L"Hard Drive Image";
 		static WCHAR *MiscFile      = (WCHAR *) L"Container File";
 		static WCHAR *Directory     = (WCHAR *) L"Directory";
 
@@ -221,7 +222,7 @@ public:
 			return Directory;
 		}
 
-		switch ( pDirectory->Files[ FileID ].Icon )
+		switch ( pDirectory->Files[ FileID ].Type )
 		{
 		case FT_None:
 			return NoneFile;
@@ -270,6 +271,9 @@ public:
 
 		case FT_MiscImage:
 			return MiscFile;
+
+		case FT_HardImage:
+			return HardFile;
 
 		case FT_Directory:
 			break;

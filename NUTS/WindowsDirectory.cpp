@@ -69,28 +69,26 @@ int	WindowsDirectory::ReadDirectory(void) {
 			file.Flags |= FF_Directory;
 			file.Icon   = FT_Directory;
 		}
-		else
+
+		size_t dp = Filename.find_last_of( L"." ) ;
+
+		if ( dp != std::wstring::npos )
 		{
-			size_t dp = Filename.find_last_of( L"." ) ;
-
-			if ( dp != std::wstring::npos )
+			if ( dp == ( Filename.length() - 4 ) )
 			{
-				if ( dp == ( Filename.length() - 4 ) )
-				{
-					file.Flags |= FF_Extension;
+				file.Flags |= FF_Extension;
 					
-					std::wstring extn = Filename.substr( dp + 1 );
+				std::wstring extn = Filename.substr( dp + 1 );
 
-					file.Extension = BYTEString( (BYTE*) AString( (WCHAR *) extn.c_str() ), 3 );
+				file.Extension = BYTEString( (BYTE*) AString( (WCHAR *) extn.c_str() ), 3 );
 
-					Filename = Filename.substr( 0, dp );
+				Filename = Filename.substr( 0, dp );
 
-					for ( BYTE i=0; i<3; i++ )
+				for ( BYTE i=0; i<3; i++ )
+				{
+					if ( ( file.Extension[ i ] >= 'a' ) && ( file.Extension[i] <= 'z' ) )
 					{
-						if ( ( file.Extension[ i ] >= 'a' ) && ( file.Extension[i] <= 'z' ) )
-						{
-							file.Extension[ i ] &= 0xDF;
-						}
+						file.Extension[ i ] &= 0xDF;
 					}
 				}
 			}
@@ -98,10 +96,23 @@ int	WindowsDirectory::ReadDirectory(void) {
 
 		file.Filename = BYTEString( (BYTE *) AString( (WCHAR *) Filename.c_str() ) );
 
-		file.Length	    = fdata.nFileSizeLow;
+		file.Length = fdata.nFileSizeHigh;
+		file.Length <<= 32;
+		file.Length |= fdata.nFileSizeLow;
+
 		file.EncodingID = ENCODING_ASCII;
 		file.XlatorID   = NULL;
 		file.HasResolvedIcon = false;
+
+		// Copy some attributes - these are all read only
+		file.Attributes[ 0 ] = (fdata.dwFileAttributes & FILE_ATTRIBUTE_READONLY)?0xFFFFFFFF:0x00000000;
+		file.Attributes[ 1 ] = (fdata.dwFileAttributes & FILE_ATTRIBUTE_ARCHIVE)?0xFFFFFFFF:0x00000000;
+		file.Attributes[ 2 ] = (fdata.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM)?0xFFFFFFFF:0x00000000;
+		file.Attributes[ 3 ] = (fdata.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)?0xFFFFFFFF:0x00000000;
+
+		file.Attributes[ 4 ] = FileTimeToUnixTime( &fdata.ftCreationTime );
+		file.Attributes[ 5 ] = FileTimeToUnixTime( &fdata.ftLastAccessTime );
+		file.Attributes[ 6 ] = FileTimeToUnixTime( &fdata.ftLastWriteTime );
 
 		TranslateFileType(&file);
 
@@ -124,4 +135,18 @@ int	WindowsDirectory::ReadDirectory(void) {
 int	WindowsDirectory::WriteDirectory(void) {
 
 	return 0;
+}
+
+#define WINDOWS_TICK 10000000
+#define SEC_TO_UNIX_EPOCH 11644473600
+
+DWORD WindowsDirectory::FileTimeToUnixTime( FILETIME *ft )
+{
+	QWORD RTicks = ft->dwHighDateTime;
+
+	RTicks <<= 32;
+
+	RTicks |= ft->dwLowDateTime;
+
+	return (DWORD) ( ( RTicks / WINDOWS_TICK ) - SEC_TO_UNIX_EPOCH );
 }
