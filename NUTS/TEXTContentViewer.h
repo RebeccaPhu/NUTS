@@ -4,6 +4,7 @@
 #include "TempFile.h"
 #include "EncodingTextArea.h"
 #include "EncodingStatusBar.h"
+#include "IconButton.h"
 #include "Defs.h"
 
 #include <map>
@@ -68,10 +69,10 @@ private:
 
 	TXTTranslateOptions opts;
 
-	HWND   hChangeTip;
-	HWND   hCopyTip;
-	HWND   hSaveTip;
-	HWND   hPrintTip;
+	IconButton *pChanger;
+	IconButton *pSave;
+	IconButton *pCopy;
+	IconButton *pPrint;
 
 private:
 	void Translate( void );

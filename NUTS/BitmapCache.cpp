@@ -36,8 +36,9 @@ IDB_ROMDISK:    "Chip Icon", Diagram Old Icons, Double-J Design, CC Attribution 
 
 IDI_NEWDIR:     "New Folder Graphite Icon", Aqua Candy Revolution Icons, McDo Design, Free for non-commercial use
 IDI_FONTSWITCH: "Font Icon", FatCow Hosting Icons, FatCow, CC Attribution 3.0 US
-IDI_PRINT:      "Print Icon", 12x12 Free Toolbar Icons, Aha-Soft, CC Attribution 3.0 US
-IDI_SAVE:       "Save Icon", 12x12 Free Toolbar Icons, Aha-Soft, CC Attribution 3.0 US
+IDI_PRINT:      "Print Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
+IDI_SAVE:       "Save Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
+IDI_OPEN:       "Open Icon", Shimmer Icons, Creative Freedom, CC Attribution-NoDerivs 3.0 Unported
 IDI_COPY:       "Copy Icon", Mini Icons 2, Brand Spanking New, CC Attribution-ShareAlike 2.5 Generic
 IDI_UPFILE:     "Move File Up Icon", Blue Bits Icons, Icojam, Freeware
 IDI_DOWNFILE:   "Move File Down Icon", Blue Bits Icons, Icojam, Freeware

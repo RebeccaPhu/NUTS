@@ -2,6 +2,7 @@
 
 #include <map>
 #include "SCREENTranslator.h"
+#include "IconButton.h"
 
 class CPaletteWindow
 {
@@ -41,9 +42,10 @@ private:
 
 	HWND hTabs;
 	HWND hPhysDlg;
-	HWND hResetButton;
-	HWND hSaveButton;
-	HWND hLoadButton;
+	
+	IconButton *pResetButton;
+	IconButton *pSaveButton;
+	IconButton *pLoadButton;
 
 	WORD ColIndex;
 	bool ColIn;

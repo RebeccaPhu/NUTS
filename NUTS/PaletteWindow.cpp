@@ -17,13 +17,14 @@ CPaletteWindow::CPaletteWindow(void)
 	hWnd         = nullptr;
 	hTabs        = nullptr;
 	hPhysDlg     = nullptr;
-	hSaveButton  = nullptr;
-	hLoadButton  = nullptr;
-	hResetButton = nullptr;
 	hColourArea  = nullptr;
 	ColIn        = false;
 	ColIndex     = 0xFFFF;
 	SelectedTab  = TabLogical;
+
+	pResetButton = nullptr;
+	pSaveButton  = nullptr;
+	pLoadButton  = nullptr;
 }
 
 CPaletteWindow::~CPaletteWindow(void)
@@ -172,17 +173,17 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 	{
 		HWND srcButton = (HWND) lParam;
 
-		if ( srcButton == hResetButton )
+		if ( srcButton == pResetButton->hWnd )
 		{
 			::SendMessage( Parent, WM_RESETPALETTE, (WPARAM) SelectedTab, 0 );
 		}
 
-		if ( srcButton == hLoadButton )
+		if ( srcButton == pLoadButton->hWnd )
 		{
 			DoLoadPalette();
 		}
 
-		if ( srcButton == hSaveButton )
+		if ( srcButton == pSaveButton->hWnd )
 		{
 			DoSavePalette();
 		}
@@ -308,9 +309,7 @@ void CPaletteWindow::PaintColours( void )
 
 	if ( ( SelectedTab == TabLogical ) && ( pLogical->size() == 0U ) )
 	{
-		FontBitmap note( FONTID_PC437, (BYTE *) "No Logical Palette in This Mode", 64, false, false );
-
-		note.DrawText( hDC, 6, 10, DT_LEFT );
+		DrawText( hDC, L"No logical palette in this mode.", 32, &cf, DT_LEFT | DT_TOP | DT_WORDBREAK );
 	}
 
 	ReleaseDC( hColourArea, hDC );
@@ -481,21 +480,14 @@ void CPaletteWindow::Create(int x, int y, HWND ParentWnd, LogPalette *pLog, Phys
 	::SendMessage( hTabs, TCM_INSERTITEM, 1, (LPARAM) &item );
 
 	// Create the 3 seashells
-	hResetButton = CreateWindowEx(NULL, L"BUTTON", L"", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_ICON,  0, 24, 24, 24, hWnd, NULL, hInst, NULL);
-	hSaveButton  = CreateWindowEx(NULL, L"BUTTON", L"", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_ICON, 24, 24, 24, 24, hWnd, NULL, hInst, NULL);
-	hLoadButton  = CreateWindowEx(NULL, L"BUTTON", L"", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | BS_ICON, 48, 24, 24, 24, hWnd, NULL, hInst, NULL);
+	pResetButton = new IconButton( hWnd, 0, 24, LoadIcon( hInst, MAKEINTRESOURCE( IDI_ROOTFS ) ) );
+	pResetButton->SetTip( L"Reset this palette to default values" );
 
-	HICON hRootIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_ROOTFS) );
+	pSaveButton  = new IconButton( hWnd, 24, 24, LoadIcon( hInst, MAKEINTRESOURCE( IDI_SAVE ) ) );
+	pSaveButton->SetTip( L"Save this palette as a file" );
 
-	SendMessage( hResetButton, BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hRootIcon );
-
-	HICON hOpenIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_OPEN) );
-
-	SendMessage( hLoadButton, BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hOpenIcon );
-
-	HICON hSaveIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_SAVE) );
-
-	SendMessage( hSaveButton, BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hSaveIcon );
+	pLoadButton  = new IconButton( hWnd, 0, 24, LoadIcon( hInst, MAKEINTRESOURCE( IDI_OPEN ) ) );
+	pLoadButton->SetTip( L"Load this palette from a file" );
 
 	ComputeWindowSize();
 }
@@ -504,9 +496,18 @@ void CPaletteWindow::DestroyWindows( void )
 {
 	NixWindow( hColourArea );
 	NixWindow( hTabs );
-	NixWindow( hResetButton );
-	NixWindow( hSaveButton );
-	NixWindow( hLoadButton );
+	
+	if ( pResetButton != nullptr )
+	{
+		delete pResetButton;
+		delete pSaveButton;
+		delete pLoadButton;
+	}
+
+	pResetButton = nullptr;
+	pSaveButton  = nullptr;
+	pLoadButton  = nullptr;
+
 	NixWindow( hWnd );
 }
 
@@ -557,9 +558,9 @@ void CPaletteWindow::ComputeWindowSize( void )
 		::SetWindowPos( hWnd, NULL, 0, 0, (r.right - r.left) + (2 * brdx) + 8, (r.bottom - r.top) + brdy + tity + 8 + 24, SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER );
 	}
 
-	::SetWindowPos( hResetButton, NULL, 8 + r.left + brdx,      4 + tity + r.bottom, 24, 24, SWP_NOREPOSITION | SWP_NOZORDER );
-	::SetWindowPos( hLoadButton,  NULL, 8 + r.left + brdx + 24, 4 + tity + r.bottom, 24, 24, SWP_NOREPOSITION | SWP_NOZORDER );
-	::SetWindowPos( hSaveButton,  NULL, 8 + r.left + brdx + 48, 4 + tity + r.bottom, 24, 24, SWP_NOREPOSITION | SWP_NOZORDER );
+	::SetWindowPos( pResetButton->hWnd, NULL, 8 + r.left + brdx,      4 + tity + r.bottom, 24, 24, SWP_NOREPOSITION | SWP_NOZORDER );
+	::SetWindowPos( pLoadButton->hWnd,  NULL, 8 + r.left + brdx + 24, 4 + tity + r.bottom, 24, 24, SWP_NOREPOSITION | SWP_NOZORDER );
+	::SetWindowPos( pSaveButton->hWnd,  NULL, 8 + r.left + brdx + 48, 4 + tity + r.bottom, 24, 24, SWP_NOREPOSITION | SWP_NOZORDER );
 
 	GetClientRect( hTabs, &r );
 

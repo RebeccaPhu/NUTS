@@ -79,10 +79,10 @@ CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, DWORD TUID )
 
 	ResizeTime       = 0;
 
-	hChangeTip = NULL;
-	hCopyTip   = NULL;
-	hPrintTip  = NULL;
-	hSaveTip   = NULL;
+	pChanger = nullptr;
+	pSave    = nullptr;
+	pCopy    = nullptr;
+	pPrint   = nullptr;
 }
 
 CTEXTContentViewer::~CTEXTContentViewer(void) {
@@ -101,10 +101,6 @@ CTEXTContentViewer::~CTEXTContentViewer(void) {
 
 	KillTimer( hWnd, 0x7e7 );
 
-	NixWindow( hCopyTip );
-	NixWindow( hSaveTip );
-	NixWindow( hPrintTip );
-	NixWindow( hChangeTip );
 	NixWindow( hCopy );
 	NixWindow( hSave );
 	NixWindow( hPrint );
@@ -119,6 +115,14 @@ CTEXTContentViewer::~CTEXTContentViewer(void) {
 	if ( pTextBuffer != nullptr )
 	{
 		free( pTextBuffer );
+	}
+
+	if ( pChanger != nullptr )
+	{
+		delete pChanger;
+		delete pSave;
+		delete pCopy;
+		delete pPrint;
 	}
 }
 
@@ -244,7 +248,7 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 
 		case WM_COMMAND:
 			{
-				if ( lParam == (LPARAM) hChanger )
+				if ( lParam == (LPARAM) pChanger->hWnd )
 				{
 					if ( !Translating )
 					{
@@ -255,17 +259,17 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 					}
 				}
 
-				if ( lParam == (LPARAM) hSave )
+				if ( lParam == (LPARAM) pSave->hWnd )
 				{
 					DoSave();
 				}
 
-				if ( lParam == (LPARAM) hPrint )
+				if ( lParam == (LPARAM) pPrint->hWnd )
 				{
 					DoPrint();
 				}
 
-				if ( lParam == (LPARAM) hCopy )
+				if ( lParam == (LPARAM) pCopy->hWnd )
 				{
 					pTextArea->CopySelection();
 				}
@@ -398,40 +402,24 @@ int CTEXTContentViewer::CreateToolbar( void ) {
 
 	int		h = 4;
 
-	hChanger = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
+	pChanger = new IconButton( hWnd, h, 4, LoadIcon( hInst, MAKEINTRESOURCE( IDI_FONTSWITCH ) ) ); h+= 28;
 
-	HICON hChangerIcon = LoadIcon( hInst, MAKEINTRESOURCE( IDI_SMFS ) );
-
-	SendMessage(hChanger, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hChangerIcon);
-
-	hChangeTip = CreateToolTip( hChanger, hWnd, L"Change the font used for rendering the text", hInst );
+	pChanger->SetTip( L"Change the font used for rendering the text" );
 
 
-	hCopy = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
-
-	HICON hCopyIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_COPY) );
-
-	SendMessage(hCopy, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hCopyIcon);
-
-	hCopyTip = CreateToolTip( hCopy, hWnd, L"Copy the text to the clipboard (may lose encoding)", hInst );
+	pCopy = new IconButton( hWnd, h, 4, LoadIcon( hInst, MAKEINTRESOURCE( IDI_COPYFILE ) ) ); h+= 28;
+	
+	pCopy->SetTip( L"Copy the text to the clipboard (may lose encoding)" );
 
 
-	hSave = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
-
-	HICON hSaveIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_SAVE) );
-
-	SendMessage(hSave, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hSaveIcon);
-
-	hSaveTip = CreateToolTip( hSave, hWnd, L"Save the text to a file (may lose encoding)", hInst );
+	pSave = new IconButton( hWnd, h, 4, LoadIcon( hInst, MAKEINTRESOURCE( IDI_SAVE ) ) ); h+= 28;
+	
+	pSave->SetTip( L"Save the text to a file (may lose encoding)" );
 
 
-	hPrint = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
+	pPrint = new IconButton( hWnd, h, 4, LoadIcon( hInst, MAKEINTRESOURCE( IDI_PRINT ) ) ); h+= 28;
 
-	HICON hPrintIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_PRINT) );
-
-	SendMessage(hPrint, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hPrintIcon);
-
-	hPrintTip = CreateToolTip( hPrint, hWnd, L"Print the text in the current font", hInst );
+	pPrint->SetTip( L"Print the text in the current font" );
 
 	return 0;
 }

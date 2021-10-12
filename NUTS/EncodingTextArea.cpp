@@ -895,14 +895,18 @@ void EncodingTextArea::SafeByteCopy( BYTE *dest, BYTE *src, DWORD len )
 
 int EncodingTextArea::CopySelection( void )
 {
+	DWORD CopyStart = TextPtrStart;
+	DWORD CopyEnd   = TextPtrEnd;
+
 	if ( TextPtrEnd == TextPtrStart )
 	{
-		return 0;
+		CopyStart = 0;
+		CopyEnd   = lTextBody - 1;
 	}
 
 	EnterCriticalSection( &cs );
 
-	DWORD CopySize = ( TextPtrEnd - TextPtrStart ) + 1024;
+	DWORD CopySize = ( CopyEnd - CopyStart ) + 1024;
 	DWORD TextSize =   0;
 
 	BYTE *pArea = (BYTE *) malloc( CopySize );
@@ -913,7 +917,7 @@ int EncodingTextArea::CopySelection( void )
 	DWORD TextPtr = 0;
 	DWORD LineLen = 0;
 
-	while ( TextPtr < TextPtrEnd )
+	while ( TextPtr < CopyEnd )
 	{
 		if ( iLinePtr == LinePointers.end() )
 		{
@@ -931,22 +935,22 @@ int EncodingTextArea::CopySelection( void )
 
 		bool  CopyThis = false;
 
-		if ( ( TextPtrStart >= TextPtr ) && ( TextPtrStart < ELine ) )
+		if ( ( CopyStart >= TextPtr ) && ( CopyStart < ELine ) )
 		{
 			// Selection starts mid-line
-			pStart = &pTextBody[ TextPtrStart ];
-			lLine  = LineLen - ( TextPtrStart - TextPtr );
+			pStart = &pTextBody[ CopyStart ];
+			lLine  = LineLen - ( CopyStart - TextPtr );
 
 			CopyThis = true;
 		}
-		else if ( ( TextPtrEnd >= TextPtr ) && ( TextPtrEnd < ELine ) )
+		else if ( ( CopyEnd >= TextPtr ) && ( CopyEnd < ELine ) )
 		{
 			// Select ends mid-line
-			lLine -= ELine - TextPtrEnd;
+			lLine -= ELine - CopyEnd;
 
 			CopyThis = true;
 		}
-		else if ( ( TextPtrStart < TextPtr ) && ( TextPtrEnd >= ELine ) )
+		else if ( ( CopyStart < TextPtr ) && ( CopyEnd >= ELine ) )
 		{
 			CopyThis = true;
 		}

@@ -6,6 +6,7 @@
 #include "TempFile.h"
 #include "SCREENTranslator.h"
 #include "EncodingEdit.h"
+#include "IconButton.h"
 
 #include <map>
 
@@ -33,20 +34,16 @@ private:
 	HWND ParentWnd;
 	HWND hToolbar;
 	HWND hModeList;
-	HWND hPaletteButton;
+	IconButton *pPaletteButton;
 	HWND hEffects;
-	HWND hCopy;
-	HWND hSave;
-	HWND hPrint;
+	IconButton *pCopy;
+	IconButton *pSave;
+	IconButton *pPrint;
 	HWND hOffsetPrompt;
 	HWND hLengthPrompt;
 	HWND hProgress;
 
 	HWND hModeTip;
-	HWND hPaletteTip;
-	HWND hCopyTip;
-	HWND hSaveTip;
-	HWND hPrintTip;
 	HWND hEffectsTip;
 	HWND hOffsetTip;
 	HWND hLengthTip;

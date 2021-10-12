@@ -294,6 +294,9 @@
     <ClCompile Include="TapeBrowser.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="IconButton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -535,6 +538,9 @@
     </ClInclude>
     <ClInclude Include="TapeBrowser.h">
       <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="IconButton.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

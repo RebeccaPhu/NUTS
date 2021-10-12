@@ -79,11 +79,11 @@ CSCREENContentViewer::CSCREENContentViewer( CTempFile &FileObj, DWORD TUID ) {
 	ParentWnd      = nullptr;
 	hToolbar       = nullptr;
 	hModeList      = nullptr;
-	hPaletteButton = nullptr;
+	pPaletteButton = nullptr;
 	hEffects       = nullptr;
-	hCopy          = nullptr;
-	hSave          = nullptr;
-	hPrint         = nullptr;
+	pCopy          = nullptr;
+	pSave          = nullptr;
+	pPrint         = nullptr;
 	hOffsetPrompt  = nullptr;
 	hLengthPrompt  = nullptr;
 	pOffset        = nullptr;
@@ -94,10 +94,6 @@ CSCREENContentViewer::CSCREENContentViewer( CTempFile &FileObj, DWORD TUID ) {
 	hPoke            = NULL;
 
 	hModeTip    = NULL;
-	hPaletteTip = NULL;
-	hCopyTip    = NULL;
-	hSaveTip    = NULL;
-	hPrintTip   = NULL;
 	hEffectsTip = NULL;
 	hOffsetTip  = NULL;
 	hLengthTip  = NULL;
@@ -179,40 +175,24 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 		EnableWindow(hModeList, FALSE);
 	}
 
-	hPaletteButton = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
+	pPaletteButton = new IconButton( hWnd, h, 4, LoadIcon( hInst, MAKEINTRESOURCE( IDI_PALETTE ) ) ); h += 28;
 
-	HICON hPaletteIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_PALETTE) );
-
-	SendMessage(hPaletteButton, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hPaletteIcon);
-
-	hPaletteTip = CreateToolTip( hPaletteButton, hWnd, L"Adjust the logical palette assignments and/or physical video palette", hInst );
+	pPaletteButton->SetTip( L"Adjust the logical palette assignments and/or physical video palette" );
 
 
-	hCopy = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
+	pCopy = new IconButton( hWnd, h, 4, LoadIcon( hInst, MAKEINTRESOURCE( IDI_COPYFILE ) ) ); h += 28;
 
-	HICON hCopyIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_COPY) );
-
-	SendMessage(hCopy, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hCopyIcon);
-
-	hCopyTip = CreateToolTip( hCopy, hWnd, L"Copy the image to the clipboard", hInst );
+	pCopy->SetTip( L"Copy the image to the clipboard" );
 
 
-	hSave = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
+	pSave = new IconButton( hWnd, h, 4, LoadIcon( hInst, MAKEINTRESOURCE( IDI_SAVE ) ) ); h += 28;
 
-	HICON hSaveIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_SAVE) );
-
-	SendMessage(hSave, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hSaveIcon);
-
-	hSaveTip = CreateToolTip( hSave, hWnd, L"Save the image as a Windows 32-bit Bitmap image file", hInst );
+	pSave->SetTip( L"Save the image as a Windows 32-bit Bitmap image file" );
 
 
-	hPrint = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
+	pPrint = new IconButton( hWnd, h, 4, LoadIcon( hInst, MAKEINTRESOURCE( IDI_PRINT ) ) ); h += 28;
 
-	HICON hPrintIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_PRINT) );
-
-	SendMessage(hPrint, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hPrintIcon);
-
-	hPrintTip = CreateToolTip( hPrint, hWnd, L"Print the image filling the page", hInst );
+	pPrint->SetTip( L"Print the image filling the page" );
 
 	
 
@@ -305,10 +285,6 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 void CSCREENContentViewer::DestroyWindows( void )
 {
 	NixWindow( hModeTip );
-	NixWindow( hPaletteTip );
-	NixWindow( hCopyTip );
-	NixWindow( hSaveTip );
-	NixWindow( hPrintTip );
 	NixWindow( hEffectsTip );
 	NixWindow( hOffsetTip );
 	NixWindow( hLengthTip );
@@ -316,14 +292,18 @@ void CSCREENContentViewer::DestroyWindows( void )
 	NixWindow( hProgress );
 	NixWindow( hLengthPrompt );
 	NixWindow( hOffsetPrompt );
-	NixWindow( hPrint );
-	NixWindow( hSave );
-	NixWindow( hCopy );
 	NixWindow( hEffects );
-	NixWindow( hPaletteButton );
 	NixWindow( hModeList );
 	NixWindow( hToolbar );
 	NixWindow( hWnd );
+
+	if ( pPaletteButton != nullptr )
+	{
+		delete pPaletteButton;
+		delete pPrint;
+		delete pSave;
+		delete pCopy;
+	}
 
 	if ( pOffset != nullptr ) { delete pOffset; pOffset = nullptr; }
 	if ( pLength != nullptr ) { delete pLength; pLength = nullptr; }
@@ -376,15 +356,15 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 		DoEffectsMenu();
 	}
 
-	if ((message == WM_COMMAND) && (lParam == (LPARAM) hCopy)) {
+	if ((message == WM_COMMAND) && (lParam == (LPARAM) pCopy->hWnd)) {
 		DoCopyImage( false );
 	}
 
-	if ((message == WM_COMMAND) && (lParam == (LPARAM) hSave)) {
+	if ((message == WM_COMMAND) && (lParam == (LPARAM) pSave->hWnd)) {
 		DoCopyImage( true );
 	}
 
-	if ((message == WM_COMMAND) && (lParam == (LPARAM) hPrint)) {
+	if ((message == WM_COMMAND) && (lParam == (LPARAM) pPrint->hWnd)) {
 		DoPrintImage();
 	}
 
@@ -419,13 +399,13 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 		SetTimer( hWnd, 0x5330, 500, NULL );
 	}
 
-	if ((message == WM_COMMAND) && (lParam == (LPARAM) hPaletteButton)) {
+	if ((message == WM_COMMAND) && (lParam == (LPARAM) pPaletteButton->hWnd)) {
 		RECT rect;
 
 		if ( palWnd == nullptr ) {
 			palWnd	= new CPaletteWindow();
 
-			GetWindowRect(hPaletteButton, &rect);
+			GetWindowRect( pPaletteButton->hWnd, &rect);
 
 			palWnd->Create( rect.left, rect.top + 32, hWnd, &LogicalPalette, &PhysicalPalette, &PhysicalColours );
 		}
@@ -514,7 +494,7 @@ int CSCREENContentViewer::PaintToolBar( void ) {
 	ReleaseDC(hWnd, hDC);
 
 	GetClientRect(hModeList, &rect);      InvalidateRect(hModeList, &rect, FALSE);
-	GetClientRect(hPaletteButton, &rect); InvalidateRect(hPaletteButton, &rect, FALSE);
+	
 	GetClientRect(hEffects, &rect);       InvalidateRect(hEffects, &rect, FALSE);
 
 	return 0;
