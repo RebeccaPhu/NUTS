@@ -349,15 +349,14 @@ void ConfigureSpaceProps( HWND hwndDlg )
 	/* Filename edit box */
 	pFilenameEdit = new EncodingEdit( hwndDlg, 70, 34, 232, true );
 
+	pFilenameEdit->Disabled = true;
+
 	if ( IsMultiProps )
 	{
-		pFilenameEdit->Disabled = true;
 		pFilenameEdit->Encoding = pHostFS->GetEncoding();
 	}
 	else if ( CurrentAction.Selection.size() == 0 )
 	{
-		pFilenameEdit->Disabled = true;
-
 		if ( pTargetFS->FSID != FS_Root )
 		{
 			pFilenameEdit->SetText( pTargetFS->pParentFS->pDirectory->Files[ pTargetFS->pParentFS->EnterIndex ].Filename );
@@ -366,15 +365,6 @@ void ConfigureSpaceProps( HWND hwndDlg )
 	}
 	else
 	{
-		if ( CurrentAction.Selection[ 0 ].Flags && FF_Pseudo )
-		{
-			pFilenameEdit->Disabled = true;
-		}
-		else
-		{
-			pFilenameEdit->Disabled = false;
-		}
-
 		pFilenameEdit->SetText( CurrentAction.Selection[ 0 ].Filename );
 		pFilenameEdit->Encoding = pHostFS->GetEncoding();
 	}

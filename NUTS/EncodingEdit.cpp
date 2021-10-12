@@ -56,11 +56,12 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 		hParent, NULL, hInst, NULL
 	);
 
-	hChanger   = NULL;
+	pChanger   = nullptr;
 	hChangeTip = NULL;
 
 	if ( FontChanger )
 	{
+		/*
 		hChanger = CreateWindowEx(
 			0,
 			L"BUTTON",
@@ -78,6 +79,11 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 		SendMessage( hChanger, BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hIcon );
 
 		hChangeTip = CreateToolTip( hChanger, hWnd, L"Change the font used for rendering the text", hInst );
+		*/
+
+		pChanger = new IconButton( hParent, x + ( w - 24 ), y, LoadIcon( hInst, MAKEINTRESOURCE( IDI_FONTSWITCH ) ) );
+
+		pChanger->SetTip( L"Change the font used for rendering the text" );
 	}
 
 	EncodingEdit::_EncodingEditClassMap[ hWnd ] = this;
@@ -98,7 +104,7 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 	LDown         = false;
 	CW            = w;
 
-	if ( ( hChanger ) && ( CW > 24 ) ) { CW -= 24; }
+	if ( ( pChanger != nullptr ) && ( CW > 24 ) ) { CW -= 24; }
 
 	DChars        = CW / 8;
 	SChar         = 0;
@@ -152,7 +158,12 @@ EncodingEdit::~EncodingEdit(void)
 	NixObject( hDisBrush );
 
 	NixWindow( hChangeTip );
-	NixWindow( hChanger );
+
+	if ( pChanger == nullptr )
+	{
+		delete pChanger;
+	}
+	
 	NixWindow( hWnd );
 }
 
@@ -532,7 +543,7 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 		break;
 
 	case WM_COMMAND:
-		if ( ( hChanger != NULL) && ( lParam == (LPARAM) hChanger ) )
+		if ( ( pChanger != nullptr) && ( lParam == (LPARAM) pChanger->hWnd ) )
 		{
 			FontNum++;
 

@@ -295,7 +295,7 @@
       <Filter>Source Files\UI</Filter>
     </ClCompile>
     <ClCompile Include="IconButton.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\UI\Elements</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -540,7 +540,7 @@
       <Filter>Header Files\UI\Elements</Filter>
     </ClInclude>
     <ClInclude Include="IconButton.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\UI\Elements</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

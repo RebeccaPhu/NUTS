@@ -4,6 +4,7 @@
 #include "Defs.h"
 
 #include "CharMap.h"
+#include "IconButton.h"
 
 #include <map>
 
@@ -51,7 +52,7 @@ public:
 	void SetBuddy( EncodingEdit *pBuddy );
 
 private:
-	HWND  hChanger;
+	IconButton *pChanger;
 	HWND  Parent;
 	HICON hIcon;
 	BYTE  Blink;

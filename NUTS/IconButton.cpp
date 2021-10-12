@@ -38,6 +38,7 @@ IconButton::IconButton( HWND hParent, int x, int y, HICON icon )
 		wc.lpfnWndProc   = IconButtonWindowProc;
 		wc.hInstance     = hInst;
 		wc.lpszClassName = IconButtonClass;
+		wc.hCursor       = LoadCursor( NULL, IDC_ARROW );
 
 		ATOM atom = RegisterClass(&wc);
 
