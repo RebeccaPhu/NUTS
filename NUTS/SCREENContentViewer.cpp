@@ -71,6 +71,8 @@ CSCREENContentViewer::CSCREENContentViewer( CTempFile &FileObj, DWORD TUID ) {
 	pXlator     = NULL;
 	XlatorID    = TUID;
 
+	FirstTranslate = true;
+
 	Path = FileObj.Name();
 
 	FileObj.Keep();
@@ -534,9 +536,14 @@ int CSCREENContentViewer::TranslateThread( void )
 
 				Translate();
 				
-				PhysicalPalette = pXlator->GetPhysicalPalette();
-				LogicalPalette  = pXlator->GetLogicalPalette( Mode );
-				PhysicalColours = pXlator->GetPhysicalColours( );
+				if ( FirstTranslate )
+				{
+					PhysicalPalette = pXlator->GetPhysicalPalette();
+					LogicalPalette  = pXlator->GetLogicalPalette( Mode );
+					PhysicalColours = pXlator->GetPhysicalColours( );
+				}
+
+				FirstTranslate = false;
 
 				ShowWindow( hProgress, SW_HIDE );
 

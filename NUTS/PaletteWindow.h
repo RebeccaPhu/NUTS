@@ -49,9 +49,13 @@ private:
 
 	WORD ColIndex;
 	bool ColIn;
+	bool LogColChanging;
 
 	WORD PColIndex;
 	bool PColIn;
+
+	int  LogX;
+	int  LogY;
 
 	typedef enum _PaletteTab {
 		TabLogical  = 0,

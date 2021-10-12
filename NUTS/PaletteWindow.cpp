@@ -25,6 +25,8 @@ CPaletteWindow::CPaletteWindow(void)
 	pResetButton = nullptr;
 	pSaveButton  = nullptr;
 	pLoadButton  = nullptr;
+
+	LogColChanging = false;
 }
 
 CPaletteWindow::~CPaletteWindow(void)
@@ -70,7 +72,7 @@ INT_PTR CALLBACK CPaletteWindow::LogWindowProc(HWND hwndDlg, UINT uMsg, WPARAM w
 }
 
 LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LPARAM lParam) {
-	if ( message ==  WM_ACTIVATE )
+	if ( message == WM_ACTIVATE )
 	{
 		if ( wParam == 0 )
 		{
@@ -222,18 +224,10 @@ void CPaletteWindow::PaintColours( void )
 
 	RECT     cf;
 	LOGBRUSH brsh;
-	HBRUSH   TempBrush;
 
 	GetClientRect( hColourArea, &cf );
 
-	brsh.lbStyle = BS_SOLID;
-	brsh.lbColor = GetSysColor( COLOR_WINDOW );
-
-	TempBrush = CreateBrushIndirect( &brsh );
-
-	FillRect( hDC, &cf, TempBrush );
-
-	DeleteObject( TempBrush );
+	FillRect( hDC, &cf, GetSysColorBrush( COLOR_WINDOW ));
 
 	DWORD TotalCols = ( SelectedTab == TabLogical ) ? pLogical->size() : pPhysical->size();
 
@@ -246,6 +240,8 @@ void CPaletteWindow::PaintColours( void )
 		r.top    = 1 + 32 * py;
 		r.right  = r.left  + 31;
 		r.bottom = r.top   + 31;
+
+		COLORREF Marker = 0;
 
 		if ( pi < TotalCols )
 		{
@@ -261,10 +257,14 @@ void CPaletteWindow::PaintColours( void )
 				if ( !FlashPhase )
 				{
 					brsh.lbColor = pPhysical->at( PhysicalIndex.first );
+
+					Marker = pPhysical->at( PhysicalIndex.first ) ^ 0xFFFFFFFF;
 				}
 				else
 				{
 					brsh.lbColor = pPhysical->at( PhysicalIndex.second );
+
+					Marker = pPhysical->at( PhysicalIndex.second ) ^ 0xFFFFFFFF;
 				}
 			}
 
@@ -278,9 +278,11 @@ void CPaletteWindow::PaintColours( void )
 			brsh.lbColor = GetSysColor( COLOR_WINDOW );
 		}
 
-		TempBrush = CreateBrushIndirect( &brsh );
+		HBRUSH TempBrush = CreateBrushIndirect( &brsh );
 
 		FillRect( hDC, &r, TempBrush );
+
+		DeleteObject( (HGDIOBJ) TempBrush );
 
 		if ( pi < TotalCols )
 		{
@@ -292,9 +294,22 @@ void CPaletteWindow::PaintColours( void )
 			{
 				DrawEdge( hDC, &r, EDGE_RAISED, BF_RECT );
 			}
-		}
 
-		DeleteObject( (HGDIOBJ) TempBrush );
+			if ( ( pi == ColIndex ) && ( SelectedTab == TabLogical ) && ( LogColChanging ) )
+			{
+				HPEN TempPen = CreatePen( PS_SOLID, 2, Marker & 0x00FFFFFF );
+
+				HGDIOBJ hOld = SelectObject( hDC, TempPen );
+
+				MoveToEx( hDC, r.left + 4, r.top + 4, NULL );
+				LineTo( hDC, r.right - 4, r.bottom - 4 );
+
+				MoveToEx( hDC, r.right - 4, r.top + 4, NULL );
+				LineTo( hDC, r.left + 4, r.bottom - 4 );
+
+				SelectObject( hDC, hOld );
+			}
+		}
 
 		pi++;
 		px++;
@@ -452,7 +467,7 @@ void CPaletteWindow::Create(int x, int y, HWND ParentWnd, LogPalette *pLog, Phys
 		NULL,
 		WC_TABCONTROL,
 		NULL,
-		WS_CHILD | WS_VISIBLE | TCS_FOCUSNEVER,
+		WS_CHILD | WS_VISIBLE | TCS_FOCUSONBUTTONDOWN | WS_TABSTOP, // | TCS_FOCUSNEVER,
 		0, 0, 100, 100,
 		hWnd, NULL, hInst, NULL
 	);
@@ -574,7 +589,18 @@ void CPaletteWindow::ComputeWindowSize( void )
 
 void CPaletteWindow::DoLogicalPaletteChange( void )
 {
+	LogColChanging = true;
+
+	RECT r;
+
+	GetWindowRect( hWnd, &r );
+
+	LogX = r.left;
+	LogY = r.bottom;
+
 	DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_LOG_SELECT ), hColourArea, LogWindowProc, (LPARAM) this );
+
+	LogColChanging = false;
 
 	(*pLogical)[ ColIndex ] = PColIndex;
 
@@ -638,7 +664,16 @@ INT_PTR CPaletteWindow::LogicalWindowProc( HWND hwndDlg, UINT uMsg, WPARAM wPara
 				ry = 1;
 			}
 
-			::SetWindowPos( hwndDlg, NULL, 0, 0, ( sqrColours * 32 ) + (2 * brdx), ( ry * 32 ) + ( 2 * brdy ), SWP_NOMOVE | SWP_NOREPOSITION | SWP_NOZORDER );
+			RECT r;
+
+			GetWindowRect( hWnd, &r );
+
+			r.right  = r.left + ( sqrColours * 32 );
+			r.bottom = r.top  + ( ry * 32 );
+
+			AdjustWindowRectEx( &r, WS_POPUP | DS_3DLOOK | DS_MODALFRAME, FALSE, WS_EX_DLGMODALFRAME | WS_EX_STATICEDGE );
+
+			::SetWindowPos( hwndDlg, NULL, LogX + 2, LogY - 3, ( r.right - r.left ) + 3, ( r.bottom - r.top ) + 3, SWP_NOREPOSITION | SWP_NOZORDER );
 
 			hPhysDlg = hwndDlg;
 		}

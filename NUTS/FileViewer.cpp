@@ -1025,6 +1025,8 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 
 		HGDIOBJ		hO	= SelectObject(hSourceDC, hIcon);
 
+		SetStretchBltMode( viewDC, 3 );
+
 		StretchBlt( viewDC, ix, iy, rw, rh, hSourceDC, 0, 0, iw, ih, rop );
 
 		FontBitmap *pFileLabel;

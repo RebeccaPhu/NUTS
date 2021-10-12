@@ -54,6 +54,7 @@ private:
 	int  Mode;
 	bool bAntiAlias;
 	bool Flash;
+	bool FirstTranslate;
 
 	QWORD lContent;
 	QWORD Length;
