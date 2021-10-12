@@ -216,6 +216,13 @@ int AudioPlayer::Create( HWND Parent, HINSTANCE hInstance )
 	Keys[ 4 ] = new TapeKey( hWnd, TapeKeyStop,    201, APKT, true );
 	Keys[ 5 ] = new TapeKey( hWnd, TapeKeyEject,   251, APKT, true );
 
+	Keys[ 0 ]->SetTip( hWnd, L"Rewind to beginning and stop" );
+	Keys[ 1 ]->SetTip( hWnd, L"Rewind" );
+	Keys[ 2 ]->SetTip( hWnd, L"Play" );
+	Keys[ 3 ]->SetTip( hWnd, L"Fast Forward" );
+	Keys[ 4 ]->SetTip( hWnd, L"Stop" );
+	Keys[ 5 ]->SetTip( hWnd, L"Close Player" );
+
 	TapeVolume = Preference( L"TapePlayerVolume", (DWORD) 64 );
 
 	::SendMessage( hOptions, WM_SETTEXT, 0, (LPARAM) L"▼" );

@@ -37,6 +37,7 @@ public:
 	void SetActiveUpdate( bool f );
 	void AddCuePoint( AudioCuePoint cue );
 	void SetCuePoint( QWORD p );
+	void AddTooltip( std::wstring Tip );
 
 public:
 	static std::map<HWND, AudioPlayerElement *> _AudioPlayerElementClassMap;
@@ -72,6 +73,7 @@ private:
 	HBRUSH  hTextBrush;
 	HFONT   hFont;
 	HFONT   hBoldFont;
+	HWND    hTip;
 
 	bool    OverElement;
 	bool    Active;

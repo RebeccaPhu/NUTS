@@ -5,6 +5,7 @@
 #include "Preference.h"
 #include "FileDialogs.h"
 #include "BuiltIns.h"
+#include "libfuncs.h"
 
 #include <richedit.h>
 #include <CommCtrl.h>
@@ -77,6 +78,11 @@ CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, DWORD TUID )
 	hProgress        = NULL;
 
 	ResizeTime       = 0;
+
+	hChangeTip = NULL;
+	hCopyTip   = NULL;
+	hPrintTip  = NULL;
+	hSaveTip   = NULL;
 }
 
 CTEXTContentViewer::~CTEXTContentViewer(void) {
@@ -95,6 +101,10 @@ CTEXTContentViewer::~CTEXTContentViewer(void) {
 
 	KillTimer( hWnd, 0x7e7 );
 
+	NixWindow( hCopyTip );
+	NixWindow( hSaveTip );
+	NixWindow( hPrintTip );
+	NixWindow( hChangeTip );
 	NixWindow( hCopy );
 	NixWindow( hSave );
 	NixWindow( hPrint );
@@ -394,12 +404,16 @@ int CTEXTContentViewer::CreateToolbar( void ) {
 
 	SendMessage(hChanger, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hChangerIcon);
 
+	hChangeTip = CreateToolTip( hChanger, hWnd, L"Change the font used for rendering the text", hInst );
+
 
 	hCopy = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
 
 	HICON hCopyIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_COPY) );
 
 	SendMessage(hCopy, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hCopyIcon);
+
+	hCopyTip = CreateToolTip( hCopy, hWnd, L"Copy the text to the clipboard (may lose encoding)", hInst );
 
 
 	hSave = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
@@ -408,12 +422,16 @@ int CTEXTContentViewer::CreateToolbar( void ) {
 
 	SendMessage(hSave, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hSaveIcon);
 
+	hSaveTip = CreateToolTip( hSave, hWnd, L"Save the text to a file (may lose encoding)", hInst );
+
 
 	hPrint = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL);	h += 28;
 
 	HICON hPrintIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_PRINT) );
 
 	SendMessage(hPrint, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hPrintIcon);
+
+	hPrintTip = CreateToolTip( hPrint, hWnd, L"Print the text in the current font", hInst );
 
 	return 0;
 }

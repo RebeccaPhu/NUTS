@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "TapeKey.h"
+#include "libfuncs.h"
 
 #include "resource.h"
 
@@ -41,6 +42,7 @@ TapeKey::TapeKey( HWND Parent, TapeKeyID KeyID, int x, int y, bool Reset )
 	hAreaCanvas = NULL;
 	hKey        = NULL;
 	hOldKey     = NULL;
+	hTip        = NULL;
 
 	hWnd = CreateWindowEx(
 		NULL,
@@ -66,6 +68,7 @@ TapeKey::~TapeKey(void)
 
 	SelectObject( hArea, hOldArea );
 
+	NixWindow( hTip );
 	NixWindow( hWnd );
 
 	NixObject( hArea );
@@ -292,4 +295,9 @@ void TapeKey::Press(void)
 bool TapeKey::IsPressed(void)
 {
 	return Pressed;
+}
+
+void TapeKey::SetTip( HWND hContainer, std::wstring Tip )
+{
+	hTip = CreateToolTip( hWnd, hContainer, (WCHAR *) Tip.c_str(), hInst );
 }

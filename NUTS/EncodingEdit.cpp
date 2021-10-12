@@ -2,6 +2,7 @@
 #include "EncodingEdit.h"
 #include "EncodingClipboard.h"
 #include "FontBitmap.h"
+#include "libfuncs.h"
 
 #include "resource.h"
 
@@ -55,7 +56,8 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 		hParent, NULL, hInst, NULL
 	);
 
-	hChanger = NULL;
+	hChanger   = NULL;
+	hChangeTip = NULL;
 
 	if ( FontChanger )
 	{
@@ -74,6 +76,8 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 		hIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_SMFS));
 
 		SendMessage( hChanger, BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hIcon );
+
+		hChangeTip = CreateToolTip( hChanger, hWnd, L"Change the font used for rendering the text", hInst );
 	}
 
 	EncodingEdit::_EncodingEditClassMap[ hWnd ] = this;
@@ -147,6 +151,7 @@ EncodingEdit::~EncodingEdit(void)
 
 	NixObject( hDisBrush );
 
+	NixWindow( hChangeTip );
 	NixWindow( hChanger );
 	NixWindow( hWnd );
 }

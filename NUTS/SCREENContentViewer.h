@@ -42,6 +42,15 @@ private:
 	HWND hLengthPrompt;
 	HWND hProgress;
 
+	HWND hModeTip;
+	HWND hPaletteTip;
+	HWND hCopyTip;
+	HWND hSaveTip;
+	HWND hPrintTip;
+	HWND hEffectsTip;
+	HWND hOffsetTip;
+	HWND hLengthTip;
+
 	EncodingEdit *pOffset;
 	EncodingEdit *pLength;
 

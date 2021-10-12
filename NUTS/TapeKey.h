@@ -32,8 +32,11 @@ public:
 	void Press(void);
 	bool IsPressed(void);
 
+	void SetTip( HWND hContainer, std::wstring Tip );
+
 public:
 	HWND hWnd;
+	HWND hTip;
 
 private:
 	HWND hParent;

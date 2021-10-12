@@ -4,6 +4,7 @@
 #include "resource.h"
 #include "Plugins.h"
 #include "FontBitmap.h"
+#include "libfuncs.h"
 
 #include <WindowsX.h>
 
@@ -165,6 +166,8 @@ AudioPlayerElement::AudioPlayerElement( HWND hParent, int x, int y, int w, int h
 		hBoldFont = CreateFont(16,0,0,0,FW_BOLD,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
 			CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY, VARIABLE_PITCH,TEXT("MS Shell Dlg"));
 	}
+
+	hTip = NULL;
 }
 
 AudioPlayerElement::~AudioPlayerElement(void)
@@ -180,6 +183,7 @@ AudioPlayerElement::~AudioPlayerElement(void)
 	NixObject( hFont );
 	NixObject( hBoldFont );
 
+	NixWindow( hTip );
 	NixWindow( hWnd );
 
 	if ( pScrollBar != nullptr )
@@ -734,4 +738,9 @@ void AudioPlayerElement::SetCuePoint( QWORD p )
 
 		Invalidate();
 	}
+}
+
+void AudioPlayerElement::AddTooltip( std::wstring Tip )
+{
+	hTip = CreateToolTip( hWnd, Parent, (WCHAR *) Tip.c_str(), hInst );
 }

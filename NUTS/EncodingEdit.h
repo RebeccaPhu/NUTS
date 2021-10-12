@@ -80,6 +80,7 @@ private:
 	HDC     hArea;
 	HGDIOBJ hAreaOld;
 	HBITMAP hAreaCanvas;
+	HWND    hChangeTip;
 
 	EncodingEdit *pBuddyControl;
 	DWORD   CurrentFontID;

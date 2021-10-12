@@ -34,6 +34,8 @@ WORD BEWORD( BYTE *p );
 
 DWORD dwDiff( DWORD a, DWORD b );
 
+HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstance );
+
 class AutoBuffer
 {
 public:

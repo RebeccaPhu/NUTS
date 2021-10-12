@@ -68,6 +68,11 @@ private:
 
 	TXTTranslateOptions opts;
 
+	HWND   hChangeTip;
+	HWND   hCopyTip;
+	HWND   hSaveTip;
+	HWND   hPrintTip;
+
 private:
 	void Translate( void );
 	void DoResize();

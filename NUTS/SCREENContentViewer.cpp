@@ -6,6 +6,7 @@
 #include "Plugins.h"
 #include "IconRatio.h"
 #include "NUTSError.h"
+#include "libfuncs.h"
 
 #include <commctrl.h>
 #include <commdlg.h>
@@ -91,6 +92,15 @@ CSCREENContentViewer::CSCREENContentViewer( CTempFile &FileObj, DWORD TUID ) {
 	hTranslateThread = NULL;
 	hTerminate       = NULL;
 	hPoke            = NULL;
+
+	hModeTip    = NULL;
+	hPaletteTip = NULL;
+	hCopyTip    = NULL;
+	hSaveTip    = NULL;
+	hPrintTip   = NULL;
+	hEffectsTip = NULL;
+	hOffsetTip  = NULL;
+	hLengthTip  = NULL;
 }
 
 CSCREENContentViewer::~CSCREENContentViewer(void) {
@@ -156,6 +166,8 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 			Mode = pXlator->GuessMode( FileObj );
 
 			SendMessage(hModeList, CB_SETCURSEL, Mode, 0);
+
+			hModeTip = CreateToolTip( hModeList, hWnd, L"Select the screen mode to use to interpret the graphic data", hInst );
 		}
 		else
 		{
@@ -173,12 +185,16 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 
 	SendMessage(hPaletteButton, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hPaletteIcon);
 
+	hPaletteTip = CreateToolTip( hPaletteButton, hWnd, L"Adjust the logical palette assignments and/or physical video palette", hInst );
+
 
 	hCopy = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
 
 	HICON hCopyIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_COPY) );
 
 	SendMessage(hCopy, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hCopyIcon);
+
+	hCopyTip = CreateToolTip( hCopy, hWnd, L"Copy the image to the clipboard", hInst );
 
 
 	hSave = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
@@ -187,6 +203,8 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 
 	SendMessage(hSave, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hSaveIcon);
 
+	hSaveTip = CreateToolTip( hSave, hWnd, L"Save the image as a Windows 32-bit Bitmap image file", hInst );
+
 
 	hPrint = CreateWindowEx(NULL, L"BUTTON", L"", BS_ICON|WS_CHILD|WS_VISIBLE|WS_TABSTOP|BS_PUSHBUTTON,h,4,24,24,hWnd,NULL,hInst,NULL); h += 28;
 
@@ -194,8 +212,13 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 
 	SendMessage(hPrint, BM_SETIMAGE, IMAGE_ICON, (LPARAM) hPrintIcon);
 
+	hPrintTip = CreateToolTip( hPrint, hWnd, L"Print the image filling the page", hInst );
+
+	
 
 	hEffects = CreateWindowEx(NULL, L"BUTTON", L"Effects ▼", WS_CHILD|WS_VISIBLE|WS_TABSTOP,h,6,100,20,hWnd,NULL,hInst,NULL); h += 104;
+
+	hEffectsTip = CreateToolTip( hEffects, hWnd, L"Apply processing effects to the image", hInst );
 
 
 	hOffsetPrompt = CreateWindowEx( NULL, L"STATIC", L"Offset:", WS_VISIBLE|WS_CHILD,h,8,50,20, hWnd, NULL, hInst, NULL ); h += 44;
@@ -207,6 +230,7 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 	pOffset->AllowNegative = true;
 	pOffset->SetText( (BYTE *) "0" );
 
+	hOffsetTip = CreateToolTip( pOffset->hWnd, hWnd, L"The offset (in hex bytes) to start process the data. Can be negative. (Not always applicable)", hInst );
 
 
 	hLengthPrompt = CreateWindowEx( NULL, L"STATIC", L"Length:", WS_VISIBLE|WS_CHILD,h,8,50,20, hWnd, NULL, hInst, NULL ); h += 50;
@@ -218,6 +242,8 @@ int CSCREENContentViewer::CreateToolbar( void ) {
 	pLength->AllowedChars = EncodingEdit::textInputHex;
 	pLength->MaxLen       = 8;
 	pLength->SetText( (BYTE *) sLen.c_str() );
+
+	hLengthTip = CreateToolTip( pLength->hWnd, hWnd, L"Number of bytes of source image data to process. (Not always applicable)", hInst );
 
 	return 0;
 }
@@ -278,6 +304,15 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 
 void CSCREENContentViewer::DestroyWindows( void )
 {
+	NixWindow( hModeTip );
+	NixWindow( hPaletteTip );
+	NixWindow( hCopyTip );
+	NixWindow( hSaveTip );
+	NixWindow( hPrintTip );
+	NixWindow( hEffectsTip );
+	NixWindow( hOffsetTip );
+	NixWindow( hLengthTip );
+
 	NixWindow( hProgress );
 	NixWindow( hLengthPrompt );
 	NixWindow( hOffsetPrompt );

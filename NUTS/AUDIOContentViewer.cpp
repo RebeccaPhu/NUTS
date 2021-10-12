@@ -124,6 +124,16 @@ AUDIOContentViewer::~AUDIOContentViewer(void)
 		delete pVolume;
 	}
 
+	std::vector<AudioPlayerElement *>::iterator iElement;
+
+	for ( iElement = Buttons.begin(); iElement != Buttons.end(); iElement++ )
+	{
+		delete *iElement;
+	}
+
+	Buttons.clear();
+	Buttons.shrink_to_fit();
+
 	if ( hOld != nullptr )
 	{
 		SelectObject( hCanvasDC, hOld );
@@ -215,6 +225,15 @@ int AUDIOContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int y ) 
 	Buttons.push_back( new AudioPlayerElement( hWnd, basex + ( 5 * xd ), basey, 16, 16, AudioElementButton, AEWS_EJECT ) );
 	Buttons.push_back( new AudioPlayerElement( hWnd, basex + ( 6 * xd ), basey, 16, 16, AudioElementButton, AEWS_LOOP  ) );
 	Buttons.push_back( new AudioPlayerElement( hWnd, basex + ( 7 * xd ), basey, 16, 16, AudioElementButton, AEWS_SAVE  ) );
+
+	Buttons[ 0 ]->AddTooltip( L"Jump to previous cue point" );
+	Buttons[ 1 ]->AddTooltip( L"Play audio" );
+	Buttons[ 2 ]->AddTooltip( L"Pause audio" );
+	Buttons[ 3 ]->AddTooltip( L"Stop audio" );
+	Buttons[ 4 ]->AddTooltip( L"Jump to next cue point" );
+	Buttons[ 5 ]->AddTooltip( L"Close audio player" );
+	Buttons[ 6 ]->AddTooltip( L"Enable/disable looping (audio restarts once finished)" );
+	Buttons[ 7 ]->AddTooltip( L"Save audio as 16-bit 44kHz Stereo WAV file (uncompressed) ");
 
 	for ( BYTE i=0; i<8; i++ ) { Buttons[i]->SetDisabled( true ); }
 
@@ -798,7 +817,11 @@ void AUDIOContentViewer::ProcessButton( DWORD Button )
 
 	if ( Button & AEWS_EJECT )
 	{
+		viewers.erase( hWnd );
+
 		delete this;
+
+		return;
 	}
 
 	if ( Button & AEWS_LOOP )

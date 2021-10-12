@@ -5,6 +5,7 @@
 
 #include <winioctl.h>
 #include <process.h>
+#include <CommCtrl.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -426,4 +427,40 @@ DWORD BEDWORD( BYTE *p )
 WORD BEWORD( BYTE *p )
 {
 	return ( p[0] << 8 ) | p[1];
+}
+
+HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstance )
+{
+	if ( ( !hWnd ) || ( !pszText ) )
+	{
+		return FALSE;
+	}
+    
+	// Create the tooltip. g_hInst is the global instance handle.
+	HWND hwndTip = CreateWindowEx(
+		NULL, TOOLTIPS_CLASS, NULL,
+		WS_POPUP |TTS_ALWAYSTIP,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT,
+		hContainer, NULL,
+		hInstance, NULL
+	);
+    
+	if ( !hwndTip )
+	{
+		return (HWND) NULL;
+	}                              
+                              
+	// Associate the tooltip with the tool.
+	TOOLINFO toolInfo = { 0 };
+
+	toolInfo.cbSize   = sizeof(toolInfo);
+	toolInfo.hwnd     = hContainer;
+	toolInfo.uFlags   = TTF_IDISHWND | TTF_SUBCLASS;
+	toolInfo.uId      = (UINT_PTR) hWnd;
+	toolInfo.lpszText = pszText;
+
+	SendMessage( hwndTip, TTM_ADDTOOL, 0, (LPARAM) &toolInfo );
+   
+	return hwndTip;
 }
