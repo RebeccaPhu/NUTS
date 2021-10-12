@@ -193,7 +193,7 @@ FSDescriptor RISCOSFS[] = {
 
 #define RISCOS_FSCOUNT ( sizeof(RISCOSFS) / sizeof( FSDescriptor) )
 
-std::wstring ImageExtensions[] = { L"SSD", L"IMG", L"DSD", L"ADF", L"ADL", L"HDF" };
+std::wstring ImageExtensions[] = { L"SSD", L"IMG", L"DSD", L"ADF", L"ADS", L"ADM", L"ADL", L"HDF" };
 
 #define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
 
