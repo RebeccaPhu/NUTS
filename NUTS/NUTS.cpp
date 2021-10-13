@@ -153,7 +153,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
-//	_CrtSetBreakAlloc( 1437 );
+//	_CrtSetBreakAlloc( 17209 );
 	pGlobalError = new NUTSError( 0, L"" );
 
 	UNREFERENCED_PARAMETER(hPrevInstance);
@@ -362,9 +362,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 		WS_EX_CONTROLPARENT,
 		szWindowClass,
 		szTitle,
-		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_VISIBLE,
 		CW_USEDEFAULT, 0, WindowWidth, WindowHeight,
-		NULL, NULL, hInstance, NULL
+		GetDesktopWindow(), NULL, hInstance, NULL
 	);
 
 	if (!hWnd)
@@ -397,6 +397,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	SetFocus( leftPane->hWnd );
 
 	FocusPane = leftPane->hWnd;
+
+	SetForegroundWindow( hWnd );
+	SetActiveWindow( hWnd );
+	SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
 
 	return TRUE;
 }
@@ -809,8 +813,8 @@ void DoResizeWindow(HWND hWnd) {
 	paneWidth -= 8;
 	paneHeight -= 2;
 
-	SetWindowPos(leftPane->hWnd, NULL, 4, 0, paneWidth, paneHeight, NULL);
-	SetWindowPos(rightPane->hWnd, NULL, paneWidth + 12, 0, paneWidth, paneHeight, NULL);
+	SetWindowPos( leftPane->hWnd, NULL, 4, 0, paneWidth, paneHeight, SWP_NOREPOSITION | SWP_NOZORDER );
+	SetWindowPos( rightPane->hWnd, NULL, paneWidth + 12, 0, paneWidth, paneHeight, SWP_NOREPOSITION | SWP_NOZORDER );
 
 	leftPane->Resize( paneWidth, paneHeight );
 	rightPane->Resize( paneWidth, paneHeight );
@@ -993,6 +997,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+
 	case WM_UPDATESTATUS:
 		if (wParam == (WPARAM) leftPane)
 		{
@@ -1523,21 +1528,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		FocusPane = (HWND) wParam;
 		return 0;
 
-//	case WM_ACTIVATEAPP:
+	case WM_ACTIVATEAPP:
 	case WM_ACTIVATE:
 		{
-			if ( wParam == 0 )
+			if ( hWnd == hMainWnd )
 			{
-				hActiveWnd = 0;
-			}
-			else
-			{
-				hActiveWnd = hWnd;
+				if ( wParam == 0 )
+				{
+					hActiveWnd = 0;
+				}
+				else
+				{
+					hActiveWnd = hWnd;
+				}
+
+				return 0;
 			}
 
-			SetFocus( FocusPane );
+//			SetFocus( FocusPane );
 		}
-		return 0;
+		break;
 
 	case WM_TIMER:
 		if ( wParam == (WPARAM) 0x5016CE )

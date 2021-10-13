@@ -145,7 +145,7 @@ int CTEXTContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, i
 		L"NUTS Text Content Renderer",
 		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_VISIBLE,
 		CW_USEDEFAULT, 0, ww, wh,
-		Parent, NULL, hInstance, NULL
+		GetDesktopWindow(), NULL, hInstance, NULL
 	);
 
 	CTEXTContentViewer::viewers[ hWnd ] = this;
@@ -184,7 +184,11 @@ int CTEXTContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, i
 
 	hTranslateThread = (HANDLE) _beginthreadex(NULL, NULL, TranslateThread, this, NULL, (unsigned int *) &dwthreadid);
 
-	ShowWindow(hWnd, TRUE);
+	SetFocus( pChanger->hWnd );
+
+	SetActiveWindow( hWnd );
+	SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
+
 	UpdateWindow( hWnd );
 
 	SetTimer( hWnd, 0x7e7, 1000, NULL );
@@ -234,7 +238,7 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			}
 			break;
 
-		case WM_CLOSE:
+		case WM_DESTROY:
 			{
 				viewers.erase( hWnd );
 

@@ -53,12 +53,12 @@ AUDIOContentViewer::AUDIOContentViewer( CTempFile &fileObj, DWORD TUID )
 		wcex.cbClsExtra		= 0;
 		wcex.cbWndExtra		= 0;
 		wcex.hInstance		= hInst;
-		wcex.hIcon			= LoadIcon(hInst, MAKEINTRESOURCE(IDI_SPRITE));
+		wcex.hIcon			= LoadIcon(hInst, MAKEINTRESOURCE(IDI_AUDIO));
 		wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 		wcex.hbrBackground	= (HBRUSH)(COLOR_BTNFACE+1);
 		wcex.lpszMenuName	= NULL;
 		wcex.lpszClassName	= L"NUTS Audio Player";
-		wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SPRITE));
+		wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_AUDIO));
 
 		RegisterClassEx(&wcex);
 
@@ -164,7 +164,7 @@ int AUDIOContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int y ) 
 		L"NUTS Audio Player",
 		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
 		x, y, PlayerW, PlayerH,
-		Parent, NULL, hInstance, NULL
+		GetDesktopWindow(), NULL, hInstance, NULL
 	);
 
 	AUDIOTranslator *pXlator = (AUDIOTranslator *) FSPlugins.LoadTranslator( TID );
@@ -247,6 +247,11 @@ int AUDIOContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int y ) 
 
 	SetTimer( hWnd, 0x7777, 100, NULL );
 
+	SetFocus( Buttons[ 1 ]->hWnd );
+
+	SetActiveWindow( hWnd );
+	SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
+
 	return 0;
 }
 
@@ -290,7 +295,7 @@ LRESULT	AUDIOContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		}
 		return FALSE;
 
-	case WM_CLOSE:
+	case WM_DESTROY:
 		viewers.erase( hWnd );
 
 		delete this;

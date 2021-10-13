@@ -99,6 +99,8 @@
 #define IDD_WIZ_DIALOG4                 174
 #define IDB_BITMAP4                     174
 #define IDB_ROMDISK                     174
+#define IDI_ICON1                       175
+#define IDI_CASSETTE                    175
 #define IDD_WIZ_DIALOG5                 176
 #define IDD_FSATTRS                     177
 #define IDD_NEWDIR                      178
@@ -734,7 +736,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        175
+#define _APS_NEXT_RESOURCE_VALUE        176
 #define _APS_NEXT_COMMAND_VALUE         40075
 #define _APS_NEXT_CONTROL_VALUE         1057
 #define _APS_NEXT_SYMED_VALUE           101

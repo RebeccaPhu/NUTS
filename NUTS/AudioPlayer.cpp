@@ -36,12 +36,12 @@ AudioPlayer::AudioPlayer( CTempFile &FileObj, TapeIndex &SourceIndexes ) {
 		wcex.cbClsExtra		= 0;
 		wcex.cbWndExtra		= 0;
 		wcex.hInstance		= hInst;
-		wcex.hIcon			= LoadIcon(hInst, MAKEINTRESOURCE(IDI_SPRITE));
+		wcex.hIcon			= LoadIcon(hInst, MAKEINTRESOURCE(IDI_CASSETTE));
 		wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 		wcex.hbrBackground	= (HBRUSH)(COLOR_BTNFACE+1);
 		wcex.lpszMenuName	= NULL;
 		wcex.lpszClassName	= L"NUTS Cassette Image Player";
-		wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SPRITE));
+		wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_CASSETTE));
 
 		RegisterClassEx(&wcex);
 
@@ -134,6 +134,8 @@ AudioPlayer::~AudioPlayer(void)
 		{
 			delete Keys[i];
 		}
+
+		Keys[ i ] = nullptr;
 	}
 
 	NixObject( hCanvasBitmap );
@@ -162,9 +164,9 @@ int AudioPlayer::Create( HWND Parent, HINSTANCE hInstance )
 		NULL,
 		L"NUTS Cassette Image Player",
 		L"NUTS Cassette Image Player",
-		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
+		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_OVERLAPPED,
 		CW_USEDEFAULT, CW_USEDEFAULT, APW, APH,
-		Parent, NULL, hInstance, NULL
+		GetDesktopWindow(), NULL, hInstance, NULL
 	);
 
 	players[ hWnd ] = this;
@@ -234,6 +236,9 @@ int AudioPlayer::Create( HWND Parent, HINSTANCE hInstance )
 
 	SetFocus( Keys[ 2 ]->hWnd );
 
+	SetActiveWindow( hWnd );
+	SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
+
 	return 0;
 }
 
@@ -256,13 +261,20 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 		{
 			PaintPlayer();
 		}
-		break;
+		return 0;
 
 	case WM_CLOSE:
+		KillTimer( hWnd, 0xA110 );
+
+		break;
+
+	case WM_DESTROY:
 		{
+			players.erase( hWnd );
+
 			delete this;
 		}
-		break;
+		return 0;
 
 	case WM_VSCROLL:
 		{
@@ -445,7 +457,7 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 				}
 			}
 		}
-		break;
+		return 0;
 
 	case WM_TBCLOSED:
 		if ( pBrowser != nullptr )
@@ -453,7 +465,7 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 			// Browser has already deleted itself
 			pBrowser = nullptr;
 		}
-		break;
+		return 0;
 
 	case WM_COMMAND:
 		if ( lParam == (LPARAM) hOptions )
@@ -483,7 +495,7 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 			}
 		}		
 
-		break;
+		return 0;
 
 	case WM_CUEINDEX_JUMP:
 		{

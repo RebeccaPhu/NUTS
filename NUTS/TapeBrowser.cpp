@@ -33,12 +33,12 @@ TapeBrowser::TapeBrowser( ) {
 		wcex.cbClsExtra		= 0;
 		wcex.cbWndExtra		= 0;
 		wcex.hInstance		= hInst;
-		wcex.hIcon			= LoadIcon(hInst, MAKEINTRESOURCE(IDI_SPRITE));
+		wcex.hIcon			= LoadIcon(hInst, MAKEINTRESOURCE(IDI_CASSETTE));
 		wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
 		wcex.hbrBackground	= (HBRUSH)(COLOR_BTNFACE+1);
 		wcex.lpszMenuName	= NULL;
 		wcex.lpszClassName	= L"NUTS Tape Browser";
-		wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SPRITE));
+		wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_CASSETTE));
 
 		RegisterClassEx(&wcex);
 
@@ -63,7 +63,7 @@ int TapeBrowser::Create( HWND Parent, int x, int y, std::vector<TapeCue> *cues )
 		L"Tape Browser",
 		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
 		x, y, TBW, TBH,
-		Parent, NULL, hInst, NULL
+		GetDesktopWindow(), NULL, hInst, NULL
 	);
 
 	browsers[ hWnd ] = this;
@@ -114,12 +114,14 @@ LRESULT	TapeBrowser::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 		return FALSE;
 
 	case WM_CLOSE:
-		{
-			::PostMessage( hParent, WM_TBCLOSED, 0, 0 );
+		::PostMessage( hParent, WM_TBCLOSED, 0, 0 );
 
-			delete this;
-		}
 		break;
+
+	case WM_DESTROY:
+		delete this;
+
+		return 0;
 
 	case WM_COMMAND:
 		if ( HIWORD( wParam ) == LBN_DBLCLK )
@@ -128,7 +130,7 @@ LRESULT	TapeBrowser::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 
 			::PostMessage( hParent, WM_CUEINDEX_JUMP, 0, (LPARAM) Index );
 		}
-		break;
+		return 0;
 	}
 
 	return DefWindowProc( hWindow, message, wParam, lParam );

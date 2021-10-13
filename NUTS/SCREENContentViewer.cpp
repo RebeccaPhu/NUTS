@@ -247,7 +247,7 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 		WS_SYSMENU | WS_CLIPCHILDREN | WS_OVERLAPPED | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_OVERLAPPED,
 		CW_USEDEFAULT,
 		0, wx + (2 * frmx), wy + (2 * frmy) + tity + 32,
-		Parent, NULL, hInstance, NULL
+		GetDesktopWindow(), NULL, hInstance, NULL
 	);
 
 	pXlator = (SCREENTranslator *) FSPlugins.LoadTranslator( XlatorID );
@@ -276,12 +276,16 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 
 	hTranslateThread = (HANDLE) _beginthreadex(NULL, NULL, _TranslateThread, this, NULL, (unsigned int *) &dwthreadid);
 
+	SetFocus( pPaletteButton->hWnd );
+
+	SetForegroundWindow( hWnd );
+	SetActiveWindow( hWnd );
+	SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
+
 	ShowWindow(hWnd, TRUE);
 	UpdateWindow(hWnd);
 
 	SetTimer(hWnd, 0x1001, 500, NULL);
-
-	SetFocus( pPaletteButton->hWnd );
 
 	return 0;
 }
@@ -315,7 +319,7 @@ void CSCREENContentViewer::DestroyWindows( void )
 
 LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 
-	if ( message == WM_ACTIVATE )
+	if ( ( message == WM_ACTIVATE ) || ( message == WM_ACTIVATEAPP ) )
 	{
 		if ( wParam == 0 )
 		{
@@ -334,7 +338,7 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 
 		DisplayImage();
 
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		return DefWindowProc( hWnd, message, wParam, lParam );
 	}
 
 	if ((message == WM_COMMAND) && (HIWORD(wParam) == CBN_SELCHANGE)) {
@@ -356,22 +360,32 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 		GetClientRect(hWnd, &rect);
 
 		InvalidateRect(hWnd, &rect, FALSE);
+
+		return 0;
 	}
 
 	if ((message == WM_COMMAND) && (lParam == (LPARAM) hEffects)) {
 		DoEffectsMenu();
+
+		return 0;
 	}
 
 	if ((message == WM_COMMAND) && (lParam == (LPARAM) pCopy->hWnd)) {
 		DoCopyImage( false );
+
+		return 0;
 	}
 
 	if ((message == WM_COMMAND) && (lParam == (LPARAM) pSave->hWnd)) {
 		DoCopyImage( true );
+
+		return 0;
 	}
 
 	if ((message == WM_COMMAND) && (lParam == (LPARAM) pPrint->hWnd)) {
 		DoPrintImage();
+
+		return 0;
 	}
 
 	if ((message == WM_COMMAND) && (lParam == (LPARAM) pOffset->hWnd)) {
@@ -391,6 +405,8 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 
 		KillTimer( hWnd, 0x5330 );
 		SetTimer( hWnd, 0x5330, 500, NULL );
+
+		return 0;
 	}
 
 	if ((message == WM_COMMAND) && (lParam == (LPARAM) pLength->hWnd)) {
@@ -403,6 +419,8 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 
 		KillTimer( hWnd, 0x5330 );
 		SetTimer( hWnd, 0x5330, 500, NULL );
+
+		return 0;
 	}
 
 	if ((message == WM_COMMAND) && (lParam == (LPARAM) pPaletteButton->hWnd)) {
@@ -419,19 +437,23 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 		GetClientRect(hWnd, &rect);
 
 		InvalidateRect(hWnd, &rect, FALSE);
+
+		return 0;
 	}
 
 	if ( message == WM_PALETTECLOSED )
 	{
-		delete palWnd;
-
 		palWnd = nullptr;
+
+		return 0;
 	}
 
 	if ( (message == WM_TIMER) && ( wParam == 0x5330 ) ) {
 		message = WM_SCPALCHANGED;
 
 		KillTimer( hWnd, 0x5330 );
+
+		return 0;
 	}
 
 	if ( ( message == WM_COMMAND ) && ( LOWORD(wParam) == (LPARAM) ID_EFFECTS_ANTIALIAS  ) ) { Effects ^= Effect_Antialias; message = WM_SCPALCHANGED; }
@@ -450,12 +472,16 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 		GetClientRect(hWnd, &rect);
 
 		InvalidateRect(hWnd, &rect, FALSE);
+
+		return 0;
 	}
 
 	if ( (message == WM_TIMER) && ( wParam == 0x1001 ) ) {
 		Flash = ! Flash;
 
 		DisplayImage();
+
+		return 0;
 	}
 
 	if ( message == WM_RESETPALETTE )
@@ -472,14 +498,18 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 
 		SendMessage( palWnd->hWnd, WM_SCPALCHANGED, 0, 0 );
 		PostMessage( hWnd, WM_SCPALCHANGED, 0, 0 );
+
+		return 0;
 	}
 
-	if ( message == WM_CLOSE )
+	if ( message == WM_DESTROY )
 	{
 		/* Nix this from the window map so we don't get further messages */
 		viewers.erase( hWnd );
 
 		delete this;
+
+		return 0;
 	}
 
 	return DefWindowProc( hWnd, message, wParam, lParam);

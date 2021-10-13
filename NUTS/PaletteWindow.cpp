@@ -72,7 +72,7 @@ INT_PTR CALLBACK CPaletteWindow::LogWindowProc(HWND hwndDlg, UINT uMsg, WPARAM w
 }
 
 LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LPARAM lParam) {
-	if ( message == WM_ACTIVATE )
+	if ( ( message == WM_ACTIVATE ) && ( hTarget == hWnd ) )
 	{
 		if ( wParam == 0 )
 		{
@@ -98,6 +98,19 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 		return DefWindowProc( hTarget, message, wParam, lParam );
 	}
 
+	if ( ( message == WM_TIMER ) && ( hWnd == hColourArea ) )
+	{
+		FlashPhase = !FlashPhase;
+
+		RECT	rect;
+
+		GetClientRect( hColourArea, &rect );
+
+		InvalidateRect( hColourArea, &rect, FALSE );
+
+		return 0;
+	}
+
 	if ( ( message == WM_LBUTTONDOWN ) && ( hTarget == hColourArea ) )
 	{
 		ColIn = true;
@@ -110,7 +123,7 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 
 		InvalidateRect( hColourArea, &rect, FALSE );
 
-		return DefWindowProc( hTarget, message, wParam, lParam );
+		return 0;
 	}
 
 	if ( ( message == WM_LBUTTONUP ) && ( hTarget == hColourArea ) )
@@ -128,7 +141,7 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 			DoPhysicalPaletteChange();
 		}
 
-		return DefWindowProc( hTarget, message, wParam, lParam );
+		return 0;
 	}
 
 	if ( hTarget != hWnd )
@@ -144,6 +157,8 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 		GetClientRect( hColourArea, &rect );
 
 		InvalidateRect( hColourArea, &rect, FALSE );
+
+		return 0;
 	}
 
 	if ( message == WM_NOTIFY )
@@ -159,18 +174,9 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 			GetClientRect( hColourArea, &rect );
 
 			InvalidateRect( hColourArea, &rect, FALSE );
+
+			return 0;
 		}
-	}
-
-	if ( message == WM_TIMER )
-	{
-		FlashPhase = !FlashPhase;
-
-		RECT	rect;
-
-		GetClientRect( hColourArea, &rect );
-
-		InvalidateRect( hColourArea, &rect, FALSE );
 	}
 
 	if ( message == WM_COMMAND )
@@ -191,16 +197,20 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 		{
 			DoSavePalette();
 		}
+
+		return 0;
 	}
 
-	if ( message == WM_CLOSE )
+	if ( message == WM_DESTROY )
 	{
+		::SendMessage( Parent, WM_PALETTECLOSED, 0, 0 );
+
 		/* Remove this now, so that this class is no longer referenced */
 		WndMap.erase( hWnd );
 
-		DestroyWindows();
+		delete this;
 
-		::PostMessage( Parent, WM_PALETTECLOSED, 0, 0 );
+		return 0;
 	}
 
 	return DefWindowProc(hTarget, message, wParam, lParam);
@@ -456,14 +466,12 @@ void CPaletteWindow::Create(int x, int y, HWND ParentWnd, LogPalette *pLog, Phys
 		WS_EX_TOOLWINDOW,
 		L"NUTS Palette Controls",
 		L"Palette",
-		WS_CLIPCHILDREN | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU,
+		WS_CLIPCHILDREN | WS_BORDER | WS_CAPTION | WS_SYSMENU,
 		x, y, 100, 100,
-		Parent, NULL, hInst, NULL
+		GetDesktopWindow(), NULL, hInst, NULL
 	);
 
 	WndMap[ hWnd ] = this;
-
-	SetTimer( hWnd, (UINT_PTR) 0x08A1E77E, 500, NULL );
 
 	hTabs = CreateWindowEx(
 		NULL,
@@ -473,7 +481,7 @@ void CPaletteWindow::Create(int x, int y, HWND ParentWnd, LogPalette *pLog, Phys
 		0, 0, 100, 100,
 		hWnd, NULL, hInst, NULL
 	);
-
+	
 	hColourArea = CreateWindowEx(
 		NULL,
 		ColourAreaClass,
@@ -484,6 +492,8 @@ void CPaletteWindow::Create(int x, int y, HWND ParentWnd, LogPalette *pLog, Phys
 	);
 
 	WndMap[ hColourArea ] = this;
+
+	SetTimer( hColourArea, (UINT_PTR) 0x08A1E77E, 500, NULL );
 
 	TCITEM item;
 
@@ -506,9 +516,13 @@ void CPaletteWindow::Create(int x, int y, HWND ParentWnd, LogPalette *pLog, Phys
 	pLoadButton  = new IconButton( hWnd, 0, 24, LoadIcon( hInst, MAKEINTRESOURCE( IDI_OPEN ) ) );
 	pLoadButton->SetTip( L"Load this palette from a file" );
 
-	ComputeWindowSize();
-
 	SetFocus( pLoadButton->hWnd );
+
+	SetForegroundWindow( hWnd );
+	SetActiveWindow( hWnd );
+	SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
+
+	ComputeWindowSize();
 }
 
 void CPaletteWindow::DestroyWindows( void )
@@ -602,7 +616,7 @@ void CPaletteWindow::DoLogicalPaletteChange( void )
 	LogX = r.left;
 	LogY = r.bottom;
 
-	DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_LOG_SELECT ), hColourArea, LogWindowProc, (LPARAM) this );
+	DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_LOG_SELECT ), hWnd, LogWindowProc, (LPARAM) this );
 
 	LogColChanging = false;
 
@@ -680,6 +694,8 @@ INT_PTR CPaletteWindow::LogicalWindowProc( HWND hwndDlg, UINT uMsg, WPARAM wPara
 			::SetWindowPos( hwndDlg, NULL, LogX + 2, LogY - 3, ( r.right - r.left ) + 3, ( r.bottom - r.top ) + 3, SWP_NOREPOSITION | SWP_NOZORDER );
 
 			hPhysDlg = hwndDlg;
+
+			SetTimer( hwndDlg, 0x8A7E77E, 500, NULL );
 		}
 		break;
 
@@ -704,7 +720,18 @@ INT_PTR CPaletteWindow::LogicalWindowProc( HWND hwndDlg, UINT uMsg, WPARAM wPara
 
 		break;
 
+	case WM_TIMER:
+		{
+			FlashPhase = !FlashPhase;
+			RECT rect;
+			GetClientRect( hwndDlg, &rect );
+			InvalidateRect( hwndDlg, &rect, FALSE );
+		}
+		break;
+
 	case WM_CLOSE:
+		KillTimer( hwndDlg, 0x8A7E77E );
+
 		hPhysDlg = nullptr;
 		break;
 

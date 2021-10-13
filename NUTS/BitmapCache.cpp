@@ -50,6 +50,7 @@ IDI_ROOTFS:     "Actions Top Icon", Glaze Icons, Marco Martin, GNU Lesser Genera
 IDI_REFRESH:    "Refresh Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
 IDI_BACK:       "Back Icon", 16x16 Free Application Icons, Aha-Soft, CC Attribution-ShareAlike 3.0 Unported
 IDI_BASIC:      "Text Icon", Simply Icons 32px, Carlos Quintana, CC Attribution 3.0 Unported
+IDI_CASSETTE:   "Cassette Icon", Fugue 16px Icons, Yusuke Kamiyamane, CC Attribution 3.0 Unported
 
 IDI_CHARMAP:    "Apps Accessories Character Map Icon", Discovery Icon Theme, Hyike Bons, CC Attribution-ShareAlike 3.0 Unported
 */

@@ -359,6 +359,7 @@
     <None Include="..\blank1.bmp" />
     <None Include="..\blank2.bmp" />
     <None Include="..\bmp00001.bmp" />
+    <None Include="..\cassetteplayer.ico" />
     <None Include="..\cdrom.bmp" />
     <None Include="..\charmap.ico" />
     <None Include="..\copy.ico" />

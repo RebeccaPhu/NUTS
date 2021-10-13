@@ -336,6 +336,7 @@ IDI_REFRESH             ICON                    "..\\refresh.ico"
 IDI_BACK                ICON                    "..\\back.ico"
 IDI_SMFS                ICON                    "..\\smfontswitch.ico"
 IDI_CHARMAP             ICON                    "..\\charmap.ico"
+IDI_CASSETTE            ICON                    "..\\cassetteplayer.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -625,7 +626,7 @@ IDD_LICENSE DIALOGEX 0, 0, 383, 254
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE | WS_SYSMENU
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_LICENSE,"RichEdit20W",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_NUMBER | WS_BORDER | WS_VSCROLL | WS_TABSTOP,7,7,369,240
+    CONTROL         "",IDC_LICENSE,"RichEdit20W",WS_BORDER | WS_VSCROLL | WS_TABSTOP | 0x2844,7,7,369,240
 END
 
 IDD_WIZ_FORMAT DIALOGEX 0, 0, 318, 154
