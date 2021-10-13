@@ -93,6 +93,8 @@ int TapeBrowser::Create( HWND Parent, int x, int y, std::vector<TapeCue> *cues )
 
 	::SendMessage( hCueList, WM_SETFONT, (WPARAM) IndexFont, (LPARAM) TRUE );
 
+	SetFocus( hCueList );
+
 	return 0;
 }
 
@@ -109,7 +111,7 @@ LRESULT	TapeBrowser::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 		{
 			hActiveWnd = hWindow;
 		}
-		break;
+		return FALSE;
 
 	case WM_CLOSE:
 		{

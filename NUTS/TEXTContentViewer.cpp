@@ -189,6 +189,8 @@ int CTEXTContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, i
 
 	SetTimer( hWnd, 0x7e7, 1000, NULL );
 
+	SetFocus( pChanger->hWnd );
+
 	return 0;
 }
 
@@ -214,7 +216,7 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 			{
 				hActiveWnd = hWnd;
 			}
-			break;
+			return FALSE;
 
 		case WM_PAINT:
 			{

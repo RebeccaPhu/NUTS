@@ -232,6 +232,8 @@ int AudioPlayer::Create( HWND Parent, HINSTANCE hInstance )
 
 	SoundPlayer.SetVolume( TapeVolume );
 
+	SetFocus( Keys[ 2 ]->hWnd );
+
 	return 0;
 }
 
@@ -248,7 +250,7 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 		{
 			hActiveWnd = hWindow;
 		}
-		break;
+		return FALSE;
 
 	case WM_PAINT:
 		{
@@ -506,6 +508,7 @@ LRESULT	AudioPlayer::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM l
 			Refresh();
 		}
 		return 0;
+
 	}
 
 	return DefWindowProc(hWnd, message, wParam, lParam);

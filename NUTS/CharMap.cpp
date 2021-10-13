@@ -144,6 +144,8 @@ CharMap::CharMap( HWND hParent, DWORD FontID )
 		}
 
 		SendMessage(hFontList, CB_SETCURSEL, (WPARAM) sfi, 0);
+
+		SetFocus( hFontList );
 	}
 	else
 	{
@@ -209,7 +211,7 @@ LRESULT CharMap::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 			{
 				hActiveWnd = hWnd;
 			}
-			break;
+			return FALSE;
 
 		case WM_PAINT:
 			PaintWindow();

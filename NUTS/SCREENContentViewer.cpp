@@ -281,6 +281,8 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 
 	SetTimer(hWnd, 0x1001, 500, NULL);
 
+	SetFocus( pPaletteButton->hWnd );
+
 	return 0;
 }
 
@@ -323,6 +325,8 @@ LRESULT	CSCREENContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LP
 		{
 			hActiveWnd = hWnd;
 		}
+
+		return FALSE;
 	}
 
 	if (message == WM_PAINT) {

@@ -82,6 +82,8 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 		{
 			hActiveWnd = hWnd;
 		}
+
+		return FALSE;
 	}
 
 	if ( (message == WM_PAINT) && ( hTarget == hColourArea ) )
@@ -93,7 +95,7 @@ LRESULT CPaletteWindow::WindowProc(HWND hTarget, UINT message, WPARAM wParam, LP
 			::PostMessage( hPhysDlg, WM_PAINT, 0, 0 );
 		}
 
-		return 0;
+		return DefWindowProc( hTarget, message, wParam, lParam );
 	}
 
 	if ( ( message == WM_LBUTTONDOWN ) && ( hTarget == hColourArea ) )
@@ -505,6 +507,8 @@ void CPaletteWindow::Create(int x, int y, HWND ParentWnd, LogPalette *pLog, Phys
 	pLoadButton->SetTip( L"Load this palette from a file" );
 
 	ComputeWindowSize();
+
+	SetFocus( pLoadButton->hWnd );
 }
 
 void CPaletteWindow::DestroyWindows( void )
