@@ -98,12 +98,21 @@ LRESULT	TapeKey::WndProc(HWND hWindow, UINT message, WPARAM wParam, LPARAM lPara
 		{
 			Pressed = true;
 
+			TRACKMOUSEEVENT tme;
+
+			tme.cbSize    = sizeof( tme );
+			tme.dwFlags   = TME_LEAVE;
+			tme.hwndTrack = hWnd;
+
+			TrackMouseEvent( &tme );
+
 			::PostMessage( hParent, WM_TAPEKEY_DOWN, (WPARAM) keyID, (LPARAM) hWnd );
 
 			Refresh();
 		}
 		break;
 
+	case WM_MOUSELEAVE:
 	case WM_LBUTTONUP:
 		{
 			if ( DoesReset )
