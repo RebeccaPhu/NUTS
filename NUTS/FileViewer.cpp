@@ -185,8 +185,14 @@ int CFileViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w, int h) {
 	titleBarFont	= CreateFont(16,6,0,0,FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"MS Shell Dlg");
 	filenameFont	= CreateFont(12,5,0,0,FW_NORMAL, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"MS Shell Dlg");
 
-	hWnd = CreateWindowEx(WS_EX_CONTROLPARENT, L"NUTS File Browser Pane", L"", SS_BLACKFRAME|SS_NOTIFY|SS_OWNERDRAW|WS_CHILD|WS_VISIBLE|WS_TABSTOP, x, 0, w, h, Parent, NULL, hInstance, NULL);
-	//SS_WHITERECT|
+	hWnd = CreateWindowEx(
+		WS_EX_CONTROLPARENT,
+		L"NUTS File Browser Pane",
+		L"",
+		WS_CHILD|WS_VISIBLE|WS_TABSTOP,
+		x, 0, w, h,
+		Parent, NULL, hInstance, NULL
+	);
 
 	viewers[ hWnd ] = this;
 

@@ -615,6 +615,8 @@ unsigned int DoEnterAs( FSAction *pVars )
 			L"Are you sure you want to proceed?",
 			L"NUTS File System Probe", MB_YESNO | MB_ICONEXCLAMATION ) != IDYES )
 		{
+			DS_RELEASE( pSource );
+
 			return 0;
 		}
 	}
@@ -661,6 +663,10 @@ unsigned int DoEnterAs( FSAction *pVars )
 				MessageBox( hMainWnd, L"Unable to load data source", L"NUTS", MB_ICONERROR | MB_OK );
 			}
 		}
+	}
+	else
+	{
+		DS_RELEASE( pSource );
 	}
 
 	ReCalculateTitleStack( pVars->pane );
