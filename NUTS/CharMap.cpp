@@ -85,7 +85,7 @@ CharMap::CharMap( HWND hParent, DWORD FontID )
 		WS_CLIPCHILDREN | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU,
 		CW_USEDEFAULT, CW_USEDEFAULT, MAP_WINDOW_WIDTH, MAP_WINDOW_HEIGHT,
 
-		hMainWnd, NULL, hInst, NULL
+		GetDesktopWindow(), NULL, hInst, NULL
 	);
 
 	/* This merry little dance is apparently needed because even when you take system metrics into account,
@@ -100,6 +100,9 @@ CharMap::CharMap( HWND hParent, DWORD FontID )
 
 	AdjustWindowRect( &r, WS_CLIPCHILDREN | WS_BORDER | WS_VISIBLE | WS_CAPTION | WS_SYSMENU, FALSE );
 
+
+	SetActiveWindow( hWnd );
+	SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
 	SetWindowPos( hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top, SWP_NOREPOSITION | SWP_NOMOVE | SWP_NOZORDER );
 
 	CharMap::_CharMapClassMap[ hWnd ] = this;
