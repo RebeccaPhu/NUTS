@@ -41,7 +41,16 @@ class AutoBuffer
 public:
 	AutoBuffer( DWORD sz )
 	{
-		intp = malloc( sz );
+		intsz = sz;
+		intp  = malloc( sz );
+	}
+
+	AutoBuffer( const AutoBuffer &source )
+	{
+		intsz = source.intsz;
+		intp  = malloc( intsz );
+
+		(void) memcpy( intp, source.intp, intsz );
 	}
 
 	~AutoBuffer()
@@ -54,4 +63,5 @@ public:
 
 private:
 	void *intp;
+	DWORD intsz;
 };
