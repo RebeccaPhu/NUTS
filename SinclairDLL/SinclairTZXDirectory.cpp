@@ -188,6 +188,7 @@ void SinclairTZXDirectory::ResolveFiles( void )
 				iFile->Attributes[ 2 ] = 0xFFFFFFFD;
 				iFile->Filename        = (BYTE *) "ORPHAN HDR";
 				iFile->Length          = iFile->Length - 0x07; /* Checksum byte */
+				iFile->Flags          |= FF_NotRenameable;
 
 				iFile++;
 

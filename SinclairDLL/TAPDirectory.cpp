@@ -159,7 +159,7 @@ int TAPDirectory::ReadDirectory(void)
 			
 			if ( IsOrphan )
 			{
-				File.Flags           = FF_Audio;
+				File.Flags           = FF_Audio | FF_NotRenameable;
 				File.Attributes[ 0 ] = TAPOffset;
 				File.Length          = * (WORD *) &ShortHeader[ 0 ];
 				File.fileID          = FileID;
