@@ -541,3 +541,50 @@ int WindowsFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	return 0;
 }
+
+int WindowsFileSystem::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt )
+{
+	std::wstring WinName = UString( (char *) NewName );
+	
+	if ( rstrnlen( NewExt, 3 ) > 0 )
+	{
+		WinName += L"." + std::wstring( UString( (char *) NewExt ) );
+	}
+
+	for ( NativeFileIterator iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	{
+		bool Same = false;
+
+		if ( ( rstricmp( iFile->Filename, NewName ) ) && ( FileID != iFile->fileID ) )
+		{
+			if ( iFile->Flags & FF_Extension )
+			{
+				if (  ( rstrcmp( iFile->Extension, NewExt ) ) && ( FileID != iFile->fileID ) )
+				{
+					Same = true;
+				}
+			}
+			else
+			{
+				Same = true;
+			}
+		}
+
+		if ( WinName == pWindowsDirectory->WindowsFiles[ iFile->fileID ] )
+		{
+			Same = true;
+		}
+
+		if ( Same )
+		{
+			return NUTSError( 0x206, L"An object with that name already exists" );
+		}
+	}
+
+	if ( _wrename( pWindowsDirectory->WindowsFiles[ FileID ].c_str(), WinName.c_str() ) )
+	{
+		return NUTSError( 0x207, L"Windows failure renaming file" );
+	}
+
+	return NUTS_SUCCESS;
+}

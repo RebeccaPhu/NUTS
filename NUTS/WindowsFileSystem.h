@@ -58,6 +58,8 @@ public:
 
 	int CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 
+	int Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt );
+
 private:
 	std::wstring folderPath;
 

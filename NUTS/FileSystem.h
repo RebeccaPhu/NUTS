@@ -368,11 +368,17 @@ public:
 
 			if ( ( rstrcmp( iFile->Filename, NewName ) ) && ( FileID != iFile->fileID ) )
 			{
-				Same = true;
-			}
-			else if ( ( iFile->Flags & FF_Extension ) && ( rstrcmp( iFile->Extension, NewExt ) ) && ( FileID != iFile->fileID ) )
-			{
-				Same = true;
+				if ( iFile->Flags & FF_Extension )
+				{
+					if ( ( rstrcmp( iFile->Extension, NewExt ) ) && ( FileID != iFile->fileID ) )
+					{
+						Same = true;
+					}
+				}
+				else
+				{
+					Same = true;
+				}
 			}
 
 			if ( Same )
