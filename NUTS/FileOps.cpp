@@ -82,6 +82,7 @@ std::map<DWORD, DWORD> Changes;
 FileSystem *SaveFS;
 
 std::vector<NativeFile> IgnoreSidecars;
+std::vector<CTempFile *> LoadedForks;
 
 DWORD RecurseSteps;
 
@@ -712,6 +713,31 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 					break;
 				}
+
+				/* Read Forks if needed */
+				if ( iStep->Object.ExtraForks > 0 )
+				{
+					for ( WORD f=0; f<iStep->Object.ExtraForks; f++ )
+					{
+						CTempFile *pFork = new CTempFile();
+
+						LoadedForks.push_back( pFork );
+
+						// Source might not offer this fork
+						if ( pSourceFS->ReadFork( iStep->Object.fileID, f, *pFork ) == DS_SUCCESS )
+						{
+							// But target must accept it.
+							if ( pTargetFS->WriteFork( f, pFork ) != DS_SUCCESS )
+							{
+								NUTSError::Report( L"Write Fork", hFileWnd );
+
+								OpError = true;
+
+								break;
+							}
+						}
+					}
+				}
 				
 				DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
@@ -1009,16 +1035,22 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 		CurrentOp++;
 
+		// Delete any forks left lying around
+		for ( std::vector<CTempFile *>::iterator ipFork = LoadedForks.begin(); ipFork != LoadedForks.end(); ipFork++ )
+		{
+			delete *ipFork;
+		}
+
+		LoadedForks.clear();
+		LoadedForks.shrink_to_fit();
+
 		if ( OpError )
 		{
 			break;
 		}
 	}
 
-	if ( !OpError )
-	{
-		::PostMessage( hFileWnd, WM_CLOSE, 0, 0 );
-	}
+	::PostMessage( hFileWnd, WM_CLOSE, 0, 0 );
 
 	return 0;
 }
@@ -1535,7 +1567,7 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			NixObject( hFileCancel );
 			NixObject( hFileThread );
 
-			return TRUE;
+			return FALSE;
 
 		case WM_PAINT:
 			DrawFilename( hwndDlg, &CurrentObject );

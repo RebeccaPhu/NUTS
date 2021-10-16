@@ -45,6 +45,17 @@ typedef enum _FileType {
 } FileType;
 
 typedef struct _NativeFile {
+	_NativeFile() {
+		Filename        = (BYTE *) "";
+		Extension       = (BYTE *) "";
+		Flags           = 0;
+		Length          = 0;
+		Type            = FT_Arbitrary;
+		Icon            = FT_Arbitrary;
+		XlatorID        = NULL;
+		HasResolvedIcon = false;
+		ExtraForks      = 0;
+	}
 	DWORD fileID;          // File index into the pDirectory->Files vector
 	BYTEString  Filename;  // Filename, in EncodingID encoding
 	BYTEString  Extension; // Extension (if Flags & FF_Extension), in EncodingID encoding 
@@ -57,6 +68,7 @@ typedef struct _NativeFile {
 	DWORD FSFileType;      // Type of file in terms of filesystem, e.g. "This is a C64 file".
 	DWORD XlatorID;        // ID of a translator plugin that can deal with this file
 	bool  HasResolvedIcon; // Has a icon resolved from the file system itself (Dynamic icon)
+	BYTE  ExtraForks;      // Number of forks (additional to the data fork) used by this file
 } NativeFile;
 
 typedef std::vector<NativeFile>::iterator NativeFileIterator;

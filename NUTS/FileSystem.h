@@ -470,6 +470,23 @@ public:
 		return 0;
 	}
 
+	virtual int WriteFork( WORD ForkID, CTempFile *pFork )
+	{
+		if ( ForkID == 0 )
+		{
+			Forks.clear();
+		}
+
+		Forks.push_back( pFork );
+
+		return 0;
+	}
+
+	virtual int ReadFork( DWORD FileID, WORD ForkID, CTempFile &forkObj )
+	{
+		return NUTSError( 0x207, L"Operation not supported" );
+	}
+
 	DWORD FSID;
 	DWORD PLID;
 	DWORD EnterIndex;
@@ -495,5 +512,7 @@ protected:
 	HANDLE hToolEvent;
 
 	BYTE *pBlockMap;
+
+	std::vector<CTempFile *> Forks;
 };
 
