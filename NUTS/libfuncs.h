@@ -32,6 +32,9 @@ BYTE *rstrndup( BYTE *src, WORD limit );
 DWORD BEDWORD( BYTE *p );
 WORD BEWORD( BYTE *p );
 
+void WBEDWORD( BYTE *p, DWORD v );
+void WBEWORD( BYTE *p, DWORD v );
+
 DWORD dwDiff( DWORD a, DWORD b );
 
 HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstance );

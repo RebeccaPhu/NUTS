@@ -429,6 +429,20 @@ WORD BEWORD( BYTE *p )
 	return ( p[0] << 8 ) | p[1];
 }
 
+void WBEDWORD( BYTE *p, DWORD v )
+{
+	p[ 0 ] = ( ( v & 0xFF000000 ) >> 24 );
+	p[ 1 ] = ( ( v & 0xFF0000 ) >> 16 );
+	p[ 2 ] = ( ( v & 0xFF00 ) >> 8 );
+	p[ 3 ] = v & 0xFF;
+}
+
+void WBEWORD( BYTE *p, DWORD v )
+{
+	p[ 0 ] = ( ( v & 0xFF00 ) >> 8 );
+	p[ 1 ] = v & 0xFF;
+}
+
 HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstance )
 {
 	if ( ( !hWnd ) || ( !pszText ) )
