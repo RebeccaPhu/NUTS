@@ -933,6 +933,8 @@ AttrDescriptors ADFSFileSystem::GetFSAttributeDescriptions( void )
 
 	Attr.Options.push_back( opt );
 
+	Attr.StartingValue = pFSMap->BootOption;
+
 	Attrs.push_back( Attr );
 
 	return Attrs;

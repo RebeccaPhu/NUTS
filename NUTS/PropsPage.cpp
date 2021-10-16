@@ -673,7 +673,7 @@ void SetupFSAttributes( HWND hWnd, bool CreateWindows )
 			A.Changed    = false;
 			A.SourceAttr = & (*iAttr);
 
-			A.StartingValue = pFSPropsFile->Attributes[ iAttr->Index ];
+			A.StartingValue = iAttr->StartingValue;
 			A.CurrentValue  = A.StartingValue;
 
 			val = A.StartingValue;
@@ -859,7 +859,7 @@ void SetupFSAttributes( HWND hWnd, bool CreateWindows )
 
 			if ( iAttr->Type & AttrTime )
 			{
-				DWORD ExStyle = WS_BORDER | DTS_SHORTDATEFORMAT | DTS_TIMEFORMAT;
+				DWORD ExStyle = WS_BORDER;
 
 				if ( CreateWindows )
 				{
