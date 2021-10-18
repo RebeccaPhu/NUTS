@@ -396,7 +396,10 @@ public:
 
 		int r = pDirectory->WriteDirectory();
 
-		pDirectory->ReadDirectory();
+		if ( r == NUTS_SUCCESS )
+		{
+			r = pDirectory->ReadDirectory();
+		}
 
 		return r;
 	}
