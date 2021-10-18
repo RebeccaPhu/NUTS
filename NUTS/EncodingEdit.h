@@ -3,15 +3,21 @@
 #include "stdafx.h"
 #include "Defs.h"
 
+#ifndef FONTBITMAP_PLUGIN
 #include "CharMap.h"
 #include "IconButton.h"
+#endif
 
 #include <map>
 
 class EncodingEdit
 {
 public:
+#ifdef FONTBITMAP_PLUGIN
+	EncodingEdit( HWND hParent, int x, int y, int w, BYTE *pFontData );
+#else
 	EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger = false );
+#endif
 	~EncodingEdit(void);
 
 public:
@@ -52,7 +58,12 @@ public:
 	void SetBuddy( EncodingEdit *pBuddy );
 
 private:
+#ifndef FONTBITMAP_PLUGIN
 	IconButton *pChanger;
+	HWND       hChangeTip;
+#else
+	BYTE  *pFont;
+#endif
 	HWND  Parent;
 	HICON hIcon;
 	BYTE  Blink;
@@ -74,14 +85,15 @@ private:
 	WORD  MouseXS;
 	bool  FontChanged;
 
+#ifndef FONTBITMAP_PLUGIN
 	std::vector<DWORD> FontSelection;
 	WORD               FontNum;
+#endif
 
 	HBRUSH  hDisBrush;
 	HDC     hArea;
 	HGDIOBJ hAreaOld;
 	HBITMAP hAreaCanvas;
-	HWND    hChangeTip;
 
 	EncodingEdit *pBuddyControl;
 	DWORD   CurrentFontID;
@@ -91,6 +103,8 @@ private:
 	void Invalidate( void );
 	void ProcessASCII( WORD ascii );
 
+#ifndef FONTBITMAP_PLUGIN
 	void OpenCharacterMap();
+#endif
 };
 

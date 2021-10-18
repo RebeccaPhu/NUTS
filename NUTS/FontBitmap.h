@@ -1,11 +1,18 @@
 #pragma once
 
+#ifndef FONTBITMAP_PLUGIN
 #include "Plugins.h"
+#endif
 
 class FontBitmap
 {
 public:
-	FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Ellipsis, const bool Selected );
+	FontBitmap( BYTE *pFontData, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected );
+
+#ifndef FONTBITMAP_PLUGIN
+	FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected );
+#endif
+
 	~FontBitmap(void);
 
 	void DrawText( HDC hDC, DWORD x, DWORD y, DWORD Displace );

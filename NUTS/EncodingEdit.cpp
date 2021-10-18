@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "EncodingEdit.h"
-#include "EncodingClipboard.h"
 #include "FontBitmap.h"
 #include "libfuncs.h"
 
@@ -8,6 +7,13 @@
 
 #include <time.h>
 #include <WindowsX.h>
+#include <string>
+
+#ifndef FONTBITMAP_PLUGIN
+#include "EncodingClipboard.h"
+#else
+extern HINSTANCE hInstance;
+#endif
 
 bool EncodingEdit::_HasWindowClass = false;
 
@@ -27,8 +33,17 @@ LRESULT CALLBACK EncodingEditWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
 
+#ifdef FONTBITMAP_PLUGIN
+EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, BYTE *pFontData )
+#else
 EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger )
+#endif
 {
+#ifdef FONTBITMAP_PLUGIN
+	bool FontChanger = false;
+	HINSTANCE hInst  = hInstance;
+#endif
+
 	if ( !_HasWindowClass )
 	{
 		WNDCLASS wc = { };
@@ -56,35 +71,19 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 		hParent, NULL, hInst, NULL
 	);
 
+#ifndef FONTBITMAP_PLUGIN
 	pChanger   = nullptr;
 	hChangeTip = NULL;
 
 	if ( FontChanger )
 	{
-		/*
-		hChanger = CreateWindowEx(
-			0,
-			L"BUTTON",
-			L"",
-			WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON | BS_ICON | WS_TABSTOP,
-
-			x + (w - 24), y, 24, 24,
-//			w - 24, 0, 24, 24,
-
-			hParent, NULL, hInst, NULL
-		);
-	
-		hIcon = LoadIcon( hInst, MAKEINTRESOURCE(IDI_SMFS));
-
-		SendMessage( hChanger, BM_SETIMAGE, (WPARAM) IMAGE_ICON, (LPARAM) hIcon );
-
-		hChangeTip = CreateToolTip( hChanger, hWnd, L"Change the font used for rendering the text", hInst );
-		*/
-
 		pChanger = new IconButton( hParent, x + ( w - 24 ), y, LoadIcon( hInst, MAKEINTRESOURCE( IDI_FONTSWITCH ) ) );
 
 		pChanger->SetTip( L"Change the font used for rendering the text" );
 	}
+#else
+	pFont = pFontData;
+#endif
 
 	EncodingEdit::_EncodingEditClassMap[ hWnd ] = this;
 
@@ -104,7 +103,10 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 	LDown         = false;
 	CW            = w;
 
+#ifndef FONTBITMAP_PLUGIN
 	if ( ( pChanger != nullptr ) && ( CW > 24 ) ) { CW -= 24; }
+	FontNum       = 0;
+#endif
 
 	DChars        = CW / 8;
 	SChar         = 0;
@@ -116,7 +118,6 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 	SCursor       = 0;
 	ECursor       = 0;
 	MouseXS       = 0;
-	FontNum       = 0;
 	MaxLen        = 255;
 	Parent        = hParent;
 	Changes       = false;
@@ -157,12 +158,14 @@ EncodingEdit::~EncodingEdit(void)
 
 	NixObject( hDisBrush );
 
+#ifndef FONTBITMAP_PLUGIN
 	NixWindow( hChangeTip );
 
 	if ( pChanger == nullptr )
 	{
 		delete pChanger;
 	}
+#endif
 	
 	NixWindow( hWnd );
 }
@@ -206,8 +209,9 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 			Cursor   = Length;
 
 			Invalidate();
-
+#ifndef FONTBITMAP_PLUGIN
 			CharMap::SetFocusWindow( hWnd );
+#endif
 		}
 
 		break;
@@ -511,6 +515,7 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 		}
 		break;
 
+#ifndef FONTBITMAP_PLUGIN
 	case WM_RBUTTONUP:
 		{
 			RECT rect;
@@ -541,8 +546,10 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 			Invalidate();
 		}
 		break;
+#endif
 
 	case WM_COMMAND:
+#ifndef FONTBITMAP_PLUGIN
 		if ( ( pChanger != nullptr) && ( lParam == (LPARAM) pChanger->hWnd ) )
 		{
 			FontNum++;
@@ -558,9 +565,11 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 			break;
 		}
+#endif
 
 		switch ( LOWORD(wParam) )
 		{
+#ifndef FONTBITMAP_PLUGIN
 		case ID_EDITMENU_CHARACTERMAP:
 			OpenCharacterMap();
 			break;
@@ -678,6 +687,7 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 				Invalidate();
 			}
 			break;
+#endif
 
 		case IDM_EE_DELETE:
 			{
@@ -906,6 +916,7 @@ void EncodingEdit::PaintControl( void )
 
 	if ( Cursor < SCursor ) { LC = Cursor; RC = SCursor; } else { LC = SCursor; RC = Cursor; }
 
+#ifndef FONTBITMAP_PLUGIN
 	FontSelection = FSPlugins.FontListForEncoding( Encoding );
 
 	if ( FontNum >= FontSelection.size() )
@@ -923,6 +934,11 @@ void EncodingEdit::PaintControl( void )
 	}
 
 	FontBitmap txt( FontSelection[ FontNum ], EditText, Length, false, false );
+#else
+	FontBitmap txt( pFont, EditText, Length, false, false );
+#endif
+
+	
 
 	if ( ( Disabled ) && ( !SoftDisable ) )
 	{
@@ -933,7 +949,11 @@ void EncodingEdit::PaintControl( void )
 
 	if ( Select )
 	{
+#ifndef FONTBITMAP_PLUGIN
 		FontBitmap seltxt( FontSelection[ FontNum ], &EditText[ LC ], RC - LC, false, true );
+#else
+		FontBitmap seltxt( pFont, &EditText[ LC ], RC - LC, false, true );
+#endif
 
 		seltxt.DrawText( hArea, ( 4 - ( SChar * 8 ) ) + LC * 8, 4, DT_LEFT | DT_TOP );
 	}
@@ -1060,7 +1080,9 @@ void EncodingEdit::SetBuddy( EncodingEdit *pBuddy )
 	pBuddyControl = pBuddy;
 }
 
+#ifndef FONTBITMAP_PLUGIN
 void EncodingEdit::OpenCharacterMap( void )
 {
 	CharMap::OpenTheMap( hWnd, CurrentFontID );
 }
+#endif

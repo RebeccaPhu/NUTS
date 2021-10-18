@@ -2,8 +2,18 @@
 #include "FontBitmap.h"
 
 #include <assert.h>
+#include <malloc.h>
 
-FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Ellipsis, const bool Selected )
+#ifndef FONTBITMAP_PLUGIN
+FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected )
+{
+	BYTE *pFontData = (BYTE *) FSPlugins.LoadFont( FontID );
+
+	FontBitmap( pFontData, pText, MaxLen, Proportionate, Selected );
+}
+#endif
+
+FontBitmap::FontBitmap( BYTE *pFontData, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected )
 {
 	pData = nullptr;
 	bmi   = nullptr;
@@ -27,8 +37,6 @@ FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, cons
 	bmi   = (BITMAPINFO *) malloc( sizeof(BITMAPINFOHEADER) + ( sizeof( RGBQUAD ) * 2U ) );
 
 	BYTE *pBitmap = (BYTE *) pData;
-
-	BYTE *pFontData = (BYTE *) FSPlugins.LoadFont( FontID );
 
 	for ( BYTE r=0; r<8; r++ )
 	{
