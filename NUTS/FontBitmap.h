@@ -13,6 +13,8 @@ public:
 	FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected );
 #endif
 
+	void Init( BYTE *pFontData, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected );
+
 	~FontBitmap(void);
 
 	void DrawText( HDC hDC, DWORD x, DWORD y, DWORD Displace );

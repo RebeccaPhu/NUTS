@@ -9,11 +9,16 @@ FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, cons
 {
 	BYTE *pFontData = (BYTE *) FSPlugins.LoadFont( FontID );
 
-	FontBitmap( pFontData, pText, MaxLen, Proportionate, Selected );
+	Init( pFontData, pText, MaxLen, Proportionate, Selected );
 }
 #endif
 
 FontBitmap::FontBitmap( BYTE *pFontData, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected )
+{
+	Init( pFontData, pText, MaxLen, Proportionate, Selected );
+}
+
+void FontBitmap::Init( BYTE *pFontData, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected )
 {
 	pData = nullptr;
 	bmi   = nullptr;
