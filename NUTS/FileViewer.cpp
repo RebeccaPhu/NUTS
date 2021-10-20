@@ -1495,6 +1495,7 @@ void CFileViewer::PopulateFSMenus( HMENU hPopup )
 	std::vector<FSMenu>::iterator iter;
 
 	UINT index = 43000;
+	UINT MenuItems = 0;
 
 	for (iter = menus.begin(); iter != menus.end(); iter++ )
 	{
@@ -1506,7 +1507,7 @@ void CFileViewer::PopulateFSMenus( HMENU hPopup )
 		mii.hSubMenu = hFormatMenu;
 		mii.dwTypeData = (WCHAR *) iter->Provider.c_str();
 
-		InsertMenuItem( hProviderMenu, (UINT) 1, TRUE, &mii );
+		InsertMenuItem( hProviderMenu, MenuItems++, TRUE, &mii );
 
 		std::vector<FormatMenu>::iterator s;
 

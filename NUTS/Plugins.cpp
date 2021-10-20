@@ -16,7 +16,7 @@
 #include "ZIPFile.h"
 
 #include <string>
-
+#include <algorithm>
 
 
 extern DataSourceCollector *pCollector;
@@ -757,6 +757,23 @@ void CPlugins::NextFont( DWORD Encoding, BYTE Index )
 		EncodingFontMap[ Encoding ].size();
 }
 
+static bool FSMenuSort( FSMenu &a, FSMenu &b )
+{
+	/*
+	if ( wcscmp( a.Provider.c_str(), b.Provider.c_str() ) < 0 )
+	{
+		return true;
+	}
+	*/
+
+	if ( a.Provider < b.Provider )
+	{
+		return true;
+	}
+	
+	return false;
+}
+
 std::vector<FSMenu> CPlugins::GetFSMenu()
 {
 	std::vector<FSMenu> menus;
@@ -815,6 +832,8 @@ std::vector<FSMenu> CPlugins::GetFSMenu()
 
 	menu.FS.push_back( format );
 	menus.push_back( menu );
+
+	std::sort( menus.begin(), menus.end(), FSMenuSort );
 
 	return menus;
 }
