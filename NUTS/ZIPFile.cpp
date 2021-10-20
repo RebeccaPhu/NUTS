@@ -234,6 +234,12 @@ int ZIPFile::WriteFile(NativeFile *pFile, CTempFile &store)
 	rstrncpy( fname, cpath, MAX_PATH );
 	rstrncat( fname, pFile->Filename, MAX_PATH );
 
+	if ( pFile->Flags & FF_Extension )
+	{
+		rstrncat( fname, (BYTE *) ".", MAX_PATH );
+		rstrncat( fname, pFile->Extension, MAX_PATH );
+	}
+
 	zip_uint64_t zfi = zip_file_add( za, (char *) fname, zs, ZIP_FL_ENC_CP437 | ZIP_FL_OVERWRITE );
 
 	if ( DidTranslate )
