@@ -23,7 +23,7 @@ public:
 
 		rstrncpy( cpath, (BYTE *) "", 2 );
 
-		Flags = FSF_Supports_Dirs | FSF_Creates_Image | FSF_ArbitrarySize | FSF_DynamicSize | FSF_Uses_Extensions;
+		Flags = FSF_Supports_Dirs | FSF_Creates_Image | FSF_ArbitrarySize | FSF_DynamicSize | FSF_Uses_Extensions | FSF_Accepts_Sidecars;
 
 		FSID = FSID_ZIP;
 

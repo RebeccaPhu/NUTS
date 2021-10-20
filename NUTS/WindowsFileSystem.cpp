@@ -19,7 +19,7 @@ WindowsFileSystem::WindowsFileSystem( std::wstring rootDrive ) : FileSystem(NULL
 
 	TopicIcon = FT_Windows;
 
-	Flags = FSF_Uses_Extensions | FSF_Supports_Dirs | FSF_SupportFreeSpace | FSF_Capacity;
+	Flags = FSF_Uses_Extensions | FSF_Supports_Dirs | FSF_SupportFreeSpace | FSF_Capacity | FSF_Accepts_Sidecars;
 }
 
 WindowsFileSystem::~WindowsFileSystem(void) {
