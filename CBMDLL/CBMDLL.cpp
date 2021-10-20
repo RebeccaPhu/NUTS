@@ -308,7 +308,7 @@ WCHAR *DescribeChar( BYTE Char, DWORD FontID )
 	return desc;
 }
 
-NUTSProvider ProviderCBM = { L"Commdore", 0, 0 };
+NUTSProvider ProviderCBM = { L"Commodore", 0, 0 };
 
 WCHAR *pPETSCII1FontName = L"PETSCII 1";
 WCHAR *pPETSCII2FontName = L"PETSCII 2";
