@@ -58,7 +58,12 @@ public:
 
 	~AutoBuffer()
 	{
-		free( intp );
+		if ( intp != nullptr )
+		{
+			free( intp );
+		}
+		
+		intp = nullptr;
 	}
 
 	operator BYTE *() { return (BYTE *) intp; }
