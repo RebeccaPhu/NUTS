@@ -74,7 +74,8 @@ int	WindowsDirectory::ReadDirectory(void) {
 
 		if ( dp != std::wstring::npos )
 		{
-			if ( dp == ( Filename.length() - 4 ) )
+			// If the dot is the very first character, then there is no extension.
+			if ( ( dp == ( Filename.length() - 4 ) ) && ( dp != 0 ) )
 			{
 				file.Flags |= FF_Extension;
 					

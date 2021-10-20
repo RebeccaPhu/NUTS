@@ -193,7 +193,7 @@ void ZIPDirectory::TranslateFileType(NativeFile *file) {
 
 	BYTE *pDot = rstrrchr( file->Filename, '.', 255 );
 
-	if ( pDot != nullptr )
+	if ( ( pDot != nullptr ) && ( file->Filename[ 0 ] != (BYTE) '.' ) )
 	{
 		file->Extension = BYTEString( pDot + 1 );
 
