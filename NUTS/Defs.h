@@ -145,6 +145,7 @@ typedef enum _FSFlags {
 	FSF_Uses_Extensions  = 0x00080000, /* Files have extensions */
 	FSF_Fake_Extensions  = 0x00100000, /* File extensions are provided visually by the originating system, but they are not changeable by the user */
 	FSF_NoDir_Extensions = 0x00200000, /* Directories may not have extensions (only files) */
+	FSF_Accepts_Sidecars = 0x00400000, /* Indicates this FS should have sidecars exported to/imported from it, if the other FS exports/imports sidecars */
 } FSFlags;
 
 typedef enum _DSFlags {

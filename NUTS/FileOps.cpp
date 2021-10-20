@@ -340,7 +340,7 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 
 void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreCopy )
 {
-	if ( ( pTrg->FSID == FS_Windows ) && ( pSrc->Flags & FSF_Exports_Sidecars ) && ( !PreCopy ) )
+	if ( ( pTrg->Flags & FSF_Accepts_Sidecars ) && ( pSrc->Flags & FSF_Exports_Sidecars ) && ( !PreCopy ) )
 	{
 		SidecarExport sidecar;
 
@@ -366,7 +366,7 @@ void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreC
 		}
 	}
 
-	if ( ( pSrc->FSID == FS_Windows ) && ( pTrg->Flags & FSF_Exports_Sidecars ) && ( PreCopy ) )
+	if ( ( pSrc->Flags & FSF_Accepts_Sidecars ) && ( pTrg->Flags & FSF_Exports_Sidecars ) && ( PreCopy ) )
 	{
 		/* Two stage process. First, get the file we should be looking for. */
 		SidecarImport sidecar;
@@ -384,8 +384,8 @@ void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreC
 
 			if ( iFile->Flags & FF_Extension )
 			{
-				rstrncat( CollatedFilename, (BYTE *) ".", iFile->Filename.length() + iFile->Extension.length() );
-				rstrncat( CollatedFilename, iFile->Extension, iFile->Extension.length() );
+				rstrncat( CollatedFilename, (BYTE *) ".", iFile->Filename.length() + iFile->Extension.length() + 1 );
+				rstrncat( CollatedFilename, iFile->Extension, iFile->Filename.length() + iFile->Extension.length() + 1 );
 			}
 
 			if ( rstrnicmp( CollatedFilename, sidecar.Filename, 256 ) )
