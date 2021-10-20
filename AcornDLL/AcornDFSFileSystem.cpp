@@ -721,7 +721,7 @@ int AcornDFSFileSystem::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar
 		Dir = pDFSDirectory->CurrentDir;
 	}
 
-	rsprintf( INFData, "%c.%s %06X %06X %s\n", Dir, pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
+	rsprintf( INFData, "%c.%s %06X %06X %s\n", Dir, (BYTE *) pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
 
 	CTempFile *pTemp = (CTempFile *) sidecar.FileObj;
 
