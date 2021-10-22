@@ -490,6 +490,16 @@ public:
 		return NUTSError( 0x207, L"Operation not supported" );
 	}
 
+	virtual int WriteCleanup( void )
+	{
+		// DO NOT DELETE THE FORKS! They are pointers only, and will be managed by FileOps!
+
+		Forks.clear();
+		Forks.shrink_to_fit();
+
+		return 0;
+	}
+
 	DWORD FSID;
 	DWORD PLID;
 	DWORD EnterIndex;

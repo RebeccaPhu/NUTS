@@ -1044,6 +1044,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 		LoadedForks.clear();
 		LoadedForks.shrink_to_fit();
 
+		pTargetFS->WriteCleanup();
+
 		if ( OpError )
 		{
 			break;
