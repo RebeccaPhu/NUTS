@@ -214,6 +214,17 @@ INT_PTR CALLBACK FormatSelectWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, 
 	return FALSE;
 }
 
+void UpdateFS()
+{
+	FileSystem *pFS = (FileSystem *) CurrentAction.FS;
+
+	pFS->pDirectory->ReadDirectory();
+
+	CFileViewer *pPane = (CFileViewer *) CurrentAction.Pane;
+
+	pPane->Update();
+}
+
 INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	static HFONT hFont = NULL;
 	static WCHAR title[512];
@@ -272,6 +283,8 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 						pFormatter = NULL;
 					}
+
+					UpdateFS();
 
 					EndDialog(hwndDlg, 0);
 
@@ -444,6 +457,8 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			{
 				DS_RELEASE( pSource );
 			}
+
+			UpdateFS();
 
 			EndDialog(hwndDlg,0);
 
