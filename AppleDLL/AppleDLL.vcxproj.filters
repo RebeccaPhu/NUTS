@@ -43,6 +43,12 @@
     <None Include="blank.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="pluginbanner.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

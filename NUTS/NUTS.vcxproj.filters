@@ -791,6 +791,15 @@
     <None Include="..\cassetteplayer.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\bitmap5.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\NutsAcorn.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\blank-tzx.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NUTS.rc">

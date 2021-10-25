@@ -205,6 +205,7 @@
   <ItemGroup>
     <None Include="bitmap1.bmp" />
     <None Include="c64.bin" />
+    <None Include="cbm.bmp" />
     <None Include="opencbm.bmp" />
     <None Include="repair.bmp" />
     <None Include="serialport.bmp" />

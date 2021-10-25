@@ -90,6 +90,8 @@ UINT APPL_ICON;
 UINT DOC_ICON;
 UINT BLANK_ICON;
 
+static WCHAR *PluginAuthor = L"Rebecca Gellman";
+
 APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 {
 	switch ( cmd->CommandID )
@@ -210,7 +212,7 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		return NUTS_PLUGIN_SUCCESS;
 
 	case PC_ReportIconCount:
-		cmd->OutParams[ 0 ].Value = 2;
+		cmd->OutParams[ 0 ].Value = 3;
 
 		return NUTS_PLUGIN_SUCCESS;
 
@@ -236,7 +238,7 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 				cmd->OutParams[ 0 ].pPtr = (void *) bmp;
 			}
 
-			if ( Icon == 1 )
+			if ( Icon == 2 )
 			{
 				BLANK_ICON = (UINT) cmd->InParams[ 1 ].Value;
 
@@ -248,6 +250,51 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
+	case PC_ReportPluginCreditStats:
+		cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_PLUGINBANNER ) );
+		cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+		cmd->OutParams[ 2 ].Value = 5;
+		cmd->OutParams[ 3 ].Value = 0;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetIconLicensing:
+		{
+			static WCHAR *pIcons[5] =
+			{
+				L"Apple Logo", L"Macintosh Application Icon", L"Macintosh Document Icon", L"Macintosh File Icon", L"Repair Icon"
+			};
+
+			static int iIcons[ 5 ] = { IDB_APPLE, IDB_APPL, IDB_DOC, IDB_BLANK, IDB_REPAIR };
+			
+			static WCHAR *pIconset = L"Large Android Icons";
+			static WCHAR *pAuthor  = L"Aha-Soft";
+			static WCHAR *pLicense = L"CC Attribution 3.0 US";
+			static WCHAR *pURL     = L"https://creativecommons.org/licenses/by/3.0/us/";
+			static WCHAR *pEmpty   = L"";
+			static WCHAR *pSet2    = L"Company Logo or System Icon";
+			static WCHAR *pApple   = L"Apple Computer Inc.";
+			static WCHAR *pFair    = L"Icons and logos used under fair use for familiar purposes";
+
+			cmd->OutParams[ 0 ].pPtr = pIcons[ cmd->InParams[ 0 ].Value ];
+			cmd->OutParams[ 1 ].pPtr = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( iIcons[ cmd->InParams[ 0 ].Value ] ) );
+			
+			if ( cmd->InParams[ 0 ].Value == 4 )
+			{
+				cmd->OutParams[ 2 ].pPtr = pIconset;
+				cmd->OutParams[ 3 ].pPtr = pAuthor;
+				cmd->OutParams[ 4 ].pPtr = pLicense;
+				cmd->OutParams[ 5 ].pPtr = pURL;
+			}
+			else
+			{
+				cmd->OutParams[ 2 ].pPtr = pSet2;
+				cmd->OutParams[ 3 ].pPtr = pApple;
+				cmd->OutParams[ 4 ].pPtr = pFair;
+				cmd->OutParams[ 5 ].pPtr = pEmpty;
+			}
+		}
+		return NUTS_PLUGIN_SUCCESS;
 	}
 
 	return NUTS_PLUGIN_UNRECOGNISED;

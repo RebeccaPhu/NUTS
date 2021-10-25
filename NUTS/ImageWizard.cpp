@@ -15,12 +15,6 @@
 #include <process.h>
 #include <commctrl.h>
 
-// ICON CREDS
-
-// "Floppy Icon", NX10 Icon set, MazeNL77, CC Attributon 3.0 Unported
-// "B Side Icon", Cassette Tape Icons, barkerbaggies, CC Attribution-NonCommercial-ShareAlike 3.0 Unported
-// "Devices 5.25 Floppy Unmount Icon", Glaze Icons, Marco Martin, LGPL
-
 HWND  hWizard = NULL;
 
 static HFONT hFont = NULL;

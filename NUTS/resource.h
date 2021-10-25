@@ -47,11 +47,9 @@
 #define IDI_UPFILE                      130
 #define IDI_DOWNFILE                    131
 #define IDI_NEWDIR                      132
-#define IDD_PLUGINS                     134
 #define IDB_FOLDER                      135
 #define IDD_ICONSDLG                    135
 #define IDB_DISKIMAGE                   136
-#define IDD_THANKS                      136
 #define IDD_LICENSE                     137
 #define IDB_FLOPPYDISC                  139
 #define IDB_ARCHIVE                     140
@@ -99,10 +97,11 @@
 #define IDD_WIZ_DIALOG4                 174
 #define IDB_BITMAP4                     174
 #define IDB_ROMDISK                     174
-#define IDI_ICON1                       175
 #define IDI_CASSETTE                    175
 #define IDD_WIZ_DIALOG5                 176
+#define IDB_NUTSACORN                   176
 #define IDD_FSATTRS                     177
+#define IDB_TZX                         177
 #define IDD_NEWDIR                      178
 #define IDD_WIZ_FORMAT                  179
 #define AFX_IDC_PRINT_DOCNAME           201
@@ -111,7 +110,6 @@
 #define AFX_IDC_PRINT_PAGENUM           204
 #define AFX_IDC_FONTPROP                1000
 #define IDC_LIST1                       1000
-#define IDC_PLUGINLIST                  1000
 #define IDC_WIZ_PROVIDER                1000
 #define AFX_IDC_FONTNAMES               1001
 #define AFX_IDC_FONTSTYLES              1002
@@ -736,7 +734,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        176
+#define _APS_NEXT_RESOURCE_VALUE        178
 #define _APS_NEXT_COMMAND_VALUE         40075
 #define _APS_NEXT_CONTROL_VALUE         1057
 #define _APS_NEXT_SYMED_VALUE           101

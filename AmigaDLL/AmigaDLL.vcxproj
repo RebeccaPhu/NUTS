@@ -140,6 +140,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="amigalogo.bmp" />
+    <None Include="bitmap1.bmp" />
     <None Include="idf_topaz2.bin" />
     <None Include="rcdata1.bin" />
     <None Include="ReadMe.txt" />

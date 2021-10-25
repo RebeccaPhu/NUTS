@@ -101,6 +101,12 @@
     <None Include="..\sinclairdll\Call.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\sinclairdll\bitmap1.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="amstrad.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

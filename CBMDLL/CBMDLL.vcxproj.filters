@@ -159,5 +159,8 @@
     <None Include="opencbm.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="cbm.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

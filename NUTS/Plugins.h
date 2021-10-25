@@ -91,6 +91,8 @@ public:
 
 	void UnloadPlugins();
 
+	NUTSPlugin *GetPlugin( DWORD FSID );
+
 private:
 	NUTSProviderList  Providers;
 	FSDescriptorList  FSDescriptors;
@@ -115,8 +117,6 @@ private:
 	void LoadTranslators( NUTSPlugin *plugin );
 	void LoadRootHooks( NUTSPlugin *plugin );
 	void LoadRootCommands( NUTSPlugin *plugin );
-
-	NUTSPlugin *GetPlugin( DWORD FSID );
 
 	void *pPC437Font;
 

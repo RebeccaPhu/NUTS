@@ -315,6 +315,8 @@ WCHAR *pPETSCII2FontName = L"PETSCII 2";
 
 WCHAR *OpenCBMPathSet = L"Set OpenCBM Path";
 
+static WCHAR *PluginAuthor = L"Rebecca Gellman";
+
 CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 {
 	switch ( cmd->CommandID )
@@ -491,6 +493,15 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 0 ].pPtr = DescribeChar( Char, FontID );
 		}
 		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportPluginCreditStats:
+		cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_CBM ) );
+		cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+		cmd->OutParams[ 2 ].Value = 0;
+		cmd->OutParams[ 3 ].Value = 0;
+
+		return NUTS_PLUGIN_SUCCESS;
+
 	}
 
 	return NUTS_PLUGIN_UNRECOGNISED;

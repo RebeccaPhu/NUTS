@@ -211,9 +211,9 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 			}
 		}
 
-		LoadImageExtensions( &plugin );
 		LoadFonts( &plugin );
 		LoadIcons( &plugin );
+		LoadImageExtensions( &plugin );
 		LoadTranslators( &plugin );
 		LoadRootHooks( &plugin );
 		LoadRootCommands( &plugin );

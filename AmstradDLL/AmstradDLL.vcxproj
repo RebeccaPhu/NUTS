@@ -141,6 +141,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="..\sinclairdll\bitmap1.bmp" />
     <None Include="..\SinclairDLL\Block10.bmp" />
     <None Include="..\sinclairdll\Call.bmp" />
     <None Include="..\sinclairdll\CSW.bmp" />
@@ -166,6 +167,7 @@
     <None Include="..\sinclairdll\setsignal.bmp" />
     <None Include="..\sinclairdll\stop48.bmp" />
     <None Include="..\sinclairdll\TurboData.bmp" />
+    <None Include="amstrad.bmp" />
     <None Include="cpc.bin" />
     <None Include="cpccpm.sys" />
     <None Include="rcdata1.bin" />

@@ -700,7 +700,7 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 				Redraw();
 			}
 			
-			if ( wParam == 0x7171 )
+			if ( ( wParam == 0x7171 ) && ( !IsSearching ) )
 			{
 				/* Tooltip timer */
 				tooltipclock++;

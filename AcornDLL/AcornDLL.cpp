@@ -606,6 +606,8 @@ WCHAR *pBBCMicroFontName = L"BBC Micro";
 WCHAR *pRiscOSFontName   = L"Risc OS";
 WCHAR *pTTXFontName      = L"Teletext";
 
+static WCHAR *PluginAuthor = L"Rebecca Gellman";
+
 ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 {
 	switch ( cmd->CommandID )
@@ -864,6 +866,100 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			DWORD FontID =        cmd->InParams[ 0 ].Value;
 
 			cmd->OutParams[ 0 ].pPtr = DescribeChar( Char, FontID );
+		}
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportPluginCreditStats:
+		if ( PROVIDERID( cmd->InParams[ 0 ].Value ) == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_BBCMICRO ) );
+			cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+			cmd->OutParams[ 2 ].Value = 0;
+			cmd->OutParams[ 3 ].Value = 0;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		if ( PROVIDERID( cmd->InParams[ 0 ].Value ) == 1 )
+		{
+			cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_RISCOS ) );
+			cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+			cmd->OutParams[ 2 ].Value = 15;
+			cmd->OutParams[ 3 ].Value = 1;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		break;
+
+	case PC_GetPluginCredits:
+		if ( PROVIDERID( cmd->InParams[ 0 ].Value ) ==  1 )
+		{
+			static WCHAR *pGerald = L"Gerald Holdsworth: RiscOS Sprite and ADFS New Map/Big Directory descriptions. See http://www.geraldholdsworth.co.uk";
+
+			cmd->OutParams[ 0 ].pPtr = (void *) pGerald;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+		break;
+
+	case PC_GetIconLicensing:
+		{
+			static WCHAR *pIcons[] =
+			{
+				L"Application icon", L"BASIC Program Icon", L"Data File Icon", L"Draw File Icon", L"Exec File Icon", L"Directory Icon", L"Font Icon", L"JPEG Icon",
+				L"Module Icon", L"Obey File Icon", L"Sprite File Icon", L"Text File Icon", L"Utility File Icon",
+
+				L"Repair Icon", L"Moving and Packing 02 Brown Icon"
+			};
+			
+			static int iIcons[] = {
+				IDB_APP, IDB_BASIC, IDB_DATA, IDB_DRAWFILE, IDB_EXEC, IDB_FOLDER, IDB_FONT, IDB_JPEG, IDB_MODULE, IDB_OBEY, IDB_SPRITE, IDB_TEXT, IDB_UTIL,
+
+				IDB_REPAIR, IDB_COMPACT
+			};
+			
+			static WCHAR *pIconset = L"Risc OS Icons";
+			static WCHAR *pAuthor  = L"Acorn Computers";
+			static WCHAR *pFair    = L"Used under fair use for familiarity purposes";
+			static WCHAR *pEmpty   = L"";
+
+			static WCHAR *pIconset2 = L"Large Android Icons";
+			static WCHAR *pIconset3 = L"Moving and Packing Icon Set";
+
+			static WCHAR *pAuthor2  = L"Aha-Soft";
+			static WCHAR *pAuthor3  = L"My Moving Reviews";
+
+			static WCHAR *pLicense2 = L"CC Attribution 3.0 US";
+			static WCHAR *pLicense3 = L"Linkware";
+
+			static WCHAR *pURL2     = L"https://creativecommons.org/licenses/by/3.0/us/";
+			static WCHAR *pURL3     = L"http://www.mymovingreviews.com/move/webmasters/moving-company-icon-sets";
+
+			cmd->OutParams[ 0 ].pPtr = pIcons[ cmd->InParams[ 0 ].Value ];
+			cmd->OutParams[ 1 ].pPtr = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( iIcons[ cmd->InParams[ 0 ].Value ] ) );
+			
+			if ( cmd->InParams[ 0 ].Value == 13 )
+			{
+				cmd->OutParams[ 2 ].pPtr = pIconset2;
+				cmd->OutParams[ 3 ].pPtr = pAuthor2;
+				cmd->OutParams[ 4 ].pPtr = pLicense2;
+				cmd->OutParams[ 5 ].pPtr = pURL2;
+			}
+			else if ( cmd->InParams[ 0 ].Value == 14 )
+			{
+				cmd->OutParams[ 2 ].pPtr = pIconset3;
+				cmd->OutParams[ 3 ].pPtr = pAuthor3;
+				cmd->OutParams[ 4 ].pPtr = pLicense3;
+				cmd->OutParams[ 5 ].pPtr = pURL3;
+			}
+			else
+			{
+				cmd->OutParams[ 2 ].pPtr = pIconset;
+				cmd->OutParams[ 3 ].pPtr = pAuthor;
+				cmd->OutParams[ 4 ].pPtr = pFair;
+				cmd->OutParams[ 5 ].pPtr = pEmpty;
+			}
 		}
 		return NUTS_PLUGIN_SUCCESS;
 	}

@@ -109,6 +109,12 @@
     <None Include="turboloader.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="bitmap2.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="sinclair.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

@@ -44,6 +44,9 @@ typedef enum _PluginCommandID {
 	PC_PerformRootCommand,
 	PC_TranslateZIPContent,
 	PC_DescribeChar,
+	PC_ReportPluginCreditStats,
+	PC_GetIconLicensing,
+	PC_GetPluginCredits,
 } PluginCommandID;
 
 typedef union _PluginCommandParameter {

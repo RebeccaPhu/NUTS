@@ -7,12 +7,6 @@
 
 #define round(a) ( (a-floor(a)>=0.5)?(floor(a)+1):(floor(a)) )
 
-/* Icon creds:
-
-   Player Previous, Player Fast Rewind, Player Fast Forward, Player Play, Player Stop, Player Eject
-   Square Cyan Buttons, Axialis Team, CC Attribution 2.5 Generic
-*/
-
 FSHint TZXFileSystem::Offer( BYTE *Extension )
 {
 	FSHint hint;

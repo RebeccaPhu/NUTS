@@ -355,6 +355,8 @@
     <None Include="..\bitmap1.bmp" />
     <None Include="..\bitmap2.bmp" />
     <None Include="..\bitmap4.bmp" />
+    <None Include="..\bitmap5.bmp" />
+    <None Include="..\blank-tzx.bmp" />
     <None Include="..\blank.bmp" />
     <None Include="..\blank1.bmp" />
     <None Include="..\blank2.bmp" />
@@ -392,6 +394,7 @@
     <None Include="..\module.bmp" />
     <None Include="..\musicfile.bmp" />
     <None Include="..\newdir.ico" />
+    <None Include="..\NutsAcorn.bmp" />
     <None Include="..\obey.bmp" />
     <None Include="..\palette.ico" />
     <None Include="..\pallette.ico" />

@@ -282,5 +282,14 @@
     <None Include="..\RiscOSFont.bin">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\bitmap5.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\bbcmicro.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\riscos.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

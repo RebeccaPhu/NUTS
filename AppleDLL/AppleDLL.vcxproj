@@ -134,10 +134,12 @@
   <ItemGroup>
     <None Include="appl.bmp" />
     <None Include="Apple.bmp" />
+    <None Include="bitmap1.bmp" />
     <None Include="blank.bmp" />
     <None Include="chicago.bin" />
     <None Include="doc.bmp" />
     <None Include="mfsboot.bin" />
+    <None Include="pluginbanner.bmp" />
     <None Include="rcdata1.bin" />
     <None Include="ReadMe.txt" />
     <None Include="repair.bmp" />

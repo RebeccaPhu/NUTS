@@ -138,6 +138,8 @@ NUTSProvider ProviderAmstrad = { L"Amstrad", 0, 0 };
 
 WCHAR *pCPCFontName = L"Amstrad";
 
+static WCHAR *PluginAuthor = L"Rebecca Gellman";
+
 AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 {
 	switch ( cmd->CommandID )
@@ -301,6 +303,15 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
 
 		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportPluginCreditStats:
+		cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_AMSTRAD ) );
+		cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+		cmd->OutParams[ 2 ].Value = 0;
+		cmd->OutParams[ 3 ].Value = 0;
+
+		return NUTS_PLUGIN_SUCCESS;
+
 	}
 
 	return NUTS_PLUGIN_UNRECOGNISED;

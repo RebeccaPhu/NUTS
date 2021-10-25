@@ -161,6 +161,8 @@ void *CreateTranslator( DWORD TUID )
 	return pXlator;
 }
 
+static WCHAR *PluginAuthor = L"Rebecca Gellman";
+
 AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 {
 	switch ( cmd->CommandID )
@@ -313,6 +315,24 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
 
 		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportPluginCreditStats:
+		cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_AMIGA ) );
+		cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+		cmd->OutParams[ 2 ].Value = 0;
+		cmd->OutParams[ 3 ].Value = 1;
+
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetPluginCredits:
+		{
+			static WCHAR *pGrzegorz = L"Grzegorz Kraszewski: Amiga Sprite and info file format. See http://krashan.ppa.pl/articles/amigaicons/";
+
+			cmd->OutParams[ 0 ].pPtr = (void *) pGrzegorz;
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+		break;
 
 	}
 

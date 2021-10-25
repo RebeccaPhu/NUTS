@@ -151,6 +151,7 @@
   <ItemGroup>
     <None Include="..\blank-tzx.bmp" />
     <None Include="bitmap1.bmp" />
+    <None Include="bitmap2.bmp" />
     <None Include="Block10.bmp" />
     <None Include="Call.bmp" />
     <None Include="CSW.bmp" />
@@ -176,6 +177,7 @@
     <None Include="Return.bmp" />
     <None Include="Select.bmp" />
     <None Include="setsignal.bmp" />
+    <None Include="sinclair.bmp" />
     <None Include="SinclairFont.bin" />
     <None Include="stop48.bmp" />
     <None Include="TurboData.bmp" />

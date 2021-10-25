@@ -328,6 +328,8 @@ NUTSProvider ProviderSinclair = { L"Sinclair", 0, 0 };
 
 WCHAR *pSinclairFontName = L"Sinclair";
 
+static WCHAR *PluginAuthor = L"Rebecca Gellman";
+
 SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 {
 	switch ( cmd->CommandID )
@@ -502,6 +504,15 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 0 ].pPtr = DescribeChar( Char );
 		}
 		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_ReportPluginCreditStats:
+		cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_SINCLAIR ) );
+		cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+		cmd->OutParams[ 2 ].Value = 0;
+		cmd->OutParams[ 3 ].Value = 0;
+
+		return NUTS_PLUGIN_SUCCESS;
+
 	}
 
 	return NUTS_PLUGIN_UNRECOGNISED;

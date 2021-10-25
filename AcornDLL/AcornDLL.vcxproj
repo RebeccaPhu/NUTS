@@ -245,7 +245,9 @@
     <None Include="..\app.bmp" />
     <None Include="..\app2.bmp" />
     <None Include="..\basic.bmp" />
+    <None Include="..\bbcmicro.bmp" />
     <None Include="..\bitmap1.bmp" />
+    <None Include="..\bitmap5.bmp" />
     <None Include="..\blank.bmp" />
     <None Include="..\data.bmp" />
     <None Include="..\drawfile.bmp" />
@@ -255,6 +257,7 @@
     <None Include="..\module.bmp" />
     <None Include="..\obey.bmp" />
     <None Include="..\rcdata2.bin" />
+    <None Include="..\riscos.bmp" />
     <None Include="..\RiscOSFont.bin" />
     <None Include="..\sprite.bmp" />
     <None Include="..\text.bmp" />
