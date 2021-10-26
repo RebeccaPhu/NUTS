@@ -44,7 +44,7 @@ public:
 
 	BYTE *DescribeFile( DWORD FileIndex );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
-	BYTE *GetTitleString( NativeFile *pFile );
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 	WCHAR *Identify( DWORD FileID );
 
 	int ChangeDirectory(NativeFile *pFile);

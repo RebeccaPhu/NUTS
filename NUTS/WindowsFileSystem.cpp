@@ -309,7 +309,7 @@ DataSource *WindowsFileSystem::FileDataSource( DWORD FileID )
 	return new ImageDataSource( FilePath );
 }
 
-BYTE *WindowsFileSystem::GetTitleString( NativeFile *pFile )
+BYTE *WindowsFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE Title[ 512 ];
 
@@ -323,12 +323,18 @@ BYTE *WindowsFileSystem::GetTitleString( NativeFile *pFile )
 		}
 
 		Path += pWindowsDirectory->WindowsFiles[ pFile->fileID ];
-		
-		WCHAR chevron[4] = { L"   " };
 
-		chevron[ 1 ] = 175;
+		if ( Flags & TF_Titlebar )
+		{
+			if ( !(Flags & TF_Final ) )
+			{
+				WCHAR chevron[4] = { L"   " };
 
-		Path += std::wstring( chevron );
+				chevron[ 1 ] = 175;
+
+				Path += std::wstring( chevron );
+			}
+		}
 	}
 
 	BYTE *pPath = (BYTE *) AString( (WCHAR *) Path.c_str() );

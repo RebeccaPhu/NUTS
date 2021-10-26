@@ -102,7 +102,13 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 	{
 		sprintf_s(DPath, 63, "\\\\.\\PhysicalDrive%d", PDN);
 
-		pSource = new RawDataSource( std::wstring( UString( DPath ) ) );
+		BYTEString DL( (BYTE *) pDirectory->Files[ FileID ].Filename, 6 );
+
+		DL[ 3 ] = ' ';
+		DL[ 4 ] = 254;
+		DL[ 5 ] = ' ';
+
+		pSource = new RawDataSource( std::wstring( UString( DPath ) ), DL );
 	}
 
 	OutputDebugStringA(DPath);

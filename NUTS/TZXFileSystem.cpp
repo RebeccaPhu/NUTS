@@ -737,9 +737,18 @@ int TZXFileSystem::DeleteFile( DWORD FileID )
 	return pDirectory->ReadDirectory();
 }
 
-BYTE *TZXFileSystem::GetTitleString( NativeFile *pFile )
+BYTE *TZXFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
-	static const BYTE *Title = (const BYTE *) "TZX Image";
+	static BYTE Title[ 256 ];
+
+	if ( Flags & TF_Titlebar )
+	{
+		rsprintf( Title, (BYTE *) "TZX Image" );
+	}
+	else
+	{
+		rsprintf( Title, (BYTE *) pFile->Filename );
+	}
 
 	return (BYTE *) Title;
 }

@@ -33,7 +33,7 @@ public:
 	}
 
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
-	BYTE *GetTitleString( NativeFile *pFile);
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags);
 
 	int	ReadFile(DWORD FileID, CTempFile &store);
 	int	WriteFile(NativeFile *pFile, CTempFile &store);

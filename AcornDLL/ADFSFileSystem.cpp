@@ -671,29 +671,37 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 	return hint;
 }
 
-BYTE *ADFSFileSystem::GetTitleString( NativeFile *pFile )
+BYTE *ADFSFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE ADFSPath[512];
 
-	std::string sPath = "ADFS::";
-	
-	if ( MYFSID==FSID_ADFS_D )
+	rstrncpy( ADFSPath, (BYTE *) "ADFS::", 511 );
+
+	if ( MYFSID == FSID_ADFS_D )
 	{
-		sPath += std::string( (char *) DiscName );
+		rstrncat( ADFSPath, DiscName, 511 );
 	}
 	else
 	{
-		sPath += "0";
+		rstrncat( ADFSPath, (BYTE *) "0", 511 );
 	}
-	
-	sPath += "." + std::string( (char *) path );
+
+	rstrncat( ADFSPath, (BYTE *) ".", 511 );
+	rstrncat( ADFSPath, path, 511 );
 
 	if ( pFile != nullptr )
 	{
-		sPath += "." + std::string( (char *) pFile->Filename ) + " > ";
-	}
+		rstrncat( ADFSPath, (BYTE *) ".", 511 );
+		rstrncat( ADFSPath, (BYTE *) pFile->Filename, 511 );
 
-	rstrncpy( ADFSPath, (BYTE *) sPath.c_str(), 511 );
+		if ( Flags & TF_Titlebar )
+		{
+			if ( !(Flags & TF_Final ) )
+			{
+				rstrncat( ADFSPath, (BYTE *) " > ", 511 );
+			}
+		}
+	}
 
 	return ADFSPath;
 }

@@ -27,7 +27,7 @@ public:
 
 	DataSource *FileDataSource( DWORD FileID );
 
-	BYTE *GetTitleString( NativeFile *pFile = nullptr );
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 
 	BYTE *GetStatusString( int FileIndex, int SelectedItems )
 	{

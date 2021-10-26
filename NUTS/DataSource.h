@@ -65,6 +65,8 @@ public:
 	DWORD Flags;
 	DWORD DataOffset;
 
+	BYTEString SourceDesc;
+
 public:
 	virtual void Retain( void )
 	{

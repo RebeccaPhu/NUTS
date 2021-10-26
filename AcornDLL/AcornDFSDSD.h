@@ -128,7 +128,7 @@ public:
 		return status;
 	}
 
-	BYTE *GetTitleString( NativeFile *pFile = nullptr )
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags )
 	{
 		static BYTE title[64];
 

@@ -253,7 +253,7 @@ FSHint D64FileSystem::Offer( BYTE *Extension )
 }
 
 
-BYTE *D64FileSystem::GetTitleString( NativeFile *pFile )
+BYTE *D64FileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE title[512];
 	
@@ -271,6 +271,15 @@ BYTE *D64FileSystem::GetTitleString( NativeFile *pFile )
 	else
 	{
 		rsprintf( title, "%s.%s", pFile->Filename, pFile->Extension );
+
+		if ( Flags & TF_Titlebar )
+		{
+			if ( !(Flags & TF_Final ) )
+			{
+				// ">" happens to be in the same place in both PETSCIIs and ASCII.
+				rsprintf( title, "%s.%s > ", (BYTE *) pFile->Filename, (BYTE *) pFile->Extension );
+			}
+		}
 	}
 
 	return title;

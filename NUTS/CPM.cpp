@@ -78,18 +78,40 @@ int CPMFileSystem::WriteExtent( DWORD LBA, DWORD Length, BYTE *Buffer )
 	return 0;
 }
 
-BYTE *CPMFileSystem::GetTitleString( NativeFile *pFile )
+BYTE *CPMFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	/* No directories, so this one is easy */
 	static BYTE Title[ 256 ];
 
-	if ( pFile == nullptr )
+	if ( Flags & TF_Titlebar )
 	{
-		rsprintf( Title, "%s::/", dpb.ShortFSName );
+		if ( pFile == nullptr )
+		{
+			rsprintf( Title, "%s::/", dpb.ShortFSName );
+		}
+		else
+		{
+			rsprintf( Title, "%s::/%s.%s > ", dpb.ShortFSName, (BYTE *) pFile->Filename, (BYTE *) pFile->Extension );
+		}
 	}
-	else
+	else if ( Flags & TF_FileOps )
 	{
-		rsprintf( Title, "%s::/%s.%s > ", dpb.ShortFSName, pFile->Filename, pFile->Extension );
+		if ( pFile == nullptr )
+		{
+			rsprintf( Title, "%s::/", dpb.ShortFSName );
+		}
+		else
+		{
+			rsprintf( Title, "%s::/%s.%s", dpb.ShortFSName, (BYTE *) pFile->Filename, (BYTE *) pFile->Extension );
+
+			if ( Flags & TF_Titlebar )
+			{
+				if ( !(Flags & TF_Final ) )
+				{
+					rstrncat( Title, (BYTE *) " > ", 255 );
+				}
+			}
+		}
 	}
 
 	return Title;

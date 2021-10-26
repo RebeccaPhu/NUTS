@@ -28,7 +28,7 @@ public:
 		return false;
 	}
 
-	BYTE *GetTitleString( NativeFile *pFile = nullptr ) {
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags ) {
 		static char *title = "My Computer";
 
 		return (BYTE *) title;

@@ -222,13 +222,13 @@ BYTE *TAPFileSystem::DescribeFile( DWORD FileIndex )
 }
 
 
-BYTE *TAPFileSystem::GetTitleString( NativeFile *pFile = nullptr )
+BYTE *TAPFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE title[ 1024 ];
 	
 	if ( pFile != nullptr )
 	{
-		rsprintf( title, "%s", pFile->Filename );
+		rsprintf( title, "%s", (BYTE *) pFile->Filename );
 	}
 	else
 	{

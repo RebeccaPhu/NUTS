@@ -36,7 +36,7 @@ public:
 	}
 
 public:
-	BYTE *GetTitleString( NativeFile *pFile = nullptr );
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *DescribeFile( DWORD FileIndex );
 

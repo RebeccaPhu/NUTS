@@ -579,18 +579,28 @@ BYTE *ADFSEFileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 	return status;
 }
 
-BYTE *ADFSEFileSystem::GetTitleString( NativeFile *pFile )
+BYTE *ADFSEFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE ADFSPath[512];
 
-	std::string sPath = "ADFS::" + std::string( (char *) pFSMap->DiscName ) + "." + std::string( (char *) path );
+	rstrncpy( ADFSPath, (BYTE *) "ADFS::", 511 );
+	rstrncat( ADFSPath, pFSMap->DiscName, 511 );
+	rstrncat( ADFSPath, (BYTE *) ".", 511 );
+	rstrncat( ADFSPath, path, 511 );
 
 	if ( pFile != nullptr )
 	{
-		sPath += "." + std::string( (char *) pFile->Filename ) + " > ";
-	}
+		rstrncat( ADFSPath, (BYTE *) ".", 511 );
+		rstrncat( ADFSPath, (BYTE *) pFile->Filename, 511 );
 
-	rstrncpy( ADFSPath, (BYTE *) sPath.c_str(), 511 );
+		if ( Flags & TF_Titlebar )
+		{
+			if ( !(Flags & TF_Final ) )
+			{
+				rstrncat( ADFSPath, (BYTE *) " > ", 511 );
+			}
+		}
+	}
 
 	return ADFSPath;
 }

@@ -114,13 +114,13 @@ int T64FileSystem::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  )
 	return pDirectory->ReadDirectory();
 }
 
-BYTE *T64FileSystem::GetTitleString( NativeFile *pFile )
+BYTE *T64FileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE Title[ 64 ];
 
 	if ( pFile != nullptr )
 	{
-		rsprintf( Title, "T64:%s:%s.%s", pDir->Container, pFile->Filename, pFile->Extension );
+		rsprintf( Title, "T64:%s:%s.%s", pDir->Container, (BYTE *) pFile->Filename, (BYTE *) pFile->Extension );
 	}
 	else
 	{

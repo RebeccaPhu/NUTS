@@ -535,15 +535,17 @@ unsigned int __stdcall FileOpThread(void *param) {
 				DWORD CFlags = CDF_ENTER_AFTER;
 
 				if ( IsInstall ) { CFlags |= CDF_INSTALL_OP; }
+
+				NativeFile CopyObject = iStep->Object;
 				
-				int FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+				int FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 
 				/* If the target FS doesn't understand the source encoding, then the source needs to translate the filename */
 				if ( FileResult == FILEOP_NEEDS_ASCII )
 				{
-					pSourceFS->MakeASCIIFilename( &iStep->Object );
+					pSourceFS->MakeASCIIFilename( &CopyObject );
 
-					FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+					FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 				}
 
 				if ( FileResult == FILEOP_EXISTS )
@@ -553,14 +555,14 @@ unsigned int __stdcall FileOpThread(void *param) {
 						/* Directory exists and the user would like to merge */
 						CFlags |= CDF_MERGE_DIR;
 
-						FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+						FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 					}
 					else if ( AlwaysRename )
 					{
 						/* Directory exists and the user would like to rename */
 						CFlags |= CDF_RENAME_DIR;
 
-						FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+						FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 					}
 					else
 					{
@@ -569,13 +571,13 @@ unsigned int __stdcall FileOpThread(void *param) {
 							/* User already agreed to this */
 							CFlags |= CDF_MERGE_DIR;
 
-							FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+							FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 						}
 						else if ( RenameAll )
 						{
 							CFlags |= CDF_RENAME_DIR;
 
-							FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+							FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 						}
 						else
 						{
@@ -597,13 +599,13 @@ unsigned int __stdcall FileOpThread(void *param) {
 							{
 								CFlags |= CDF_MERGE_DIR;
 
-								FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+								FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 							}
 							else if ( ( RenameOnce ) || ( RenameAll ) )
 							{
 								CFlags |= CDF_RENAME_DIR;
 
-								FileResult = pTargetFS->CreateDirectory( &iStep->Object, CFlags );
+								FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 							}
 						}
 					}
@@ -741,16 +743,18 @@ unsigned int __stdcall FileOpThread(void *param) {
 				
 				DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
 
-				int FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
+				NativeFile CopyObject = iStep->Object;
+
+				int FileResult = pTargetFS->WriteFile( &CopyObject, FileObj );
 
 				/* If the target FS doesn't understand the source encoding, then the source needs to translate the filename */
 				if ( FileResult == FILEOP_NEEDS_ASCII )
 				{
-					pSourceFS->MakeASCIIFilename( &iStep->Object );
+					pSourceFS->MakeASCIIFilename( &CopyObject );
 
-					DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+					DoSidecar( pSourceFS, pTargetFS, &CopyObject, true );
 
-					FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
+					FileResult = pTargetFS->WriteFile( &CopyObject, FileObj );
 				}
 
 				if ( FileResult == FILEOP_EXISTS )
@@ -758,30 +762,30 @@ unsigned int __stdcall FileOpThread(void *param) {
 					if ( !Confirm )
 					{
 						/* File exists and the user doesn't care */
-						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+						DoSidecar( pSourceFS, pTargetFS, &CopyObject, true );
 
-						pTargetFS->DeleteFile( &iStep->Object );
+						pTargetFS->DeleteFile( &CopyObject );
 
-						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+						DoSidecar( pSourceFS, pTargetFS, &CopyObject, true );
 
-						FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
+						FileResult = pTargetFS->WriteFile( &CopyObject, FileObj );
 
-						DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
+						DoSidecar( pSourceFS, pTargetFS, &CopyObject, false );
 					}
 					else
 					{
 						if ( YesToAll )
 						{
 							/* User already agreed to this */
-							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+							DoSidecar( pSourceFS, pTargetFS, &CopyObject, true );
 
-							pTargetFS->DeleteFile( &iStep->Object );
+							pTargetFS->DeleteFile( &CopyObject );
 
-							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+							DoSidecar( pSourceFS, pTargetFS, &CopyObject, true );
 
-							FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
+							FileResult = pTargetFS->WriteFile( &CopyObject, FileObj );
 
-							DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
+							DoSidecar( pSourceFS, pTargetFS, &CopyObject, false );
 						}
 						else if ( !NoToAll )
 						{
@@ -801,15 +805,15 @@ unsigned int __stdcall FileOpThread(void *param) {
 							/* Thread resumes here */
 							if ( ( YesOnce ) || ( YesToAll ) )
 							{
-								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+								DoSidecar( pSourceFS, pTargetFS, &CopyObject, true );
 
-								pTargetFS->DeleteFile( &iStep->Object );
+								pTargetFS->DeleteFile( &CopyObject );
 
-								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, true );
+								DoSidecar( pSourceFS, pTargetFS, &CopyObject, true );
 
-								FileResult = pTargetFS->WriteFile( &iStep->Object, FileObj );
+								FileResult = pTargetFS->WriteFile( &CopyObject, FileObj );
 
-								DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
+								DoSidecar( pSourceFS, pTargetFS, &CopyObject, false );
 							}
 						}
 					}
@@ -819,7 +823,7 @@ unsigned int __stdcall FileOpThread(void *param) {
 				}
 				else
 				{
-					DoSidecar( pSourceFS, pTargetFS, &iStep->Object, false );
+					DoSidecar( pSourceFS, pTargetFS, &CopyObject, false );
 				}
 
 
@@ -1088,7 +1092,7 @@ void DrawClippedTitleStack( std::vector<TitleComponent> *pStack, HDC hWindowDC, 
 
 		if ( ( i == pStack->size() ) && ( pFile->fileID < pSourceFS->pDirectory->Files.size() ) )
 		{
-			pString = pSourceFS->GetTitleString( pFile );
+			pString = pSourceFS->GetTitleString( pFile, TF_Final | TF_FileOps );
 		}
 
 		FullWidth += rstrnlen( pString, 8192 );
@@ -1129,7 +1133,7 @@ void DrawClippedTitleStack( std::vector<TitleComponent> *pStack, HDC hWindowDC, 
 
 		if ( ( i == pStack->size() ) && ( pFile->fileID < pSourceFS->pDirectory->Files.size() ) )
 		{
-			pString = pSourceFS->GetTitleString( pFile );
+			pString = pSourceFS->GetTitleString( pFile, TF_Final | TF_FileOps );
 		}
 
 		FontBitmap TitleString(
@@ -1205,7 +1209,7 @@ void DrawFilename( HWND hWnd, NativeFile *pFile )
 
 				FileSystem *pFS = (FileSystem *) CurrentAction.FS;
 
-				rstrncpy( title.String, pFS->GetTitleString( pFile ), 512 );
+				rstrncpy( title.String, pFS->GetTitleString( pFile, TF_FileOps ), 512 );
 			
 				title.Encoding = pFS->GetEncoding();
 			

@@ -222,7 +222,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	delete pGlobalError;
 
 #ifdef _DEBUG
-	_CrtDumpMemoryLeaks();
+//	_CrtDumpMemoryLeaks();
 #endif
 
 	return (int) msg.wParam;

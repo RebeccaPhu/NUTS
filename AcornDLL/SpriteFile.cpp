@@ -155,13 +155,20 @@ BYTE *SpriteFile::GetStatusString( int FileIndex, int SelectedItems )
 	return status;
 }
 
-BYTE *SpriteFile::GetTitleString( NativeFile *pFile )
+BYTE *SpriteFile::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
-	static BYTE ADFSPath[512];
+	static BYTE Title[ 256 ];
 
-	rsprintf( ADFSPath, "SpriteFS::$" );
+	if ( Flags & TF_Titlebar )
+	{
+		rsprintf( Title, (BYTE *) "SpriteFile::$" );
+	}
+	else
+	{
+		rsprintf( Title, (BYTE *) pFile->Filename );
+	}
 
-	return ADFSPath;
+	return Title;
 }
 
 int SpriteFile::FreeIcons( void )

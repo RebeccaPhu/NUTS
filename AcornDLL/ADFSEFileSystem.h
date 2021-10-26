@@ -97,7 +97,7 @@ public:
 
 	BYTE *DescribeFile(DWORD FileIndex);
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
-	BYTE *GetTitleString( NativeFile *pFile );
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 
 	FileSystem *FileFilesystem( DWORD FileID );
 	WCHAR *Identify( DWORD FileID );

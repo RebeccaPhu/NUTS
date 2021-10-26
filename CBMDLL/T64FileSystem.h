@@ -41,7 +41,7 @@ public:
 	int    SwapFile( DWORD FileID1, DWORD FileID2 );
 	int    Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 
-	BYTE   *GetTitleString( NativeFile *pFile = nullptr );
+	BYTE   *GetTitleString( NativeFile *pFile, DWORD Flags );
 	BYTE   *DescribeFile( DWORD FileIndex );
 	BYTE   *GetStatusString( int FileIndex, int SelectedItems );
 	WCHAR  *Identify( DWORD FileID );

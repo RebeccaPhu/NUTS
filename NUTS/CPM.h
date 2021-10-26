@@ -37,7 +37,7 @@ public:
 	}
 
 public:
-	virtual BYTE  *GetTitleString( NativeFile *pFile = nullptr );
+	virtual BYTE  *GetTitleString( NativeFile *pFile, DWORD Flags );
 	virtual BYTE  *DescribeFile( DWORD FileIndex );
 	virtual BYTE  *GetStatusString( int FileIndex, int SelectedItems );
 

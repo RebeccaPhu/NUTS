@@ -150,13 +150,13 @@ FSHint MacintoshMFSFileSystem::Offer( BYTE *Extension )
 	return hint;
 }
 
-BYTE *MacintoshMFSFileSystem::GetTitleString( NativeFile *pFile )
+BYTE *MacintoshMFSFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE Title[ 300 ];
 
 	rsprintf( Title, "MFS:" );
 
-	rstrncpy( &Title[ 4 ], VolRecord.VolumeName, VolRecord.VolumeName.length() );
+	rstrncpy( &Title[ 4 ], (BYTE *) VolRecord.VolumeName, VolRecord.VolumeName.length() );
 
 	if ( pFile != nullptr )
 	{
@@ -164,16 +164,22 @@ BYTE *MacintoshMFSFileSystem::GetTitleString( NativeFile *pFile )
 
 		Title[ p ] = ':';
 
-		rstrncpy( &Title[ p + 1 ], pFile->Filename, pFile->Filename.length() );
+		rstrncpy( &Title[ p + 1 ], (BYTE *) pFile->Filename, pFile->Filename.length() );
 
 		p++;
+	}
 
-		p += pFile->Filename.length();
+	if ( Flags & TF_Titlebar )
+	{
+		if ( !( Flags & TF_Final ) )
+		{
+			WORD p = rstrnlen( Title, 280 );
 
-		Title[ p + 0 ] = ' ';
-		Title[ p + 1 ] = 0xC8;
-		Title[ p + 2 ] = ' ';
-		Title[ p + 3 ] = 0;
+			Title[ p + 0 ] = ' ';
+			Title[ p + 1 ] = 0xC8;
+			Title[ p + 2 ] = ' ';
+			Title[ p + 3 ] = 0;
+		}
 	}
 
 	return Title;

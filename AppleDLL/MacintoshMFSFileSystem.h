@@ -35,7 +35,7 @@ private:
 public:
 	int Init(void);
 	FSHint Offer( BYTE *Extension );
-	BYTE *GetTitleString( NativeFile *pFile = nullptr );
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	std::vector<AttrDesc> GetAttributeDescriptions( void );
 	int ReadFile(DWORD FileID, CTempFile &store);
@@ -72,6 +72,8 @@ public:
 
 	int	ReplaceFile(NativeFile *pFile, CTempFile &store)
 	{
+		pFile->Length = store.Ext();
+
 		// Just delete and store
 		NativeFile newFile = *pFile;
 
@@ -80,13 +82,18 @@ public:
 
 		ReadFork( pFile->fileID, 0, forkObj );
 
-		WriteFork( 0, &forkObj );
-
 		int r = FileSystem::DeleteFile( pFile );
 
 		if ( r == NUTS_SUCCESS )
 		{
+			r = WriteFork( 0, &forkObj );
+		}
+
+		if ( r == NUTS_SUCCESS )
+		{
 			r = WriteFile( &newFile, store );
+
+			WriteCleanup();
 		}
 
 		return r;

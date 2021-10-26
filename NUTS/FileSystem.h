@@ -124,7 +124,7 @@ public:
 		return nullptr;
 	}
 
-	virtual	BYTE *GetTitleString( NativeFile *pFile = nullptr ) {
+	virtual	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags ) {
 		static char *baseTitle = "FileSystem";
 
 		return (BYTE *) baseTitle;

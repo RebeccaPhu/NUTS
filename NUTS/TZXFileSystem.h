@@ -29,7 +29,7 @@ public:
 
 		tzxpb = pb;
 
-		Flags = FSF_Creates_Image | FSF_Formats_Image | FSF_DynamicSize | FSF_Reorderable;
+		Flags = FSF_Creates_Image | FSF_Formats_Image | FSF_DynamicSize | FSF_Reorderable | FSF_Prohibit_Nesting;
 	}
 
 	~TZXFileSystem(void)
@@ -53,7 +53,7 @@ public:
 	virtual LocalCommands GetLocalCommands( void );
 	virtual int ExecLocalCommand( DWORD CmdIndex, std::vector<NativeFile> &Selection, HWND hParentWnd );
 
-	virtual BYTE *GetTitleString( NativeFile *pFile = nullptr );
+	virtual BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 	virtual BYTE *DescribeFile( DWORD FileIndex );
 	virtual BYTE *GetStatusString( int FileIndex, int SelectedItems );
 

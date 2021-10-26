@@ -14,7 +14,7 @@
 #include "archive_entry.h"
 #include "zip.h"
 
-BYTE *ZIPFile::GetTitleString( NativeFile *pFile )
+BYTE *ZIPFile::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE Title[ 384 ];
 
@@ -27,22 +27,28 @@ BYTE *ZIPFile::GetTitleString( NativeFile *pFile )
 		Title[ l - 1 ] = 0;
 	}
 
+	BYTE chevron[4] = { "   " };
+
 	if ( pFile != nullptr )
 	{
-		BYTE chevron[4] = { "   " };
-
 		chevron[ 1 ] = 175;
 
 		rstrncat( Title, (BYTE *) "/", 384 );
-		rstrncat( Title, pFile->Filename,384 );
+		rstrncat( Title, (BYTE *) pFile->Filename, 384 );
 
 		if ( pFile->Flags & FF_Extension )
 		{
 			rstrncat( Title, (BYTE *) ".", 384 );
-			rstrncat( Title, pFile->Extension, 384 );
+			rstrncat( Title, (BYTE *) pFile->Extension, 384 );
 		}
+	}
 
-		rstrncat( Title, chevron, 384 );
+	if ( Flags & TF_Titlebar )
+	{
+		if ( !(Flags & TF_Final ) )
+		{
+			rstrncat( Title, chevron, 384 );
+		}
 	}
 
 	return Title;

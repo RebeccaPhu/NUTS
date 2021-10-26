@@ -359,7 +359,7 @@ BYTE *AmigaFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 	return status;
 }
 
-BYTE *AmigaFileSystem::GetTitleString( NativeFile *pFile = nullptr )
+BYTE *AmigaFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	static BYTE title[ 512 ];
 
@@ -375,7 +375,15 @@ BYTE *AmigaFileSystem::GetTitleString( NativeFile *pFile = nullptr )
 	if ( pFile != nullptr )
 	{
 		rstrncat( title, (BYTE *) "/", 512 );
-		rstrncat( title, pFile->Filename, 512 );
+		rstrncat( title, (BYTE *) pFile->Filename, 512 );
+	}
+
+	if ( Flags & TF_Titlebar )
+	{
+		if ( !(Flags & TF_Final ) )
+		{
+			rstrncat( title, (BYTE *) " > ", 511 );
+		}
 	}
 
 	return title;

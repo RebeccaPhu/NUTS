@@ -291,7 +291,7 @@ BYTE *IECATAFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 	return status;
 }
 
-BYTE *IECATAFileSystem::GetTitleString( NativeFile *pFile )
+BYTE *IECATAFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
 	// TODO: Generate this properly
 	static BYTE title[512];
@@ -302,13 +302,15 @@ BYTE *IECATAFileSystem::GetTitleString( NativeFile *pFile )
 	}
 	else
 	{
-		if ( pFile->Flags & FF_Extension )
+		rsprintf( title, "%s.%s", (BYTE *) pFile->Filename, (BYTE *) pFile->Extension );
+
+		if ( Flags & TF_Titlebar )
 		{
-			sprintf_s( (char *) title, 512, "IECATA::%s/%s.%s", "$", (char *) pFile->Filename, (char *) pFile->Extension );
-		}
-		else
-		{
-			sprintf_s( (char *) title, 512, "IECATA::%s/%s", "$", (char *) pFile->Filename );
+			if ( !(Flags & TF_Final ) )
+			{
+				// ">" happens to be in the same place in both PETSCIIs and ASCII.
+				rsprintf( title, "%s.%s > ", (BYTE *) pFile->Filename, (BYTE *) pFile->Extension );
+			}
 		}
 	}
 

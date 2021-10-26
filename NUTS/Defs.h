@@ -122,6 +122,12 @@ typedef struct _TitleComponent {
 	DWORD Encoding;
 } TitleComponent;
 
+typedef enum _TitleFlags {
+	TF_Final    = 0x00000001,
+	TF_Titlebar = 0x00000002,
+	TF_FileOps  = 0x00000004,
+} TitleFlags;
+
 typedef enum _FSFlags {
 	FSF_Formats_Raw      = 0x00000001, /* FileSystem can be placed on a raw device such as a memory card or hard drive - NOT FLOPPIES */
 	FSF_Formats_Image    = 0x00000002, /* FileSystem can be used to format an image - everything should have this, but you never know */

@@ -124,7 +124,7 @@ public:
 		return ENCODING_ACORN;
 	}
 
-	BYTE *ADFSFileSystem::GetTitleString( NativeFile *pFile );
+	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 	BYTE *DescribeFile( DWORD FileIndex );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	WCHAR *Identify( DWORD FileID );

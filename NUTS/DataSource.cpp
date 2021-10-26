@@ -21,6 +21,8 @@ DataSource::DataSource(void)
 
 	DiskShapeSet     = false;
 	ComplexDiskShape = false;
+
+	SourceDesc = (BYTE *) "";
 }
 
 DataSource::~DataSource(void)

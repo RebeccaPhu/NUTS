@@ -9,7 +9,7 @@ class RawDataSource :
 	public DataSource
 {
 public:
-	RawDataSource(std::wstring RawFileName) : DataSource() {
+	RawDataSource(std::wstring RawFileName, BYTEString desc) : DataSource() {
 		ImageSource = RawFileName;
   
 		PhysicalDiskSize	= 0;
@@ -39,6 +39,8 @@ public:
 		}
 
 		Flags = DS_RawDevice;
+
+		SourceDesc = desc;
 	}
 
 	~RawDataSource(void) {

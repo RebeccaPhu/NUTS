@@ -2985,13 +2985,26 @@ void CFileViewer::ReCalculateTitleStack( )
 	{
 		TitleComponent t;
 
+		if ( (pFSStack->size() > 1 ) && ( iStack == pFSStack->begin() + 1 ) && ( (*iStack)->pSource != nullptr ) )
+		{
+			// Check if it's raw
+			if ( (*iStack)->pSource->Flags & DS_RawDevice )
+			{
+				t.Encoding = ENCODING_ASCII;
+				
+				rstrncpy( t.String, (BYTE * ) (*iStack)->pSource->SourceDesc, 511 );
+
+				pTitleStack->push_back( t );
+			}
+		}
+
 		if ( (*iStack)->EnterIndex == 0xFFFFFFFF )
 		{
-			strncpy_s( (char *) t.String, 512, (char *) (*iStack)->GetTitleString( nullptr ), 511 );
+			rstrncpy( t.String, (BYTE * ) (*iStack)->GetTitleString( nullptr, TF_Titlebar | TF_Final ), 511 );
 		}
 		else
 		{
-			strncpy_s( (char *) t.String, 512, (char *) (*iStack)->GetTitleString( &(*iStack)->pDirectory->Files[ (*iStack)->EnterIndex ] ), 511 );
+			rstrncpy( t.String, (BYTE * ) (*iStack)->GetTitleString( &(*iStack)->pDirectory->Files[ (*iStack)->EnterIndex ], TF_Titlebar ), 511 );
 		}
 
 		t.Encoding = (*iStack)->GetEncoding();
