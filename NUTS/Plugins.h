@@ -93,6 +93,20 @@ public:
 
 	NUTSPlugin *GetPlugin( DWORD FSID );
 
+	std::wstring GetSplash( )
+	{
+		std::wstring t;
+
+		EnterCriticalSection( &SplashLock );
+
+		t = PluginSplash;
+
+		LeaveCriticalSection( &SplashLock );
+
+		return t;
+	}
+
+
 private:
 	NUTSProviderList  Providers;
 	FSDescriptorList  FSDescriptors;
@@ -126,6 +140,19 @@ private:
 	DWORD FontID;
 	DWORD FSFTID;
 	DWORD TXID;
+
+	CRITICAL_SECTION SplashLock;
+
+	std::wstring PluginSplash;
+
+	void SetSplash( std::wstring t )
+	{
+		EnterCriticalSection( &SplashLock );
+
+		PluginSplash = t;
+
+		LeaveCriticalSection( &SplashLock );
+	}
 };
 
 extern CPlugins FSPlugins;

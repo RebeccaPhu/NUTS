@@ -327,6 +327,7 @@ typedef struct _IconCredit
 
 IconCredit BitmapIconCreds[] =
 {
+	{ IDB_ACORN,      L"Acorn Icon", L"FatCow Hosting Extra Icons 2", L"FatCow", L"CC Attribution 3.0 US", L"https://creativecommons.org/licenses/by/3.0/us/" },
 	{ IDB_APP,        L"Application Icon", L"Blue Bits Icons", L"Icojam", L"Freeware", L"" },
 	{ IDB_BINARY,     L"Mimetypes Binary Icon", L"Crystal Clear Icons", L"Everaldo Coelho", L"LGPL", L"http://www.gnu.org/licenses/lgpl-3.0.html" },
 	{ IDB_CDROM,      L"CD-Rom Icon", L"Influens Icons", L"Mat-u", L"CC Attribution-NonCommerical-NoDerivs 3.0 Unported", L"https://creativecommons.org/licenses/by-nc-nd/3.0/" },

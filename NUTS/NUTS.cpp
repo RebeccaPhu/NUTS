@@ -39,6 +39,7 @@ TCHAR szWindowClass[MAX_LOADSTRING]; // the main window class name
 
 HWND hMainWnd;	  // Main window handle
 HWND hNextClip;   // Next Clipboard Window
+HWND hSplashWnd;  // Splash Screen
 
 EncodingStatusBar *pStatusBar;
 
@@ -67,6 +68,8 @@ ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
+BOOL                LoadMainWindow( HINSTANCE hInstance );
+BOOL                ShowMainWindow( HINSTANCE hInstance );
 
 HWND   FocusPane   = NULL;
 HWND   DragSource  = NULL;
@@ -151,12 +154,132 @@ void UnloadStacks( void )
 	ExtReg.UnloadExtensions();
 }
 
+LRESULT CALLBACK SplashProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch ( message )
+	{
+	case WM_PAINT:
+		{
+			HDC hDC = GetDC( hWnd );
+
+			HDC hSplash = CreateCompatibleDC( hDC );
+			HDC hNutsLogo = CreateCompatibleDC( hDC );
+
+			HBITMAP hCanvas = CreateCompatibleBitmap( hDC, 300, 200 );
+
+			HGDIOBJ hOld = SelectObject( hSplash, hCanvas );
+			HGDIOBJ hOLDBM = SelectObject( hNutsLogo, LoadBitmap( hInst, MAKEINTRESOURCE( IDB_NUTSACORN ) ) );
+
+			HFONT h1Font = CreateFont(52,0,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
+						CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY, VARIABLE_PITCH,TEXT("Times New Roman"));
+
+			HFONT h2Font = CreateFont(16,0,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
+						CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY, VARIABLE_PITCH,TEXT("Arial"));
+
+			HFONT h3Font = CreateFont(12,0,0,0,FW_DONTCARE,FALSE,FALSE,FALSE,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,
+						CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY, VARIABLE_PITCH,TEXT("Arial"));
+
+			RECT r; GetClientRect( hWnd, &r );
+
+			FillRect( hSplash, &r, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
+
+			SetStretchBltMode( hSplash, 3 );
+
+			StretchBlt( hSplash, 20, 20, 64, 64, hNutsLogo, 0, 0, 64, 64, SRCCOPY );
+
+			RECT r2 = { 110, 25, 280, 80 };
+
+			SelectObject( hSplash, h1Font );
+
+			DrawText( hSplash, L"N.U.T.S.", 8, &r2, DT_CENTER | DT_VCENTER );
+
+			r2.top += 45;
+			r2.bottom += 45;
+
+			SelectObject( hSplash, h3Font );
+
+			DrawText( hSplash, L"The Native Universal Transfer System", 36, &r2, DT_CENTER | DT_VCENTER );
+
+			SelectObject( hSplash, h2Font );
+
+			RECT r3 = { 4, 100, 296, 120 };
+
+			DrawText( hSplash, L"Written by Rebecca Gellman - (C) 2021", 37, &r3, DT_CENTER | DT_VCENTER );
+
+			r3.top += 60;
+			r3.bottom += 60;
+
+			std::wstring t = FSPlugins.GetSplash();
+
+			if ( t == L"" ) { t= L"Loading Plugins..."; }
+
+			FillRect( hSplash, &r3, (HBRUSH) GetStockObject( WHITE_BRUSH ) );
+
+			DrawText( hSplash, t.c_str(), t.length(), &r3, DT_CENTER | DT_VCENTER );
+
+			BitBlt( hDC, 0, 0, 300, 200, hSplash, 0, 0, SRCCOPY );
+
+			ReleaseDC( hWnd, hDC );
+
+			SelectObject( hSplash, hOld );
+			SelectObject( hNutsLogo, hOLDBM );
+
+			DeleteObject( hCanvas );
+			DeleteObject( h1Font );
+			DeleteObject( h2Font );
+			DeleteObject( h3Font );
+			DeleteObject( hSplash );
+			DeleteObject( hNutsLogo );
+		}
+		break;
+
+	case WM_ENDSPLASH:
+		SetTimer( hSplashWnd, 0x4040, 1000, NULL );
+		break;
+
+	case WM_TIMER:
+		KillTimer( hSplashWnd, 0x4040 );
+
+		DestroyWindow( hSplashWnd );
+
+		ShowMainWindow( hInst );
+
+		break;
+	}
+
+	return DefWindowProc( hWnd, message, wParam, lParam );
+}
+
+void SetupSplashScreen( HINSTANCE hInstance )
+{
+	WNDCLASSEX wcex;
+
+	wcex.cbSize = sizeof(WNDCLASSEX);
+
+	wcex.style			= CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc	= SplashProc;
+	wcex.cbClsExtra		= 0;
+	wcex.cbWndExtra		= 0;
+	wcex.hInstance		= hInstance;
+	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.hCursor		= LoadCursor( NULL, IDC_ARROW );
+	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
+	wcex.lpszMenuName	= NULL;
+	wcex.lpszClassName	= L"NUTSSplashScreen";
+	wcex.hIconSm		= NULL; // LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+
+	RegisterClassEx(&wcex);
+}
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
                      int       nCmdShow)
 {
 //	_CrtSetBreakAlloc( 17209 );
+
+	SetupSplashScreen( hInstance );
+
 	pGlobalError = new NUTSError( 0, L"" );
 
 	UNREFERENCED_PARAMETER(hPrevInstance);
@@ -332,31 +455,9 @@ void SetUpBaseMappings( void )
 	ExtReg.RegisterExtension( L"LHA", FT_Archive,   FT_Archive );
 }
 
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) { 
+BOOL LoadMainWindow( HINSTANCE hInstance )
+{
 	HWND hWnd;
-
-	hInst = hInstance; // Store instance handle in our global variable
-
-	INITCOMMONCONTROLSEX icc;
-	icc.dwSize = sizeof(icc);
-	icc.dwICC = ICC_WIN95_CLASSES;
-	InitCommonControlsEx(&icc);
-
-	LoadLibrary( L"RichEd20.dll" );
-
-	BitmapCache.LoadBitmaps();
-
-	SetUpBaseMappings();
 
 	DWORD WindowWidth  = Preference( L"WindowWidth",  (DWORD) 800 );
 	DWORD WindowHeight = Preference( L"WindowHeight", (DWORD) 500 );
@@ -374,10 +475,83 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 		return FALSE;
 
 	hMainWnd	= hWnd;
-
 	CharMap::hMainWnd = hWnd;
 
+	return TRUE;
+}
+
+
+
+BOOL LoadSplashWindow( HINSTANCE hInstance )
+{
+	int screenX = GetSystemMetrics( SM_CXSCREEN );
+	int screenY = GetSystemMetrics( SM_CYSCREEN );
+
+	int xc = ( screenX / 2 ) - 150;
+	int yc = ( screenY / 2 ) - 100;
+
+	hSplashWnd = CreateWindowEx(
+		NULL,
+		L"NUTSSplashScreen",
+		L"Splash Screen",
+		WS_DLGFRAME | WS_VISIBLE | WS_POPUP,
+		xc, yc, 300, 200,
+		GetDesktopWindow(), NULL, hInstance, NULL
+	);
+
+	if ( !hSplashWnd )
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+unsigned int dwPluginThreadID;
+HANDLE hPluginThread = NULL;
+
+unsigned int __stdcall _PluginThread(void *param)
+{
 	FSPlugins.LoadPlugins();
+
+	return 0;
+}
+
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) { 
+	hInst = hInstance; // Store instance handle in our global variable
+
+	INITCOMMONCONTROLSEX icc;
+	icc.dwSize = sizeof(icc);
+	icc.dwICC = ICC_WIN95_CLASSES;
+	InitCommonControlsEx(&icc);
+
+	LoadLibrary( L"RichEd20.dll" );
+
+	BitmapCache.LoadBitmaps();
+
+	SetUpBaseMappings();
+	
+	if ( !LoadSplashWindow( hInstance ) )
+	{
+		return FALSE;
+	}
+
+	hPluginThread = (HANDLE) _beginthreadex(NULL, NULL, _PluginThread, NULL, NULL, &dwPluginThreadID);
+
+	return TRUE;
+}
+
+BOOL ShowMainWindow( HINSTANCE hInstance )
+{
+	if ( hPluginThread != NULL )
+	{
+		CloseHandle( hPluginThread );
+	}
+
+	if ( !LoadMainWindow( hInstance ) )
+	{
+		return FALSE;
+	}
 
 	ConfigureExtrasMenu();
 
@@ -393,17 +567,17 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	ReCalculateTitleStack( leftPane );
 	ReCalculateTitleStack( rightPane );
 
-	ShowWindow(hWnd, nCmdShow);
+	ShowWindow( hMainWnd, SW_SHOW );
 
-	UpdateWindow(hWnd);
+	UpdateWindow(hMainWnd);
 
 	SetFocus( leftPane->hWnd );
 
 	FocusPane = leftPane->hWnd;
 
-	SetForegroundWindow( hWnd );
-	SetActiveWindow( hWnd );
-	SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
+	SetForegroundWindow( hMainWnd );
+	SetActiveWindow( hMainWnd );
+	SetWindowPos( hMainWnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE );
 
 	return TRUE;
 }

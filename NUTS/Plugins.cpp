@@ -20,6 +20,7 @@
 
 
 extern DataSourceCollector *pCollector;
+extern HWND hSplashWnd;
 
 CPlugins FSPlugins;
 
@@ -30,6 +31,10 @@ CPlugins::CPlugins()
 	pPC437Font = nullptr;
 
 	FontNames[ FONTID_PC437 ] = L"PC437";
+
+	PluginSplash = L"";
+
+	InitializeCriticalSection( &SplashLock );
 }
 
 CPlugins::~CPlugins()
@@ -49,6 +54,8 @@ CPlugins::~CPlugins()
 	{
 		free( pPC437Font );
 	}
+
+	DeleteCriticalSection( &SplashLock );
 }
 
 void CPlugins::LoadPlugins()
@@ -91,6 +98,11 @@ void CPlugins::LoadPlugins()
 
 		FindClose( hFind );
 	}
+
+	SetSplash( L"Loaded " + std::to_wstring( (QWORD) Providers.size() ) + L" plugins." );
+
+	::PostMessage( hSplashWnd, WM_PAINT, 0, 0 );
+	::PostMessage( hSplashWnd, WM_ENDSPLASH, 0, 0 );
 }
 
 void CPlugins::LoadPlugin( WCHAR *plugin )
@@ -174,6 +186,10 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 			p.ProviderID = MAKEPROVID( PluginID, pid );
 
 			Providers.push_back( p );
+
+			SetSplash( L"Loaded Plugin: " + p.FriendlyName );
+
+			::PostMessage( hSplashWnd, WM_PAINT, 0, 0 );
 
 			/* Get Filesystems and load them */
 			cmd.CommandID = PC_ReportFileSystems;
