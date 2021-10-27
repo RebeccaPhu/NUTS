@@ -248,7 +248,7 @@ LRESULT CharMap::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 		case WM_LBUTTONUP:
 			{
-				if ( ( ci > 0 ) && ( ci <= 255 ) )
+				if ( ( ci > 0 ) && ( ci <= 255 ) && ( hParentWnd != NULL ) )
 				{
 					::SendMessage( hParentWnd, WM_CHARMAPCHAR, (WPARAM) ci, 0 );
 				}
@@ -347,6 +347,14 @@ void CharMap::PaintWindow( void )
 void CharMap::SetFocusWindow( HWND hParent )
 {
 	CharMap::hParentWnd = hParent;
+}
+
+void CharMap::RemoveFocus( HWND hParent )
+{
+	if ( CharMap::hParentWnd == hParent )
+	{
+		CharMap::hParentWnd = NULL;
+	}
 }
 
 void CharMap::SetFont( DWORD FontID )

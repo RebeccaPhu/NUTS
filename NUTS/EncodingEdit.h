@@ -6,6 +6,11 @@
 #ifndef FONTBITMAP_PLUGIN
 #include "CharMap.h"
 #include "IconButton.h"
+
+extern HWND  hMainWnd;
+extern HWND  hCharmapFocusWnd;
+extern DWORD CharmapFontID;
+
 #endif
 
 #include <map>

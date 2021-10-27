@@ -19,6 +19,8 @@ public:
 
 	static void OpenTheMap( HWND hParent, DWORD FontID );
 	static void SetFocusWindow( HWND hParent );
+	static void RemoveFocus( HWND hParent );
+
 public:
 	LRESULT WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam );
 

@@ -227,6 +227,12 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 		break;
 
+#ifndef FONTBITMAP_PLUGIN
+	case WM_DESTROY:
+		CharMap::RemoveFocus( hWnd );
+		break;
+#endif
+
 	case WM_GETDLGCODE:
 		switch ( wParam )
 			{
@@ -1083,6 +1089,9 @@ void EncodingEdit::SetBuddy( EncodingEdit *pBuddy )
 #ifndef FONTBITMAP_PLUGIN
 void EncodingEdit::OpenCharacterMap( void )
 {
-	CharMap::OpenTheMap( hWnd, CurrentFontID );
+	hCharmapFocusWnd = hWnd;
+	CharmapFontID    = CurrentFontID;
+
+	::PostMessage( hMainWnd, WM_OPENCHARMAP, 0, 0 );
 }
 #endif

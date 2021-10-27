@@ -82,6 +82,9 @@ std::deque<FSAction> ActionQueue;
 
 HANDLE hActionEvent, hActionShutdown, hFSActionThread;
 
+HWND  hCharmapFocusWnd;
+DWORD CharmapFontID;
+
 void InitFSActions( void )
 {
 	unsigned int	dwthreadid;
@@ -1003,6 +1006,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+
+	case WM_OPENCHARMAP:
+		CharMap::OpenTheMap( hCharmapFocusWnd, CharmapFontID );
+		break;
 
 	case WM_UPDATESTATUS:
 		if (wParam == (WPARAM) leftPane)

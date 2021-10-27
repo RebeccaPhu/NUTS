@@ -512,6 +512,7 @@ typedef struct _TapeIndex {
 #define WM_TAPEKEY_UP       (WM_APP + 37)
 #define WM_CUEINDEX_JUMP    (WM_APP + 38)
 #define WM_TBCLOSED         (WM_APP + 39)
+#define WM_OPENCHARMAP      (WM_APP + 40)
 
 #define TUID_TEXT           0x80000001
 #define TUID_MOD_MUSIC      0x80000002
