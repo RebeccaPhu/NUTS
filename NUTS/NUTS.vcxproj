@@ -206,6 +206,7 @@
     <ClCompile Include="IconButton.cpp" />
     <ClCompile Include="IconRatio.cpp" />
     <ClCompile Include="ImageWizard.cpp" />
+    <ClCompile Include="License.cpp" />
     <ClCompile Include="MemorySource.cpp" />
     <ClCompile Include="MikModNUTSRawDrv.cpp" />
     <ClCompile Include="MODTranslator.cpp" />
@@ -289,6 +290,7 @@
     <ClInclude Include="HEXDumpTranslator.h" />
     <ClInclude Include="IconButton.h" />
     <ClInclude Include="IconRatio.h" />
+    <ClInclude Include="License.h" />
     <ClInclude Include="MemorySource.h" />
     <ClInclude Include="MikModNUTSRawDrv.h" />
     <ClInclude Include="MODTranslator.h" />

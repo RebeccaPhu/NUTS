@@ -19,6 +19,7 @@
 #include "NUTSError.h"
 #include "FileOps.h"
 #include "CharMap.h"
+#include "License.h"
 
 #include <winioctl.h>
 #include <process.h>
@@ -241,6 +242,11 @@ LRESULT CALLBACK SplashProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 		KillTimer( hSplashWnd, 0x4040 );
 
 		DestroyWindow( hSplashWnd );
+
+		if ( !DoAcceptLicense() )
+		{
+			exit( 0 );
+		}
 
 		ShowMainWindow( hInst );
 

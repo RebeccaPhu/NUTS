@@ -104,6 +104,7 @@
 #define IDB_TZX                         177
 #define IDD_NEWDIR                      178
 #define IDD_WIZ_FORMAT                  179
+#define IDD_ACCEPTLICENSE               180
 #define AFX_IDC_PRINT_DOCNAME           201
 #define AFX_IDC_PRINT_PRINTERNAME       202
 #define AFX_IDC_PRINT_PORTNAME          203
@@ -172,6 +173,9 @@
 #define IDC_FORMAT_PROVIDER             1051
 #define IDC_FORMAT_FORMAT               1052
 #define IDC_SELECT_FORMAT               1054
+#define IDC_CHECK1                      1057
+#define IDC_LICACCEPT                   1057
+#define IDC_LICTEXT2                    1058
 #define AFX_IDC_COLOR_BLACK             1100
 #define AFX_IDC_COLOR_WHITE             1101
 #define AFX_IDC_COLOR_RED               1102
@@ -734,9 +738,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        178
+#define _APS_NEXT_RESOURCE_VALUE        181
 #define _APS_NEXT_COMMAND_VALUE         40075
-#define _APS_NEXT_CONTROL_VALUE         1057
+#define _APS_NEXT_CONTROL_VALUE         1059
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

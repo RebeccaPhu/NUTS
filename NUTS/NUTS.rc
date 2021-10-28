@@ -593,6 +593,18 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
 END
 
+IDD_ACCEPTLICENSE DIALOGEX 0, 0, 472, 259
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_CAPTION
+CAPTION "NUTS Software License"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Proceed",IDOK,355,238,50,14,WS_DISABLED
+    PUSHBUTTON      "Cancel",IDCANCEL,415,238,50,14
+    CONTROL         "I accept the terms of this simple license agreement, and understand my responsibilities and the disclaimers.",IDC_LICACCEPT,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,225,458,10
+    CONTROL         "",IDC_LICTEXT2,"RichEdit20W",ES_MULTILINE | ES_AUTOHSCROLL | WS_BORDER | WS_VSCROLL | WS_TABSTOP,7,7,458,213
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -723,6 +735,14 @@ BEGIN
         VERTGUIDE, 80
         TOPMARGIN, 7
         BOTTOMMARGIN, 213
+    END
+
+    IDD_ACCEPTLICENSE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 465
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 252
     END
 END
 #endif    // APSTUDIO_INVOKED

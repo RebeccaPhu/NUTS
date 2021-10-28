@@ -297,6 +297,9 @@
     <ClCompile Include="IconButton.cpp">
       <Filter>Source Files\UI\Elements</Filter>
     </ClCompile>
+    <ClCompile Include="License.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -541,6 +544,9 @@
     </ClInclude>
     <ClInclude Include="IconButton.h">
       <Filter>Header Files\UI\Elements</Filter>
+    </ClInclude>
+    <ClInclude Include="License.h">
+      <Filter>Header Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
