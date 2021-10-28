@@ -100,7 +100,7 @@ public:
 
 		if ( source.bytes == 0 ) { bytes = 0; pMem = empty; empty[ 0 ] = 0; return *this; }
 
-		pMem = (BYTE *) malloc( source.bytes );
+		pMem = (BYTE *) malloc( max( source.bytes, 32 ) );
 
 		memcpy( pMem, source.pMem, source.bytes );
 
