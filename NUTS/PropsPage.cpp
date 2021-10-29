@@ -1701,6 +1701,9 @@ unsigned int __stdcall ToolThread(void *param) {
 
 		hToolThread = NULL;
 
+		// Pause a moment so the user can see stuff has happened
+		Sleep( 1500 );
+
 		::PostMessage( hToolDlg, WM_THREADDONE, 0, 0 );
 	}
 
