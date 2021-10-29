@@ -42,9 +42,27 @@ public:
 			rsprintf( status, "%d Items Selected", SelectedItems );
 		}
 		else if ( pDirectory->Files[FileIndex].Flags & FF_Directory )
-			rsprintf( status, "%s - Folder", (BYTE *) pDirectory->Files[FileIndex].Filename );
+		{
+			if ( pDirectory->Files[FileIndex].Flags & FF_Extension )
+			{
+				rsprintf( status, "%s.%s - Folder", (BYTE *) pDirectory->Files[FileIndex].Filename, (BYTE *) pDirectory->Files[FileIndex].Extension );
+			}
+			else
+			{
+				rsprintf( status, "%s - Folder", (BYTE *) pDirectory->Files[FileIndex].Filename );
+			}
+		}
 		else
-			rsprintf( status, "%s - %d bytes", (BYTE *) pDirectory->Files[FileIndex].Filename, pDirectory->Files[FileIndex].Length );
+		{
+			if ( pDirectory->Files[FileIndex].Flags & FF_Extension )
+			{
+				rsprintf( status, "%s.%s - %d bytes", (BYTE *) pDirectory->Files[FileIndex].Filename, (BYTE *) pDirectory->Files[FileIndex].Extension, pDirectory->Files[FileIndex].Length );
+			}
+			else
+			{
+				rsprintf( status, "%s - %d bytes", (BYTE *) pDirectory->Files[FileIndex].Filename, pDirectory->Files[FileIndex].Length );
+			}
+		}
 
 		return status;
 	}
