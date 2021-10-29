@@ -1335,6 +1335,19 @@ int  MacintoshMFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &si
 		memcpy( &sidecarF[ 2 ], (BYTE *) pFile->Filename, pFile->Filename.length() );
 
 		sidecar.Filename = BYTEString( (BYTE *) sidecarF, sidecarF.length() );
+
+		if ( pFile->Flags & FF_Extension )
+		{
+			WORD l = sidecarF.length() + 1 + pFile->Extension.length() + 1;
+
+			BYTEString sidecarE = BYTEString( l );
+
+			rstrncpy( (BYTE *) sidecarE, (BYTE *) sidecarF, l );
+			rstrncat( (BYTE *) sidecarE, (BYTE *) ".", l );
+			rstrncat( (BYTE *) sidecarE, (BYTE *) pFile->Extension, l );
+
+			sidecar.Filename = BYTEString( (BYTE *) sidecarE, sidecarE.length() );
+		}
 	}
 	else
 	{
@@ -1358,13 +1371,7 @@ int  MacintoshMFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &si
 
 		obj->Read( Data, 16 );
 
-		if ( 
-			( !rstrncmp( Data, (BYTE *) "Macintosh       ", 16 ) ) &&
-			( !rstrncmp( Data, (BYTE *) "Mac OS X        ", 16 ) ) &&
-			( !rstrncmp( Data, (BYTE *) "macOS           ", 16 ) )
-			) {
-				return NUTSError( 0x809, L"Bad AppleDouble file (unrecognised home file system)" );
-		}
+		// Skip the Home FS. It seems it's not reliably set anyway.
 
 		WORD forks;
 		DWORD Offset1 = 0;
@@ -1407,7 +1414,7 @@ int  MacintoshMFSFileSystem::ImportSidecar( NativeFile *pFile, SidecarImport &si
 			
 			memset( (BYTE *) *OverrideFinder, 0, 16 );
 
-			obj->Read( (BYTE *) *OverrideFinder, max( 16, Length1 ) );
+			obj->Read( (BYTE *) *OverrideFinder, min( 16, Length1 ) );
 		}
 
 		if ( Offset2 != 0 )
