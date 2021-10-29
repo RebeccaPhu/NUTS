@@ -8,6 +8,7 @@
 #include "Plugins.h"
 
 #include <CommCtrl.h>
+#include <WindowsX.h>
 #include "resource.h"
 
 #define FNTop     46
@@ -62,6 +63,7 @@ bool    RenameOnce  = false;
 bool    AlwaysRename= false;
 bool    AlwaysMerge = false;
 bool    DirDialog   = false;
+bool    RecurseAttr = false;
 
 DWORD   HuntCount   = 0;
 
@@ -127,26 +129,29 @@ void CreateOpSteps( std::vector<NativeFile> Selection )
 			::PostMessage( hFileWnd, WM_FILEOP_NOTICE, 0, (LPARAM) HuntCount );
 
 			/* Found a directory. Recurse it. */
-			FileOpStep step;
+			if ( RecurseAttr )
+			{
+				FileOpStep step;
 
-			step.Object = *iFile;
-			step.Step   = Op_Directory;
+				step.Object = *iFile;
+				step.Step   = Op_Directory;
 
-			OpSteps.push_back( step );
+				OpSteps.push_back( step );
 
-			TotalOps++;
+				TotalOps++;
 
-			pSourceFS->ChangeDirectory( iFile->fileID );
+				pSourceFS->ChangeDirectory( iFile->fileID );
 
-			CreateOpSteps( pSourceFS->pDirectory->Files );
+				CreateOpSteps( pSourceFS->pDirectory->Files );
 
-			FileOpStep ParentStep;
+				FileOpStep ParentStep;
 			
-			ParentStep.Step = Op_Parent;
+				ParentStep.Step = Op_Parent;
 
-			OpSteps.push_back( ParentStep );
+				OpSteps.push_back( ParentStep );
 
-			pSourceFS->Parent();
+				pSourceFS->Parent();
+			}
 
 			FileOpStep Final;
 
@@ -1701,12 +1706,68 @@ INT_PTR CALLBACK FileWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 	return FALSE;
 }
 
+INT_PTR CALLBACK HowWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg )
+	{
+	case WM_INITDIALOG:
+		Button_SetCheck( GetDlgItem( hwndDlg, IDC_JUSTTHESE ), BST_CHECKED );
+		break;
+
+	case WM_COMMAND:
+		if ( wParam == IDOK )
+		{
+			EndDialog( hwndDlg, 0 );
+
+			break;
+		}
+
+		if ( wParam == IDC_JUSTTHESE )
+		{
+			RecurseAttr = false;
+
+			break;
+		}
+
+		if ( wParam == IDC_ANDTHOSE )
+		{
+			RecurseAttr = true;
+
+			break;
+		}
+	}
+
+	return FALSE;
+}
+
 int	FileOP_Handler(AppAction &Action) {
 
 	CurrentAction = Action;
 	CurrentObject = Action.Selection[ 0 ];
 
 	Confirm = Preference( L"Confirm", true );
+
+	RecurseAttr = false;
+
+	if ( Action.Action == AA_SET_PROPS )
+	{
+		NativeFileIterator iFile;
+
+		bool CanRecurse = false;
+
+		for ( iFile = Action.Selection.begin(); iFile != Action.Selection.end(); iFile++ )
+		{
+			if ( iFile->Flags & FF_Directory )
+			{
+				CanRecurse = true;
+			}
+		}
+
+		if ( CanRecurse )
+		{
+			DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_HOWPROPS), Action.hWnd, HowWindowProc, NULL );
+		}
+	}
 
 	DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILEOPS), Action.hWnd, FileWindowProc, NULL);
 

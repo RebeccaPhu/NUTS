@@ -605,6 +605,19 @@ BEGIN
     CONTROL         "",IDC_LICTEXT2,"RichEdit20W",ES_MULTILINE | ES_AUTOHSCROLL | WS_BORDER | WS_VSCROLL | WS_TABSTOP,7,7,458,213
 END
 
+IDD_HOWPROPS DIALOGEX 0, 0, 359, 94
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "Apply Attribute Changes"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,302,73,50,14
+    LTEXT           "You can apply these property changes to just the highlighted selection in the file viewer pane, or to all selected objects and their contents (if the selection includes one or more directories).\r\n\r\nHow would like to proceed?",IDC_STATIC,7,7,345,31
+    CONTROL         "Apply attribute changes to the selected items only.",IDC_JUSTTHESE,
+                    "Button",BS_AUTORADIOBUTTON | WS_GROUP,7,49,345,9
+    CONTROL         "Apply attribute changes to selected items and their contents.",IDC_ANDTHOSE,
+                    "Button",BS_AUTORADIOBUTTON,7,61,345,10
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -743,6 +756,14 @@ BEGIN
         RIGHTMARGIN, 465
         TOPMARGIN, 7
         BOTTOMMARGIN, 252
+    END
+
+    IDD_HOWPROPS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 352
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 87
     END
 END
 #endif    // APSTUDIO_INVOKED
