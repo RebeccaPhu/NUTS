@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <process.h>
 #include <assert.h>
+#include <math.h>
 
 std::map<HWND, CSCREENContentViewer *> CSCREENContentViewer::viewers;
 
@@ -689,6 +690,14 @@ int CSCREENContentViewer::Translate( void ) {
 			DoneEffects++;
 		}
 
+		if ( Effects & Effect_CRTGlow )
+		{
+			DoCRTGlow( &pixels1, bmi );
+			DoCRTGlow( &pixels2, bmi );
+
+			DoneEffects++;
+		}
+
 		if ( DoneEffects > 0 )
 		{
 			DoEffectMultiplier( DoneEffects, &pixels1, bmi );
@@ -1318,6 +1327,72 @@ void CSCREENContentViewer::DoSnow( DWORD **pPixels, BITMAPINFO *pBMI )
 		pix[ 1 ] = (BYTE) g;
 		pix[ 2 ] = (BYTE) r;
 	}
+}
+
+#define GLOW_THRESHOLD 0x55
+#define GLOW_RADIUS    4
+
+void CSCREENContentViewer::AddGlowSpot( BYTE *out, LONG px, LONG py, LONG pix, LONG r, LONG t, LONG mx, LONG my )
+{
+	for ( long gy = 0 - r; gy < r; gy++ )
+	{
+		// Use pythagoras to get this line length
+		long lx = (long) sqrt( ( (double) r * (double) r ) + ( (double) gy * (double) gy ) );
+
+		long yp = py + gy;
+		
+		for ( long gx = 0 - lx; gx < lx; gx++ )
+		{
+			long xp = px + gx;
+
+			if ( ( xp != px ) && ( yp != py ) ) // Don't fill in the center spot
+			{
+				if ( ( xp > 0 ) && ( xp < mx ) && ( yp > 0 ) && ( yp < my ) )
+				{
+					// Now we need to reverse the radius - pythagoras again.
+					long xr = (long) sqrt( ( (double) gx * (double) gx ) + ( (double) gy * (double) gy ) );
+
+					double tt = (double) t / pow( 2.0, (double) xr );
+
+					DWORD offset = ( yp * (mx * 4 ) ) + ( xp * 4 ) + pix;
+
+					if ( out[ offset ] < tt )
+					{
+						out[ offset ] = (BYTE) ( ( (double) out[offset] + (double) tt ) / 2.0 );
+					}
+				}
+			}
+		}
+	}
+}
+
+void CSCREENContentViewer::DoCRTGlow( DWORD **pPixels, BITMAPINFO *pBMI )
+{
+	DWORD Pitch  = pBMI->bmiHeader.biWidth * 4;
+	BYTE *pixels = (BYTE *) *pPixels;
+	BYTE *out    = (BYTE *) malloc( pBMI->bmiHeader.biSizeImage );
+
+	memcpy( out, pixels, pBMI->bmiHeader.biSizeImage );
+
+	for ( LONG py=0; py<pBMI->bmiHeader.biHeight; py++ )
+	{
+		for ( LONG px=0; px<pBMI->bmiHeader.biWidth; px++ )
+		{
+			for ( LONG pix=0; pix<3; pix++ ) // B, G, R
+			{
+				DWORD offset = ( py * Pitch ) + ( px * 4 ) + pix;
+
+				if ( pixels[ offset ] > GLOW_THRESHOLD )
+				{
+					AddGlowSpot( out, px, py, pix, GLOW_RADIUS, GLOW_THRESHOLD, pBMI->bmiHeader.biWidth, pBMI->bmiHeader.biHeight );
+				}
+			}
+		}
+	}
+
+	memcpy( pixels, out, pBMI->bmiHeader.biSizeImage );
+
+	free( (void *) out );
 }
 
 void CSCREENContentViewer::DoGhosting( DWORD **pPixels, BITMAPINFO *pBMI )

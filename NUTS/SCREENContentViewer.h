@@ -111,11 +111,14 @@ private:
 	void DoScanlines( DWORD **pPixels, BITMAPINFO *pBMI );
 	void DoAntialias( DWORD **pPixels, BITMAPINFO *pBMI );
 	void DoSnow( DWORD **pPixels, BITMAPINFO *pBMI );
+	void DoCRTGlow( DWORD **pPixels, BITMAPINFO *pBMI );
 	void DoRainbow( DWORD **pPixels, BITMAPINFO *pBMI );
 	void DoGhosting( DWORD **pPixels, BITMAPINFO *pBMI );
 	void DoEffectMultiplier( int DoneEffects, DWORD **pPixels, BITMAPINFO *pBMI );
 
 	float rgb2luma( DWORD *pix );
+
+	void AddGlowSpot( BYTE *out, LONG px, LONG py, LONG pix, LONG r, LONG t, LONG mx, LONG my );
 
 	void DestroyWindows( void );
 
