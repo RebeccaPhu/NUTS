@@ -162,6 +162,14 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 			}
 		}
 	}
+	else
+	{
+		// Must do some pruning on the type here. IECATA doesn't recognise DEL, or beyond PRG.
+		if ( ( outfile.AttrType == 0 ) || ( outfile.AttrType > 2 ) )
+		{
+			outfile.AttrType = 2;
+		}
+	}
 
 	pDirectory->Files.push_back(outfile);
 
@@ -617,19 +625,19 @@ std::vector<AttrDesc> IECATAFileSystem::GetAttributeDescriptions( void )
 	Attrs.push_back( Attr );
 
 	/* Locked */
-	Attr.Index = 1;
+	Attr.Index = 2;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile;
 	Attr.Name  = L"Locked";
 	Attrs.push_back( Attr );
 
 	/* Closed */
-	Attr.Index = 2;
+	Attr.Index = 3;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile;
 	Attr.Name  = L"Closed";
 	Attrs.push_back( Attr );
 
 	/* File type */
-	Attr.Index = 3;
+	Attr.Index = 1;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrSelect | AttrWarning | AttrFile;
 	Attr.Name  = L"File type";
 

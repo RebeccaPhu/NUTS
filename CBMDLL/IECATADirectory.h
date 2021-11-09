@@ -3,9 +3,9 @@
 
 #include "CBMDefs.h"
 
-#define AttrLocked Attributes[1]
-#define AttrClosed Attributes[2]
-#define AttrType   Attributes[3]
+#define AttrType   Attributes[1]
+#define AttrLocked Attributes[2]
+#define AttrClosed Attributes[3]
 
 #include <vector>
 
