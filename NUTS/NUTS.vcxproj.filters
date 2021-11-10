@@ -300,6 +300,9 @@
     <ClCompile Include="License.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
+    <ClCompile Include="RawDevices.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -547,6 +550,9 @@
     </ClInclude>
     <ClInclude Include="License.h">
       <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="RawDevices.h">
+      <Filter>Header Files\File Systems</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

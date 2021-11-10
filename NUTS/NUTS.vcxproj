@@ -218,6 +218,7 @@
     <ClCompile Include="Preference.cpp" />
     <ClCompile Include="PropsPage.cpp" />
     <ClCompile Include="RawDataSource.cpp" />
+    <ClCompile Include="RawDevices.cpp" />
     <ClCompile Include="SCREENTranslator.cpp" />
     <ClCompile Include="SidebarItem.cpp" />
     <ClCompile Include="SidePanel.cpp" />
@@ -294,6 +295,7 @@
     <ClInclude Include="MemorySource.h" />
     <ClInclude Include="MikModNUTSRawDrv.h" />
     <ClInclude Include="MODTranslator.h" />
+    <ClInclude Include="RawDevices.h" />
     <ClInclude Include="SidebarItem.h" />
     <ClInclude Include="SidePanel.h" />
     <ClInclude Include="SourceFunctions.h" />

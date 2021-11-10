@@ -39,6 +39,31 @@ static std::vector<FormatDesc> FSList;
 
 BOOL EN1,EN2,EN3,EN4;
 
+BYTE RawDrive;
+
+void Dismount( BYTE Drive )
+{
+	BYTE path[ 64 ];
+
+	rsprintf( path, "\\\\.\\%c:", Drive );
+
+	HANDLE hDevice = CreateFileA(
+		(char *) path, GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING, 0, NULL
+	);
+
+	DWORD returned;
+	BOOL  Result;
+
+	if (hDevice != INVALID_HANDLE_VALUE) {
+		Result =  DeviceIoControl( hDevice, (DWORD) FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &returned, NULL );
+
+		CloseHandle( hDevice );
+	}
+}
+
 void SetOptions( HWND hwndDlg, DWORD FSFlags )
 {
 	if ( pSource->Flags & DS_SupportsLLF )
@@ -105,7 +130,19 @@ unsigned int __stdcall FormatThread(void *param) {
 	if ( Button_GetCheck( GetDlgItem( hFormatWindow, IDC_FINITIALISE ) ) == BST_CHECKED ) { Format_FT |= FTF_Initialise; }
 	if ( Button_GetCheck( GetDlgItem( hFormatWindow, IDC_TRUNCATE ) ) == BST_CHECKED ) { Format_FT |= FTF_Truncate; }
 
-	unsigned int Result = pFormatter->Format_Process( Format_FT, hFormatWindow );
+	unsigned int Result = 0xFF;
+
+	if ( pFormatter->pSource->PrepareFormat() == NUTS_SUCCESS )
+	{
+		if ( RawDrive != 0 )
+		{
+			Dismount( RawDrive );
+		}
+
+		Result = pFormatter->Format_Process( Format_FT, hFormatWindow );
+
+		pFormatter->pSource->CleanupFormat();
+	}
 
 	Formatting = false;
 
@@ -484,6 +521,10 @@ int	Format_Handler(AppAction &Action) {
 
 	CurrentAction = Action;
 
+	bool DismountFS = false;
+
+	RawDrive = 0;
+
 	if (pFS->FSID == FS_Root)
 	{
 		//	A drive is being formatted
@@ -495,10 +536,26 @@ int	Format_Handler(AppAction &Action) {
 		
 			if (MessageBox( Action.hWnd, msg, L"NUTS Formatter", MB_YESNO|MB_ICONEXCLAMATION) == IDNO)
 				return -1;
+
+			DismountFS = true;
+
+			RawDrive = Action.Selection[ 0 ].Filename[ 0 ];
 		}
 	}
 
 	DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FORMAT), Action.hWnd, FormatProc, NULL);
+
+	if ( DismountFS )
+	{
+		Dismount( RawDrive );
+	}
+
+	if ( pFormatter != nullptr )
+	{
+		delete pFormatter;
+	}
+
+	pFormatter = nullptr;
 
 	return 0;
 }

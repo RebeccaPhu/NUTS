@@ -2,6 +2,12 @@
 #include "directory.h"
 #include "Plugins.h"
 
+#define ROOT_OBJECT_WINDOWS_VOLUME 0
+#define ROOT_OBJECT_RAW_DEVICE     1
+#define ROOT_OBJECT_SPECIAL_FOLDER 2
+#define ROOT_OBJECT_HOOK           3
+#define ROOT_OBJECT_ROMDISK        4
+
 typedef struct _FolderPair
 {
 	DWORD FolderID;

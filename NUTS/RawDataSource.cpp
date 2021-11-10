@@ -6,80 +6,117 @@
 #include <assert.h>
 
 int	RawDataSource::ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
+	QWORD RealOffset = (QWORD) Sector * (QWORD) SectorSize;
 
-	FILE	*fFile;
-
-	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
-
-	if ( fFile == nullptr )
-		return NUTSError( 0x3F, L"Unable to open data source" );
-
-	fflush(fFile);
-
-	fseek(fFile, Sector * SectorSize, SEEK_SET);
-
-	fread(pSectorBuf, 1, SectorSize, fFile);
-
-	fclose(fFile);
-
-	return 0;
+	return ReadRaw( RealOffset, SectorSize, pSectorBuf );
 }
 
 int RawDataSource::ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 {
-	FILE	*fFile;
+	if ( hDevice == INVALID_HANDLE_VALUE )
+	{
+		return NUTSError( 0x30, L"No handle for device" );
+	}
 
-	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
+	LARGE_INTEGER p;
 
-	if ( fFile == nullptr )
-		return NUTSError( 0x3F, L"Unable to open data source" );
+	p.QuadPart = Offset;
 
-	fflush(fFile);
+	if ( !SetFilePointerEx( hDevice, p, NULL, FILE_BEGIN ) )
+	{
+		return NUTSError( 0x3F, L"Unable to set file pointer on raw device" );
+	}
 
-	_fseeki64( fFile, Offset, SEEK_SET );
+	if ( !ReadFile( hDevice, (LPVOID) pBuffer, Length, NULL, NULL ) )
+	{
+		DWORD x = GetLastError();
 
-	fread( pBuffer, 1, Length, fFile );
-
-	fclose(fFile);
+		return NUTSError( 0x3E, L"Unable to read data from raw device" );
+	}
 
 	return 0;
 }
 
 int RawDataSource::WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 {
-	FILE	*fFile;
+	if ( hDevice == INVALID_HANDLE_VALUE )
+	{
+		return NUTSError( 0x30, L"No handle for device" );
+	}
 
-	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
+	LARGE_INTEGER p;
 
-	if ( fFile == nullptr )
-		return NUTSError( 0x3F, L"Unable to open data source" );
+	p.QuadPart = Offset;
 
-	fflush(fFile);
+	if ( !SetFilePointerEx( hDevice, p, NULL, FILE_BEGIN ) )
+	{
+		return NUTSError( 0x3F, L"Unable to set file pointer on raw device" );
+	}
 
-	_fseeki64( fFile, Offset, SEEK_SET );
-
-	fwrite( pBuffer, 1, Length, fFile );
-
-	fclose(fFile);
+	if ( !WriteFile( hDevice, (LPVOID) pBuffer, Length, NULL, NULL ) )
+	{
+		return NUTSError( 0x3E, L"Unable to write data to raw device" );
+	}
 
 	return 0;
 }
 
 int	RawDataSource::WriteSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize ) {
-	FILE	*fFile;
+	QWORD RealOffset = (QWORD) Sector * (QWORD) SectorSize;
 
-	_wfopen_s( &fFile, ImageSource.c_str(), L"r+b" );
+	return WriteRaw( RealOffset, SectorSize, pSectorBuf );
+}
 
-	if ( fFile == nullptr )
-		return NUTSError( 0x3F, L"Unable to open data source" );
+int RawDataSource::PrepareFormat()
+{
+	DWORD returned;
 
-	fflush(fFile);
+	if ( IsLocked )
+	{
+		return 0;
+	}
 
-	fseek(fFile, Sector * SectorSize, SEEK_SET);
+	if ( hDevice == INVALID_HANDLE_VALUE )
+	{
+		return NUTSError( 0x30, L"No handle for device" );
+	}
 
-	fwrite(pSectorBuf, 1, SectorSize, fFile);
+	if ( !DeviceIoControl( hDevice, (DWORD) FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &returned, NULL ) )
+	{
+		return NUTSError( 0x3D, L"Unable to lock raw device" );
+	}
 
-	fclose(fFile);
+	// Note we don't check the return result here, as the volume may not be mounted
+	(void) DeviceIoControl( hDevice, (DWORD) FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &returned, NULL );
+
+	IsLocked = true;
+
+	return 0;
+}
+
+int RawDataSource::CleanupFormat()
+{
+	DWORD returned;
+
+	// Note we don't check the return result here, as the volume may not be mounted
+	(void) DeviceIoControl( hDevice, (DWORD) FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &returned, NULL );
+
+	if ( !IsLocked )
+	{
+		return 0;
+	}
+
+	if ( hDevice == INVALID_HANDLE_VALUE )
+	{
+		return NUTSError( 0x30, L"No handle for device" );
+	}
+
+	if ( !DeviceIoControl( hDevice, (DWORD) FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &returned, NULL ) )
+	{
+		return NUTSError( 0x3D, L"Unable to lock raw device" );
+	}
+
+	IsLocked = false;
 
 	return 0;
 }

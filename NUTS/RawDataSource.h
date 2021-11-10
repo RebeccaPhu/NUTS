@@ -16,9 +16,10 @@ public:
 
 		DISK_GEOMETRY	disk;
 
-		HANDLE hDevice = CreateFile(
-			RawFileName.c_str(), 0,
-			FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+		hDevice = CreateFile(
+			RawFileName.c_str(), GENERIC_READ | GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			NULL,
 			OPEN_EXISTING, 0, NULL
 		);
 
@@ -30,8 +31,6 @@ public:
 				&disk, sizeof(DISK_GEOMETRY), &returned, NULL
 			);
 
-			CloseHandle(hDevice);
-
 			PhysicalDiskSize	 =	disk.BytesPerSector;
 			PhysicalDiskSize	*=	disk.SectorsPerTrack;
 			PhysicalDiskSize	*=	disk.TracksPerCylinder;
@@ -41,9 +40,15 @@ public:
 		Flags = DS_RawDevice;
 
 		SourceDesc = desc;
+
+		IsLocked = false;
 	}
 
 	~RawDataSource(void) {
+		if ( hDevice != INVALID_HANDLE_VALUE )
+		{
+			CloseHandle(hDevice);
+		}
 	}
 
 	virtual int ReadSectorLBA( DWORD Sector, BYTE *pSectorBuf, DWORD SectorSize );
@@ -57,5 +62,12 @@ public:
 		return 0;
 	}
 
+	virtual int PrepareFormat();
+	virtual int CleanupFormat();
+
 	std::wstring( ImageSource );
+
+private:
+	HANDLE hDevice;
+	bool   IsLocked;
 };

@@ -53,10 +53,13 @@ public:
 
 	/* Physical routines. Most sources ignore these */
 	virtual SectorIDSet GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted );
+
+	virtual int  PrepareFormat() { return 0; }
 	virtual void StartFormat( DiskShape &shape ) { };
 	virtual int  SeekTrack( WORD Track ) { return 0; }
 	virtual int  WriteTrack( TrackDefinition track ) { return 0; }
 	virtual void EndFormat( void ) { };
+	virtual int  CleanupFormat() { return 0; }
 
 	__int64	PhysicalDiskSize;
 

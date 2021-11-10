@@ -6,6 +6,7 @@
 #include "MemorySource.h"
 #include "WindowsFileSystem.h"
 #include "libfuncs.h"
+#include "RawDevices.h"
 
 #include <ShlObj.h>
 
@@ -13,17 +14,32 @@ BYTE *RootFileSystem::DescribeFile( DWORD FileIndex )
 {
 	static BYTE status[64];
 
-	if ( pDirectory->Files[ FileIndex ].Type == FT_Floppy )
+	if ( pDirectory->Files[ FileIndex ].Icon == FT_Floppy )
 	{
 		rsprintf( status, "Removable disk drive or memory card" );
 	}
-	else if ( pDirectory->Files[ FileIndex ].Type == FT_CDROM )
+	else if ( pDirectory->Files[ FileIndex ].Icon == FT_CDROM )
 	{
 		rsprintf( status, "Optical drive" );
 	}
+	else if ( pDirectory->Files[ FileIndex ].Icon == FT_Directory )
+	{
+		rsprintf( status, "Library folder" );
+	}
+	else if ( pDirectory->Files[ FileIndex ].Icon == FT_ROMDisk )
+	{
+		rsprintf( status, "ROM Disk Scratch Storage" );
+	}
 	else
 	{
-		rsprintf( status, "Hard disk drive" );
+		if ( pDirectory->Files[ FileIndex ].Attributes[ 2 ] == ROOT_OBJECT_WINDOWS_VOLUME )
+		{
+			rsprintf( status, "Hard Disk, Windows Volume" );
+		}
+		else
+		{
+			rsprintf( status, "Hard Disk: %s", (BYTE *) ReadDeviceProductID( pDirectory->Files[ FileIndex ].Attributes[ 1 ] ) );
+		}
 	}
 
 	return status;
@@ -41,17 +57,32 @@ BYTE *RootFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 	{
 		rsprintf( status, "%d Items Selected", SelectedItems );
 	}
-	else if ( pDirectory->Files[ FileIndex ].Type == FT_Floppy )
+	else if ( pDirectory->Files[ FileIndex ].Icon == FT_Floppy )
 	{
 		rsprintf( status, "Removable disk drive or memory card" );
 	}
-	else if ( pDirectory->Files[ FileIndex ].Type == FT_CDROM )
+	else if ( pDirectory->Files[ FileIndex ].Icon == FT_CDROM )
 	{
 		rsprintf( status, "Optical drive" );
 	}
+	else if ( pDirectory->Files[ FileIndex ].Icon == FT_Directory )
+	{
+		rsprintf( status, "Library folder" );
+	}
+	else if ( pDirectory->Files[ FileIndex ].Icon == FT_ROMDisk )
+	{
+		rsprintf( status, "ROM Disk Scratch Storage" );
+	}
 	else
 	{
-		rsprintf( status, "Hard disk drive" );
+		if ( pDirectory->Files[ FileIndex ].Attributes[ 2 ] == ROOT_OBJECT_WINDOWS_VOLUME )
+		{
+			rsprintf( status, "Hard Disk, Windows Volume" );
+		}
+		else
+		{
+			rsprintf( status, "Hard Disk: %s", (BYTE *) ReadDeviceProductID( pDirectory->Files[ FileIndex ].Attributes[ 1 ] ) );
+		}
 	}
 
 	return status;
@@ -64,11 +95,27 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 		return nullptr;
 	}
 
+	BYTE DPath[64];
+
+	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == ROOT_OBJECT_RAW_DEVICE )
+	{
+		rsprintf( DPath, "\\\\.\\PhysicalDrive%d", pDirectory->Files[ FileID ].Attributes[ 1 ] );
+
+		BYTEString DL( (BYTE *) pDirectory->Files[ FileID ].Filename, 6 );
+
+		DL[ 3 ] = ' ';
+		DL[ 4 ] = 254;
+		DL[ 5 ] = ' ';
+
+		pSource = new RawDataSource( std::wstring( UString( (char *) DPath ) ), DL );
+
+		return pSource;
+	}
+
 	bool IsRaw = IsRawFS( UString( (char *) pDirectory->Files[ FileID ].Filename ) );
 
 	OutputDebugString(L"RAW FS\n");
 
-	char	DPath[64];
 	int		PDN	= PhysicalDrive( (char *) pDirectory->Files[ FileID ].Filename );
 
 	if (PDN == -1) {
@@ -88,19 +135,19 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 	if (PDN == -2)
 	{
-		sprintf_s(DPath, 63, "\\\\.\\A:");
+		rsprintf( DPath, "\\\\.\\A:" );
 
-		pSource = new FloppyDataSource( std::wstring( UString( DPath ) ) );
+		pSource = new FloppyDataSource( std::wstring( UString( (char *) DPath ) ) );
 	}
 	else if (PDN == -3)
 	{
-		sprintf_s(DPath, 63, "\\\\.\\B:");
+		rsprintf( DPath, "\\\\.\\B:" );
 
-		pSource = new FloppyDataSource( std::wstring( UString( DPath ) ) );
+		pSource = new FloppyDataSource( std::wstring( UString( (char *) DPath ) ) );
 	}
 	else
 	{
-		sprintf_s(DPath, 63, "\\\\.\\PhysicalDrive%d", PDN);
+		rsprintf( DPath, "\\\\.\\PhysicalDrive%d", PDN );
 
 		BYTEString DL( (BYTE *) pDirectory->Files[ FileID ].Filename, 6 );
 
@@ -108,10 +155,10 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 		DL[ 4 ] = 254;
 		DL[ 5 ] = ' ';
 
-		pSource = new RawDataSource( std::wstring( UString( DPath ) ), DL );
+		pSource = new RawDataSource( std::wstring( UString( (char *) DPath ) ), DL );
 	}
 
-	OutputDebugStringA(DPath);
+	OutputDebugStringA( (char *) DPath );
 
 	if ( pSource != nullptr )
 	{

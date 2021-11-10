@@ -3,6 +3,8 @@
 #include "libfuncs.h"
 #include "Plugins.h"
 
+#include "RawDevices.h"
+
 #include <ShlObj.h>
 
 FolderPair RootDirectory::Folders[] = {
@@ -16,6 +18,8 @@ FolderPair RootDirectory::Folders[] = {
 };
 
 int	RootDirectory::ReadDirectory(void) {
+
+	RawPaths devs = GetRawDevices();
 
 	NativeFileIterator iFile;
 
@@ -73,10 +77,14 @@ int	RootDirectory::ReadDirectory(void) {
 		file.Icon = FT_HardDisc;
 
 		if (DType == DRIVE_REMOVABLE)
+		{
 			file.Icon = FT_Floppy;
+		}
 
 		if (DType == DRIVE_CDROM)
+		{
 			file.Icon = FT_CDROM;
+		}
 
 		file.Type = FT_MiscImage;
 
@@ -87,7 +95,73 @@ int	RootDirectory::ReadDirectory(void) {
 
 		file.Length = CapacityBytes.QuadPart;
 
+		file.Attributes[ 2 ] = ROOT_OBJECT_WINDOWS_VOLUME;
+
+		if ( IsRawFS( dirEnt ) )
+		{
+			file.Attributes[ 2 ] = ROOT_OBJECT_RAW_DEVICE;
+
+			file.Attributes[ 1 ] = PhysicalDrive( (char *) file.Filename );
+		}
+
+		// Now we need to see if this is a raw device. Windows will recognise CDROM0 as being
+		// "physical drive" 0, and confuse the loop below, so we'll exclude if this is an optical drive.
+		if ( ( file.Attributes[ 2 ] == ROOT_OBJECT_RAW_DEVICE ) && ( DType != DRIVE_CDROM ) )
+		{
+			std::wstring PhysPath = L"\\\\.\\PhysicalDrive" + std::to_wstring( (long long) file.Attributes[ 1 ] );
+
+			for ( RawPaths::iterator iPath = devs.begin(); iPath != devs.end(); )
+			{
+				if ( *iPath == PhysPath )
+				{
+					iPath = devs.erase( iPath );
+				}
+				else
+				{
+					iPath++;
+				}
+			}
+		}
+
 		Files.push_back(file);
+	}
+
+	/* Add on letterless drives */
+	for ( RawPaths::iterator iPath = devs.begin(); iPath != devs.end(); iPath++ )
+	{
+		NativeFile	file;
+
+		std::wstring FriendlyPath = *iPath;
+
+		FriendlyPath = L"Raw Dev " + FriendlyPath.substr( 17 );
+
+		BYTE DNum = 0xFF;
+
+		try
+		{
+			DNum = (BYTE) std::stoi( FriendlyPath.substr( 8 ), nullptr, 10 );
+		}
+
+		catch ( std::exception & e )
+		{
+		}
+
+		file.Attributes[ 2 ] = ROOT_OBJECT_RAW_DEVICE;
+		file.Attributes[ 1 ] = DNum;
+
+		file.Filename = BYTEString( (BYTE*) AString( (WCHAR *) FriendlyPath.c_str() ), FriendlyPath.length() );
+
+		file.fileID     = FileID++;
+		file.Flags      = FF_NotRenameable;
+		file.FSFileType = FT_ROOT;
+		file.EncodingID = ENCODING_ASCII;
+		file.XlatorID   = NULL;
+		file.Icon       = FT_HardDisc;
+		file.Type       = FT_MiscImage;
+
+		file.HasResolvedIcon = false;
+
+		Files.push_back( file );
 	}
 
 	/* Add on special folder paths */
@@ -102,6 +176,7 @@ int	RootDirectory::ReadDirectory(void) {
 			NativeFile file;
 
 			file.Attributes[ 0 ] = fIndex;
+			file.Attributes[ 2 ] = ROOT_OBJECT_SPECIAL_FOLDER;
 			file.EncodingID      = ENCODING_ASCII;
 			file.fileID          = FileID;
 			file.Flags           = FF_NotRenameable;
@@ -135,6 +210,7 @@ int	RootDirectory::ReadDirectory(void) {
 		file.Type            = FT_MiscImage;
 		file.Length          = 0;
 		file.XlatorID        = NULL;
+		file.Attributes[ 2 ] = ROOT_OBJECT_ROMDISK;
 
 		file.Filename = BYTEString( (BYTE *) "ROM Disk", 8 );
 
@@ -153,6 +229,7 @@ int	RootDirectory::ReadDirectory(void) {
 		NativeFile file;
 
 		file.Attributes[ 0 ] = fIndex;
+		file.Attributes[ 2 ] = ROOT_OBJECT_HOOK;
 		file.EncodingID      = ENCODING_ASCII;
 		file.fileID          = FileID;
 		file.Flags           = FF_NotRenameable | FF_Pseudo;
