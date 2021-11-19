@@ -2735,22 +2735,36 @@ void CFileViewer::DoContextMenu( void )
 
 	GetWindowRect(hWnd, &rect);
 
-	if ( Selected == 1 )
-	{
-		PopulateFSMenus(hPopup);
-	}
-
 	hSubMenu	= GetSubMenu(hPopup, 0);
 
-	if ( Selected == 0 )
+	if ( Selected == 1 )
 	{
-		DeleteMenu(hSubMenu, IDM_FORMAT, MF_BYCOMMAND);
-		DeleteMenu(hSubMenu, IDM_ENTER, MF_BYCOMMAND);
-
-		if ( CurrentFSID == FS_Root )
+		if ( TheseFiles[ GetSelectedIndex() ].Flags & FF_Pseudo )
 		{
-			DeleteMenu(hSubMenu, IDM_PROPERTIES, MF_BYCOMMAND);
+			EnableMenuItem( hSubMenu, IDM_FORMAT,  MF_BYCOMMAND | MF_DISABLED );
+			EnableMenuItem( hSubMenu, IDM_ENTER,   MF_BYCOMMAND | MF_DISABLED );
+			EnableMenuItem( hSubMenu, IDM_ENTERAS, MF_BYCOMMAND | MF_DISABLED );
+
+			EnableMenuItem(hSubMenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED );
 		}
+		else
+		{
+			PopulateFSMenus(hPopup);
+		}
+
+		if ( TheseFiles[ GetSelectedIndex() ].Flags & FF_Directory )
+		{
+			EnableMenuItem( hSubMenu, IDM_FORMAT,  MF_BYCOMMAND | MF_DISABLED );
+		}
+	}
+
+	if ( ( Selected == 0 ) || ( Selected > 1 ) )
+	{
+		EnableMenuItem( hSubMenu, IDM_FORMAT,  MF_BYCOMMAND | MF_DISABLED );
+		EnableMenuItem( hSubMenu, IDM_ENTER,   MF_BYCOMMAND | MF_DISABLED );
+		EnableMenuItem( hSubMenu, IDM_ENTERAS, MF_BYCOMMAND | MF_DISABLED );
+
+		EnableMenuItem(hSubMenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED );
 	}
 
 	if ( Displaying == DisplayLargeIcons ) { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_CHECKED ); } else { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_UNCHECKED ); }

@@ -1365,15 +1365,18 @@ void HandleFSAttributeMessage( HWND hSourceWnd, UINT uMsg, UINT v )
 
 	if ( hSourceWnd == GetDlgItem( hFSAttrsWnd, IDC_FSRESET ) )
 	{
-		for ( iAttr = FSAttrWnds.begin(); iAttr != FSAttrWnds.end(); iAttr++ )
+		if ( pTargetFS != nullptr )
 		{
-			iAttr->second.Changed      = false;
-			iAttr->second.CurrentValue = iAttr->second.StartingValue;
+			for ( iAttr = FSAttrWnds.begin(); iAttr != FSAttrWnds.end(); iAttr++ )
+			{
+				iAttr->second.Changed      = false;
+				iAttr->second.CurrentValue = iAttr->second.StartingValue;
+			}
+
+			SetupFSAttributes( hFSAttrsWnd, false );
+
+			PropSheet_UnChanged( hPropSheet, hFSAttrsWnd );
 		}
-
-		SetupFSAttributes( hFSAttrsWnd, false );
-
-		PropSheet_UnChanged( hPropSheet, hFSAttrsWnd );
 
 		return;
 	}
@@ -1529,7 +1532,10 @@ INT_PTR CALLBACK FSAttrsWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 						CLIP_DEFAULT_PRECIS,CLEARTYPE_QUALITY, VARIABLE_PITCH,TEXT("MS Shell Dlg"));
 				}
 
-				SetupFSAttributes( hwndDlg, true );
+				if ( pTargetFS != nullptr )
+				{
+					SetupFSAttributes( hwndDlg, true );
+				}
 			}
 			break;
 

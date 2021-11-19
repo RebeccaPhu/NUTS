@@ -177,7 +177,6 @@
 #define IDC_LICACCEPT                   1057
 #define IDC_LICTEXT2                    1058
 #define IDC_JUSTTHESE                   1059
-#define IDC_RADIO2                      1060
 #define IDC_ANDTHOSE                    1060
 #define AFX_IDC_COLOR_BLACK             1100
 #define AFX_IDC_COLOR_WHITE             1101
@@ -742,7 +741,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        182
-#define _APS_NEXT_COMMAND_VALUE         40075
+#define _APS_NEXT_COMMAND_VALUE         40077
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

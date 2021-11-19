@@ -179,7 +179,7 @@ int	RootDirectory::ReadDirectory(void) {
 			file.Attributes[ 2 ] = ROOT_OBJECT_SPECIAL_FOLDER;
 			file.EncodingID      = ENCODING_ASCII;
 			file.fileID          = FileID;
-			file.Flags           = FF_NotRenameable;
+			file.Flags           = FF_NotRenameable | FF_Pseudo;
 			file.FSFileType      = NULL;
 			file.HasResolvedIcon = false;
 			file.Icon            = FT_Directory;
@@ -203,7 +203,7 @@ int	RootDirectory::ReadDirectory(void) {
 
 		file.EncodingID      = ENCODING_ASCII;
 		file.fileID          = FileID;
-		file.Flags           = FF_NotRenameable;
+		file.Flags           = FF_NotRenameable | FF_Pseudo;
 		file.FSFileType      = NULL;
 		file.HasResolvedIcon = false;
 		file.Icon            = FT_ROMDisk;

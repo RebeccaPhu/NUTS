@@ -95,6 +95,8 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 		return nullptr;
 	}
 
+	DataSource *pDataSource;
+
 	BYTE DPath[64];
 
 	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == ROOT_OBJECT_RAW_DEVICE )
@@ -107,7 +109,7 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 		DL[ 4 ] = 254;
 		DL[ 5 ] = ' ';
 
-		pSource = new RawDataSource( std::wstring( UString( (char *) DPath ) ), DL );
+		pDataSource = new RawDataSource( std::wstring( UString( (char *) DPath ) ), DL );
 
 		return pSource;
 	}
@@ -131,19 +133,17 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 	SetErrorMode( SEM_FAILCRITICALERRORS );
 
-	DataSource *pSource = nullptr;
-
 	if (PDN == -2)
 	{
 		rsprintf( DPath, "\\\\.\\A:" );
 
-		pSource = new FloppyDataSource( std::wstring( UString( (char *) DPath ) ) );
+		pDataSource = new FloppyDataSource( std::wstring( UString( (char *) DPath ) ) );
 	}
 	else if (PDN == -3)
 	{
 		rsprintf( DPath, "\\\\.\\B:" );
 
-		pSource = new FloppyDataSource( std::wstring( UString( (char *) DPath ) ) );
+		pDataSource = new FloppyDataSource( std::wstring( UString( (char *) DPath ) ) );
 	}
 	else
 	{
@@ -155,7 +155,7 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 		DL[ 4 ] = 254;
 		DL[ 5 ] = ' ';
 
-		pSource = new RawDataSource( std::wstring( UString( (char *) DPath ) ), DL );
+		pDataSource = new RawDataSource( std::wstring( UString( (char *) DPath ) ), DL );
 	}
 
 	OutputDebugStringA( (char *) DPath );
@@ -165,7 +165,7 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 		pDirectory->Files[ FileID ].Length = pSource->PhysicalDiskSize;
 	}
 
-	return pSource;
+	return pDataSource;
 }
 
 FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )

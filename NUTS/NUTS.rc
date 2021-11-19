@@ -72,8 +72,8 @@ BEGIN
         MENUITEM "Re&name\tF2",                 IDM_RENAME
         MENUITEM "&Install\tCtrl+I",            IDM_INSTALL
         MENUITEM "&Delete\tDEL",                IDM_DELETE
-        MENUITEM "&Properties",                 IDM_PROPERTIES
-        MENUITEM "&Format\tCtrl+F",             IDM_FORMAT
+        MENUITEM "&Properties\tCtrl+R",         IDM_PROPERTIES
+        MENUITEM "&Format ...\tCtrl+F",         IDM_FORMAT
         MENUITEM SEPARATOR
         MENUITEM "New &Folder\tCtrl+N",         IDM_NEWFOLDER
         MENUITEM "&New Image Here ...",         IDM_NEWIMAGE
@@ -93,9 +93,9 @@ IDR_ROOT_POPUP MENU
 BEGIN
     POPUP ""
     BEGIN
-        MENUITEM "&Enter",                      IDM_ENTER
-        MENUITEM "&Format",                     IDM_FORMAT
-        MENUITEM "&Properties",                 IDM_PROPERTIES
+        MENUITEM "&Enter\tEnter",               IDM_ENTER
+        MENUITEM "&Format ...\tCtrl+F",         IDM_FORMAT
+        MENUITEM "&Properties\tCtrl+R",         IDM_PROPERTIES
         MENUITEM SEPARATOR
         POPUP "Display As"
         BEGIN
@@ -275,10 +275,11 @@ BEGIN
     "F",            IDM_FORMAT,             VIRTKEY, CONTROL, NOINVERT
     "I",            IDM_INSTALL,            VIRTKEY, CONTROL, NOINVERT
     "N",            IDM_NEWFOLDER,          VIRTKEY, CONTROL, NOINVERT
+    "T",            IDM_PLAY_AUDIO,         VIRTKEY, CONTROL, NOINVERT
     VK_F5,          IDM_REFRESH,            VIRTKEY, NOINVERT
     VK_F2,          IDM_RENAME,             VIRTKEY, NOINVERT
     "A",            IDM_SELECTALL,          VIRTKEY, CONTROL, NOINVERT
-    "T",            IDM_PLAY_AUDIO,         VIRTKEY, CONTROL, NOINVERT
+    "R",            IDM_PROPERTIES,         VIRTKEY, CONTROL, NOINVERT
 END
 
 
