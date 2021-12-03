@@ -215,7 +215,16 @@ int ZIPFile::WriteFile(NativeFile *pFile, CTempFile &store)
 	BYTE fname[ MAX_PATH ];
 
 	/* Try and get this translated first */
-	bool DidTranslate = FSPlugins.TranslateZIPContent( pFile, field );
+	FOPData fop;
+
+	fop.DataType  = FOP_DATATYPE_ZIPATTR;
+	fop.Direction = FOP_WriteEntry;
+	fop.pXAttr    = field;
+	fop.lXAttr    = 64;
+	fop.pFile     = (void *) pFile;
+	fop.pFS       = (void *) this;
+
+	bool DidTranslate = ProcessFOP( &fop );
 
 	zip_error_t ze;
 
@@ -313,13 +322,51 @@ int	ZIPFile::CreateDirectory( NativeFile *pDir, DWORD CreateFlags )
 	/* Existence check */
 	NativeFileIterator iFile;
 
-	for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+	NativeFile SourceDir = *pDir;
+
+	for ( NativeFileIterator iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
 	{
-		if ( rstrnicmp( iFile->Filename, pDir->Filename, 255 ) )
+		if ( rstrnicmp( iFile->Filename, SourceDir.Filename, 10 ) )
 		{
-			return FILEOP_EXISTS;
+			if ( ( CreateFlags & ( CDF_MERGE_DIR | CDF_RENAME_DIR ) ) == 0 )
+			{
+				if ( iFile->Flags & FF_Directory )
+				{
+					return FILEOP_EXISTS;
+				}
+				else
+				{
+					return FILEOP_ISFILE;
+				}
+			}
+			else if ( CreateFlags & CDF_MERGE_DIR )
+			{
+				return ChangeDirectory( iFile->fileID );
+			}
+			else if ( CreateFlags & CDF_RENAME_DIR )
+			{
+				if ( RenameIncomingDirectory( &SourceDir, pDirectory ) != NUTS_SUCCESS )
+				{
+					return -1;
+				}
+			}
 		}
 	}
+
+	pDir = &SourceDir;
+
+	BYTE field[ 64 ];
+
+	FOPData fop;
+
+	fop.DataType  = FOP_DATATYPE_ZIPATTR;
+	fop.Direction = FOP_WriteEntry;
+	fop.pXAttr    = field;
+	fop.lXAttr    = 64;
+	fop.pFile     = (void *) pDir;
+	fop.pFS       = (void *) this;
+
+	bool DidTranslate = ProcessFOP( &fop );
 
 	BYTE fname[ MAX_PATH ];
 
@@ -340,6 +387,28 @@ int	ZIPFile::CreateDirectory( NativeFile *pDir, DWORD CreateFlags )
 	rstrncat( fname, pDir->Filename, MAX_PATH );
 
 	zip_uint64_t zfi = zip_dir_add( za, (char *) fname, ZIP_FL_ENC_CP437 );
+
+	if ( DidTranslate )
+	{
+		zip_flags_t attrSource = ZIP_FL_LOCAL;
+
+		DWORD NumFields = zip_file_extra_fields_count( za, zfi, attrSource );
+
+		if ( NumFields == 0xFFFFFFFF )
+		{
+			attrSource = ZIP_FL_CENTRAL;
+
+			NumFields = zip_file_extra_fields_count( za, zfi, attrSource );
+		}
+
+		if ( NumFields == 0xFFFFFFFF )
+		{
+			NumFields = 0;
+		}
+
+		zip_file_extra_field_set( za, zfi, * ( zip_uint16_t *) &field[ 0 ], ( zip_uint16_t ) NumFields, (zip_uint8_t *) &field[4], (zip_uint16_t) * (WORD *) &field[ 2 ], ZIP_FL_LOCAL );
+		zip_file_extra_field_set( za, zfi, * ( zip_uint16_t *) &field[ 0 ], ( zip_uint16_t ) NumFields, (zip_uint8_t *) &field[4], (zip_uint16_t) * (WORD *) &field[ 2 ], ZIP_FL_CENTRAL );
+	}
 
 	zip_error_fini( &ze );
 	zip_close( za );
@@ -396,7 +465,16 @@ int ZIPFile::ReplaceFile(NativeFile *pFile, CTempFile &store)
 	BYTE fname[ MAX_PATH ];
 
 	/* Try and get this translated first */
-	bool DidTranslate = FSPlugins.TranslateZIPContent( pFile, field );
+	FOPData fop;
+
+	fop.DataType  = FOP_DATATYPE_ZIPATTR;
+	fop.Direction = FOP_WriteEntry;
+	fop.pXAttr    = field;
+	fop.lXAttr    = 64;
+	fop.pFile     = (void *) pFile;
+	fop.pFS       = (void *) this;
+
+	bool DidTranslate = ProcessFOP( &fop );
 
 	zip_error_t ze;
 
@@ -475,6 +553,77 @@ int ZIPFile::Format_Process( DWORD FT, HWND hWnd )
 	pSource->Truncate( sizeof( EmptyZIP ) );
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, 100, 0);
+
+	return 0;
+}
+
+int ZIPFile::RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory )
+{
+	/* The idea here is to try and alter the name of the directory to something unique.
+
+	   We're going to do this by copying the filename, then overwriting the trail with
+	   a number starting at 1, and incrementing on each pass. The number is prefixed by _
+
+	   When we find one, we'll return it. If not, we go around again. If we somehow fill
+	   up all 10 characters, we'll error here.
+	*/
+
+	bool Done = false;
+
+	BYTEString CurrentFilename( pDir->Filename, pDir->Filename.length() + 11 );
+	BYTEString ProposedFilename( pDir->Filename.length() + 11 );
+
+	size_t InitialLen = CurrentFilename.length();
+
+	DWORD ProposedIndex = 1;
+
+	BYTE ProposedSuffix[ 11 ];
+
+	while ( !Done )
+	{
+		rstrncpy( ProposedFilename, CurrentFilename, InitialLen );
+
+		rsprintf( ProposedSuffix, "_%d", ProposedIndex );
+
+		WORD SuffixLen = rstrnlen( ProposedSuffix, 9 );
+		
+		/* If we allow long file names, then we just add it on the end, otherwise we have the 10 char limit */
+		if ( ( InitialLen + SuffixLen ) <= 10 )
+		{
+			rstrcpy( &ProposedFilename[ InitialLen ], ProposedSuffix );
+		}
+		else
+		{
+			rstrncpy( &ProposedFilename[ 10 - SuffixLen ], ProposedSuffix, 10 );
+		}
+
+		/* Now see if that's unique */
+		NativeFileIterator iFile;
+
+		bool Unique = true;
+
+		for ( iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
+		{
+			if ( rstricmp( iFile->Filename, ProposedFilename ) )
+			{
+				Unique = false;
+
+				break;
+			}
+		}
+
+		Done = Unique;
+
+		ProposedIndex++;
+
+		if ( ProposedIndex == 0 )
+		{
+			/* EEP - Ran out */
+			return NUTSError( 208, L"Unable to find unique name for incoming directory" );
+		}
+	}
+
+	pDir->Filename = ProposedFilename;
 
 	return 0;
 }

@@ -80,6 +80,48 @@ int ZIPDirectory::ReadDirectory(void)
 
 				file.Filename = BYTEString( pDir );
 
+				zip_flags_t attrSource = ZIP_FL_LOCAL;
+
+				DWORD NumFields = zip_file_extra_fields_count( za, SeqID, attrSource );
+
+				if ( NumFields == 0xFFFFFFFF )
+				{
+					attrSource = ZIP_FL_CENTRAL;
+
+					NumFields = zip_file_extra_fields_count( za, SeqID, attrSource );
+				}
+
+				bool DidTranslate = false;
+
+				if ( NumFields != 0xFFFFFFFF )
+				{
+					for ( DWORD f = 0; f < NumFields; f++ )
+					{
+						BYTE field[64];
+
+						ZeroMemory( field, 64 );
+
+						zip_uint16_t fl;
+
+						BYTE *srcField = (BYTE *) zip_file_extra_field_get( za, SeqID, f, (zip_uint16_t *) field, &fl, attrSource );
+
+						memcpy( &field[4], srcField, min( 60, fl ) );
+
+						* (WORD *) &field[2] = fl;
+
+						FOPData fop;
+
+						fop.DataType  = FOP_DATATYPE_ZIPATTR;
+						fop.Direction = FOP_ReadEntry;
+						fop.pXAttr    = field;
+						fop.lXAttr    = fl;
+						fop.pFile     = (void *) &file;
+						fop.pFS       = (void *) this;
+
+						DidTranslate = ProcessFOP( &fop );
+					}
+				}
+
 				file.Attributes[ 0 ] = SeqID;
 
 				Files.push_back( file );
@@ -139,7 +181,16 @@ int ZIPDirectory::ReadDirectory(void)
 
 					* (WORD *) &field[2] = fl;
 
-					DidTranslate = FSPlugins.TranslateZIPContent( &file, field );
+					FOPData fop;
+
+					fop.DataType  = FOP_DATATYPE_ZIPATTR;
+					fop.Direction = FOP_ReadEntry;
+					fop.pXAttr    = field;
+					fop.lXAttr    = fl;
+					fop.pFile     = (void *) &file;
+					fop.pFS       = (void *) this;
+
+					DidTranslate = ProcessFOP( &fop );
 				}
 			}
 
@@ -156,23 +207,11 @@ int ZIPDirectory::ReadDirectory(void)
 		}
 
 		SeqID++;
-
-//		archive_read_data_skip( a );
 	}
 
 	zip_error_fini( &ze );
 	zip_source_close( z );
 	zip_source_free( z );
-
-
-///	r = archive_read_free( a );
-
-	/*
-	if ( r != ARCHIVE_OK )
-	{
-		return NUTSError( 0xA0, ZIPError( a ) );
-	}
-	*/
 
 	return 0;
 }

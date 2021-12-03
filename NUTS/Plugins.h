@@ -85,7 +85,7 @@ public:
 
 	int PerformRootCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex );
 
-	bool TranslateZIPContent( NativeFile *pFile, BYTE *pExtra );
+	bool ProcessFOP( FOPData *_FOPData );
 
 	std::wstring GetCharacterDescription( DWORD FontID, BYTE Char );
 

@@ -42,7 +42,7 @@ typedef enum _PluginCommandID {
 	PC_ReportRootCommands,
 	PC_DescribeRootCommand,
 	PC_PerformRootCommand,
-	PC_TranslateZIPContent,
+	PC_TranslateFOPContent,
 	PC_DescribeChar,
 	PC_ReportPluginCreditStats,
 	PC_GetIconLicensing,

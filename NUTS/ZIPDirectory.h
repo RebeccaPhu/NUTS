@@ -7,6 +7,7 @@
 #include "Directory.h"
 #include "DataSource.h"
 #include "ZIPCommon.h"
+#include "FOP.h"
 
 #include "libfuncs.h"
 
@@ -34,6 +35,8 @@ public:
 	{
 		return pSource;
 	}
+
+	FOPTranslateFunction ProcessFOP;
 
 private:
 	void TranslateFileType(NativeFile *file);

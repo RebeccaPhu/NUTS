@@ -24,6 +24,11 @@ extern HWND hSplashWnd;
 
 CPlugins FSPlugins;
 
+static bool _ProcessFOPData( FOPData *pFOP )
+{
+	return FSPlugins.ProcessFOP( pFOP );
+}
+
 CPlugins::CPlugins()
 {
 	Plugins.clear();
@@ -468,6 +473,8 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 	{
 		FileSystem *pFS = new ZIPFile( pSource );
 
+		pFS->ProcessFOP = _ProcessFOPData;
+
 		return pFS;
 	}
 	
@@ -584,6 +591,11 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 
 			pFS = fav;
 
+			if ( pFS != nullptr )
+			{
+				pFS->ProcessFOP = _ProcessFOPData;
+			}
+
 			return pFS;
 		}
 
@@ -603,6 +615,11 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 				if ( p->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 				{
 					FileSystem *pFS = (FileSystem *) cmd.OutParams[ 0 ].pPtr;
+
+					if ( pFS != nullptr )
+					{
+						pFS->ProcessFOP = _ProcessFOPData;
+					}
 
 					return pFS;
 				}
@@ -904,7 +921,7 @@ int CPlugins::PerformRootCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex )
 	return NUTSError( 0x70, L"Declared command not recognised - this is a software bug." );
 }
 
-bool CPlugins::TranslateZIPContent( NativeFile *pFile, BYTE *pExtra )
+bool CPlugins::ProcessFOP( FOPData *_FOPData )
 {
 	PluginList::iterator iter = Plugins.begin();
 
@@ -912,9 +929,8 @@ bool CPlugins::TranslateZIPContent( NativeFile *pFile, BYTE *pExtra )
 	{
 		PluginCommand cmd;
 
-		cmd.CommandID = PC_TranslateZIPContent;
-		cmd.InParams[ 0 ].pPtr = pFile;
-		cmd.InParams[ 1 ].pPtr = pExtra;
+		cmd.CommandID = PC_TranslateFOPContent;
+		cmd.InParams[ 0 ].pPtr = _FOPData;
 
 		if ( iter->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 		{

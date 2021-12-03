@@ -43,7 +43,7 @@ int ADFSCommon::ExportSidecar( NativeFile *pFile, SidecarExport &sidecar )
 
 	BYTE INFData[80];
 
-	rsprintf( INFData, "$.%s %06X %06X %s\n", pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
+	rsprintf( INFData, "$.%s %06X %06X %s\n", (BYTE *) pFile->Filename, pFile->LoadAddr & 0xFFFFFF, pFile->ExecAddr & 0xFFFFFF, ( pFile->AttrLocked ) ? "Locked" : "" );
 
 	CTempFile *pTemp = (CTempFile *) sidecar.FileObj;
 

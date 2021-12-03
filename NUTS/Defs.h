@@ -101,6 +101,7 @@ typedef enum _FileFlags {
 	FF_EncodingOverride = 0x00000004, /* FS item should override the FS encoding */
 	FF_NotRenameable    = 0x00000008, /* FS item cannot be renamed */
 	FF_Audio            = 0x00000010, /* FS item contains renderable audio */
+	FF_AvoidSidecar     = 0x00000020, /* Target FS has stored aux data separately, so a normally required sidecar is now not required */
 	FF_Pseudo           = 0x40000000, /* FS item is a pseudo item (e.g. Drive in AcornDSD) */
 } FileFlags;
 

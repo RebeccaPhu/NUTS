@@ -6,6 +6,7 @@
 #include "TempFile.h"
 #include "NUTSError.h"
 #include "NestedImageSource.h"
+#include "FOP.h"
 
 #include <string>
 #include <deque>
@@ -500,6 +501,11 @@ public:
 		return 0;
 	}
 
+	virtual FileSystem *Clone( void )
+	{
+		return nullptr;
+	}
+
 	DWORD FSID;
 	DWORD PLID;
 	DWORD EnterIndex;
@@ -518,6 +524,8 @@ public:
 	std::deque<DWORD> AlternateOffsets;
 
 	BYTEString PreferredArbitraryExtension;
+
+	FOPTranslateFunction ProcessFOP;
 
 protected:
 	HANDLE hCancelFormat;

@@ -303,6 +303,12 @@
     <ClCompile Include="RawDevices.cpp">
       <Filter>Source Files\File Systems</Filter>
     </ClCompile>
+    <ClCompile Include="ISO9660FileSystem.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="ISO9660Directory.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -553,6 +559,15 @@
     </ClInclude>
     <ClInclude Include="RawDevices.h">
       <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="ISO9660FileSystem.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="ISO9660Directory.h">
+      <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="FOP.h">
+      <Filter>Header Files\Functions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

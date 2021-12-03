@@ -9,6 +9,7 @@
 #include "ZIPCommon.h"
 
 #include "ZIPDirectory.h"
+#include "FOP.h"
 
 class ZIPFile : public FileSystem, ZIPCommon
 {
@@ -54,6 +55,14 @@ public:
 
 	int  Format_Process( DWORD FT, HWND hWnd );
 
+	int Init(void) {
+		pZDir->ProcessFOP = ProcessFOP;
+
+		pDirectory->ReadDirectory();
+
+		return 0;
+	}
+
 	DataSource *GetSource()
 	{
 		return pSource;
@@ -63,6 +72,9 @@ private:
 	ZIPDirectory *pZDir;
 
 	BYTE cpath[ 256 ];
+
+private:
+	int RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory );
 };
 
 class ZIPFromTemp : public ZIPCommon

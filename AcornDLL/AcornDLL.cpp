@@ -337,14 +337,14 @@ void *CreateTranslator( DWORD TUID )
 	return pXlator;
 }
 
-bool TranslateZIPContent( void *pFile, void *pExtra )
+bool TranslateZIPContent( FOPData *fop )
 {
+	NativeFile *File = (NativeFile *) fop->pFile;
+
+	BYTE *pData = fop->pXAttr;
+
 	/* Translate the extra data in the ZIP (max 64 bytes) if it is present */
-
-	NativeFile *File = (NativeFile *) pFile;
-	BYTE *pData      = (BYTE *) pExtra;
-
-	if ( File->FSFileType == FT_ZIP )
+	if ( fop->Direction == FOP_ReadEntry )
 	{
 		/* This is source data */
 		WORD Offset = 0;
@@ -398,37 +398,43 @@ bool TranslateZIPContent( void *pFile, void *pExtra )
 	}
 	else if ( ( File->FSFileType == FT_ACORN ) || ( File->FSFileType == FT_ACORNX ) )
 	{
-		ZeroMemory( pData, 64 );
+		ZeroMemory( pData, fop->lXAttr );
 
-		pData[ 0 ] = 0x41;
-		pData[ 1 ] = 0x43;
-		pData[ 2 ] = 0x18;
-		pData[ 3 ] = 0x00;
-
-		rstrncpy( &pData[ 0x04 ], (BYTE *) "ARC0", 4 );
-
-		if ( File->FSFileType == FT_ACORN )
+		if ( fop->lXAttr >= 0x18 )
 		{
-			* (DWORD *) &pData[ 0x08 ] = 0;
-			* (DWORD *) &pData[ 0x0C ] = 0;
+			pData[ 0 ] = 0x41;
+			pData[ 1 ] = 0x43;
+			pData[ 2 ] = 0x18;
+			pData[ 3 ] = 0x00;
+
+			rstrncpy( &pData[ 0x04 ], (BYTE *) "ARC0", 4 );
+
+			if ( File->FSFileType == FT_ACORN )
+			{
+				* (DWORD *) &pData[ 0x08 ] = 0;
+				* (DWORD *) &pData[ 0x0C ] = 0;
+			}
+			else
+			{
+				* (DWORD *) &pData[ 0x08 ] = File->LoadAddr;
+				* (DWORD *) &pData[ 0x0C ] = File->ExecAddr;
+			}
+
+			DWORD Attrs = 0;
+
+			if ( File->AttrRead )   { Attrs |= ( 1 | 16 ); }
+			if ( File->AttrWrite )  { Attrs |= ( 2 | 32 ); }
+			if ( File->AttrLocked ) { Attrs |= 4; }
+
+			* (DWORD *) &pData[ 0x010 ] = Attrs;
+
+			File->FSFileType = FT_ZIP;
+			File->Flags     |= FF_AvoidSidecar;
+
+			fop->lXAttr = 0x18;
+
+			return true;
 		}
-		else
-		{
-			* (DWORD *) &pData[ 0x08 ] = File->LoadAddr;
-			* (DWORD *) &pData[ 0x0C ] = File->ExecAddr;
-		}
-
-		DWORD Attrs = 0;
-
-		if ( File->AttrRead )   { Attrs |= ( 1 | 16 ); }
-		if ( File->AttrWrite )  { Attrs |= ( 2 | 32 ); }
-		if ( File->AttrLocked ) { Attrs |= 4; }
-
-		* (DWORD *) &pData[ 0x010 ] = Attrs;
-
-		File->FSFileType = FT_ZIP;
-
-		return true;
 	}
 
 	return false;
@@ -848,17 +854,21 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_TranslateZIPContent:
+	case PC_TranslateFOPContent:
 		{
-			NativeFile *pFile = (NativeFile *) cmd->InParams[ 0 ].pPtr;
-			BYTE *pExtra      = (BYTE *)       cmd->InParams[ 1 ].pPtr;
+			FOPData *fop = (FOPData *) cmd->InParams[ 0 ].pPtr;
 
-			bool r = TranslateZIPContent( pFile, pExtra );
+			if ( fop->DataType == FOP_DATATYPE_ZIPATTR )
+			{
+				bool r = TranslateZIPContent( fop );
 
-			if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
+				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
+
+				return NUTS_PLUGIN_SUCCESS;
+			}
 		}
 		
-		return NUTS_PLUGIN_SUCCESS;
+		break;
 
 	case PC_DescribeChar:
 		{

@@ -345,7 +345,7 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 
 void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreCopy )
 {
-	if ( ( pTrg->Flags & FSF_Accepts_Sidecars ) && ( pSrc->Flags & FSF_Exports_Sidecars ) && ( !PreCopy ) )
+	if ( ( pTrg->Flags & FSF_Accepts_Sidecars ) && ( pSrc->Flags & FSF_Exports_Sidecars ) && ( !PreCopy ) && ( ! ( pFile->Flags & FF_AvoidSidecar ) ) )
 	{
 		SidecarExport sidecar;
 
@@ -369,6 +369,11 @@ void DoSidecar( FileSystem *pSrc, FileSystem *pTrg, NativeFile *pFile, bool PreC
 			/* This is not the end of the world, but might be annoying */
 			pGlobalError->GlobalCode = 0;
 		}
+	}
+
+	if ( !PreCopy )
+	{
+		pFile->Flags &= !FF_AvoidSidecar;
 	}
 
 	if ( ( pSrc->Flags & FSF_Accepts_Sidecars ) && ( pTrg->Flags & FSF_Exports_Sidecars ) && ( PreCopy ) )
@@ -1767,6 +1772,10 @@ int	FileOP_Handler(AppAction &Action) {
 		{
 			DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_HOWPROPS), Action.hWnd, HowWindowProc, NULL );
 		}
+	}
+	else
+	{
+		RecurseAttr = true;
 	}
 
 	DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_FILEOPS), Action.hWnd, FileWindowProc, NULL);
