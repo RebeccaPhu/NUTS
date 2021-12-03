@@ -206,7 +206,7 @@ DWORD dwDiff( DWORD a, DWORD b )
 	return a - b;
 }
 
-BYTE *rstrncpy( BYTE *target, BYTE *src, WORD limit )
+BYTE *rstrncpy( BYTE *target, const BYTE *src, WORD limit )
 {
 	WORD c = 0;
 

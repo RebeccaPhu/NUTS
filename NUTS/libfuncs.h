@@ -16,7 +16,7 @@ bool FilenameCmp( NativeFile *pFirst, NativeFile *pSecond );
 BYTE *rsprintf( BYTE *target, BYTE *fmt, ... );
 BYTE *rsprintf( BYTE *target, char *fmt, ... );
 
-BYTE *rstrncpy( BYTE *target, BYTE *src, WORD limit );
+BYTE *rstrncpy( BYTE *target, const BYTE *src, WORD limit );
 BYTE *rstrnecpy( BYTE *target, BYTE *src, WORD limit, BYTE *exclus );
 BYTE *rstrncat( BYTE *target, BYTE *src, WORD limit );
 BYTE *rstrrchr( BYTE *target, BYTE chr, WORD limit );

@@ -134,6 +134,13 @@ public:
 		return ADFSCommon::ImportSidecar( pFile, sidecar, obj );
 	}
 
+	FileSystem *Clone( void )
+	{
+		ADFSEFileSystem *CloneFS = new ADFSEFileSystem( *this );
+
+		return CloneFS;
+	}
+
 private:
 	TargetedFileFragments FindSpace( DWORD Length, bool ForDir );
 

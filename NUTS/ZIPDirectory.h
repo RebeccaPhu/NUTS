@@ -19,6 +19,8 @@ public:
 		pSource = pSrc;
 
 		rstrncpy( cpath, (BYTE *) "", 255 );
+
+		CloneWars = false;
 	}
 
 	~ZIPDirectory( void )
@@ -37,6 +39,9 @@ public:
 	}
 
 	FOPTranslateFunction ProcessFOP;
+
+	void *srcFS;
+	bool CloneWars;
 
 private:
 	void TranslateFileType(NativeFile *file);

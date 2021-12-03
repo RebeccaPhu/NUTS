@@ -28,6 +28,7 @@
 #include "../NUTS/OffsetDataSource.h"
 #include "ADFSDirectoryCommon.h"
 #include "../NUTS/NUTSError.h"
+#include "IconResolve.h"
 
 #include "resource.h"
 
@@ -390,6 +391,8 @@ bool TranslateZIPContent( FOPData *fop )
 					/* Change the type for copying purposes */
 					File->FSFileType = FT_ACORNX;
 					File->EncodingID = ENCODING_RISCOS;
+
+					ResolveAppIcon( (FileSystem *) fop->pFS, (NativeFile *) fop->pFile );
 
 					return true;
 				}

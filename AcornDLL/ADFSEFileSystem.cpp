@@ -39,7 +39,7 @@ int ADFSEFileSystem::Init(void) {
 
 	pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSEFileSystem>( this );
+	ResolveAppIcons( this );
 
 	if ( ( MYFSID==FSID_ADFS_HO ) || ( MYFSID==FSID_ADFS_HN ) || ( MYFSID==FSID_ADFS_HP ) )
 	{
@@ -256,7 +256,7 @@ int ADFSEFileSystem::ChangeDirectory( DWORD FileID )
 
 	pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSEFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return 0;
 }
@@ -274,7 +274,7 @@ int	ADFSEFileSystem::Parent() {
 
 	pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSEFileSystem>( this );
+	ResolveAppIcons( this );
 
 	BYTE *p = rstrrchr( path, (BYTE) '.', 512 );
 
@@ -507,7 +507,7 @@ int	ADFSEFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSEFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return r;
 }
@@ -687,7 +687,7 @@ int ADFSEFileSystem::Refresh( void )
 
 	pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSEFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return 0;
 }
@@ -1352,7 +1352,7 @@ int	ADFSEFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSEFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return r;
 }
@@ -1423,7 +1423,7 @@ int ADFSEFileSystem::DeleteFile( DWORD FileID )
 		return -1;
 	}
 
-	ResolveAppIcons<ADFSEFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return FILEOP_SUCCESS;
 }
@@ -1729,7 +1729,7 @@ int ADFSEFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 		}
 	}
 
-	ResolveAppIcons<ADFSEFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return 0;
 }

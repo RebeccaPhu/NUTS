@@ -241,7 +241,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return r;
 }
@@ -264,7 +264,7 @@ int ADFSFileSystem::ChangeDirectory( DWORD FileID )
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return r;
 }
@@ -396,7 +396,7 @@ int	ADFSFileSystem::Parent() {
 		*p = 0;
 	}
 
-	ResolveAppIcons<ADFSFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return r;
 }
@@ -598,7 +598,7 @@ int	ADFSFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 
 	int r = pDirectory->ReadDirectory();
 
-	ResolveAppIcons<ADFSFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return r;
 }
@@ -1134,7 +1134,7 @@ int ADFSFileSystem::Init(void) {
 	pFSMap->FloppyFormat = FloppyFormat;
 	pFSMap->UseDFormat   = MYFSID==FSID_ADFS_D;
 
-	ResolveAppIcons<ADFSFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return 0;
 }
@@ -1150,7 +1150,7 @@ int ADFSFileSystem::Refresh( void )
 		return -1;
 	}
 
-	ResolveAppIcons<ADFSFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return 0;
 }
@@ -1411,7 +1411,7 @@ int ADFSFileSystem::DeleteFile( DWORD FileID )
 		return -1;
 	}
 
-	ResolveAppIcons<ADFSFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return FILEOP_SUCCESS;
 }
@@ -1765,7 +1765,7 @@ int ADFSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 		}
 	}
 
-	ResolveAppIcons<ADFSFileSystem>( this );
+	ResolveAppIcons( this );
 
 	return r;
 }

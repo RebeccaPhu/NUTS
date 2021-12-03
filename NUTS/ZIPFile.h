@@ -19,6 +19,7 @@ public:
 		pSource = pSrc;
 
 		pZDir = new ZIPDirectory( pSrc );
+		pZDir->srcFS = (void *) this;
 
 		pDirectory = (Directory *) pZDir;
 
@@ -29,6 +30,34 @@ public:
 		FSID = FSID_ZIP;
 
 		TopicIcon = FT_Archive;
+
+		CloneWars = false;
+
+		pZDir->CloneWars = CloneWars;
+	}
+
+	ZIPFile( const ZIPFile &source ) : FileSystem( source.pSource )
+	{
+		pSource = source.pSource;
+
+		pZDir = new ZIPDirectory( pSource );
+		pZDir->srcFS = (void *) this;
+
+		pDirectory = (Directory *) pZDir;
+
+		pDirectory->Files = source.pDirectory->Files;
+
+		Flags = FSF_Supports_Dirs | FSF_Creates_Image | FSF_ArbitrarySize | FSF_DynamicSize | FSF_Uses_Extensions | FSF_Accepts_Sidecars;
+
+		rstrncpy( cpath, source.cpath, 255 );
+
+		FSID = FSID_ZIP;
+
+		TopicIcon = FT_Archive;
+
+		CloneWars = true;
+
+		pZDir->CloneWars = CloneWars;
 	}
 
 	~ZIPFile( void )
@@ -68,10 +97,19 @@ public:
 		return pSource;
 	}
 
+	FileSystem *Clone( void )
+	{
+		ZIPFile *CloneFS = new ZIPFile( *this );
+
+		return CloneFS;
+	}
+
 private:
 	ZIPDirectory *pZDir;
 
 	BYTE cpath[ 256 ];
+
+	bool CloneWars;
 
 private:
 	int RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory );

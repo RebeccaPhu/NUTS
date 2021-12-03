@@ -182,6 +182,7 @@
     <ClCompile Include="ADFSFileSystem.cpp" />
     <ClCompile Include="BBCBASICTranslator.cpp" />
     <ClCompile Include="BBCFunctions.cpp" />
+    <ClCompile Include="IconResolve.cpp" />
     <ClCompile Include="TranslatedSector.cpp" />
     <ClCompile Include="dllmain.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -225,6 +226,7 @@
     <ClInclude Include="ADFSFileSystem.h" />
     <ClInclude Include="BBCBASICTranslator.h" />
     <ClInclude Include="BBCFunctions.h" />
+    <ClInclude Include="IconResolve.h" />
     <ClInclude Include="TranslatedSector.h" />
     <ClInclude Include="Defs.h" />
     <ClInclude Include="NewFSMap.h" />

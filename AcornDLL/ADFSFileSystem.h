@@ -158,6 +158,13 @@ public:
 		return ADFSCommon::ImportSidecar( pFile, sidecar, obj );
 	}
 
+	FileSystem *Clone( void )
+	{
+		ADFSFileSystem *CloneFS = new ADFSFileSystem( *this );
+
+		return CloneFS;
+	}
+
 private:
 	ADFSDirectory *pADFSDirectory;
 

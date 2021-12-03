@@ -80,6 +80,12 @@ int ZIPDirectory::ReadDirectory(void)
 
 				file.Filename = BYTEString( pDir );
 
+				file.Attributes[ 0 ] = SeqID;
+
+				Files.push_back( file );
+
+				FileID++;
+
 				zip_flags_t attrSource = ZIP_FL_LOCAL;
 
 				DWORD NumFields = zip_file_extra_fields_count( za, SeqID, attrSource );
@@ -115,18 +121,12 @@ int ZIPDirectory::ReadDirectory(void)
 						fop.Direction = FOP_ReadEntry;
 						fop.pXAttr    = field;
 						fop.lXAttr    = fl;
-						fop.pFile     = (void *) &file;
-						fop.pFS       = (void *) this;
+						fop.pFile     = (void *) &Files.back();
+						fop.pFS       = (void *) srcFS;
 
 						DidTranslate = ProcessFOP( &fop );
 					}
 				}
-
-				file.Attributes[ 0 ] = SeqID;
-
-				Files.push_back( file );
-
-				FileID++;
 			}
 		}
 
@@ -152,6 +152,12 @@ int ZIPDirectory::ReadDirectory(void)
 
 			file.Filename = BYTEString( ZIPSubName( cpath, fname ) );
 
+			file.Attributes[ 0 ] = SeqID;
+
+			Files.push_back( file );
+
+			FileID++;
+
 			zip_flags_t attrSource = ZIP_FL_LOCAL;
 
 			DWORD NumFields = zip_file_extra_fields_count( za, SeqID, attrSource );
@@ -165,7 +171,7 @@ int ZIPDirectory::ReadDirectory(void)
 
 			bool DidTranslate = false;
 
-			if ( NumFields != 0xFFFFFFFF )
+			if ( ( NumFields != 0xFFFFFFFF ) && ( !CloneWars ) )
 			{
 				for ( DWORD f = 0; f < NumFields; f++ )
 				{
@@ -187,23 +193,18 @@ int ZIPDirectory::ReadDirectory(void)
 					fop.Direction = FOP_ReadEntry;
 					fop.pXAttr    = field;
 					fop.lXAttr    = fl;
-					fop.pFile     = (void *) &file;
-					fop.pFS       = (void *) this;
+					fop.pFile     = (void *) &Files.back();
+					fop.pFS       = srcFS;
 
 					DidTranslate = ProcessFOP( &fop );
 				}
 			}
 
-			file.Attributes[ 0 ] = SeqID;
-
 			if ( !DidTranslate )
 			{
-				TranslateFileType( &file );
+				TranslateFileType( &Files.back() );
 			}
 
-			Files.push_back( file );
-
-			FileID++;
 		}
 
 		SeqID++;
