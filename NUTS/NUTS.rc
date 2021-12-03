@@ -216,6 +216,7 @@ BEGIN
         MENUITEM "Slow File Enhancement",       IDM_SLOWENHANCE
         MENUITEM "Merge Directories",           ID_OPTIONS_MERGEDIRECTORIES
         MENUITEM "Rename Directories",          ID_OPTIONS_RENAMEDIRECTORIES
+        MENUITEM "Metadata AND Sidecars",       ID_OPTIONS_SIDECARSANYWAY
     END
     POPUP "&Help"
     BEGIN

@@ -29,6 +29,7 @@
 #include "ADFSDirectoryCommon.h"
 #include "../NUTS/NUTSError.h"
 #include "IconResolve.h"
+#include "../NUTS/Preference.h"
 
 #include "resource.h"
 
@@ -432,7 +433,13 @@ bool TranslateZIPContent( FOPData *fop )
 			* (DWORD *) &pData[ 0x010 ] = Attrs;
 
 			File->FSFileType = FT_ZIP;
-			File->Flags     |= FF_AvoidSidecar;
+
+			bool SidecarsAnyway = (bool) Preference( L"SidecarsAnyway", false );
+
+			if ( !SidecarsAnyway )
+			{
+				File->Flags |= FF_AvoidSidecar;
+			}
 
 			fop->lXAttr = 0x18;
 

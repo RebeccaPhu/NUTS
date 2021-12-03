@@ -338,6 +338,8 @@
 #define ID_EDITMENU_CHARACTERMAP        40072
 #define ID_EDITMENU_                    40073
 #define ID__COPY                        40074
+#define ID_OPTIONS_METADATAANDSIDECARS  40077
+#define ID_OPTIONS_SIDECARSANYWAY       40078
 #define IDM_VIEW_BBCSCREEN              41001
 #define IDM_VIEW_ZXSSCREEN              41002
 #define IDM_VIEW_BBCBASIC               42001
@@ -741,7 +743,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        182
-#define _APS_NEXT_COMMAND_VALUE         40077
+#define _APS_NEXT_COMMAND_VALUE         40079
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

@@ -1225,8 +1225,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			AlwaysRename = (bool) Preference( L"RenameDirectories", false );
 			AlwaysMerge  = (bool) Preference( L"MergeDirectories", false );
 
+			bool SidecarsAnyway = (bool) Preference( L"SidecarsAnyway", false );
+
 			CheckMenuItem( hMainMenu, ID_OPTIONS_RENAMEDIRECTORIES, (AlwaysRename)?MF_CHECKED:MF_UNCHECKED );
 			CheckMenuItem( hMainMenu, ID_OPTIONS_MERGEDIRECTORIES, (AlwaysMerge)?MF_CHECKED:MF_UNCHECKED );
+			CheckMenuItem( hMainMenu, ID_OPTIONS_SIDECARSANYWAY, (SidecarsAnyway)?MF_CHECKED:MF_UNCHECKED );
 
 			SetTimer( hWnd, 0x5016CE, 5000, NULL );
 		}
@@ -1329,6 +1332,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
+			break;
+
+		case ID_OPTIONS_SIDECARSANYWAY:
+			{
+				bool SidecarsAnyway = (bool) Preference( L"SidecarsAnyway", false );
+
+				SidecarsAnyway = !SidecarsAnyway;
+
+				Preference( L"SidecarsAnyway" ) = SidecarsAnyway;
+
+				HMENU hMainMenu = GetMenu( hWnd );
+
+				CheckMenuItem( hMainMenu, ID_OPTIONS_SIDECARSANYWAY, (SidecarsAnyway)?MF_CHECKED:MF_UNCHECKED );
+			}
 			break;
 
 		case ID_OPTIONS_RENAMEDIRECTORIES:
