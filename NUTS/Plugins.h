@@ -34,16 +34,6 @@ typedef std::map<DWORD, DWORD> PluginFontMap;
 typedef std::map<DWORD, DWORD> PluginFontMap_iter;
 typedef std::map< DWORD, std::vector< QWORD > > FSImageOffsets;
 
-typedef struct _FormatMenu {
-	std::wstring FS;
-	DWORD ID;
-} FormatMenu;
-
-typedef struct _FSMenu {
-	std::wstring Provider;
-	std::vector<FormatMenu> FS;
-} FSMenu;
-
 typedef std::vector<NUTSPlugin> PluginList;
 typedef std::vector<NUTSPlugin>::iterator Plugin_iter;
 typedef std::vector<RootHook> RootHookList;

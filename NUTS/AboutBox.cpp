@@ -341,6 +341,7 @@ IconCredit BitmapIconCreds[] =
 	{ IDB_TEXT,       L"Text Icon", L"Crystal Office Icon Set", L"MediaJon", L"Linkware", L"http://www.iconshots.com" },
 	{ IDB_TAPEIMAGE,  L"B Side Icon", L"Cassette Tape Icons", L"barkerbaggies", L"CC Attribution-NonCommercial-ShareAlike 3.0 Unported", L"https://creativecommons.org/licenses/by-nc-sa/3.0/" },
 	{ IDB_HARDIMAGE,  L"Apps Hard Drive 2 Icon", L"Crystal Project Icons", L"Everaldo Coelho", L"LGPL", L"http://www.gnu.org/licenses/lgpl-3.0.html" },
+	{ IDB_CDIMAGE,    L"CD Icon", L"Soft Icons", L"Lokas Software", L"CC Attribution 3.0 Unported", L"http://creativecommons.org/licenses/by/3.0/" },
 	{ IDB_ARCHIVE,    L"Light Brown ZIP Icon", L"Cats Icons 2", L"McDo Design", L"Free for non-commerical use.", L"" },
 	{ IDB_SYSTEM,     L"Computer Icon", L"Aero Icons", L"Lokas Software", L"CC Attribution 3.0 Unported.", L"https://creativecommons.org/licenses/by/3.0/" },
 	{ IDB_WINDOWS,    L"Windows Icon", L"Crystal Intense Icons", L"Tatice", L"CC Attribution-Noncommercial-NoDervis 3.0", L"https://creativecommons.org/licenses/by-nc-nd/3.0/" },

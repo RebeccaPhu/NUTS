@@ -74,6 +74,7 @@ void CBitmapCache::LoadBitmaps() {
 		{ FT_TapeImage, IDB_TAPEIMAGE  },
 		{ FT_MiscImage, IDB_DISKIMAGE  },
 		{ FT_HardImage, IDB_HARDIMAGE  },
+		{ FT_CDImage,   IDB_CDIMAGE    },
 		{ FT_CDROM,     IDB_CDROM      },
 		{ FT_HardDisc,  IDB_HARDDISC   },
 		{ FT_Floppy,    IDB_FLOPPYDISC },

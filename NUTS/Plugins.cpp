@@ -13,7 +13,7 @@
 #include "DataSourceCollector.h"
 #include "DSKDataSource.h"
 
-#include "ZIPFile.h"
+#include "BuiltIns.h"
 
 #include <string>
 #include <algorithm>
@@ -71,13 +71,7 @@ void CPlugins::LoadPlugins()
 	EncodingFontSelectors[ 0 ][ ENCODING_ASCII ] = 0;
 	EncodingFontSelectors[ 1 ][ ENCODING_ASCII ] = 0;
 
-	NUTSProvider ZIPProvider;
-
-	ZIPProvider.FriendlyName = L"PKWare";
-	ZIPProvider.PluginID     = PUID_ZIP;
-	ZIPProvider.ProviderID   = PUID_ZIP;
-
-	Providers.push_back( ZIPProvider );
+	Providers = NUTSBuiltIns.GetBuiltInProviders();
 
 	PluginID   = 0x0001;
 	EncodingID = 0x01000000;
@@ -104,7 +98,7 @@ void CPlugins::LoadPlugins()
 		FindClose( hFind );
 	}
 
-	SetSplash( L"Loaded " + std::to_wstring( (QWORD) Providers.size() ) + L" plugins." );
+	SetSplash( L"Loaded " + std::to_wstring( (QWORD) Providers.size() ) + L" providers." );
 
 	::PostMessage( hSplashWnd, WM_PAINT, 0, 0 );
 	::PostMessage( hSplashWnd, WM_ENDSPLASH, 0, 0 );
@@ -313,18 +307,10 @@ FormatList CPlugins::GetFormats( DWORD PUID )
 {
 	FormatList Formats;
 
-	if ( PUID == PUID_ZIP )
+	Formats = NUTSBuiltIns.GetBuiltinFormatList( PUID );
+
+	if ( Formats.size() > 0 )
 	{
-		FormatDesc Format;
-
-		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
-		Format.FUID   = PUID_ZIP;
-		Format.Format = L"ZIP File";
-
-		Format.PreferredExtension = (BYTE *) "ZIP";
-
-		Formats.push_back( Format );
-
 		return Formats;
 	}
 
@@ -374,7 +360,7 @@ TranslatorList CPlugins::GetTranslators( DWORD PUID, DWORD Type )
 
 FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 {
-	std::vector<FSHint> hints;
+	std::vector<FSHint> hints = NUTSBuiltIns.GetOffers( pSource, pFile );
 	
 	FSDescriptor_iter iter = FSDescriptors.begin();
 
@@ -416,28 +402,6 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 		pCollector->ReleaseSources();
 	}
 
-	FSHint hint = { 0, 0 };
-
-	hint.FSID      = FSID_ZIP;
-
-	BYTE Buf[ 4 ];
-
-	pSource->ReadRaw( 0, 4, Buf );
-
-	if ( rstrncmp( Buf, (BYTE *) "PK", 2 ) )
-	{
-		hint.Confidence += 20;
-	}
-
-	if ( ( pFile->Flags & FF_Extension ) && ( rstrncmp( pFile->Extension, (BYTE *) "ZIP", 3 ) ) )
-	{
-		hint.Confidence += 10;
-	}
-
-	hints.push_back( hint );
-
-	DataSourceCollector *px = pCollector;
-
 	return hints;
 }
 
@@ -469,13 +433,13 @@ FileSystem *CPlugins::FindAndLoadFS( DataSource *pSource, NativeFile *pFile )
 
 FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 {
-	if ( FSID == FSID_ZIP )
+	FileSystem *pBuiltIn = NUTSBuiltIns.LoadFS( FSID, pSource );
+
+	if ( pBuiltIn != nullptr )
 	{
-		FileSystem *pFS = new ZIPFile( pSource );
+		pBuiltIn->ProcessFOP = _ProcessFOPData;
 
-		pFS->ProcessFOP = _ProcessFOPData;
-
-		return pFS;
+		return pBuiltIn;
 	}
 	
 	FSDescriptor_iter iter = FSDescriptors.begin();
@@ -647,17 +611,11 @@ NUTSPlugin *CPlugins::GetPlugin( DWORD FSID )
 
 std::wstring CPlugins::ProviderName( DWORD PRID )
 {
-	if( PRID == FSID_ZIP )
+	std::wstring BuiltInProviderName = NUTSBuiltIns.ProviderName( PRID );
+
+	if ( BuiltInProviderName != L"" )
 	{
-		return L"PKWare";
-	}
-	else if ( PRID == FS_Windows )
-	{
-		return L"Microsoft";
-	}
-	else if ( PRID == FS_Root )
-	{
-		return L"NUTS";
+		return BuiltInProviderName;
 	}
 
 	std::wstring name = L"Unknown Provider";
@@ -679,17 +637,11 @@ std::wstring CPlugins::ProviderName( DWORD PRID )
 
 std::wstring CPlugins::FSName( DWORD FSID )
 {
-	if( FSID == FSID_ZIP )
+	std::wstring BuiltInFSName = NUTSBuiltIns.FSName( FSID );
+
+	if ( BuiltInFSName != L"" )
 	{
-		return L"ZIP File";
-	}
-	else if ( FSID == FS_Windows )
-	{
-		return L"Windows Drive";
-	}
-	else if ( FSID == FS_Root )
-	{
-		return L"System";
+		return BuiltInFSName;
 	}
 
 	std::wstring name = L"Unknown File System";
@@ -809,7 +761,7 @@ static bool FSMenuSort( FSMenu &a, FSMenu &b )
 
 std::vector<FSMenu> CPlugins::GetFSMenu()
 {
-	std::vector<FSMenu> menus;
+	std::vector<FSMenu> menus = NUTSBuiltIns.GetBuiltInMenuList();
 
 	DWORD CProviderID = 0xFFFF;
 
@@ -852,18 +804,6 @@ std::vector<FSMenu> CPlugins::GetFSMenu()
 		fi++;
 	}
 
-	menus.push_back( menu );
-
-	/* Add ZIP Files manually */
-	FormatMenu format;
-
-	menu.Provider = L"PKWare";
-	menu.FS.clear();
-
-	format.FS     = L"ZIP File";
-	format.ID     = FSID_ZIP;
-
-	menu.FS.push_back( format );
 	menus.push_back( menu );
 
 	std::sort( menus.begin(), menus.end(), FSMenuSort );

@@ -364,6 +364,7 @@ IDB_MUSICFILE           BITMAP                  "..\\musicfile.bmp"
 IDB_ROMDISK             BITMAP                  "..\\romdisk.bmp"
 IDB_NUTSACORN           BITMAP                  "..\\NutsAcorn.bmp"
 IDB_TZX                 BITMAP                  "E:\\NUTS\\blank-tzx.bmp"
+IDB_CDIMAGE             BITMAP                  "..\\cdimage.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //

@@ -4,6 +4,10 @@
 #include "TextFileTranslator.h"
 #include "HEXDumpTranslator.h"
 #include "MODTranslator.h"
+#include "libfuncs.h"
+
+#include "ISO9660FileSystem.h"
+#include "ZIPFile.h"
 
 #include "Defs.h"
 
@@ -63,6 +67,246 @@ void *BuiltIns::LoadTranslator( DWORD TUID )
 	}
 
 	return pXlator;
+}
+
+BuiltInProviderList BuiltIns::GetBuiltInProviders()
+{
+	BuiltInProviderList pvl;
+
+	NUTSProvider ZIPProvider;
+
+	ZIPProvider.FriendlyName = L"PKWare";
+	ZIPProvider.PluginID     = PUID_ZIP;
+	ZIPProvider.ProviderID   = PUID_ZIP;
+
+	pvl.push_back( ZIPProvider );
+
+	NUTSProvider ISOProvider;
+
+	ISOProvider.FriendlyName = L"CD/DVD";
+	ISOProvider.PluginID     = PUID_ISO;
+	ISOProvider.ProviderID   = PUID_ISO;
+
+	pvl.push_back( ISOProvider );
+
+	return pvl;
+}
+
+FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
+{
+	FormatList Formats;
+
+	if ( PUID == PUID_ZIP )
+	{
+		FormatDesc Format;
+
+		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
+		Format.FUID   = FSID_ZIP;
+		Format.Format = L"ZIP File";
+
+		Format.PreferredExtension = (BYTE *) "ZIP";
+
+		Formats.push_back( Format );
+
+		return Formats;
+	}
+
+	if ( PUID == PUID_ISO )
+	{
+		FormatDesc Format;
+
+		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
+		Format.FUID   = FSID_ISOHS;
+		Format.Format = L"High Sierra";
+
+		Format.PreferredExtension = (BYTE *) "ISO";
+
+		Formats.push_back( Format );
+
+		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
+		Format.FUID   = FSID_ISO9660;
+		Format.Format = L"ISO 9660";
+
+		Format.PreferredExtension = (BYTE *) "ISO";
+
+		Formats.push_back( Format );
+
+		return Formats;
+	}
+}
+
+FSHints BuiltIns::GetOffers( DataSource *pSource, NativeFile *pFile )
+{
+	FSHints hints;
+
+	{ // ZIP files
+		FSHint hint = { 0, 0 };
+
+		hint.FSID      = FSID_ZIP;
+
+		BYTE Buf[ 4 ];
+
+		pSource->ReadRaw( 0, 4, Buf );
+
+		if ( rstrncmp( Buf, (BYTE *) "PK", 2 ) )
+		{
+			hint.Confidence += 20;
+		}
+
+		if ( ( pFile->Flags & FF_Extension ) && ( rstrncmp( pFile->Extension, (BYTE *) "ZIP", 3 ) ) )
+		{
+			hint.Confidence += 10;
+		}
+
+		hints.push_back( hint );
+	}
+
+	{ // ISO 9660
+		FSHint hint = { 0, 0 };
+
+		hint.FSID      = FSID_ISO9660;
+
+		BYTE Buf[ 5 ];
+
+		pSource->ReadRaw( 0x8001, 5, Buf );
+
+		if ( rstrncmp( Buf, (BYTE *) "CD001", 5 ) )
+		{
+			hint.Confidence += 20;
+		}
+
+		if ( ( pFile->Flags & FF_Extension ) && ( rstrncmp( pFile->Extension, (BYTE *) "ISO", 3 ) ) )
+		{
+			hint.Confidence += 10;
+		}
+
+		hints.push_back( hint );
+	}
+
+	{ // ISO High Sierra
+		FSHint hint = { 0, 0 };
+
+		hint.FSID      = FSID_ISOHS;
+
+		BYTE Buf[ 5 ];
+
+		pSource->ReadRaw( 0x8001, 5, Buf );
+
+		if ( rstrncmp( Buf, (BYTE *) "CDROM", 5 ) )
+		{
+			hint.Confidence += 20;
+		}
+
+		if ( ( pFile->Flags & FF_Extension ) && ( rstrncmp( pFile->Extension, (BYTE *) "ISO", 3 ) ) )
+		{
+			hint.Confidence += 10;
+		}
+
+		hints.push_back( hint );
+	}
+
+	return hints;
+}
+
+FileSystem *BuiltIns::LoadFS( DWORD FSID, DataSource *pSource )
+{
+	FileSystem *pFS = nullptr;
+
+	if ( FSID == FSID_ZIP )
+	{
+		pFS = new ZIPFile( pSource );
+	}
+	else if ( ( FSID == FSID_ISO9660 ) || ( FSID == FSID_ISOHS ) )
+	{
+		pFS = new ISO9660FileSystem( pSource );
+
+		pFS->FSID = FSID;
+	}
+
+	return pFS;
+}
+
+std::wstring BuiltIns::ProviderName( DWORD PRID )
+{
+	if( PRID == FSID_ZIP )
+	{
+		return L"PKWare";
+	}
+	else if ( PRID == FS_Windows )
+	{
+		return L"Microsoft";
+	}
+	else if ( PRID == FS_Root )
+	{
+		return L"NUTS";
+	}
+	else if ( PRID == PUID_ISO )
+	{
+		return L"CD/DVD";
+	}
+
+	return L"";
+}
+
+std::wstring BuiltIns::FSName( DWORD FSID )
+{
+	if( FSID == FSID_ZIP )
+	{
+		return L"ZIP File";
+	}
+	else if ( FSID == FS_Windows )
+	{
+		return L"Windows Drive";
+	}
+	else if ( FSID == FS_Root )
+	{
+		return L"System";
+	}
+	else if ( FSID == FSID_ISO9660 )
+	{
+		return L"ISO9660";
+	}
+	else if ( FSID == FSID_ISOHS )
+	{
+		return L"High Sierra";
+	}
+
+	return L"";
+}
+
+BuiltInMenuList BuiltIns::GetBuiltInMenuList()
+{
+	BuiltInMenuList fsmenu;
+
+	/* Add ZIP Files manually */
+	FormatMenu format;
+	FSMenu     menu;
+
+	menu.Provider = L"PKWare";
+	menu.FS.clear();
+
+	format.FS = L"ZIP File";
+	format.ID = FSID_ZIP;
+
+	menu.FS.push_back( format );
+	fsmenu.push_back( menu );
+
+	menu.Provider = L"CD/DVD";
+	menu.FS.clear();
+
+	format.FS = L"High Sierra";
+	format.ID = FSID_ISOHS;
+
+	menu.FS.push_back( format );
+
+	format.FS = L"ISO9660";
+	format.ID = FSID_ISO9660;
+
+	menu.FS.push_back( format );
+
+	fsmenu.push_back( menu );
+
+	return fsmenu;
 }
 
 BuiltIns NUTSBuiltIns;

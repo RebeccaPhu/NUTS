@@ -459,6 +459,7 @@ void SetUpBaseMappings( void )
 	ExtReg.RegisterExtension( L"TXT", FT_Text,      FT_Text    );
 	ExtReg.RegisterExtension( L"ZIP", FT_Archive,   FT_Archive );
 	ExtReg.RegisterExtension( L"LHA", FT_Archive,   FT_Archive );
+	ExtReg.RegisterExtension( L"ISO", FT_MiscImage, FT_CDImage );
 }
 
 BOOL LoadMainWindow( HINSTANCE hInstance )

@@ -827,6 +827,9 @@
     <None Include="..\blank-tzx.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\cdimage.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NUTS.rc">

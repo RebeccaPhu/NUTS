@@ -106,6 +106,8 @@
 #define IDD_WIZ_FORMAT                  179
 #define IDD_ACCEPTLICENSE               180
 #define IDD_HOWPROPS                    181
+#define IDB_BITMAP5                     182
+#define IDB_CDIMAGE                     182
 #define AFX_IDC_PRINT_DOCNAME           201
 #define AFX_IDC_PRINT_PRINTERNAME       202
 #define AFX_IDC_PRINT_PORTNAME          203
@@ -742,7 +744,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        182
+#define _APS_NEXT_RESOURCE_VALUE        183
 #define _APS_NEXT_COMMAND_VALUE         40079
 #define _APS_NEXT_CONTROL_VALUE         1061
 #define _APS_NEXT_SYMED_VALUE           101

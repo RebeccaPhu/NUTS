@@ -8,10 +8,13 @@
 #define ENCODING_ASCII 0x000A5C11
 #define FT_WINDOWS     0x80000000
 #define FT_ROOT        0x00000000
-#define FT_ZIP         0xC0000000
 #define FT_UNSET       0xFFFFFFFF
+#define FT_ZIP         0xC0000000
 #define PUID_ZIP       0xF000021D
 #define FSID_ZIP       0xF000021D
+#define PUID_ISO       0xF0000150
+#define FSID_ISO9660   0xF0000150
+#define FSID_ISOHS     0xF0000150
 
 typedef unsigned long long QWORD;
 
@@ -42,6 +45,7 @@ typedef enum _FileType {
 	FT_System    = 22, // System (the top level)
 	FT_Windows   = 23, // Windows Volume
 	FT_ROMDisk   = 24, // ROMDisk
+	FT_CDImage   = 25, // CDROM Disc Image
 } FileType;
 
 typedef struct _NativeFile {
@@ -110,6 +114,16 @@ typedef enum _BuiltInFSIDs {
 	FS_Root    = 0x80001001,
 	FS_Windows = 0x80001002,
 } BuiltInFSIDs;
+
+typedef struct _FormatMenu {
+	std::wstring FS;
+	DWORD ID;
+} FormatMenu;
+
+typedef struct _FSMenu {
+	std::wstring Provider;
+	std::vector<FormatMenu> FS;
+} FSMenu;
 
 typedef struct _FSHint {
 	DWORD FSID;
