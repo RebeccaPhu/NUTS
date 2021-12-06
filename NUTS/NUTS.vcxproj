@@ -208,6 +208,7 @@
     <ClCompile Include="ImageWizard.cpp" />
     <ClCompile Include="ISO9660Directory.cpp" />
     <ClCompile Include="ISO9660FileSystem.cpp" />
+    <ClCompile Include="ISOFuncs.cpp" />
     <ClCompile Include="License.cpp" />
     <ClCompile Include="MemorySource.cpp" />
     <ClCompile Include="MikModNUTSRawDrv.cpp" />
@@ -296,6 +297,8 @@
     <ClInclude Include="IconRatio.h" />
     <ClInclude Include="ISO9660Directory.h" />
     <ClInclude Include="ISO9660FileSystem.h" />
+    <ClInclude Include="ISODefs.h" />
+    <ClInclude Include="ISOFuncs.h" />
     <ClInclude Include="License.h" />
     <ClInclude Include="MemorySource.h" />
     <ClInclude Include="MikModNUTSRawDrv.h" />

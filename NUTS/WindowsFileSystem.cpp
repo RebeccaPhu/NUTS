@@ -461,6 +461,7 @@ WCHAR *WindowsFileSystem::Identify( DWORD FileID )
 	static WCHAR *DiskImage = L"Disk Image";
 	static WCHAR *TapeImage = L"Casette Image";
 	static WCHAR *HardImage = L"Hard Drive Image";
+	static WCHAR *CDImage   = L"CD/DVD Image";
 
 	// See if we can enhance this.
 	NativeFile *pFile = &pDirectory->Files[ FileID ];
@@ -476,6 +477,10 @@ WCHAR *WindowsFileSystem::Identify( DWORD FileID )
 	else if ( pFile->Icon == FT_HardImage )
 	{
 		pIdent = HardImage;
+	}
+	else if ( pFile->Icon == FT_CDImage )
+	{
+		pIdent = CDImage;
 	}
 
 	return pIdent;

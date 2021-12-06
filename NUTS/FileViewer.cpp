@@ -2737,6 +2737,11 @@ void CFileViewer::DoContextMenu( void )
 
 	hSubMenu	= GetSubMenu(hPopup, 0);
 
+	if ( CurrentFSID == FS_Root )
+	{
+		EnableMenuItem(hSubMenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED );
+	}
+
 	if ( Selected == 1 )
 	{
 		if ( TheseFiles[ GetSelectedIndex() ].Flags & FF_Pseudo )
@@ -2763,8 +2768,6 @@ void CFileViewer::DoContextMenu( void )
 		EnableMenuItem( hSubMenu, IDM_FORMAT,  MF_BYCOMMAND | MF_DISABLED );
 		EnableMenuItem( hSubMenu, IDM_ENTER,   MF_BYCOMMAND | MF_DISABLED );
 		EnableMenuItem( hSubMenu, IDM_ENTERAS, MF_BYCOMMAND | MF_DISABLED );
-
-		EnableMenuItem(hSubMenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED );
 	}
 
 	if ( Displaying == DisplayLargeIcons ) { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_CHECKED ); } else { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_UNCHECKED ); }

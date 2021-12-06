@@ -14,7 +14,7 @@
 #define FSID_ZIP       0xF000021D
 #define PUID_ISO       0xF0000150
 #define FSID_ISO9660   0xF0000150
-#define FSID_ISOHS     0xF0000150
+#define FSID_ISOHS     0xF0000151
 
 typedef unsigned long long QWORD;
 

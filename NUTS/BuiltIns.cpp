@@ -96,11 +96,27 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 {
 	FormatList Formats;
 
+	DWORD ISOFlags =
+		FSF_Supports_Spaces | FSF_Supports_Dirs |
+		FSF_DynamicSize | FSF_UseSectors |
+		FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw |
+		FSF_Uses_Extensions | FSF_NoDir_Extensions |
+		FSF_Size |
+		FSF_Accepts_Sidecars;
+
+	DWORD ZIPFlags =
+		FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw |
+		FSF_DynamicSize | 
+		FSF_Supports_Spaces | FSF_Supports_Dirs |
+		FSF_Size |
+		FSF_Uses_Extensions |
+		FSF_Accepts_Sidecars;
+
 	if ( PUID == PUID_ZIP )
 	{
 		FormatDesc Format;
 
-		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
+		Format.Flags  = ZIPFlags;
 		Format.FUID   = FSID_ZIP;
 		Format.Format = L"ZIP File";
 
@@ -115,7 +131,7 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 	{
 		FormatDesc Format;
 
-		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
+		Format.Flags  = ISOFlags;
 		Format.FUID   = FSID_ISOHS;
 		Format.Format = L"High Sierra";
 
@@ -123,7 +139,7 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 
 		Formats.push_back( Format );
 
-		Format.Flags  = FSF_DynamicSize | FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw;
+		Format.Flags  = ISOFlags;
 		Format.FUID   = FSID_ISO9660;
 		Format.Format = L"ISO 9660";
 

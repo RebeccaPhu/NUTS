@@ -67,6 +67,12 @@
     <Filter Include="Source Files\Imported Source">
       <UniqueIdentifier>{7980f9e1-7875-4863-a4e3-c0f81224a4a7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\File Systems\ISO9660">
+      <UniqueIdentifier>{30bda90c-3acf-445b-ae61-8a168fc17d0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\File Systems\ISO9660">
+      <UniqueIdentifier>{ec4cba89-c656-476a-979f-443038d9402d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -303,11 +309,14 @@
     <ClCompile Include="RawDevices.cpp">
       <Filter>Source Files\File Systems</Filter>
     </ClCompile>
-    <ClCompile Include="ISO9660FileSystem.cpp">
-      <Filter>Source Files\File Systems</Filter>
-    </ClCompile>
     <ClCompile Include="ISO9660Directory.cpp">
-      <Filter>Source Files\File Systems</Filter>
+      <Filter>Source Files\File Systems\ISO9660</Filter>
+    </ClCompile>
+    <ClCompile Include="ISO9660FileSystem.cpp">
+      <Filter>Source Files\File Systems\ISO9660</Filter>
+    </ClCompile>
+    <ClCompile Include="ISOFuncs.cpp">
+      <Filter>Source Files\File Systems\ISO9660</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -560,14 +569,20 @@
     <ClInclude Include="RawDevices.h">
       <Filter>Header Files\File Systems</Filter>
     </ClInclude>
-    <ClInclude Include="ISO9660FileSystem.h">
-      <Filter>Header Files\File Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="ISO9660Directory.h">
-      <Filter>Header Files\File Systems</Filter>
-    </ClInclude>
     <ClInclude Include="FOP.h">
       <Filter>Header Files\Functions</Filter>
+    </ClInclude>
+    <ClInclude Include="ISO9660Directory.h">
+      <Filter>Header Files\File Systems\ISO9660</Filter>
+    </ClInclude>
+    <ClInclude Include="ISODefs.h">
+      <Filter>Header Files\File Systems\ISO9660</Filter>
+    </ClInclude>
+    <ClInclude Include="ISOFuncs.h">
+      <Filter>Header Files\File Systems\ISO9660</Filter>
+    </ClInclude>
+    <ClInclude Include="ISO9660FileSystem.h">
+      <Filter>Header Files\File Systems\ISO9660</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -215,6 +215,7 @@ public:
 		static WCHAR *DiskFile      = (WCHAR *) L"Disk Image";
 		static WCHAR *TapeFile      = (WCHAR *) L"Cassette Image";
 		static WCHAR *HardFile      = (WCHAR *) L"Hard Drive Image";
+		static WCHAR *CDFile        = (WCHAR *) L"CD/DVD Image";
 		static WCHAR *MiscFile      = (WCHAR *) L"Container File";
 		static WCHAR *Directory     = (WCHAR *) L"Directory";
 
@@ -276,11 +277,34 @@ public:
 		case FT_HardImage:
 			return HardFile;
 
+		case FT_CDImage:
+			return CDFile;
+
 		case FT_Directory:
 			break;
 
 		default:
 			return NoneFile;
+		}
+
+		if ( pDirectory->Files[ FileID ].Icon == FT_DiskImage )
+		{
+			return DiskFile;
+		}
+
+		if ( pDirectory->Files[ FileID ].Icon == FT_TapeImage )
+		{
+			return TapeFile;
+		}
+
+		if ( pDirectory->Files[ FileID ].Icon == FT_HardImage )
+		{
+			return HardFile;
+		}
+
+		if ( pDirectory->Files[ FileID ].Icon == FT_CDImage )
+		{
+			return CDFile;
 		}
 
 		return NoneFile;
