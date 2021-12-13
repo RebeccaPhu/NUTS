@@ -1649,6 +1649,19 @@ void CFileViewer::PopulateXlatorMenus( HMENU hPopup )
 
 			TXTindex++;
 		}
+
+		TranslatorList AUD = FSPlugins.GetTranslators( iter->ProviderID, TXAUDTranslator );
+
+		TranslatorIterator aud;
+
+		for ( aud = AUD.begin(); aud != AUD.end(); aud++ )
+		{
+			AppendMenu( hAudioMenu, MF_STRING, (UINT) AUDindex, aud->FriendlyName.c_str() );
+
+			MenuXlatorMap[ AUDindex ] = aud->ProviderID;
+
+			AUDindex++;
+		}
 	}
 	
 }
@@ -1987,6 +2000,8 @@ void CFileViewer::DoContentViewer( DWORD PrefTUID )
 
 			return;
 		}
+
+		FileObj.Dump();
 
 		BuiltInTranslator_iter iT;
 		BuiltInTranslators bits = NUTSBuiltIns.GetBuiltInTranslators();

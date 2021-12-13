@@ -180,6 +180,7 @@
     <ClCompile Include="ADFSEDirectory.cpp" />
     <ClCompile Include="ADFSEFileSystem.cpp" />
     <ClCompile Include="ADFSFileSystem.cpp" />
+    <ClCompile Include="ARMadeusTranslator.cpp" />
     <ClCompile Include="BBCBASICTranslator.cpp" />
     <ClCompile Include="BBCFunctions.cpp" />
     <ClCompile Include="IconResolve.cpp" />
@@ -224,6 +225,7 @@
     <ClInclude Include="ADFSEDirectory.h" />
     <ClInclude Include="ADFSEFileSystem.h" />
     <ClInclude Include="ADFSFileSystem.h" />
+    <ClInclude Include="ARMadeusTranslator.h" />
     <ClInclude Include="BBCBASICTranslator.h" />
     <ClInclude Include="BBCFunctions.h" />
     <ClInclude Include="IconResolve.h" />

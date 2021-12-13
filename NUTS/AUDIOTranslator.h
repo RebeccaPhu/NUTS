@@ -32,8 +32,13 @@ typedef struct _AudioTranslateOptions
 class AUDIOTranslator
 {
 public:
-	AUDIOTranslator();
-	~AUDIOTranslator(void);
+	AUDIOTranslator()
+	{
+	}
+
+	~AUDIOTranslator(void)
+	{
+	}
 
 	virtual int Translate( CTempFile &obj, CTempFile &Output, AudioTranslateOptions *tx )
 	{

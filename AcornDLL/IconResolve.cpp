@@ -29,7 +29,7 @@ WORD GetFiletypeSuffix( BYTE *pName )
 	return r;
 }
 
-void ResolveAppIcon( FileSystem *pFS, NativeFile *iFile )
+void ResolveAppIcon( FileSystem *pFS, NativeFile *iFile, bool AllowISOFilename )
 {
 	if ( !pFS->UseResolvedIcons )
 	{
@@ -65,6 +65,22 @@ void ResolveAppIcon( FileSystem *pFS, NativeFile *iFile )
 			if ( rstricmp( iSpriteFile->Filename, (BYTE *) "!Sprites22" ) )
 			{
 				PrefSpriteFileId = iSpriteFile->fileID;
+			}
+
+			if ( ( PrefSpriteFileId == 0xFFFFFFFF ) && ( AllowISOFilename ) )
+			{
+				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "_Sprites" ) )
+				{
+					if ( PrefSpriteFileId == 0xFFFFFFFF )
+					{
+						PrefSpriteFileId = iSpriteFile->fileID;
+					}
+				}
+
+				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "_Sprites22" ) )
+				{
+					PrefSpriteFileId = iSpriteFile->fileID;
+				}
 			}
 		}
 

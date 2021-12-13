@@ -22,6 +22,7 @@
 #include "AcornSCREENTranslator.h"
 #include "SpriteTranslator.h"
 #include "BBCBASICTranslator.h"
+#include "ARMadeusTranslator.h"
 #include "../NUTS/Defs.h"
 #include "RISCOSIcons.h"
 #include "../NUTS/IDE8Source.h"
@@ -44,7 +45,9 @@ DWORD FT_SPRITE;
 DWORD FT_ACORNX;
 DWORD GRAPHIC_ACORN;
 DWORD GRAPHIC_SPRITE;
+DWORD AUDIO_ARMADEUS;
 DWORD BBCBASIC;
+DWORD MyPLID;
 
 HMODULE hInstance;
 
@@ -202,7 +205,8 @@ std::wstring ImageExtensions[] = { L"SSD", L"IMG", L"DSD", L"ADF", L"ADS", L"ADM
 DataTranslator Translators[] = {
 	{ 0, L"BBC BASIC I - V",   0, TXTextTranslator },
 	{ 0, L"Acorn Modes 0 - 7", 0, TXGFXTranslator | GFXLogicalPalette | GFXMultipleModes },
-	{ 1, L"RISC OS Sprite",    0, TXGFXTranslator | GFXMultipleModes }
+	{ 1, L"RISC OS Sprite",    0, TXGFXTranslator | GFXMultipleModes },
+	{ 1, L"ARMadeus Sample",   0, TXAUDTranslator }
 };
 
 #define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
@@ -335,8 +339,146 @@ void *CreateTranslator( DWORD TUID )
 	{
 		pXlator = (void *) new BBCBASICTranslator();
 	}
+	else if ( TUID == AUDIO_ARMADEUS )
+	{
+		pXlator = (void *) new ARMadeusTranslator();
+	}
 
 	return pXlator;
+}
+
+WCHAR *FOPIdentify( DWORD risctype )
+{
+	static WCHAR *BASICFile  = L"BASIC Program";
+	static WCHAR *DrawFile   = L"Draw File";
+	static WCHAR *ExecFile   = L"Exec (Spool)";
+	static WCHAR *FontFile   = L"Font";
+	static WCHAR *JPEGFile   = L"JPEG Image";
+	static WCHAR *ModFile    = L"Module";
+	static WCHAR *ObeyFile   = L"Obey (Script)";
+	static WCHAR *SpriteFile = L"Sprite File";
+	static WCHAR *UtilFile   = L"Utility";
+	static WCHAR *AppFile    = L"Application";
+	static WCHAR *DataFile   = L"Data File";
+	static WCHAR *TextFile   = L"Text File";
+	static WCHAR *ArbFile    = L"File";
+
+	switch ( risctype )
+	{
+	case 0xFFB:
+		return BASICFile;
+	case 0xAFF:
+		return DrawFile;
+	case 0xFFE:
+		return ExecFile;
+	case 0xFF7:
+		return FontFile;
+	case 0xC85:
+		return JPEGFile;
+	case 0xFFA:
+		return ModFile;
+	case 0xFEB:
+		return ObeyFile;
+	case 0xFF9:
+		return SpriteFile;
+	case 0xFFC:
+		return UtilFile;
+	case 0xA01:
+		return AppFile;
+	case 0xFFD:
+		return DataFile;
+	case 0xFFF:
+		return TextFile;
+	default:
+		return ArbFile;
+	}
+
+	return ArbFile;
+}
+
+bool TranslateISOContent( FOPData *fop )
+{
+	NativeFile *File = (NativeFile *) fop->pFile;
+
+	BYTE *pData = fop->pXAttr;
+
+	bool DidTranslate = false;
+
+	/* Translate the extra data in the ZIP (max 64 bytes) if it is present */
+	if ( fop->Direction == FOP_ReadEntry )
+	{
+		if ( memcmp( pData, (void *) "ARCHIMEDES", 9 ) == 0 )
+		{
+			// Got one.
+			File->LoadAddr = * (DWORD *) &pData[ 10 ];
+			File->ExecAddr = * (DWORD *) &pData[ 14 ];
+
+			/* Attribute DWORD - Only the first 6 bits are used */
+			DWORD Attrs = * (DWORD *) &pData[ 18 ];
+
+			if ( ( Attrs & 1 ) | ( Attrs & 16 ) ) { File->AttrRead   = 0xFFFFFFFF; } else { File->AttrRead   = 0x00000000; }
+			if ( ( Attrs & 2 ) | ( Attrs & 32 ) ) { File->AttrWrite  = 0xFFFFFFFF; } else { File->AttrWrite  = 0x00000000; }
+			if   ( Attrs & 4 )                    { File->AttrLocked = 0xFFFFFFFF; } else { File->AttrLocked = 0x00000000; }
+
+			/* Fix up the first char */
+			if ( Attrs & 0x100 )
+			{
+				File->Filename[ 0 ] = '!';
+			}
+
+			/* Give it icons too */
+			ADFSDirectoryCommon adir;
+
+			adir.TranslateType( File );
+
+			/* Change the type for copying purposes */
+			File->FSFileType = FT_ACORNX;
+			File->EncodingID = ENCODING_RISCOS;
+
+			ResolveAppIcon( (FileSystem *) fop->pFS, (NativeFile *) fop->pFile, true );
+
+			/* Set some return strings */
+			DWORD Type = ( File->LoadAddr & 0x000FFF00 ) >> 8;
+
+			std::string FileTypeName = RISCOSIcons::GetNameForType( Type );
+
+			const char *pTypeName = FileTypeName.c_str();
+
+			if ( File->Flags & FF_Directory )
+			{
+				rsprintf( fop->ReturnData.StatusString, "%s | [%s%s%s%s] - Directory",
+					(BYTE *) File->Filename, (File->Flags & FF_Directory)?"D":"-", (File->AttrLocked)?"L":"-", (File->AttrRead)?"R":"-", (File->AttrWrite)?"W":"-"
+				);
+
+				rsprintf( fop->ReturnData.Descriptor, "[%s%s%s%s] - Directory",
+					(File->Flags & FF_Directory)?"D":"-", (File->AttrLocked)?"L":"-", (File->AttrRead)?"R":"-", (File->AttrWrite)?"W":"-"
+				);
+
+				fop->ReturnData.Identifier = L"Directory";
+			}
+			else
+			{
+				rsprintf( fop->ReturnData.StatusString, "%s | [%s%s%s%s] - %0X bytes - %s/%03X",
+					(BYTE *) File->Filename, (File->Flags & FF_Directory)?"D":"-", (File->AttrLocked)?"L":"-", (File->AttrRead)?"R":"-", (File->AttrWrite)?"W":"-",
+					(DWORD) File->Length, (char *) pTypeName, Type
+				);
+
+				rsprintf( fop->ReturnData.Descriptor, "[%s%s%s%s] %08X bytes, %s/%03X",
+					(File->Flags & FF_Directory)?"D":"-", (File->AttrLocked)?"L":"-", (File->AttrRead)?"R":"-", (File->AttrWrite)?"W":"-",
+					(DWORD) File->Length, pTypeName, Type
+				);
+
+				fop->ReturnData.Identifier = FOPIdentify( File->RISCTYPE );
+			}
+
+			if ( File->RISCTYPE == 0xFF9 )
+			{
+				fop->ReturnData.ProposedFS = MAKEFSID( MyPLID, 0x01, 0x0A );
+			}
+		}
+	}
+
+	return DidTranslate;
 }
 
 bool TranslateZIPContent( FOPData *fop )
@@ -631,6 +773,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_SetPluginConnectors:
 		pCollector   = (DataSourceCollector *) cmd->InParams[ 0 ].pPtr;
 		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
+		MyPLID       =                         cmd->InParams[ 2 ].Value;
 		
 		LoadFonts();
 
@@ -855,6 +998,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			BBCBASIC       = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 0 ].TUID );
 			GRAPHIC_ACORN  = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 1 ].TUID );
 			GRAPHIC_SPRITE = MAKEFSID( cmd->InParams[ 2 ].Value, 1, Translators[ 2 ].TUID );
+			AUDIO_ARMADEUS = MAKEFSID( cmd->InParams[ 2 ].Value, 1, Translators[ 3 ].TUID );
 		}
 
 		return NUTS_PLUGIN_SUCCESS;
@@ -871,6 +1015,15 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			if ( fop->DataType == FOP_DATATYPE_ZIPATTR )
 			{
 				bool r = TranslateZIPContent( fop );
+
+				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
+
+				return NUTS_PLUGIN_SUCCESS;
+			}
+
+			if ( fop->DataType == FOP_DATATYPE_CDISO )
+			{
+				bool r= TranslateISOContent( fop );
 
 				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
 

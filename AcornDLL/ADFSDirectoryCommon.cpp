@@ -90,5 +90,12 @@ void ADFSDirectoryCommon::TranslateType( NativeFile *file )
 				file->XlatorID = TUID_MOD_MUSIC;
 			}
 			break;
+
+		case 0xD3C: // ARMadeus Sample file
+			{
+				file->XlatorID = AUDIO_ARMADEUS;
+			}
+			break;
+
 	}
 }
