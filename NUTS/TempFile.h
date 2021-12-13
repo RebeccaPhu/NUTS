@@ -4,6 +4,8 @@
 
 #include "Defs.h"
 
+#define MAX_MEMORY_SIZE 4*1048576
+
 class CTempFile
 {
 public:
@@ -17,6 +19,11 @@ private:
 
 	bool bKeep;
 
+	bool InMemory;
+
+	BYTE *pMemory;
+	DWORD MemorySize;
+
 public:
 	void Seek( QWORD NewPtr );
 	QWORD Ext( void );
@@ -25,5 +32,9 @@ public:
 	std::wstring Name( void ) { return PathName; }
 	void SetExt( QWORD NewPtr );
 	void Keep( void );
+	void Dump();
+
+private:
+	void DumpMemory();
 };
 

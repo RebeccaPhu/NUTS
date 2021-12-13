@@ -4,18 +4,13 @@
 
 CTempFile::CTempFile(void)
 {
-	WCHAR TempPath[ MAX_PATH + 1 ];
-	WCHAR TempName[ MAX_PATH + 1 ];
-
-	GetTempPathW( MAX_PATH, TempPath );
-
-	GetTempFileNameW( TempPath, L"NUTS", 0, TempName );
-
-	PathName = std::wstring( TempName );
-
 	Ptr = 0;
 
 	bKeep = false;
+
+	MemorySize = 0;
+	InMemory   = true;
+	pMemory    = nullptr;
 }
 
 CTempFile::CTempFile( std::wstring exFile )
@@ -25,6 +20,10 @@ CTempFile::CTempFile( std::wstring exFile )
 	Ptr = 0;
 
 	bKeep = false;
+
+	InMemory   = false;
+	MemorySize = 0;
+	pMemory    = nullptr;
 }
 
 CTempFile::~CTempFile(void)
@@ -32,6 +31,53 @@ CTempFile::~CTempFile(void)
 	if ( !bKeep )
 	{
 		_wunlink( PathName.c_str() );
+	}
+
+	if ( pMemory )
+	{
+		free( pMemory );
+	}
+
+	pMemory = nullptr;
+}
+
+void CTempFile::DumpMemory()
+{
+	if ( InMemory )
+	{
+		WCHAR TempPath[ MAX_PATH + 1 ];
+		WCHAR TempName[ MAX_PATH + 1 ];
+
+		GetTempPathW( MAX_PATH, TempPath );
+
+		GetTempFileNameW( TempPath, L"NUTS", 0, TempName );
+
+		PathName = std::wstring( TempName );
+
+		if ( MemorySize == 0 )
+		{
+			return;
+		}
+
+		FILE *f = nullptr;
+	
+		_wfopen_s( &f, PathName.c_str(), L"wb" );
+
+		if ( f == nullptr )
+		{
+			return;
+		}
+
+		fwrite( pMemory, 1, MemorySize, f );
+
+		fclose( f );
+
+		InMemory   = false;
+		MemorySize = 0;
+
+		free( pMemory );
+
+		pMemory  = nullptr;
 	}
 }
 
@@ -42,6 +88,11 @@ void CTempFile::Seek( QWORD NewPtr )
 
 QWORD CTempFile::Ext( void )
 {
+	if ( InMemory )
+	{
+		return (QWORD) MemorySize;
+	}
+
 	FILE *f = nullptr;
 	
 	_wfopen_s( &f, PathName.c_str(), L"rb" );
@@ -62,6 +113,26 @@ QWORD CTempFile::Ext( void )
 
 void CTempFile::Write( void *Buffer, DWORD Length )
 {
+	if ( ( Ptr + Length ) > MAX_MEMORY_SIZE )
+	{
+		DumpMemory();
+	}
+	else
+	{
+		if ( ( Ptr + Length ) > MemorySize )
+		{
+			MemorySize += Ptr+Length;
+		}
+
+		pMemory = (BYTE *) realloc( pMemory, MemorySize );
+
+		memcpy( &pMemory[ Ptr ], Buffer, Length );
+
+		Ptr += Length;
+
+		return;
+	}
+
 	FILE *f = nullptr;
 	
 	_wfopen_s( &f, PathName.c_str(), L"rb+" );
@@ -85,8 +156,32 @@ void CTempFile::Write( void *Buffer, DWORD Length )
 	fclose( f );
 }
 
+void CTempFile::Dump()
+{
+	DumpMemory();
+}
+
 void CTempFile::Read( void *Buffer, DWORD Length )
 {
+	if ( InMemory )
+	{
+		DWORD CpyLen = Length;
+
+		if ( ( CpyLen + Ptr ) > MemorySize )
+		{
+			CpyLen = MemorySize - Ptr;
+		}
+
+		if ( Ptr < MemorySize )
+		{
+			memcpy( Buffer, &pMemory[ Ptr ], CpyLen );
+		}
+
+		Ptr += Length;
+
+		return;
+	}
+
 	FILE *f = nullptr;
 	
 	_wfopen_s( &f, PathName.c_str(), L"rb" );
@@ -109,6 +204,17 @@ void CTempFile::SetExt( QWORD NewPtr )
 {
 	if ( NewPtr == Ext() )
 	{
+		return;
+	}
+
+	if ( NewPtr > MAX_MEMORY_SIZE )
+	{
+		DumpMemory();
+	}
+	else if ( InMemory )
+	{
+		pMemory = (BYTE *) realloc( pMemory, NewPtr );
+
 		return;
 	}
 
@@ -171,5 +277,7 @@ void CTempFile::SetExt( QWORD NewPtr )
 
 void CTempFile::Keep( void )
 {
+	DumpMemory();
+
 	bKeep = true;
 }
