@@ -478,6 +478,80 @@ bool TranslateISOContent( FOPData *fop )
 		}
 	}
 
+	if ( fop->Direction == FOP_ExtraAttrs )
+	{
+		NativeFile *pFile = (NativeFile *) fop->pFile;
+		std::vector<AttrDesc> *pDescs = (std::vector<AttrDesc> *) fop->pXAttr;
+
+		// Don't do this for a BBC Micro (!?!) file
+		if ( ( pFile->FSFileType == FT_ACORNX ) && ( pFile->EncodingID == ENCODING_RISCOS ) )
+		{
+			AttrDesc Attr;
+
+			/* Locked */
+			Attr.Index = 1;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
+			Attr.Name  = L"Locked";
+			pDescs->push_back( Attr );
+
+			/* Read */
+			Attr.Index = 2;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
+			Attr.Name  = L"Read";
+			pDescs->push_back( Attr );
+
+			/* Write */
+			Attr.Index = 3;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
+			Attr.Name  = L"Write";
+			pDescs->push_back( Attr );
+
+			/* Load address. Hex. */
+			Attr.Index = 4;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrWarning | AttrFile;
+			Attr.Name  = L"Load address";
+			pDescs->push_back( Attr );
+
+			/* Exec address. Hex. */
+			Attr.Index = 5;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrWarning | AttrFile;
+			Attr.Name  = L"Execute address";
+			pDescs->push_back( Attr );
+
+			/* File Type. Hex. */
+			Attr.Index = 7;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrCombo | AttrHex | AttrFile;
+			Attr.Name  = L"File Type";
+
+			static DWORD    FileTypes[ ] = {
+				0xFFB, 0xFFD, 0xAFF, 0xFFE, 0xFF7, 0xC85, 0xFFA, 0xFEB, 0xFF9, 0xFFF, 0xFFC
+			};
+
+			static std::wstring Names[ ] = {
+				L"BASIC Program", L"Data", L"Draw File", L"Exec (Spool)", L"Font", L"JPEG Image", L"Module", L"Obey (Script)", L"Sprite", L"Text File", L"Utility"
+			};
+
+			for ( BYTE i=0; i<11; i++ )
+			{
+				AttrOption opt;
+
+				opt.Name            = Names[ i ];
+				opt.EquivalentValue = FileTypes[ i ];
+				opt.Dangerous       = false;
+
+				Attr.Options.push_back( opt );
+			}
+
+			pDescs->push_back( Attr );
+
+			/* Time Stamp */
+			Attr.Index = 8;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrTime | AttrFile | AttrDir;
+			Attr.Name  = L"Time Stamp";
+			pDescs->push_back( Attr );
+		}
+	}
+
 	return DidTranslate;
 }
 

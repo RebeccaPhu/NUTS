@@ -65,7 +65,7 @@ typedef struct _NativeFile {
 	BYTEString  Extension; // Extension (if Flags & FF_Extension), in EncodingID encoding 
 	DWORD Flags;           // File flags
 	QWORD Length;          // Length in bytes
-	DWORD Attributes[16];  // Arbitrary set of FS-specific attributes
+	DWORD Attributes[32];  // Arbitrary set of FS-specific attributes
 	FileType Type;         // Type of file in terms of content (see below)
 	DWORD Icon;            // Icon number to display (can be FT)
 	DWORD EncodingID;      // Text encoding of filename/extension
@@ -175,6 +175,7 @@ typedef enum _DSFlags {
 	DS_AlwaysLLF         = 0x00000004, /* The data source is attached to a device that requires Low Level Formatting every time */
 	DS_SupportsTruncate  = 0x00000008, /* The data source does not require the extent to match the capacity */
 	DS_SlowAccess        = 0x00000010, /* The data source is slow to respond, so enhanced interrogation processes should not be used */
+	DS_ReadOnly          = 0x00000010, /* The data source does not support write operations. */
 } DSFlags;
 
 typedef struct _FormatDesc {

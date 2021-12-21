@@ -29,6 +29,11 @@ static bool _ProcessFOPData( FOPData *pFOP )
 	return FSPlugins.ProcessFOP( pFOP );
 }
 
+static void *_LoadFOPFS( DWORD FSID, void *source )
+{
+	return (void *) FSPlugins.LoadFS( FSID, (DataSource *) source );
+}
+
 CPlugins::CPlugins()
 {
 	Plugins.clear();
@@ -147,8 +152,9 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 
 		/* Initialise the plugin and set the connector points */
 		cmd.CommandID = PC_SetPluginConnectors;
-		cmd.InParams[ 0 ].pPtr = (void *) pCollector;
-		cmd.InParams[ 1 ].pPtr = (void *) pGlobalError;
+		cmd.InParams[ 0 ].pPtr  = (void *) pCollector;
+		cmd.InParams[ 1 ].pPtr  = (void *) pGlobalError;
+		cmd.InParams[ 2 ].Value = plugin.PluginID;
 
 		if ( plugin.CommandHandler( &cmd ) != NUTS_PLUGIN_SUCCESS )
 		{
@@ -438,6 +444,12 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 	if ( pBuiltIn != nullptr )
 	{
 		pBuiltIn->ProcessFOP = _ProcessFOPData;
+		pBuiltIn->LoadFOPFS  = _LoadFOPFS;
+
+		if ( pSource->Flags & DS_ReadOnly )
+		{
+			pBuiltIn->Flags |= FSF_ReadOnly;
+		}
 
 		return pBuiltIn;
 	}
@@ -558,6 +570,12 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 			if ( pFS != nullptr )
 			{
 				pFS->ProcessFOP = _ProcessFOPData;
+				pFS->LoadFOPFS  = _LoadFOPFS;
+
+				if ( pSource->Flags & DS_ReadOnly )
+				{
+					pFS->Flags |= FSF_ReadOnly;
+				}
 			}
 
 			return pFS;
@@ -583,6 +601,11 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 					if ( pFS != nullptr )
 					{
 						pFS->ProcessFOP = _ProcessFOPData;
+
+						if ( pSource->Flags & DS_ReadOnly )
+						{
+							pFS->Flags |= FSF_ReadOnly;
+						}
 					}
 
 					return pFS;
