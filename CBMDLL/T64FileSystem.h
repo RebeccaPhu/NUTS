@@ -48,7 +48,7 @@ public:
 
 	int    MakeASCIIFilename( NativeFile *pFile );
 
-	std::vector<AttrDesc> GetAttributeDescriptions( void );
+	std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 	std::vector<AttrDesc> GetFSAttributeDescriptions( void );
 	int    SetProps( DWORD FileID, NativeFile *Changes );
 	int    SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );

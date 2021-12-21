@@ -398,7 +398,7 @@ int WindowsFileSystem::RenameIncomingDirectory( NativeFile *pDir, Directory *pDi
 	return 0;
 }
 
-std::vector<AttrDesc> WindowsFileSystem::GetAttributeDescriptions( void )
+std::vector<AttrDesc> WindowsFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

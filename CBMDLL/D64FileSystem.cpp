@@ -286,7 +286,7 @@ BYTE *D64FileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 }
 
 
-AttrDescriptors D64FileSystem::GetAttributeDescriptions( void )
+AttrDescriptors D64FileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

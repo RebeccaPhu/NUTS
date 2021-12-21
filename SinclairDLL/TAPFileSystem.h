@@ -41,7 +41,7 @@ public:
 	int Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 	BYTE *DescribeFile( DWORD FileIndex );
 
-	AttrDescriptors GetAttributeDescriptions( void );
+	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
 	int SwapFile( DWORD FileID1, DWORD FileID2 );
 	int SetProps( DWORD FileID, NativeFile *Changes );

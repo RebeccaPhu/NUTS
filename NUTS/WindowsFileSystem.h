@@ -69,7 +69,7 @@ public:
 
 	int DeleteFile( DWORD FileID );
 
-	std::vector<AttrDesc> GetAttributeDescriptions( void );
+	std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
 	WCHAR *Identify( DWORD FileID );
 	BYTE *DescribeFile( DWORD FileIndex );

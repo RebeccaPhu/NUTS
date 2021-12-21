@@ -174,7 +174,7 @@ int T64FileSystem::MakeASCIIFilename( NativeFile *pFile )
 	return 0;
 }
 
-std::vector<AttrDesc> T64FileSystem::GetAttributeDescriptions( void )
+std::vector<AttrDesc> T64FileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

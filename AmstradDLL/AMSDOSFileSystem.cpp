@@ -208,9 +208,9 @@ int AMSDOSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 }
 
 
-std::vector<AttrDesc> AMSDOSFileSystem::GetAttributeDescriptions( void )
+std::vector<AttrDesc> AMSDOSFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
-	std::vector<AttrDesc> Attrs = CPMFileSystem::GetAttributeDescriptions();
+	std::vector<AttrDesc> Attrs = CPMFileSystem::GetAttributeDescriptions( pFile );
 
 	AttrDesc Attr;
 

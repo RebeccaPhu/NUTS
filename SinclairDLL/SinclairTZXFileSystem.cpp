@@ -144,7 +144,7 @@ void SinclairTZXFileSystem::RequestResolvedFileWrite( CTempFile &Output, NativeF
 	Output.Write( &Flag, 1 );
 }
 
-AttrDescriptors SinclairTZXFileSystem::GetAttributeDescriptions( void )
+AttrDescriptors SinclairTZXFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

@@ -251,7 +251,7 @@ int SpriteFile::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  )
 	return r;
 }
 
-AttrDescriptors SpriteFile::GetAttributeDescriptions( void )
+AttrDescriptors SpriteFile::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

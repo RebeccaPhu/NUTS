@@ -209,7 +209,7 @@ BYTE *MacintoshMFSFileSystem::GetStatusString( int FileIndex, int SelectedItems 
 	return status;
 }
 
-std::vector<AttrDesc> MacintoshMFSFileSystem::GetAttributeDescriptions( void )
+std::vector<AttrDesc> MacintoshMFSFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

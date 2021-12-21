@@ -27,7 +27,7 @@ public:
 	{
 	}
 
-	AttrDescriptors GetAttributeDescriptions( void );
+	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 	int SetProps( DWORD FileID, NativeFile *Changes );
 
 	int WriteFile(NativeFile *pFile, CTempFile &store);

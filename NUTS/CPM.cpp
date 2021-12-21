@@ -658,7 +658,7 @@ int CPMFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	return 0;
 }
 
-std::vector<AttrDesc> CPMFileSystem::GetAttributeDescriptions( void )
+std::vector<AttrDesc> CPMFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

@@ -80,7 +80,7 @@ public:
 		return ENCODING_RISCOS;
 	}
 
-	AttrDescriptors GetAttributeDescriptions( void );
+	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
 	int Format_Process( DWORD FT, HWND hWnd );
 

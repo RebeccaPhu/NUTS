@@ -610,7 +610,7 @@ int IECATAFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	return 0;
 }
 
-std::vector<AttrDesc> IECATAFileSystem::GetAttributeDescriptions( void )
+std::vector<AttrDesc> IECATAFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

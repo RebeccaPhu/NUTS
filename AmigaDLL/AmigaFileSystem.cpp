@@ -389,7 +389,7 @@ BYTE *AmigaFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 	return title;
 }
 
-AttrDescriptors AmigaFileSystem::GetAttributeDescriptions( void )
+AttrDescriptors AmigaFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

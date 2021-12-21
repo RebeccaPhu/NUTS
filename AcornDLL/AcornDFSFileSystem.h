@@ -83,7 +83,7 @@ public:
 	int CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 
 	AttrDescriptors GetFSAttributeDescriptions( void );
-	AttrDescriptors GetAttributeDescriptions( void );
+	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
 	DWORD GetEncoding(void )
 	{

@@ -526,7 +526,7 @@ int TAPFileSystem::RewriteTAPFile( DWORD SpecialID, DWORD SwapID, BYTE *pName, i
 	return pDirectory->ReadDirectory();
 }
 
-AttrDescriptors TAPFileSystem::GetAttributeDescriptions( void )
+AttrDescriptors TAPFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

@@ -929,7 +929,7 @@ int ADFSEFileSystem::SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal )
 	return pFSMap->WriteFSMap();
 }
 
-AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( void )
+AttrDescriptors ADFSEFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

@@ -88,9 +88,9 @@ FSHint DOS3FileSystem::Offer( BYTE *Extension )
 	return hint;
 }
 
-std::vector<AttrDesc> DOS3FileSystem::GetAttributeDescriptions( void )
+std::vector<AttrDesc> DOS3FileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
-	std::vector<AttrDesc> Attrs = CPMFileSystem::GetAttributeDescriptions();
+	std::vector<AttrDesc> Attrs = CPMFileSystem::GetAttributeDescriptions( pFile );
 
 	AttrDesc Attr;
 

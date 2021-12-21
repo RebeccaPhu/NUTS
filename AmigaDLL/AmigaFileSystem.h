@@ -76,7 +76,7 @@ public:
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
 	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 
-	AttrDescriptors GetAttributeDescriptions( void );
+	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
 private:
 	int ReadFileBlocks( DWORD FileHeaderBlock, CTempFile &store );

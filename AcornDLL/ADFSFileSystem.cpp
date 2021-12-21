@@ -788,7 +788,7 @@ int ADFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	return 0;
 }
 
-AttrDescriptors ADFSFileSystem::GetAttributeDescriptions( void )
+AttrDescriptors ADFSFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

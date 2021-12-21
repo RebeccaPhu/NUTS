@@ -934,8 +934,15 @@ void SetupAttributes( HWND hWnd, bool CreateWindows )
 	}
 
 	static AttrDescriptors Attrs;
+
+	NativeFile *pTargetFile = nullptr;
+
+	if ( ( CurrentAction.Selection.size() == 1 ) && ( pHostFS->FSID != FS_Root ) )
+	{
+		pTargetFile = &CurrentAction.Selection[ 0 ];
+	}
 		
-	Attrs = pHostFS->GetAttributeDescriptions();
+	Attrs = pHostFS->GetAttributeDescriptions( pTargetFile );
 
 	if ( ( CurrentAction.Selection.size() == 0 ) && ( pHostFS->FSID != FS_Root ) )
 	{

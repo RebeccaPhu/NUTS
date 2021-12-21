@@ -364,7 +364,7 @@ public:
 		return 0;
 	}
 
-	virtual std::vector<AttrDesc> GetAttributeDescriptions( void )
+	virtual std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr )
 	{
 		std::vector<AttrDesc> none;
 
@@ -550,6 +550,7 @@ public:
 	BYTEString PreferredArbitraryExtension;
 
 	FOPTranslateFunction ProcessFOP;
+	FOPLoadFSFunction    LoadFOPFS;
 
 protected:
 	HANDLE hCancelFormat;

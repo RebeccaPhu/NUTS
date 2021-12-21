@@ -563,7 +563,7 @@ AttrDescriptors AcornDFSFileSystem::GetFSAttributeDescriptions( void )
 	return Attrs;
 }
 
-AttrDescriptors AcornDFSFileSystem::GetAttributeDescriptions( void )
+AttrDescriptors AcornDFSFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 {
 	static std::vector<AttrDesc> Attrs;
 

@@ -103,7 +103,7 @@ public:
 	WCHAR *Identify( DWORD FileID );
 	int  CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 
-	AttrDescriptors GetAttributeDescriptions( void );
+	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 	AttrDescriptors GetFSAttributeDescriptions( void );
 
 	int ResolveAuxFileType( NativeFile *pSprite, NativeFile *pFile, SpriteFile &spriteFile );

@@ -37,7 +37,7 @@ public:
 	FSHint Offer( BYTE *Extension );
 	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 	BYTE *GetStatusString( int FileIndex, int SelectedItems );
-	std::vector<AttrDesc> GetAttributeDescriptions( void );
+	std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 	int ReadFile(DWORD FileID, CTempFile &store);
 	int CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 	AttrDescriptors MacintoshMFSFileSystem::GetFSAttributeDescriptions( void );

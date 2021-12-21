@@ -23,7 +23,7 @@ public:
 
 	int Format_Process( DWORD FT, HWND hWnd );
 
-	std::vector<AttrDesc> GetAttributeDescriptions( void );
+	std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 	int SetProps( DWORD FileID, NativeFile *Changes );
 
 	int EnhanceFileData( NativeFile *pFile );

@@ -72,7 +72,7 @@ public:
 	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags );
 	WCHAR *Identify( DWORD FileID );
 
-	AttrDescriptors GetAttributeDescriptions( void );
+	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 	AttrDescriptors GetFSAttributeDescriptions( void );
 
 	int  SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );

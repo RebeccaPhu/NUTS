@@ -51,7 +51,7 @@ public:
 
 	virtual int   CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 
-	virtual std::vector<AttrDesc> GetAttributeDescriptions( void );
+	virtual std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 	virtual int   SetProps( DWORD FileID, NativeFile *Changes );
 	virtual std::vector<AttrDesc> GetFSAttributeDescriptions( void );
 	virtual int  SetFSProp( DWORD PropID, DWORD NewVal, BYTE *pNewVal );

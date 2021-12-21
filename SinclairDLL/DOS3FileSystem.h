@@ -17,7 +17,7 @@ public:
 
 	FSHint Offer( BYTE *Extension );
 
-	std::vector<AttrDesc> GetAttributeDescriptions( void );
+	std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
 	bool GetCPMHeader( NativeFile *pFile, BYTE *pHeader );
 	int  SetProps( DWORD FileID, NativeFile *Changes );

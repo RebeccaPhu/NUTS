@@ -66,7 +66,7 @@ public:
 		return ENCODING_PETSCII;
 	}
 
-	std::vector<AttrDesc> GetAttributeDescriptions( void );
+	std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
 private:
 	IECATADirectory *pIECDirectory;
