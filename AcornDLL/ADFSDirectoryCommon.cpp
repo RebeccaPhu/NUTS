@@ -35,7 +35,10 @@ void ADFSDirectoryCommon::TranslateType( NativeFile *file )
 
 	/* This timestamp converstion is a little esoteric. RISC OS uses centiseconds
 	   since 0:0:0@1/1/1900. This is *nearly* unixtime. */
-	QWORD UnixTime = ( ( (QWORD) file->ExecAddr ) << 8 ) | (file->LoadAddr & 0xFF);
+	QWORD UnixTime = file->LoadAddr & 0xFF;
+
+	UnixTime <<= 32;
+	UnixTime |= file->ExecAddr;
 
 	UnixTime /= 100;
 	UnixTime -= 2208988800; // Secs difference between 1/1/1970 and 1/1/1900.
