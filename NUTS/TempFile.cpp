@@ -113,24 +113,27 @@ QWORD CTempFile::Ext( void )
 
 void CTempFile::Write( void *Buffer, DWORD Length )
 {
-	if ( ( Ptr + Length ) > MAX_MEMORY_SIZE )
+	if ( InMemory )
 	{
-		DumpMemory();
-	}
-	else
-	{
-		if ( ( Ptr + Length ) > MemorySize )
+		if ( ( Ptr + Length ) > MAX_MEMORY_SIZE )
 		{
-			MemorySize += Ptr+Length;
+			DumpMemory();
 		}
+		else
+		{
+			if ( ( Ptr + Length ) > MemorySize )
+			{
+				MemorySize += Ptr+Length;
+			}
 
-		pMemory = (BYTE *) realloc( pMemory, MemorySize );
+			pMemory = (BYTE *) realloc( pMemory, MemorySize );
 
-		memcpy( &pMemory[ Ptr ], Buffer, Length );
+			memcpy( &pMemory[ Ptr ], Buffer, Length );
 
-		Ptr += Length;
+			Ptr += Length;
 
-		return;
+			return;
+		}
 	}
 
 	FILE *f = nullptr;
