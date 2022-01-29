@@ -416,7 +416,36 @@ public:
 
 		if ( pDirectory->Files[ FileID ].Flags & FF_Extension )
 		{
-			pDirectory->Files[ FileID ].Extension = BYTEString( NewExt );
+			if ( rstrnlen( NewExt, 256 ) == 0 )
+			{
+				pDirectory->Files[ FileID ].Flags &= ~FF_Extension;
+			}
+			else
+			{
+				pDirectory->Files[ FileID ].Extension = BYTEString( NewExt );
+			}
+		}
+		else
+		{
+			if ( rstrnlen( NewExt, 256 ) != 0 )
+			{
+				if ( Flags & FSF_Uses_Extensions )
+				{
+					if ( pDirectory->Files[ FileID ].Flags & FF_Directory )
+					{
+						if ( ! ( Flags & FSF_NoDir_Extensions ) )
+						{
+							pDirectory->Files[ FileID ].Flags |= FF_Extension;
+							pDirectory->Files[ FileID ].Extension = BYTEString( NewExt );
+						}
+					}
+					else
+					{
+						pDirectory->Files[ FileID ].Flags |= FF_Extension;
+						pDirectory->Files[ FileID ].Extension = BYTEString( NewExt );
+					}
+				}
+			}
 		}
 
 		int r = pDirectory->WriteDirectory();

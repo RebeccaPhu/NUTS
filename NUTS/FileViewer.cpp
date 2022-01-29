@@ -2134,6 +2134,7 @@ void CFileViewer::RenameFile( void )
 		CFileViewer::StaticFlags    = FS->Flags;
 		CFileViewer::pRenameFile    = OldName;
 		CFileViewer::pRenameExt     = OldExt;
+		CFileViewer::StaticFileFlags = iter->Flags;
 
 		if ( DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_RENAME), hWnd, RenameDialogProc, (LPARAM) OldName ) == IDOK )
 		{
@@ -2240,6 +2241,7 @@ EncodingEdit *CFileViewer::pRenameEditX = nullptr;
 
 DWORD CFileViewer::StaticFlags    = 0;
 DWORD CFileViewer::StaticEncoding = 0;
+DWORD CFileViewer::StaticFileFlags = 0;
 
 INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -2247,7 +2249,24 @@ INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM w
 	{
 	case WM_INITDIALOG:
 		{
-			if ( StaticFlags & FSF_Uses_Extensions )
+			bool HaveExtension = false;
+
+			if ( StaticFileFlags & FF_Directory )
+			{
+				if ( ( StaticFlags & FSF_Uses_Extensions ) && ( ! (StaticFlags & FSF_NoDir_Extensions) ) )
+				{
+					HaveExtension = true;
+				}
+			}
+			else
+			{
+				if ( StaticFlags & FSF_Uses_Extensions )
+				{
+					HaveExtension = true;
+				}
+			}
+
+			if ( HaveExtension )
 			{
 				pRenameEdit  = new EncodingEdit( hDlg, 12, 52, 348, false );
 				pRenameEditX = new EncodingEdit( hDlg, 362, 52, 105, true );
@@ -2295,7 +2314,17 @@ INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM w
 
 				if ( StaticFlags & FSF_Uses_Extensions )
 				{
-					rstrncpy(  CFileViewer::pRenameExt,  pRenameEditX->GetText(), 256 );
+					if ( StaticFileFlags & FF_Directory )
+					{
+						if ( ! ( StaticFlags & FSF_NoDir_Extensions ) ) 
+						{
+							rstrncpy(  CFileViewer::pRenameExt,  pRenameEditX->GetText(), 256 );
+						}
+					}
+					else
+					{
+						rstrncpy(  CFileViewer::pRenameExt,  pRenameEditX->GetText(), 256 );
+					}
 				}
 
 				EndDialog( hDlg, IDOK );
@@ -2944,6 +2973,7 @@ void CFileViewer::DoLocalCommandMenu( HMENU hPopup )
 		if ( ( s >  1 ) && ( ! ( iter->Flags & LC_ApplyMany ) ) ) { Flags |= MF_GRAYED; }
 
 		if ( iter->Flags & LC_IsChecked ) { Flags |= MF_CHECKED; }
+		if ( iter->Flags & LC_Disabled  ) { Flags |= MF_DISABLED; }
 
 		if ( iter->Flags & LC_IsSeparator )
 		{

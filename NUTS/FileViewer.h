@@ -47,6 +47,7 @@ public:
 	static BYTE *pRenameExt;
 	static EncodingEdit *pRenameEditX;
 	static DWORD StaticFlags;
+	static DWORD StaticFileFlags;
 	static DWORD StaticEncoding;
 	static INT_PTR CALLBACK NewDirDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static BYTE *pNewDir;
