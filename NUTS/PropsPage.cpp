@@ -379,6 +379,14 @@ void ConfigureSpaceProps( HWND hwndDlg )
 	{
 		std::wstring name = FSPlugins.FSName( pTargetFS->FSID );
 
+		if ( pTargetFS->pSource != nullptr )
+		{
+			if ( pTargetFS->pSource->Feedback != L"" )
+			{
+				name += L" (" + pTargetFS->pSource->Feedback + L")";
+			}
+		}
+
 		::SendMessage( GetDlgItem( hwndDlg, IDC_FSTYPE ), WM_SETTEXT, 0, (LPARAM) name.c_str() );
 	}
 	else
@@ -1855,10 +1863,17 @@ int PropsPage_Handler( AppAction Action )
 
 			if ( pTargetFS != nullptr )
 			{
-				pTargetFS->Init();
+				if ( pTargetFS->Init() == NUTS_SUCCESS )
+				{
+					// To free later
+					pLoadedFS = pTargetFS;
+				}
+				else
+				{
+					delete pTargetFS;
 
-				// To free later
-				pLoadedFS = pTargetFS;
+					pTargetFS = nullptr;
+				}
 			}
 		}
 	}
