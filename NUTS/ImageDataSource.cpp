@@ -39,7 +39,12 @@ int ImageDataSource::ReadRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 
 	_fseeki64( fFile, Offset, SEEK_SET );
 
-	fread( pBuffer, 1, Length, fFile );
+	if ( fread( pBuffer, 1, Length, fFile ) < 1 )
+	{
+		fclose( fFile );
+
+		return NUTSError( 0x40, L"Out of data reading data source" );
+	}
 
 	fclose(fFile);
 
