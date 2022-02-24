@@ -10,6 +10,7 @@
 #define FT_ROOT        0x00000000
 #define FT_UNSET       0xFFFFFFFF
 #define FT_ZIP         0xC0000000
+#define FT_ISO         0xD0000000
 #define PUID_ZIP       0xF000021D
 #define FSID_ZIP       0xF000021D
 #define PUID_ISO       0xF0000150
@@ -46,6 +47,7 @@ typedef enum _FileType {
 	FT_Windows   = 23, // Windows Volume
 	FT_ROMDisk   = 24, // ROMDisk
 	FT_CDImage   = 25, // CDROM Disc Image
+	FT_MemCard   = 26, // Memory card
 } FileType;
 
 typedef struct _NativeFile {
@@ -59,6 +61,10 @@ typedef struct _NativeFile {
 		XlatorID        = NULL;
 		HasResolvedIcon = false;
 		ExtraForks      = 0;
+		pAuxData        = nullptr;
+		lAuxData        = 0;
+		FSFileType      = 0;
+		FSFileTypeX     = 0;
 	}
 	DWORD fileID;          // File index into the pDirectory->Files vector
 	BYTEString  Filename;  // Filename, in EncodingID encoding
@@ -70,14 +76,18 @@ typedef struct _NativeFile {
 	DWORD Icon;            // Icon number to display (can be FT)
 	DWORD EncodingID;      // Text encoding of filename/extension
 	DWORD FSFileType;      // Type of file in terms of filesystem, e.g. "This is a C64 file".
+	DWORD FSFileTypeX;     // Type of file in terms of filesystem containing it, e.g. "This is a CDROM ISO file".
 	DWORD XlatorID;        // ID of a translator plugin that can deal with this file
 	bool  HasResolvedIcon; // Has a icon resolved from the file system itself (Dynamic icon)
 	BYTE  ExtraForks;      // Number of forks (additional to the data fork) used by this file
+	BYTE  *pAuxData;       // Pointer to auxilliary directory data
+	DWORD lAuxData;        // Size of auxilliary directory data
 } NativeFile;
 
 typedef std::vector<NativeFile>::iterator NativeFileIterator;
 
 typedef enum _ActionID {
+	AA_NONE        = 0,
 	AA_FORMAT      = 1,
 	AA_COPY        = 2,
 	AA_DELETE      = 3,
@@ -278,6 +288,7 @@ typedef enum _LCFlags {
 	LC_ApplyNone   = 0x00000004, /* Menu entry applies when NO FS items are selected */
 	LC_ApplyOne    = 0x00000008, /* Menu entry applies when ONE FS item is selected */
 	LC_ApplyMany   = 0x00000010, /* Menu entry applies when MORE THAN ONE FS item are selected */
+	LC_Disabled    = 0x00000020, /* Menu entry is disabled */
     LC_Always      = 0x0000001C, /* Menu entry applies REGARDLESS of how many FS items are selected */
 	LC_OneOrMore   = 0x00000018, /* Menu entry applies when ONE OR MORE FS items are selected */
 } LCFlags;

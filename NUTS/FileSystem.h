@@ -58,6 +58,8 @@ public:
 		pParentFS        = nullptr;
 
 		PreferredArbitraryExtension = (BYTE *) "IMG";
+
+		FileOpsAction = AA_NONE;
 	}
 
 	virtual ~FileSystem(void) {
@@ -81,7 +83,7 @@ public:
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
-	virtual	int	ReplaceFile(NativeFile *pFile, CTempFile &store) {
+	virtual int ReplaceFile(NativeFile *pFile, CTempFile &store) {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
@@ -93,7 +95,7 @@ public:
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
-	virtual int	CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
+	virtual int CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
@@ -165,7 +167,7 @@ public:
 			}
 		}
 
-		return NUTSError( 400, L"Couldn't find find to delete (software bug)" );
+		return NUTSError( 400, L"Couldn't find file to delete (software bug)" );
 	}
 
 	virtual int Init(void) {
@@ -559,6 +561,16 @@ public:
 		return nullptr;
 	}
 
+	virtual void BeginOps( ActionID action )
+	{
+		FileOpsAction = action;
+	}
+
+	virtual void CommitOps( void )
+	{
+		FileOpsAction = AA_NONE;
+	}
+
 	DWORD FSID;
 	DWORD PLID;
 	DWORD EnterIndex;
@@ -589,5 +601,7 @@ protected:
 	BYTE *pBlockMap;
 
 	std::vector<CTempFile *> Forks;
+
+	ActionID FileOpsAction;
 };
 

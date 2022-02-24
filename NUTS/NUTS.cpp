@@ -20,6 +20,7 @@
 #include "FileOps.h"
 #include "CharMap.h"
 #include "License.h"
+#include "ISOECC.h"
 
 #include <winioctl.h>
 #include <process.h>
@@ -537,6 +538,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 	BitmapCache.LoadBitmaps();
 
 	SetUpBaseMappings();
+
+	// LUT init for ISO raw sectors
+	eccedc_init();
 	
 	if ( !LoadSplashWindow( hInstance ) )
 	{
@@ -676,12 +680,14 @@ unsigned int DoEnter( FSAction *pVars )
 		if ( pNewFS->Init() != NUTS_SUCCESS )
 		{
 			NUTSError::Report( L"Initialise File System", hMainWnd );
+
+			delete pNewFS;
 		}
+		else
+		{
+			pNewFS->hMainWindow = hMainWnd;
+			pNewFS->hPaneWindow = pVars->pane->hWnd;
 
-		pNewFS->hMainWindow = hMainWnd;
-		pNewFS->hPaneWindow = pVars->pane->hWnd;
-
-		if ( pNewFS ) {
 			pVars->pStack->push_back( pNewFS );
 
 			pVars->pane->FS	      = pNewFS;
@@ -712,18 +718,22 @@ unsigned int DoEnter( FSAction *pVars )
 				if ( pNewFS->Init() != NUTS_SUCCESS )
 				{
 					NUTSError::Report( L"Initialise File System", hMainWnd );
+
+					delete pNewFS;
 				}
+				else
+				{
+					pNewFS->IsRaw = false;
 
-				pNewFS->IsRaw = false;
+					pVars->pStack->push_back( pNewFS );
 
-				pVars->pStack->push_back( pNewFS );
+					pVars->pane->FS	           = pNewFS;
+					pVars->pane->CurrentFSID   = pNewFS->FSID;
+					pNewFS->hMainWindow        = hMainWnd;
+					pNewFS->hPaneWindow        = pVars->pane->hWnd;
 
-				pVars->pane->FS	           = pNewFS;
-				pVars->pane->CurrentFSID   = pNewFS->FSID;
-				pNewFS->hMainWindow        = hMainWnd;
-				pNewFS->hPaneWindow        = pVars->pane->hWnd;
-
-				pVars->pane->SelectionStack.push_back( -1 );
+					pVars->pane->SelectionStack.push_back( -1 );
+				}
 			}
 			else
 			{

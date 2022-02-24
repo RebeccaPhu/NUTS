@@ -208,7 +208,10 @@
     <ClCompile Include="ImageWizard.cpp" />
     <ClCompile Include="ISO9660Directory.cpp" />
     <ClCompile Include="ISO9660FileSystem.cpp" />
+    <ClCompile Include="ISOECC.cpp" />
     <ClCompile Include="ISOFuncs.cpp" />
+    <ClCompile Include="ISOPathTable.cpp" />
+    <ClCompile Include="ISORawSectorSource.cpp" />
     <ClCompile Include="License.cpp" />
     <ClCompile Include="MemorySource.cpp" />
     <ClCompile Include="MikModNUTSRawDrv.cpp" />
@@ -298,7 +301,11 @@
     <ClInclude Include="ISO9660Directory.h" />
     <ClInclude Include="ISO9660FileSystem.h" />
     <ClInclude Include="ISODefs.h" />
+    <ClInclude Include="ISOECC.h" />
     <ClInclude Include="ISOFuncs.h" />
+    <ClInclude Include="ISOPathTable.h" />
+    <ClInclude Include="ISORawSectorSource.h" />
+    <ClInclude Include="ISOSectorTypes.h" />
     <ClInclude Include="License.h" />
     <ClInclude Include="MemorySource.h" />
     <ClInclude Include="MikModNUTSRawDrv.h" />
@@ -404,6 +411,7 @@
     <None Include="..\icon1.ico" />
     <None Include="..\icon2.ico" />
     <None Include="..\jpeg.bmp" />
+    <None Include="..\memorycard.bmp" />
     <None Include="..\module.bmp" />
     <None Include="..\musicfile.bmp" />
     <None Include="..\newdir.ico" />
@@ -438,6 +446,7 @@
     <None Include="..\WizMark.bmp" />
     <None Include="ClassDiagram1.cd" />
     <None Include="NUTS.ico" />
+    <None Include="repair.bmp" />
     <None Include="SingleFile.cur" />
     <None Include="small.ico" />
   </ItemGroup>

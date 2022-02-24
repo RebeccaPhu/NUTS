@@ -7,6 +7,7 @@
 #include "libfuncs.h"
 
 #include "ISO9660FileSystem.h"
+#include "ISORawSectorSource.h"
 #include "ZIPFile.h"
 
 #include "Defs.h"
@@ -98,14 +99,14 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 
 	DWORD ISOFlags =
 		FSF_Supports_Spaces | FSF_Supports_Dirs |
-		FSF_DynamicSize | FSF_UseSectors |
-		FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw |
+		FSF_DynamicSize |
+		FSF_Creates_Image | FSF_Formats_Image | FSF_Formats_Raw |
 		FSF_Uses_Extensions | FSF_NoDir_Extensions |
 		FSF_Size |
 		FSF_Accepts_Sidecars;
 
 	DWORD ZIPFlags =
-		FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw |
+		FSF_Creates_Image | FSF_Formats_Image | FSF_Formats_Raw |
 		FSF_DynamicSize | 
 		FSF_Supports_Spaces | FSF_Supports_Dirs |
 		FSF_Size |
@@ -149,6 +150,8 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 
 		return Formats;
 	}
+
+	return Formats; // Empty list
 }
 
 FSHints BuiltIns::GetOffers( DataSource *pSource, NativeFile *pFile )
@@ -206,7 +209,7 @@ FSHints BuiltIns::GetOffers( DataSource *pSource, NativeFile *pFile )
 
 		BYTE Buf[ 5 ];
 
-		pSource->ReadRaw( 0x8001, 5, Buf );
+		pSource->ReadRaw( 0x8009, 5, Buf );
 
 		if ( rstrncmp( Buf, (BYTE *) "CDROM", 5 ) )
 		{
@@ -234,6 +237,22 @@ FileSystem *BuiltIns::LoadFS( DWORD FSID, DataSource *pSource )
 	}
 	else if ( ( FSID == FSID_ISO9660 ) || ( FSID == FSID_ISOHS ) )
 	{
+		// Do a raw test
+		const BYTE SectorHeader[ 12 ] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+
+		BYTE HeaderCheck[ 12 ];
+
+		if ( pSource->ReadRaw( 0, 12, HeaderCheck ) == DS_SUCCESS )
+		{
+			if ( memcmp( HeaderCheck, SectorHeader, 12 ) == 0 )
+			{
+				// Looks raw. Wrap this up.
+				ISORawSectorSource *pISOSource = new ISORawSectorSource( pSource );
+
+				pSource = pISOSource;
+			}
+		}
+
 		pFS = new ISO9660FileSystem( pSource );
 
 		pFS->FSID = FSID;
@@ -280,11 +299,11 @@ std::wstring BuiltIns::FSName( DWORD FSID )
 	}
 	else if ( FSID == FSID_ISO9660 )
 	{
-		return L"ISO9660";
+		return L"ISO9660 CD-ROM";
 	}
 	else if ( FSID == FSID_ISOHS )
 	{
-		return L"High Sierra";
+		return L"High Sierra CD-ROM";
 	}
 
 	return L"";
@@ -310,12 +329,12 @@ BuiltInMenuList BuiltIns::GetBuiltInMenuList()
 	menu.Provider = L"CD/DVD";
 	menu.FS.clear();
 
-	format.FS = L"High Sierra";
+	format.FS = L"High Sierra CD-ROM";
 	format.ID = FSID_ISOHS;
 
 	menu.FS.push_back( format );
 
-	format.FS = L"ISO9660";
+	format.FS = L"ISO9660 CD-ROM";
 	format.ID = FSID_ISO9660;
 
 	menu.FS.push_back( format );

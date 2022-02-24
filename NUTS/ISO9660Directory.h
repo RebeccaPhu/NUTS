@@ -18,6 +18,13 @@ public:
 	int	ReadDirectory(void);
 	int	WriteDirectory(void);
 
+	DWORD ProjectedDirectorySize();
+
+	void  ConvertUnixTime( BYTE *pTimestamp, DWORD Unixtime );
+
+	void  Push( DWORD Extent, DWORD Length );
+	void  Pop();
+
 public:
 	ISOVolDesc *pPriVolDesc;
 	ISOVolDesc *pJolietDesc;
@@ -25,18 +32,37 @@ public:
 	DWORD DirSector;
 	DWORD DirLength;
 
+	DWORD JDirSector;
+	DWORD JDirLength;
+
+	DWORD ParentSector;
+	DWORD ParentLength;
+
+	DWORD FSID;
+
 	FOPTranslateFunction ProcessFOP;
 
 	void *pSrcFS;
 
 	bool CloneWars;
+	bool UsingJoliet;
 
 	std::map<DWORD, FOPReturn> FileFOPData;
+
+	std::vector<DWORD> PathStackExtent;
+	std::vector<DWORD> PathStackSize;
 
 private:
 	NativeFile AssocFile;
 
 private:
 	bool RockRidge( BYTE *pEntry, NativeFile *pTarget );
+
+	int	ReadJDirectory(void);
+
+	void ClearAuxData();
+
+	DWORD ConvertISOTime( BYTE *pTimestamp );
+
 };
 

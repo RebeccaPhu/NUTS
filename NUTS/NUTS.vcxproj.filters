@@ -318,6 +318,15 @@
     <ClCompile Include="ISOFuncs.cpp">
       <Filter>Source Files\File Systems\ISO9660</Filter>
     </ClCompile>
+    <ClCompile Include="ISOPathTable.cpp">
+      <Filter>Source Files\File Systems\ISO9660</Filter>
+    </ClCompile>
+    <ClCompile Include="ISORawSectorSource.cpp">
+      <Filter>Source Files\File Systems\ISO9660</Filter>
+    </ClCompile>
+    <ClCompile Include="ISOECC.cpp">
+      <Filter>Source Files\File Systems\ISO9660</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -584,6 +593,18 @@
     <ClInclude Include="ISO9660FileSystem.h">
       <Filter>Header Files\File Systems\ISO9660</Filter>
     </ClInclude>
+    <ClInclude Include="ISOPathTable.h">
+      <Filter>Header Files\File Systems\ISO9660</Filter>
+    </ClInclude>
+    <ClInclude Include="ISORawSectorSource.h">
+      <Filter>Header Files\File Systems\ISO9660</Filter>
+    </ClInclude>
+    <ClInclude Include="ISOECC.h">
+      <Filter>Header Files\File Systems\ISO9660</Filter>
+    </ClInclude>
+    <ClInclude Include="ISOSectorTypes.h">
+      <Filter>Header Files\File Systems\ISO9660</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="NUTS.ico">
@@ -843,6 +864,12 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\cdimage.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\memorycard.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="repair.bmp">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

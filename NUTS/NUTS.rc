@@ -365,6 +365,8 @@ IDB_ROMDISK             BITMAP                  "..\\romdisk.bmp"
 IDB_NUTSACORN           BITMAP                  "..\\NutsAcorn.bmp"
 IDB_TZX                 BITMAP                  "E:\\NUTS\\blank-tzx.bmp"
 IDB_CDIMAGE             BITMAP                  "..\\cdimage.bmp"
+IDB_MEMCARD             BITMAP                  "..\\memorycard.bmp"
+IDB_REPAIR              BITMAP                  "repair.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -460,7 +462,7 @@ CAPTION "New Image Wizard"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     LTEXT           "Welcome to the New Image Wizard",IDC_WIZ_WELCOME,115,15,202,20
-    LTEXT           "This wiard will guide you through the process of creating a new disk or tape image, or container image. The following pages will allow you to select the file system, the image size (where permitted) and the file name for the image.",IDC_STATIC,115,45,202,100
+    LTEXT           "This wizard will guide you through the process of creating a new disk or tape image, or container image. The following pages will allow you to select the file system, the image size (where permitted) and the file name for the image.",IDC_STATIC,115,45,202,100
     LTEXT           "Press Next to begin.",IDC_STATIC,115,100,120,20
 END
 
@@ -621,6 +623,54 @@ BEGIN
                     "Button",BS_AUTORADIOBUTTON,7,61,345,10
 END
 
+IDD_ISO_PROGRESS DIALOGEX 0, 0, 419, 47
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+CAPTION "ISO Processing"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "",IDC_JOB_NAME,7,7,405,13
+    CONTROL         "",IDC_JOB_PROGRESS,"msctls_progress32",WS_BORDER,7,23,405,17
+END
+
+IDD_CHOOSE_ISO_CAPACITY DIALOGEX 0, 0, 316, 130
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Select ISO Capacity"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,205,109,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,259,109,50,14
+    LTEXT           "Select the maximum capacity of the CD/DVD image. This maximum capacity will be assumed while the file system is active, but will need to be set again if you exit the file system.",IDC_STATIC,7,7,302,18
+    LTEXT           "Select Disc Capacity:",IDC_STATIC,14,66,75,9
+    COMBOBOX        IDC_ISO_CAPACITY,92,64,202,17,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Note: It is not recommended to use the ISO9660 or High Sierra file systems with DVD media. These file systems are not designed for DVD's higher capacity, and only computers (i.e. not DVD players) will recognise them correctly in all cases.",IDC_STATIC,7,29,302,27
+    LTEXT           "Sizes applicable when using Mode 1 formats only. Other modes will have larger resulting sizes.",IDC_STATIC,7,89,302,14
+END
+
+IDD_ISO_FORMAT DIALOGEX 0, 0, 316, 157
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Select ISO Format Options"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,205,136,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,259,136,50,14
+    LTEXT           "The following options are available for tuning for the format of the ISO media.\n\nNot all options are available for all media types. If you are not sure how to use these options, leave the defaults selected.",IDC_STATIC,7,7,302,37
+    GROUPBOX        "Sector Format",IDC_STATIC,7,46,302,36
+    GROUPBOX        "Path Tables",IDC_STATIC,7,90,302,40
+    CONTROL         "Mode 1 Pure",IDC_MODE1PURE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,16,54,54,12
+    CONTROL         "Mode 1 Raw",IDC_MODE1RAW,"Button",BS_AUTORADIOBUTTON,112,54,54,12
+    CONTROL         "Mode 2 Raw",IDC_MODE2RAW,"Button",BS_AUTORADIOBUTTON,208,54,54,12
+    CONTROL         "XA Mode 2 Form 1",IDC_XAM2F1,"Button",BS_AUTORADIOBUTTON,16,68,74,8
+    CONTROL         "XA Mode 2 Form 2",IDC_XAM2F2,"Button",BS_AUTORADIOBUTTON,112,68,74,8
+    CONTROL         "1 L-Table",IDC_1LTABLE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,16,100,42,10
+    CONTROL         "2 L-Tables",IDC_2LTABLE,"Button",BS_AUTORADIOBUTTON,90,100,52,10
+    CONTROL         "3 L-Tables",IDC_3LTABLE,"Button",BS_AUTORADIOBUTTON,164,100,52,10
+    CONTROL         "4 L-Tables",IDC_4LTABLE,"Button",BS_AUTORADIOBUTTON,238,100,52,10
+    CONTROL         "1 M-Table",IDC_1MTABLE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,16,113,42,10
+    CONTROL         "2 M-Tables",IDC_2MTABLE,"Button",BS_AUTORADIOBUTTON,90,113,52,10
+    CONTROL         "3 M-Tables",IDC_3MTABLE,"Button",BS_AUTORADIOBUTTON,164,113,52,10
+    CONTROL         "4 M-Tables",IDC_4MTABLE,"Button",BS_AUTORADIOBUTTON,238,113,52,10
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -767,6 +817,30 @@ BEGIN
         RIGHTMARGIN, 352
         TOPMARGIN, 7
         BOTTOMMARGIN, 87
+    END
+
+    IDD_ISO_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 412
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 40
+    END
+
+    IDD_CHOOSE_ISO_CAPACITY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 123
+    END
+
+    IDD_ISO_FORMAT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 150
     END
 END
 #endif    // APSTUDIO_INVOKED

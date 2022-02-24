@@ -23,6 +23,8 @@ DataSource::DataSource(void)
 	ComplexDiskShape = false;
 
 	SourceDesc = (BYTE *) "";
+
+	Feedback = L"";
 }
 
 DataSource::~DataSource(void)

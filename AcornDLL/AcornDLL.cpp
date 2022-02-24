@@ -407,7 +407,7 @@ bool TranslateISOContent( FOPData *fop )
 	/* Translate the extra data in the ZIP (max 64 bytes) if it is present */
 	if ( fop->Direction == FOP_ReadEntry )
 	{
-		if ( memcmp( pData, (void *) "ARCHIMEDES", 9 ) == 0 )
+		if ( memcmp( pData, (void *) "ARCHIMEDES", 10 ) == 0 )
 		{
 			// Got one.
 			File->LoadAddr = * (DWORD *) &pData[ 10 ];
@@ -475,6 +475,54 @@ bool TranslateISOContent( FOPData *fop )
 			{
 				fop->ReturnData.ProposedFS = MAKEFSID( MyPLID, 0x01, 0x0A );
 			}
+
+			return true;
+		}
+	}
+
+	if ( fop->Direction == FOP_WriteEntry )
+	{
+		NativeFile *pObj = (NativeFile *) fop->pFile;
+
+		if ( pObj->FSFileType == FT_ACORNX )
+		{
+			memcpy( fop->pXAttr, (void *) "ARCHIMEDES", 10 );
+
+			BYTE *pData = (BYTE *) fop->pXAttr;
+
+			* (DWORD *) &pData[ 10 ] = File->LoadAddr;
+			* (DWORD *) &pData[ 14 ] = File->ExecAddr;
+
+			/* Attribute DWORD - Only the first 6 bits are used */
+			DWORD Attrs = 0;
+
+			if ( pObj->AttrRead   != 0x00000000 ) { Attrs |= 0x11; }
+			if ( pObj->AttrWrite  != 0x00000000 ) { Attrs |= 0x22; }
+			if ( pObj->AttrLocked != 0x00000000 ) { Attrs |= 0x04; }
+
+			// Convert the filename bit back
+			if ( pObj->Filename[ 0 ] == '!' )
+			{
+				pObj->Filename[ 0 ] = '_';
+
+				Attrs |= 0x100;
+			}
+
+			* (DWORD *) &pData[ 18 ] = Attrs;
+
+			pObj->EncodingID = ENCODING_ASCII;
+			pObj->FSFileType = FT_WINDOWS;
+
+			bool SidecarsAnyway = (bool) Preference( L"SidecarsAnyway", false );
+
+			if ( !SidecarsAnyway )
+			{
+				File->Flags |= FF_AvoidSidecar;
+			}
+
+			fop->lXAttr = 32;
+
+			return true;
 		}
 	}
 
@@ -549,6 +597,37 @@ bool TranslateISOContent( FOPData *fop )
 			Attr.Type  = AttrVisible | AttrEnabled | AttrTime | AttrFile | AttrDir;
 			Attr.Name  = L"Time Stamp";
 			pDescs->push_back( Attr );
+
+			return true;
+		}
+	}
+
+	if ( fop->Direction == FOP_AttrChanges )
+	{
+		NativeFile *pFile    = (NativeFile *) fop->pFile;
+		NativeFile *pChanges = (NativeFile *) fop->pXAttr;
+
+		// Don't do this for a BBC Micro (!?!) file
+		if ( ( pFile->FSFileType == FT_ACORNX ) && ( pFile->EncodingID == ENCODING_RISCOS ) )
+		{
+			DWORD PreType = pFile->RISCTYPE;
+
+			for ( BYTE i=0; i<16; i++ )
+			{
+				pFile->Attributes[ i ] = pChanges->Attributes[ i ];
+			}
+
+			DWORD PostType = pFile->RISCTYPE;
+
+			if ( PostType != PreType )
+			{
+				/* The type was changed, update the load/exec stuff from it */
+				ADFSCommon acom;
+
+				acom.InterpretNativeType(  pFile  );
+			}
+			
+			return true;
 		}
 	}
 

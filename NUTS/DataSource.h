@@ -7,8 +7,10 @@
 #include <vector>
 
 #if 1
+#pragma warning( disable : 4996 )
 #define DS_RETAIN( x )  char err[256]; sprintf( err, "DS %016X Retain  %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( err ); x->Retain()
 #define DS_RELEASE( x ) char err[256]; sprintf( err, "DS %016X Release %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( err ); x->Release()
+#pragma warning( default : 4996 )
 #else
 #define DS_RETAIN( x )  x->Retain();
 #define DS_RELEASE( x ) x->Release();
@@ -31,6 +33,12 @@ typedef struct _DS_ComplexShape {
 } DS_ComplexShape;
 
 typedef std::vector<WORD> SectorIDSet;
+
+typedef struct _DSWriteHint
+{
+	std::wstring HintName;
+	BYTE Hint[ 32 ];
+} DSWriteHint;
 
 class DataSource {
 public:
@@ -69,6 +77,10 @@ public:
 	DWORD DataOffset;
 
 	BYTEString SourceDesc;
+
+	std::wstring Feedback;
+
+	std::vector<DSWriteHint> WriteHints;
 
 public:
 	virtual void Retain( void )
