@@ -112,10 +112,16 @@ int PhysicalDrive(char *path) {
 
 int Percent( int stage, int stages, int step, int steps, bool allow100 )
 {
+	if ( stage > stages ) { stage = stages; }
+	if ( step > steps ) { step = steps; }
+
 	double stage_block = 100.0 / (double) stages;
 	double step_block  = stage_block / (double) steps;
 
-	double percent = ( (double) stage * stage_block ) + ( (double) step * step_block );
+	double dstep  = (double) step;
+	double dstage = (double) stage;
+
+	double percent = ( dstage * stage_block ) + ( dstep * step_block );
 
 	percent++;
 
@@ -441,6 +447,30 @@ void WBEWORD( BYTE *p, DWORD v )
 {
 	p[ 0 ] = ( ( v & 0xFF00 ) >> 8 );
 	p[ 1 ] = v & 0xFF;
+}
+
+DWORD LEDWORD( BYTE *p )
+{
+	return ( p[3] << 24 ) | ( p[2] << 16 ) | ( p[1] << 8 ) | p[0];
+}
+
+WORD LEWORD( BYTE *p )
+{
+	return ( p[1] << 8 ) | p[0];
+}
+
+void WLEDWORD( BYTE *p, DWORD v )
+{
+	p[ 3 ] = ( ( v & 0xFF000000 ) >> 24 );
+	p[ 2 ] = ( ( v & 0xFF0000 ) >> 16 );
+	p[ 1 ] = ( ( v & 0xFF00 ) >> 8 );
+	p[ 0 ] = v & 0xFF;
+}
+
+void WLEWORD( BYTE *p, DWORD v )
+{
+	p[ 1 ] = ( ( v & 0xFF00 ) >> 8 );
+	p[ 0 ] = v & 0xFF;
 }
 
 HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstance )

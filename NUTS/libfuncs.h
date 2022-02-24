@@ -35,6 +35,12 @@ WORD BEWORD( BYTE *p );
 void WBEDWORD( BYTE *p, DWORD v );
 void WBEWORD( BYTE *p, DWORD v );
 
+DWORD LEDWORD( BYTE *p );
+WORD LEWORD( BYTE *p );
+
+void WLEDWORD( BYTE *p, DWORD v );
+void WLEWORD( BYTE *p, DWORD v );
+
 DWORD dwDiff( DWORD a, DWORD b );
 
 HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstance );
