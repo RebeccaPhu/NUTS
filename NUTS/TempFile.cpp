@@ -54,11 +54,6 @@ void CTempFile::DumpMemory()
 
 		PathName = std::wstring( TempName );
 
-		if ( MemorySize == 0 )
-		{
-			return;
-		}
-
 		FILE *f = nullptr;
 	
 		_wfopen_s( &f, PathName.c_str(), L"wb" );
@@ -68,14 +63,20 @@ void CTempFile::DumpMemory()
 			return;
 		}
 
-		fwrite( pMemory, 1, MemorySize, f );
+		if ( ( MemorySize > 0 ) && ( pMemory != nullptr ) )
+		{
+			fwrite( pMemory, 1, MemorySize, f );
+		}
 
 		fclose( f );
 
 		InMemory   = false;
 		MemorySize = 0;
 
-		free( pMemory );
+		if ( pMemory != nullptr )
+		{
+			free( pMemory );
+		}
 
 		pMemory  = nullptr;
 	}
