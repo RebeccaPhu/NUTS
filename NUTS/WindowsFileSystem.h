@@ -84,6 +84,8 @@ private:
 private:
 	int RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory );
 
+	void SanitizeFilename( NativeFile *pFile );
+
 	BYTE *DisplayNumber( QWORD val );
 
 public:

@@ -85,6 +85,8 @@ int	WindowsFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		return FILEOP_NEEDS_ASCII;
 	}
 
+	SanitizeFilename( pFile );
+
 	for ( NativeFileIterator iFile = pDirectory->Files.begin(); iFile != pDirectory->Files.end(); iFile++ )
 	{
 		if ( FilenameCmp( pFile, &*iFile ) )
@@ -200,6 +202,8 @@ int	WindowsFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 	{
 		return FILEOP_NEEDS_ASCII;
 	}
+
+	SanitizeFilename( pDir );
 
 	NativeFile SourceDir = *pDir;
 
@@ -598,4 +602,34 @@ int WindowsFileSystem::Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt )
 	}
 
 	return NUTS_SUCCESS;
+}
+
+void WindowsFileSystem::SanitizeFilename( NativeFile *pFile )
+{
+	for ( BYTE p=0; p<2; p++ )
+	{
+		DWORD l = pFile->Filename.length();
+		BYTE *f = (BYTE *) pFile->Filename;
+
+		if ( p == 1 )
+		{
+			if ( pFile->Flags & FF_Extension )
+			{
+				l = pFile->Extension.length();
+				f = (BYTE *) pFile->Extension;
+			}
+			else
+			{
+				return;
+			}
+		}
+
+		for ( DWORD i=0; i<l; i++ )
+		{
+			if  ( ( f[ i ] == '/' ) || ( f[ i ] == '?' ) )
+			{
+				f[ i ] = '_';
+			}
+		}
+	}
 }
