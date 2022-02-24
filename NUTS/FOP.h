@@ -6,12 +6,13 @@
 
 typedef enum _FOPDirection
 {
-	FOP_None       = 0,
-	FOP_ReadEntry  = 1,
-	FOP_WriteEntry = 2,
-	FOP_PostRead   = 3,
-	FOP_PreWrite   = 4,
-	FOP_ExtraAttrs = 5,
+	FOP_None        = 0,
+	FOP_ReadEntry   = 1,
+	FOP_WriteEntry  = 2,
+	FOP_PostRead    = 3,
+	FOP_PreWrite    = 4,
+	FOP_ExtraAttrs  = 5,
+	FOP_AttrChanges = 6,
 } FOPDirection;
 
 #define FOP_DATATYPE_ZIPATTR 0x071D071D
