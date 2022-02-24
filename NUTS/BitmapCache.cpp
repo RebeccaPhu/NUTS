@@ -84,6 +84,7 @@ void CBitmapCache::LoadBitmaps() {
 		{ FT_Windows,   IDB_WINDOWS    },
 		{ FT_Sound,     IDB_MUSICFILE  },
 		{ FT_ROMDisk,   IDB_ROMDISK    },
+		{ FT_MemCard,   IDB_MEMCARD    },
 		{ FT_None,      NULL },
 	};
 

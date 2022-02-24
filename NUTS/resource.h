@@ -106,8 +106,12 @@
 #define IDD_WIZ_FORMAT                  179
 #define IDD_ACCEPTLICENSE               180
 #define IDD_HOWPROPS                    181
-#define IDB_BITMAP5                     182
 #define IDB_CDIMAGE                     182
+#define IDD_ISO_PROGRESS                183
+#define IDD_CHOOSE_ISO_CAPACITY         184
+#define IDB_MEMCARD                     185
+#define IDD_ISO_FORMAT                  185
+#define IDB_REPAIR                      186
 #define AFX_IDC_PRINT_DOCNAME           201
 #define AFX_IDC_PRINT_PRINTERNAME       202
 #define AFX_IDC_PRINT_PORTNAME          203
@@ -122,6 +126,7 @@
 #define IDC_FILE_PROGRESS               1003
 #define IDC_CREATE_PROGRESS             1003
 #define IDC_TOOL_PROGRESS               1003
+#define IDC_JOB_PROGRESS                1003
 #define AFX_IDC_STRIKEOUT               1004
 #define IDC_PROGRESS_TEXT               1004
 #define AFX_IDC_UNDERLINE               1005
@@ -180,6 +185,21 @@
 #define IDC_LICTEXT2                    1058
 #define IDC_JUSTTHESE                   1059
 #define IDC_ANDTHOSE                    1060
+#define IDC_JOB_NAME                    1061
+#define IDC_ISO_CAPACITY                1062
+#define IDC_MODE1PURE                   1063
+#define IDC_MODE1RAW                    1064
+#define IDC_MODE2RAW                    1065
+#define IDC_XAM2F1                      1066
+#define IDC_XAM2F2                      1067
+#define IDC_1LTABLE                     1068
+#define IDC_2LTABLE                     1069
+#define IDC_3LTABLE                     1070
+#define IDC_4LTABLE                     1071
+#define IDC_1MTABLE                     1072
+#define IDC_2MTABLE                     1073
+#define IDC_3MTABLE                     1074
+#define IDC_4MTABLE                     1075
 #define AFX_IDC_COLOR_BLACK             1100
 #define AFX_IDC_COLOR_WHITE             1101
 #define AFX_IDC_COLOR_RED               1102
@@ -744,9 +764,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        183
+#define _APS_NEXT_RESOURCE_VALUE        187
 #define _APS_NEXT_COMMAND_VALUE         40079
-#define _APS_NEXT_CONTROL_VALUE         1061
+#define _APS_NEXT_CONTROL_VALUE         1069
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

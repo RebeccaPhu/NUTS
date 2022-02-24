@@ -78,7 +78,14 @@ int	RootDirectory::ReadDirectory(void) {
 
 		if (DType == DRIVE_REMOVABLE)
 		{
-			file.Icon = FT_Floppy;
+			if ( file.Filename[ 0 ] >= 'B' ) 
+			{
+				file.Icon = FT_MemCard;
+			}
+			else
+			{
+				file.Icon = FT_Floppy;
+			}
 		}
 
 		if (DType == DRIVE_CDROM)

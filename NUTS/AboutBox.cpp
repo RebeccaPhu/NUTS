@@ -347,6 +347,7 @@ IconCredit BitmapIconCreds[] =
 	{ IDB_WINDOWS,    L"Windows Icon", L"Crystal Intense Icons", L"Tatice", L"CC Attribution-Noncommercial-NoDervis 3.0", L"https://creativecommons.org/licenses/by-nc-nd/3.0/" },
 	{ IDB_MUSICFILE,  L"File Music Icon", L"Phuzion Icons", L"kyo-tux", L"CC Attribution-Noncommerical-ShareALike 3.0 Unported", L"https://creativecommons.org/licenses/by-nc-sa/3.0/" },
 	{ IDB_ROMDISK,    L"Chip Icon", L"Diagram Old Icons", L"Double-J Design", L"CC Attribution 3.0 Unported", L"https://creativecommons.org/licenses/by/3.0/" },
+	{ IDB_MEMCARD,    L"Flash Memory Icon", L"Emulator Icons", L"JOMMANS", L"Free for non-commercial use", L"" },
 	{ IDB_TZX,        L"TZX Block, based on Text Icon", L"Crystal Office Icon Set", L"MediaJon", L"Linkware", L"http://www.iconshots.com" },
 
 	{ IDB_PLAYER_EJECT,   L"Player Eject", L"Square Cyan Buttons", L"Axialis Team", L"CC Attribution 2.5 Generic", L"https://creativecommons.org/licenses/by-sa/2.5/" },
