@@ -262,31 +262,32 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 			step.Step = Op_Enter_FS;
 			step.FS   = pFS;
 
-			OpSteps.push_back( step );
+			if ( pFS->Init() == NUTS_SUCCESS )
+			{
+				OpSteps.push_back( step );
 
-			pFS->Init();
+				pFS->pParentFS = pPane->FS;
 
-			pFS->pParentFS = pPane->FS;
+				SaveFS = (FileSystem *) CurrentAction.FS;
 
-			SaveFS = (FileSystem *) CurrentAction.FS;
+				CurrentAction.FS = pFS;
 
-			CurrentAction.FS = pFS;
+				CreateOpSteps( pFS->pDirectory->Files );
 
-			CreateOpSteps( pFS->pDirectory->Files );
+				CurrentAction.FS = SaveFS;
 
-			CurrentAction.FS = SaveFS;
+				step.Step = Op_Leave_FS;
 
-			step.Step = Op_Leave_FS;
+				OpSteps.push_back( step );
 
-			OpSteps.push_back( step );
+				step.Step = Op_CParent;
 
-			step.Step = Op_CParent;
+				OpSteps.push_back( step );
 
-			OpSteps.push_back( step );
+				step.Step = Op_Refresh;
 
-			step.Step = Op_Refresh;
-
-			OpSteps.push_back( step );
+				OpSteps.push_back( step );
+			}
 		}
 		else
 		{
@@ -312,31 +313,32 @@ void CreateOpStepsByFS( std::vector<NativeFile> Selection )
 					step.Step = Op_Enter_FS;
 					step.FS   = pFS;
 
-					OpSteps.push_back( step );
+					if ( pFS->Init() == NUTS_SUCCESS )
+					{
+						OpSteps.push_back( step );
 
-					pFS->Init();
+						pFS->pParentFS = pPane->FS;
 
-					pFS->pParentFS = pPane->FS;
+						SaveFS = (FileSystem *) CurrentAction.FS;
 
-					SaveFS = (FileSystem *) CurrentAction.FS;
+						CurrentAction.FS = pFS;
 
-					CurrentAction.FS = pFS;
+						CreateOpSteps( pFS->pDirectory->Files );
 
-					CreateOpSteps( pFS->pDirectory->Files );
+						CurrentAction.FS = SaveFS;
 
-					CurrentAction.FS = SaveFS;
+						step.Step = Op_Leave_FS;
 
-					step.Step = Op_Leave_FS;
+						OpSteps.push_back( step );
 
-					OpSteps.push_back( step );
+						step.Step = Op_CParent;
 
-					step.Step = Op_CParent;
+						OpSteps.push_back( step );
 
-					OpSteps.push_back( step );
+						step.Step = Op_Refresh;
 
-					step.Step = Op_Refresh;
-
-					OpSteps.push_back( step );
+						OpSteps.push_back( step );
+					}
 				}
 			}
 		}
@@ -486,6 +488,15 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 	bool IsInstall = false;
 	bool OpError   = false;
+
+	if ( pTargetFS != nullptr )
+	{
+		pTargetFS->BeginOps( CurrentAction.Action );
+	}
+	else
+	{
+		pSourceFS->BeginOps( CurrentAction.Action );
+	}
 
 	for ( iStep = OpSteps.begin(); iStep != OpSteps.end(); iStep++ )
 	{
@@ -937,6 +948,8 @@ unsigned int __stdcall FileOpThread(void *param) {
 
 				bool Dangerous = false;
 				bool Warning   = false;
+
+				Attrs = pSourceFS->GetAttributeDescriptions( &Rework );
 				
 				for ( AttrDesc_iter iAttr = Attrs.begin(); iAttr != Attrs.end(); iAttr++ )
 				{
@@ -1067,6 +1080,15 @@ unsigned int __stdcall FileOpThread(void *param) {
 		{
 			break;
 		}
+	}
+
+	if ( pTargetFS != nullptr )
+	{
+		pTargetFS->CommitOps();
+	}
+	else
+	{
+		pSourceFS->CommitOps();
 	}
 
 	::PostMessage( hFileWnd, WM_CLOSE, 0, 0 );
