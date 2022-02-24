@@ -330,6 +330,8 @@ unsigned int __stdcall CreationThread(void *param)
 {
 	CTempFile NewImage;
 
+	NewImage.Dump();
+
 	DataSource *pSource = nullptr;
 
 	unsigned int Result;
