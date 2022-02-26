@@ -124,10 +124,10 @@ void CTempFile::Write( void *Buffer, DWORD Length )
 		{
 			if ( ( Ptr + Length ) > MemorySize )
 			{
-				MemorySize += Ptr+Length;
-			}
+				MemorySize = Ptr+Length;
 
-			pMemory = (BYTE *) realloc( pMemory, MemorySize );
+				pMemory = (BYTE *) realloc( pMemory, MemorySize );
+			}
 
 			memcpy( &pMemory[ Ptr ], Buffer, Length );
 
@@ -284,4 +284,14 @@ void CTempFile::Keep( void )
 	DumpMemory();
 
 	bKeep = true;
+}
+
+void CTempFile::KeepAs( std::wstring Filename )
+{
+	Keep();
+
+	// Preemptive remove any existing file
+	_wunlink( Filename.c_str() );
+
+	_wrename( PathName.c_str(), Filename.c_str() );
 }

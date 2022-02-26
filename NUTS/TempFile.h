@@ -32,6 +32,7 @@ public:
 	std::wstring Name( void ) { return PathName; }
 	void SetExt( QWORD NewPtr );
 	void Keep( void );
+	void KeepAs( std::wstring Filename );
 	void Dump();
 
 private:
