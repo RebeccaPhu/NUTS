@@ -134,7 +134,7 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 					LPDLGTEMPLATEW dlg = (LPDLGTEMPLATEW) LockResource( hG );
 
-					pCurrentTab = CreateDialogIndirect( hInst, dlg, GetDlgItem( hDlg, IDC_ABOUTTABS ), CreditsDlgFunc );
+					pCurrentTab = CreateDialogIndirect( hInst, dlg, hDlg, CreditsDlgFunc );
 				}
 				
 				if ( iSel == 1 )
@@ -144,31 +144,47 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 
 					LPDLGTEMPLATEW dlg = (LPDLGTEMPLATEW) LockResource( hG );
 
-					pCurrentTab = CreateDialogIndirect( hInst, dlg, GetDlgItem( hDlg, IDC_ABOUTTABS ), LicenseFunc );
+					pCurrentTab = CreateDialogIndirect( hInst, dlg, hDlg, LicenseFunc );
 				}
-				
+
+				// NONE OF THIS MAKES ANY SENSE WHATSOEVER. MICROSOFT YOU ARE ON ==DRUGS==
 				DWORD dwDlgBase = GetDialogBaseUnits();
 				int cxMargin = LOWORD(dwDlgBase) / 4; 
 				int cyMargin = HIWORD(dwDlgBase) / 8;
 
 				RECT r, tr;
 
-				GetClientRect( GetDlgItem( hDlg, IDC_ABOUTTABS ), &r );
+				GetWindowRect( GetDlgItem( hDlg, IDC_ABOUTTABS ), &tr );
+
+				MapWindowPoints( GetDesktopWindow(), hDlg, (LPPOINT) &tr, 2 );
+
+				r = tr;
+
+				TabCtrl_AdjustRect( GetDlgItem( hDlg, IDC_ABOUTTABS ), TRUE, &r );
+
+				OffsetRect(&r, cxMargin - r.left, cyMargin - r.top); 
+
+				TabCtrl_AdjustRect( GetDlgItem( hDlg, IDC_ABOUTTABS ), FALSE, &r );
+
+				tr.left -= cxMargin; tr.top -= cyMargin;
+				r.left  -= cxMargin; r.top  -= cyMargin;
+				r.left += tr.left; r.right += tr.left;
+				r.top  += tr.top; r.bottom += tr.top;
 
 				TabCtrl_GetItemRect( GetDlgItem( hDlg, IDC_ABOUTTABS ), iSel, &tr );
 
-				SetWindowPos( pCurrentTab, NULL,
-					r.left + cxMargin,
-					r.top + ( tr.bottom - tr.top ) + cyMargin + 1,
-					( r.right - r.left ) - ( 2 * cxMargin ) - 2,
-					( r.bottom - r.top ) - ( tr.bottom - tr.top ) - ( 2 * cyMargin ) - 1,
-					SWP_NOZORDER | SWP_NOREPOSITION
-				);
+				r.bottom -= ( tr.bottom - tr.top ) + ( cyMargin * 2 ) + 2;
+				r.right  -= ( cxMargin * 2 ) + 4;
+				r.top    += 2;
+
+				SetWindowPos( pCurrentTab, NULL, r.left, r.top, (r.right - r.left), (r.bottom - r.top), NULL );
+
+				ShowWindow( pCurrentTab, SW_SHOW );
 
 				::PostMessage( pCurrentTab, WM_ABOUT_RESIZE, 0, 0 );
 			}
 		}
-		break;
+		return (INT_PTR) FALSE;
 	}
 	return (INT_PTR)FALSE;
 }
@@ -1059,7 +1075,7 @@ INT_PTR CALLBACK CreditsDlgFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_MOUSEWHEEL:
 		{
-			long WheelDelta = 0 - (GET_WHEEL_DELTA_WPARAM(wParam) / 30);
+			long WheelDelta = 0 - ( GET_WHEEL_DELTA_WPARAM( wParam ) / 3 );
 
 			if ( ( cc > 0 ) && ( WheelDelta < 0 ) )
 			{
