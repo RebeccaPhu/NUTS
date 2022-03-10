@@ -15,6 +15,8 @@ extern DWORD CharmapFontID;
 
 #include <map>
 
+typedef bool (*fnCharValidator)(BYTE);
+
 class EncodingEdit
 {
 public:
@@ -48,6 +50,8 @@ public:
 	bool  AllowSpaces;
 
 	InputType AllowedChars;
+
+	fnCharValidator pValidator;
 
 public:
 	LRESULT WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam );

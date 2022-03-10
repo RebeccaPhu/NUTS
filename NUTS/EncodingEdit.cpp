@@ -71,6 +71,8 @@ EncodingEdit::EncodingEdit( HWND hParent, int x, int y, int w, bool FontChanger 
 		hParent, NULL, hInst, NULL
 	);
 
+	pValidator = nullptr;
+
 #ifndef FONTBITMAP_PLUGIN
 	pChanger   = nullptr;
 	hChangeTip = NULL;
@@ -800,55 +802,65 @@ void EncodingEdit::Invalidate( void )
 
 	int i,j;
 
-	if ( AllowedChars != textInputAny )
+	if ( ( AllowedChars != textInputAny ) || ( pValidator != nullptr ) )
 	{
 		for ( i=0; i<Length; i++ )
 		{
-			if ( AllowNegative )
+			if ( pValidator == nullptr )
 			{
-				if ( ( EditText[i] == '-' ) && ( i == 0 ) )
+				if ( AllowNegative )
 				{
-					continue;
+					if ( ( EditText[i] == '-' ) && ( i == 0 ) )
+					{
+						continue;
+					}
+				}
+
+				if ( AllowedChars == textInputBin )
+				{
+					if ( ( EditText[ i ] >= '0' ) && ( EditText[ i ] <= '1' ) )
+					{
+						continue;
+					}
+				}
+
+				if ( AllowedChars == textInputOct )
+				{
+					if ( ( EditText[ i ] >= '0' ) && ( EditText[ i ] <= '7' ) )
+					{
+						continue;
+					}
+				}
+
+				if ( AllowedChars == textInputDec )
+				{
+					if ( ( EditText[ i ] >= '0' ) && ( EditText[ i ] <= '9' ) )
+					{
+						continue;
+					}
+				}
+
+				if ( AllowedChars == textInputHex )
+				{
+					if ( ( EditText[ i ] >= '0' ) && ( EditText[ i ] <= '9' ) )
+					{
+						continue;
+					}
+
+					if ( ( EditText[ i ] >= 'A' ) && ( EditText[ i ] <= 'F' ) )
+					{
+						continue;
+					}
+
+					if ( ( EditText[ i ] >= 'a' ) && ( EditText[ i ] <= 'f' ) )
+					{
+						continue;
+					}
 				}
 			}
-
-			if ( AllowedChars == textInputBin )
+			else
 			{
-				if ( ( EditText[ i ] >= '0' ) && ( EditText[ i ] <= '1' ) )
-				{
-					continue;
-				}
-			}
-
-			if ( AllowedChars == textInputOct )
-			{
-				if ( ( EditText[ i ] >= '0' ) && ( EditText[ i ] <= '7' ) )
-				{
-					continue;
-				}
-			}
-
-			if ( AllowedChars == textInputDec )
-			{
-				if ( ( EditText[ i ] >= '0' ) && ( EditText[ i ] <= '9' ) )
-				{
-					continue;
-				}
-			}
-
-			if ( AllowedChars == textInputHex )
-			{
-				if ( ( EditText[ i ] >= '0' ) && ( EditText[ i ] <= '9' ) )
-				{
-					continue;
-				}
-
-				if ( ( EditText[ i ] >= 'A' ) && ( EditText[ i ] <= 'F' ) )
-				{
-					continue;
-				}
-
-				if ( ( EditText[ i ] >= 'a' ) && ( EditText[ i ] <= 'f' ) )
+				if ( pValidator( EditText[ i ] ) )
 				{
 					continue;
 				}
