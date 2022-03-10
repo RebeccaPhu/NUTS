@@ -154,14 +154,17 @@ int	ISO9660Directory::ReadDirectory(void)
 				}
 			}
 
-			// If we have a matching Associated File, we need to copy some details
-			if ( rstrncmp( file.Filename, AssocFile.Filename, max( file.Filename.length(), AssocFile.Filename.length() ) ) )
+			// If we have a matching Associated File, we need to copy some details.. BUT ONLY FOR ISO9660!
+			if ( FSID == FSID_ISO9660 )
 			{
-				// Note that only the most recent associated file survives
-				file.Attributes[ ISOATTR_FORK_EXTENT ] = AssocFile.Attributes[ 0 ];
-				file.Attributes[ ISOATTR_FORK_LENGTH ] = AssocFile.Length;
+				if ( rstrncmp( file.Filename, AssocFile.Filename, max( file.Filename.length(), AssocFile.Filename.length() ) ) )
+				{
+					// Note that only the most recent associated file survives
+					file.Attributes[ ISOATTR_FORK_EXTENT ] = AssocFile.Attributes[ ISOATTR_START_EXTENT ];
+					file.Attributes[ ISOATTR_FORK_LENGTH ] = AssocFile.Length;
 
-				file.ExtraForks = 1;
+					file.ExtraForks = 1;
+				}
 			}
 
 			if ( ISOFlags & 2 )
@@ -172,8 +175,23 @@ int	ISO9660Directory::ReadDirectory(void)
 			}
 			else if ( ISOFlags & 4 )
 			{
-				// "Associated File" - this is basically a fork
-				AssocFile = file;
+				// "Associated File" - this is basically a fork. Store it if it's ISO9660, as it applies t
+				// the next directory entry. If we're High Sierra, make the change now.
+				if ( FSID == FSID_ISO9660 )
+				{
+					AssocFile = file;
+				}
+				else
+				{
+					// Sanity check
+					if ( Files.size() > 0 )
+					{
+						NativeFileIterator iPrevFile = Files.begin() + ( Files.size() - 1 );
+
+						iPrevFile->Attributes[ ISOATTR_FORK_EXTENT ] = file.Attributes[ ISOATTR_START_EXTENT ];
+						iPrevFile->Attributes[ ISOATTR_FORK_LENGTH ] = file.Length;
+					}
+				}
 
 				IsAssoc = true;
 			}
@@ -547,6 +565,14 @@ int	ISO9660Directory::WriteDirectory(void)
 	{
 		MakeISOFilename( &*iFile, ISOFilename );
 
+		DWORD ForkNum = 0;
+
+		// In ISO9660, the fork comes before the file. In High Sierra, it comes after. (thanks)
+		if ( FSID == FSID_ISOHS )
+		{
+			ForkNum = iFile->ExtraForks;
+		}
+
 		for ( int f=0; f < ( 1 + iFile->ExtraForks ); f++ )
 		{
 			// Calculate the size of the directory entry, as we may need to move along.
@@ -585,7 +611,7 @@ int	ISO9660Directory::WriteDirectory(void)
 				Flags |= 0x2;
 			}
 
-			if ( f < iFile->ExtraForks )
+			if ( ( f == ForkNum ) && ( iFile->ExtraForks > 0 ) )
 			{
 				Extent = iFile->Attributes[ ISOATTR_FORK_EXTENT ];
 				DataSz = iFile->Attributes[ ISOATTR_FORK_LENGTH ];
@@ -647,6 +673,178 @@ int	ISO9660Directory::WriteDirectory(void)
 	}
 
 	return 0;
+}
+
+void ISO9660Directory::WriteJDirectory( DWORD DirSector, DWORD JParentSector, DWORD JParentSize )
+{
+	if ( pJolietDesc == nullptr ) { return; }
+
+	AutoBuffer SectorBuffer( pJolietDesc->SectorSize );
+
+	BYTE *sector = (BYTE *) SectorBuffer;
+
+	NativeFileIterator iFile;
+
+	DWORD SBytes = 0;
+
+	DWORD DirSect = DirSector;
+
+	ZeroMemory( sector, pJolietDesc->SectorSize );
+
+	// Sort the directory - ISO standard requires ISO filenames are correctly sorted.
+	std::sort( Files.begin(), Files.end(), DirectorySort );
+
+	// We must fill in . and .., because reasons.
+	BYTE *pEnt = sector;
+
+	// . = this
+	pEnt[ 0 ] = 0x22; // fixed size
+	pEnt[ 1 ] = 0;
+	WLEDWORD( &pEnt[  2 ], DirSector ); WBEDWORD( &pEnt[  6 ], DirSector );
+	WLEDWORD( &pEnt[ 10 ], DirLength ); WBEDWORD( &pEnt[ 14 ], ProjectedDirectorySize() * pJolietDesc->SectorSize );
+	ConvertUnixTime( &pEnt[ 18 ], time( NULL ) );
+	pEnt[ 25 ] = 0x2; // Directory
+	pEnt[ 26 ] = 0;
+	pEnt[ 27 ] = 0;
+	WBEDWORD( &pEnt[ 28 ], 0x01000001 );
+	pEnt[ 32 ] = 1;
+	pEnt[ 33 ] = 0;
+
+	if ( FSID == FSID_ISOHS ) { pEnt[ 24 ] = pEnt[ 25 ]; pEnt[ 25 ] = 0; }
+
+	pEnt += 0x22;
+
+	// .. = parent
+	pEnt[ 0 ] = 0x22; // fixed size
+	pEnt[ 1 ] = 0;
+	WLEDWORD( &pEnt[  2 ], ParentSector ); WBEDWORD( &pEnt[  6 ], JParentSector );
+	WLEDWORD( &pEnt[ 10 ], ParentLength ); WBEDWORD( &pEnt[ 14 ], JParentSize );
+	ConvertUnixTime( &pEnt[ 18 ], time( NULL ) );
+	pEnt[ 25 ] = 0x2; // Directory
+	pEnt[ 26 ] = 0;
+	pEnt[ 27 ] = 0;
+	WBEDWORD( &pEnt[ 28 ], 0x01000001 );
+	pEnt[ 32 ] = 1;
+	pEnt[ 33 ] = 1;
+
+	if ( FSID == FSID_ISOHS ) { pEnt[ 24 ] = pEnt[ 25 ]; pEnt[ 25 ] = 0; }
+
+	SBytes = 0x44;
+
+	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
+	{
+		DWORD ForkNum = 0;
+
+		// In ISO9660, the fork comes before the file. In High Sierra, it comes after. (thanks)
+		if ( FSID == FSID_ISOHS )
+		{
+			ForkNum = iFile->ExtraForks;
+		}
+
+		for ( int f=0; f < ( 1 + iFile->ExtraForks ); f++ )
+		{
+			// Calculate the size of the directory entry, as we may need to move along.
+			DWORD FBytes = min( iFile->Filename.length(), 64 ) << 1;
+			DWORD EBytes = 33 + FBytes;
+
+			if ( ( EBytes & 1 ) == 1 ) { EBytes++; }
+
+			EBytes += iFile->lAuxData;
+
+			if ( ( EBytes & 1 ) == 1 ) { EBytes++; }
+
+			if ( ( SBytes + EBytes ) >= pJolietDesc-> SectorSize )
+			{
+				// Write this sector out, and get a new one.
+				SetISOHints( pSource, false, false );
+
+				if ( pSource->WriteSectorLBA( DirSect, sector, pJolietDesc->SectorSize ) != DS_SUCCESS )
+				{
+					return;
+				}
+
+				DirSect++;
+
+				ZeroMemory( sector, pPriVolDesc->SectorSize );
+
+				SBytes = 0;
+			}
+
+			DWORD Extent = iFile->Attributes[ ISOATTR_START_EXTENT ];
+			DWORD DataSz = iFile->Length;
+			BYTE  Flags  = 0;
+
+			if ( iFile->Flags & FF_Directory )
+			{
+				Flags |= 0x2;
+			}
+
+			if ( ( f == ForkNum ) && ( iFile->ExtraForks > 0 ) )
+			{
+				Extent = iFile->Attributes[ ISOATTR_FORK_EXTENT ];
+				DataSz = iFile->Attributes[ ISOATTR_FORK_LENGTH ];
+				Flags |= 0x4;
+			}
+
+			// Now we can write the entry proper, both-endian dwords and all.
+			BYTE *pEnt = &sector[ SBytes ];
+
+			pEnt[ 0 ] = (BYTE) EBytes;
+			pEnt[ 1 ] = 0; // Don't support extended attributes
+		
+			* (DWORD *) &pEnt[  2 ] = Extent; WBEDWORD( &pEnt[  6 ], Extent );
+			* (DWORD *) &pEnt[ 10 ] = DataSz; WBEDWORD( &pEnt[ 14 ], DataSz );
+
+			ConvertUnixTime( &pEnt[ 18 ], iFile->Attributes[ ISOATTR_TIMESTAMP ] );
+
+			pEnt[ 25 ] = Flags;
+
+			if ( FSID == FSID_ISOHS )
+			{
+				pEnt[ 24 ] = Flags; pEnt[ 25 ] = 0;
+			}
+
+			pEnt[ 26 ] = 0; // File Unit Size
+			pEnt[ 27 ] = 0; // Interleave
+			* (WORD *) &pEnt[ 28 ] = iFile->Attributes[ ISOATTR_VOLSEQ ];
+			WBEWORD( &pEnt[ 30 ], iFile->Attributes[ ISOATTR_VOLSEQ ] );
+			pEnt[ 32 ] = (BYTE) FBytes;
+
+			WCHAR BEStr[ 256 ];
+
+			ISOJolietStore( (BYTE *) BEStr, iFile->Filename, FBytes );
+
+			memcpy( &pEnt[ 33 ], BEStr, FBytes );
+
+			if ( iFile->lAuxData != 0 )
+			{
+				pEnt += 33 + FBytes;
+
+				if ( ( FBytes  & 1 ) == 0 )
+				{
+					*pEnt = 0;
+
+					pEnt++;
+				}
+
+				memcpy( pEnt, iFile->pAuxData, iFile->lAuxData );
+			}
+
+			SBytes += EBytes;
+		}
+	}
+
+	if ( SBytes > 0 )
+	{
+		SetISOHints( pSource, true, true );
+
+		if ( pSource->WriteSectorLBA( DirSect, sector, pJolietDesc->SectorSize ) != DS_SUCCESS )
+		{
+			return;
+		}
+	}
+
+	return;
 }
 
 bool ISO9660Directory::RockRidge( BYTE *pEntry, NativeFile *pTarget )
@@ -742,7 +940,7 @@ void ISO9660Directory::ConvertUnixTime( BYTE *pTimestamp, DWORD Unixtime )
 // Calculates how many bytes are required to store the directory contiguously (excepting
 // sector boundaries), taking into account the System Use area on each entry, and returns
 // the size as the number of sectors required.
-DWORD ISO9660Directory::ProjectedDirectorySize()
+DWORD ISO9660Directory::ProjectedDirectorySize( bool Joliet )
 {
 	DWORD DBytes = 0;
 	DWORD SBytes = 0;
@@ -768,6 +966,8 @@ DWORD ISO9660Directory::ProjectedDirectorySize()
 			MakeISOFilename( &*iFile, ISOFilename );
 		
 			FBytes += rstrnlen( ISOFilename, 240 );
+
+			if ( Joliet ) { FBytes <<= 1; }
 		
 			if ( ( FBytes & 1 ) == 1 ) { FBytes++; }
 

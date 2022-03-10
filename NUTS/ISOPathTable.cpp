@@ -21,7 +21,7 @@ ISOPathTable::~ISOPathTable(void)
 }
 
 
-void ISOPathTable::ReadPathTable( DWORD Extent, DWORD Size, DWORD FSID )
+void ISOPathTable::ReadPathTable( DWORD Extent, DWORD Size, DWORD FSID, bool IsJoliet )
 {
 	// This functon rather naïvely assumes the path table is an L-Table,
 	// as it will be called by ISO19960FileSystem to read the primary L-Table,
@@ -76,7 +76,30 @@ void ISOPathTable::ReadPathTable( DWORD Extent, DWORD Size, DWORD FSID )
 			else
 			{
 				entry.IsRoot        = false;
-				entry.DirectoryName = BYTEString( &pEnt[ 8 ], FNSize );
+
+				if ( IsJoliet )
+				{
+					BYTE BEStrs[ 256 ];
+
+					static  BOOL UseDefault = TRUE;
+
+					WORD Src[ 256 ];
+					WORD *pSrc = (WORD *) &pEnt[ 8 ];
+
+					// WHY BIGENDIAN UNICODE FOR THE LOVE OF
+					for ( WORD i=0; i<FNSize>>1; i++ )
+					{
+						Src[ i ] = BEWORD( (BYTE *) &pSrc[ i ] );
+					}
+
+					WideCharToMultiByte( GetACP(), NULL, (WCHAR *) Src, FNSize >> 1, (char *) BEStrs, 256, "_", &UseDefault );
+
+					entry.DirectoryName = BYTEString( BEStrs );
+				}
+				else
+				{
+					entry.DirectoryName = BYTEString( &pEnt[ 8 ], FNSize );
+				}
 			}
 
 			entry.Extent       = LEDWORD( &pEnt[ 2 ] );
@@ -191,7 +214,7 @@ void ISOPathTable::CompilePathTree()
 	}
 }
 
-void ISOPathTable::WritePathTable( DWORD Extent, bool IsMTable, DWORD FSID )
+void ISOPathTable::WritePathTable( DWORD Extent, bool IsMTable, DWORD FSID, bool IsJoliet )
 {
 	DWORD Size       = GetProjectedSize();
 	DWORD TableSects = ( Size + ( SectorSize -1 ) ) / SectorSize;
@@ -219,8 +242,24 @@ void ISOPathTable::WritePathTable( DWORD Extent, bool IsMTable, DWORD FSID )
 			}
 			else
 			{
-				pEnt[ 0 ] = iPath->DirectoryName.length();
-				memcpy( &pEnt[ 8 ], (BYTE *) iPath->DirectoryName, iPath->DirectoryName.length() );
+				if ( IsJoliet )
+				{
+					WCHAR *pChars = UString( (char *) iPath->DirectoryName );
+					WORD  BEStr[ 256 ];
+
+					for ( WORD i=0; i<iPath->DirectoryName.length(); i++ )
+					{
+						WBEWORD( (BYTE *) &BEStr[ i ], pChars[ i ] );
+					}
+
+					pEnt[ 0 ] = iPath->DirectoryName.length() << 1;
+					memcpy( &pEnt[ 8 ], BEStr, pEnt[ 0 ] );
+				}
+				else
+				{
+					pEnt[ 0 ] = iPath->DirectoryName.length();
+					memcpy( &pEnt[ 8 ], (BYTE *) iPath->DirectoryName, iPath->DirectoryName.length() );
+				}
 			}
 
 			FNSize = pEnt[ 0 ];
@@ -286,7 +325,7 @@ void ISOPathTable::WritePathTable( DWORD Extent, bool IsMTable, DWORD FSID )
 	}
 }
 
-DWORD ISOPathTable::GetProjectedSize()
+DWORD ISOPathTable::GetProjectedSize( bool Joliet )
 {
 	DWORD TableSize = 0;
 
@@ -298,6 +337,8 @@ DWORD ISOPathTable::GetProjectedSize()
 		TableSize += 8; // All entries are at least this.
 
 		size_t FBytes = iPath->DirectoryName.length();
+
+		if ( Joliet ) { FBytes <<= 1; }
 
 		TableSize += (DWORD) FBytes; // Entries must be an even size.
 

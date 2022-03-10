@@ -367,6 +367,7 @@ IDB_TZX                 BITMAP                  "E:\\NUTS\\blank-tzx.bmp"
 IDB_CDIMAGE             BITMAP                  "..\\cdimage.bmp"
 IDB_MEMCARD             BITMAP                  "..\\memorycard.bmp"
 IDB_REPAIR              BITMAP                  "repair.bmp"
+IDB_VDEDITBANNER        BITMAP                  "E:\\NUTS\\vdedit.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -671,6 +672,87 @@ BEGIN
     CONTROL         "4 M-Tables",IDC_4MTABLE,"Button",BS_AUTORADIOBUTTON,238,113,52,10
 END
 
+IDD_VD_EDIT DIALOGEX 0, 0, 327, 297
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "Volume Descriptor Editor"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,205,276,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,267,276,50,14
+    CONTROL         187,IDC_STATIC,"Static",SS_BITMAP,0,0,329,38
+    CONTROL         "",IDC_VD_TABS,"SysTabControl32",TCS_MULTILINE | WS_TABSTOP,7,41,312,231
+END
+
+IDD_ISO_SYSUSEAREA DIALOGEX 0, 0, 316, 182
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT | WS_EX_NOINHERITLAYOUT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "&Install Code",IDC_ISO_NEWSYSAREA,7,63,60,16,WS_GROUP
+    LTEXT           "The code installed in the System Use Area may not be more than 16 sectors in size. On a Mode 1 CDROM, this is 32 kilobytes maximum.",IDC_STATIC,7,37,302,19
+    LTEXT           "The System Use Area is usually used to hold additional boot code or partition information to allow the disc to be bootable. Adding code here will not make the disc bootable alone, and the right code must be installed for the target operating system.",IDC_STATIC,7,7,302,27
+    PUSHBUTTON      "&Save Code",IDC_ISO_SAVESYSAREA,79,63,60,16
+END
+
+IDD_ISO_VOLDESC DIALOGEX 0, 0, 316, 222
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "System ID:",IDC_ISO_SYSID,7,8,45,9,NOT WS_GROUP
+    LTEXT           "Volume ID:",IDC_ISO_VOLID,159,9,43,9,NOT WS_GROUP
+    LTEXT           "Volume Set:",IDC_ISO_VOLSET,7,24,43,9,NOT WS_GROUP
+    LTEXT           "Publisher:",IDC_ISO_PUBLISHER,159,25,38,9,NOT WS_GROUP
+    LTEXT           "Preparer:",IDC_ISO_PREPARER,8,40,39,9,NOT WS_GROUP
+    LTEXT           "Application:",IDC_ISO_APPLICATION,160,41,42,9,NOT WS_GROUP
+    LTEXT           "Copyright File:",IDC_STATIC,8,56,53,9,NOT WS_GROUP
+    LTEXT           "Abstract File:",IDC_STATIC,160,57,44,9,NOT WS_GROUP
+    LTEXT           "Bibliographic File:",IDC_ISO_BIBPROMPT,7,72,56,9,NOT WS_GROUP
+    LTEXT           "Creation Date:",IDC_STATIC,7,88,55,9,NOT WS_GROUP
+    LTEXT           "Modified Date:",IDC_STATIC,159,89,48,9,NOT WS_GROUP
+    LTEXT           "Expiration Date:",IDC_STATIC,7,104,55,9,NOT WS_GROUP
+    LTEXT           "Effective Date:",IDC_STATIC,159,105,51,9,NOT WS_GROUP
+    CONTROL         "",IDC_ISO_CREATION,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_SHOWNONE | WS_TABSTOP,67,87,87,12
+    CONTROL         "",IDC_ISO_MODIFICATION,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_SHOWNONE | WS_TABSTOP,213,87,87,12
+    CONTROL         "",IDC_ISO_EXPIRATION,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_SHOWNONE | WS_TABSTOP,67,103,87,12
+    CONTROL         "",IDC_ISO_EFFECTIVE,"SysDateTimePick32",DTS_RIGHTALIGN | DTS_SHOWNONE | WS_TABSTOP,213,103,87,12
+    COMBOBOX        IDC_ISO_BIBLIOGRAPHICFILE,67,70,87,12,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_ISO_COPYRIGHTFILE,67,54,87,12,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_ISO_ABSTRACTFILE,213,54,87,12,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "&Save Application Data",IDC_ISO_SAVEAPPDATA,67,124,88,14
+    PUSHBUTTON      "&Install Application Data",IDC_ISO_INSTALLAPPDATA,213,124,88,14
+    GROUPBOX        "Path L-Tables",IDC_STATIC,7,145,294,30
+    GROUPBOX        "Path M-Tables",IDC_STATIC,7,178,293,30
+    CONTROL         "1 L-Table",IDC_LTABLE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,12,158,54,11
+    CONTROL         "2 L-Tables",IDC_LTABLE2,"Button",BS_AUTORADIOBUTTON,85,158,54,11
+    CONTROL         "3 L-Tables",IDC_LTABLE3,"Button",BS_AUTORADIOBUTTON,158,158,54,11
+    CONTROL         "4 L-Tables",IDC_LTABLE4,"Button",BS_AUTORADIOBUTTON,231,158,54,11
+    CONTROL         "1 M-Table",IDC_MTABLE1,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,12,191,54,11
+    CONTROL         "2 M-Tables",IDC_MTABLE2,"Button",BS_AUTORADIOBUTTON,86,191,54,11
+    CONTROL         "3 M-Tables",IDC_MTABLE3,"Button",BS_AUTORADIOBUTTON,158,191,54,11
+    CONTROL         "4 M-Tables",IDC_MTABLE4,"Button",BS_AUTORADIOBUTTON,232,191,54,11
+    LTEXT           "(Max. 512 bytes)",IDC_STATIC,157,127,55,11
+END
+
+IDD_ISO_BOOTDESC DIALOGEX 0, 0, 316, 182
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "&Install Code",IDC_ISO_NEWBOOTCODE,7,63,60,16
+    LTEXT           "The code installed in the Boot Descriptor may not be more than 2032 bytes in size.",IDC_STATIC,7,37,302,19
+    LTEXT           "A Boot Descriptor holds code required to boot the disc on a specific system. Note that the right code for a particular system must be provided for this to be successful, and very often additional code in the System Use Area is required.",IDC_STATIC,7,7,302,27
+    PUSHBUTTON      "&Save Code",IDC_ISO_SAVEBOOTCODE,79,63,60,16
+END
+
+IDD_ISO_NOJOLIET DIALOGEX 0, 0, 316, 182
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "No Joliet Descriptor is present. Use the ""Add Joliet Descriptor"" command to add a Joliet data structure to this disc image.",-1,7,7,302,27
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -841,6 +923,43 @@ BEGIN
         RIGHTMARGIN, 309
         TOPMARGIN, 7
         BOTTOMMARGIN, 150
+    END
+
+    IDD_VD_EDIT, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 290
+    END
+
+    IDD_ISO_SYSUSEAREA, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_ISO_VOLDESC, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 215
+    END
+
+    IDD_ISO_BOOTDESC, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_ISO_NOJOLIET, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
     END
 END
 #endif    // APSTUDIO_INVOKED

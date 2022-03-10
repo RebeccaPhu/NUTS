@@ -331,6 +331,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 		{
 			if ( ( hActiveWnd == NULL ) || ( !IsDialogMessage( hActiveWnd, &msg ) ) )
 			{
+
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}

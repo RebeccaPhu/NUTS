@@ -28,9 +28,9 @@ public:
 	~ISOPathTable(void);
 
 public:
-	void  ReadPathTable( DWORD Extent, DWORD Size, DWORD FSID );
-	void  WritePathTable( DWORD Extent, bool IsMTable, DWORD FSID );
-	DWORD GetProjectedSize();
+	void  ReadPathTable( DWORD Extent, DWORD Size, DWORD FSID, bool IsJoliet = false );
+	void  WritePathTable( DWORD Extent, bool IsMTable, DWORD FSID, bool IsJoliet = false );
+	DWORD GetProjectedSize( bool Joliet = false );
 	void  AddDirectory( BYTEString &Identifier, DWORD Extent, DWORD ParentExt );
 	void  RemoveDirectory( DWORD Extent );
 	void  BlankTable( DWORD RootExtent );

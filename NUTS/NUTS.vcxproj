@@ -440,6 +440,7 @@
     <None Include="..\text.bmp" />
     <None Include="..\upfile.ico" />
     <None Include="..\util.bmp" />
+    <None Include="..\vdedit.bmp" />
     <None Include="..\volume.bmp" />
     <None Include="..\Windows.bmp" />
     <None Include="..\WizBanner.bmp" />

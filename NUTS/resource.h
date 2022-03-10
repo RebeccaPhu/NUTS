@@ -29,6 +29,7 @@
 #define IDB_BITMAP1                     115
 #define IDB_WIZ_MARK                    115
 #define IDB_WIZBANNER                   116
+#define IDD_VD_EDIT                     116
 #define IDR_EDIT_MENU                   117
 #define IDD_LOG_SELECT                  118
 #define IDB_BLANK                       119
@@ -112,6 +113,11 @@
 #define IDB_MEMCARD                     185
 #define IDD_ISO_FORMAT                  185
 #define IDB_REPAIR                      186
+#define IDB_VDEDITBANNER                187
+#define IDD_ISO_SYSUSEAREA              188
+#define IDD_ISO_VOLDESC                 189
+#define IDD_ISO_BOOTDESC                190
+#define IDD_ISO_NOJOLIET                191
 #define AFX_IDC_PRINT_DOCNAME           201
 #define AFX_IDC_PRINT_PRINTERNAME       202
 #define AFX_IDC_PRINT_PORTNAME          203
@@ -132,6 +138,7 @@
 #define AFX_IDC_UNDERLINE               1005
 #define IDC_TAB1                        1005
 #define IDC_ABOUTTABS                   1005
+#define IDC_VD_TABS                     1005
 #define AFX_IDC_SAMPLEBOX               1006
 #define IDC_FILE_YES                    1006
 #define IDC_FILE_NO                     1007
@@ -194,16 +201,44 @@
 #define IDC_XAM2F2                      1067
 #define IDC_1LTABLE                     1068
 #define IDC_2LTABLE                     1069
+#define IDC_ISO_NEWSYSAREA              1069
 #define IDC_3LTABLE                     1070
+#define IDC_ISO_NEWBOOTCODE             1070
 #define IDC_4LTABLE                     1071
+#define IDC_ISO_SAVEBOOTCODE            1071
 #define IDC_1MTABLE                     1072
+#define IDC_ISO_SAVESYSAREA             1072
 #define IDC_2MTABLE                     1073
+#define IDC_ISO_CREATION                1073
 #define IDC_3MTABLE                     1074
+#define IDC_ISO_MODIFICATION            1074
 #define IDC_4MTABLE                     1075
+#define IDC_ISO_EXPIRATION              1075
+#define IDC_ISO_EFFECTIVE               1076
+#define IDC_ISO_BIBLIOGRAPHICFILE       1077
+#define IDC_ISO_COPYRIGHTFILE           1079
+#define IDC_ISO_ABSTRACTFILE            1080
+#define IDC_ISO_INSTALLAPPDATA          1082
+#define IDC_LTABLE1                     1084
+#define IDC_LTABLE2                     1085
+#define IDC_LTABLE3                     1086
+#define IDC_LTABLE4                     1091
+#define IDC_MTABLE1                     1092
+#define IDC_MTABLE2                     1093
+#define IDC_MTABLE3                     1094
+#define IDC_MTABLE4                     1095
+#define IDC_ISO_BIBPROMPT               1096
+#define IDC_ISO_SYSID                   1097
+#define IDC_ISO_VOLID                   1098
+#define IDC_ISO_VOLSET                  1099
 #define AFX_IDC_COLOR_BLACK             1100
+#define IDC_ISO_PUBLISHER               1100
 #define AFX_IDC_COLOR_WHITE             1101
+#define IDC_ISO_PREPARER                1101
 #define AFX_IDC_COLOR_RED               1102
+#define IDC_ISO_APPLICATION             1102
 #define AFX_IDC_COLOR_GREEN             1103
+#define IDC_ISO_SAVEAPPDATA             1103
 #define AFX_IDC_COLOR_BLUE              1104
 #define AFX_IDC_COLOR_YELLOW            1105
 #define AFX_IDC_COLOR_MAGENTA           1106
@@ -764,9 +799,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        187
+#define _APS_NEXT_RESOURCE_VALUE        189
 #define _APS_NEXT_COMMAND_VALUE         40079
-#define _APS_NEXT_CONTROL_VALUE         1069
+#define _APS_NEXT_CONTROL_VALUE         1104
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

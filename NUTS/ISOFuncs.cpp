@@ -60,6 +60,36 @@ void ISOStrStore( BYTE *p, BYTE *s, WORD ml )
 	memcpy( p, s, sl );
 }
 
+void ISOJolietStore( BYTE *p, BYTE *s, WORD bl )
+{
+	// Like ISOStrStore, but for Joliet Strings, which are evil. Yes they are.
+	WORD sl = rstrnlen( s, bl );
+
+	WORD ml = bl >> 1;
+
+	WORD BEStr[ 256 ];
+
+	for ( WORD i=0; i<ml; i++ ) { BEStr[ i ] = 0x20; } // Pre-blank
+
+	MultiByteToWideChar( GetACP(), NULL, (char *) s, -1, (WCHAR *) BEStr, 256 );
+
+	// Byte swap. Because yes.
+	for ( WORD i=0; i<ml; i++ )
+	{
+		WBEWORD( (BYTE *) &BEStr[ i ], LEWORD( (BYTE *) &BEStr[ i ] ) );
+
+		// Replace terminating zero.
+		if ( BEStr[ i ] == 0 )
+		{
+			WBEWORD( (BYTE *)&BEStr[ i ], 0x20 );
+		}
+	}
+
+	memcpy( p, (BYTE *) BEStr, bl );
+	
+	// Microsoft.
+}
+
 void JolietStrTerm( BYTE *jp, WORD jl )
 {
 	WORD *p = (WORD *) jp;
@@ -110,12 +140,41 @@ void PrepareISOSectors( ISOSectorList &Sectors )
 	// First sort the sector list, in case it's not in order.
 	std::sort( Sectors.begin(), Sectors.end(), ISOSectorSort );
 
-	// Now assign a shift to the ordered list
-	DWORD Shift = 1;
-
+	// Set the sector counts to 1
 	for ( ISOSectorList::iterator iSector = Sectors.begin(); iSector != Sectors.end(); iSector++ )
 	{
+		iSector->TotalSectors = 1;
+	}
+
+	// Now assign a shift to the ordered list
+	DWORD Shift   = 1;
+
+	for ( ISOSectorList::iterator iSector = Sectors.begin(); iSector != Sectors.end(); )
+	{
 		iSector->Shift = Shift++;
+
+		if ( iSector == Sectors.begin() )
+		{
+			iSector++;
+		}
+		else
+		{
+			ISOSectorList::iterator iPrevSector = iSector; iPrevSector--;
+
+			if ( iSector->ID == iPrevSector->ID )
+			{
+				iPrevSector->Shift++;
+				iPrevSector->TotalSectors++;
+
+				iSector = Sectors.erase( iSector );
+
+				Shift--;
+			}
+			else
+			{
+				iSector++;
+			}
+		}
 	}
 }
 
@@ -502,7 +561,9 @@ int ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWO
 	DWORD DestSectNum   = 0;
 	DWORD NumSects      = ( WorkSource.Ext() + ( SectorSize - 1 ) ) / SectorSize;
 
-	ISOSectorList::iterator iSector = Sectors.begin();
+	ISOSectorList SectorsCopy = Sectors;
+
+	ISOSectorList::iterator iSector = SectorsCopy.begin();
 
 	SendMessage( GetDlgItem( hJobWindow, IDC_JOB_NAME ), WM_SETTEXT, 0, (LPARAM) std::wstring( L"Synchronizing data..." ).c_str() );
 
@@ -524,7 +585,7 @@ int ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWO
 
 		if ( IsoOp == ISO_RESTRUCTURE_REM_SECTORS )
 		{
-			if ( ( iSector == Sectors.end() ) || ( Sect < iSector->ID ) )
+			if ( ( iSector == SectorsCopy.end() ) || ( Sect < iSector->ID ) )
 			{
 				CopySector = true;
 			}
@@ -534,7 +595,7 @@ int ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWO
 		{
 			CopySector = true;
 
-			if ( ( iSector != Sectors.end() ) && ( Sect == iSector->ID ) )
+			if ( ( iSector != SectorsCopy.end() ) && ( Sect == iSector->ID ) )
 			{
 				AddSector = true;
 			}
@@ -542,24 +603,27 @@ int ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWO
 
 		if ( AddSector )
 		{
-			memset( (BYTE *) SectorBuffer, 0, SectorSize );
-
-			memcpy( &pOutBuffer[ KiloPtr ], (BYTE *) SectorBuffer, SectorSize );
-
-			KiloPtr += SectorSize;
-
-			if ( KiloPtr == KiloSize )
+			for ( DWORD i=0; i<iSector->TotalSectors; i++ )
 			{
-				if ( pSource->WriteRaw( RawPtr, KiloSize, pOutBuffer ) != DS_SUCCESS )
+				memset( (BYTE *) SectorBuffer, 0, SectorSize );
+
+				memcpy( &pOutBuffer[ KiloPtr ], (BYTE *) SectorBuffer, SectorSize );
+
+				KiloPtr += SectorSize;
+
+				if ( KiloPtr == KiloSize )
 				{
-					return -1;
+					if ( pSource->WriteRaw( RawPtr, KiloSize, pOutBuffer ) != DS_SUCCESS )
+					{
+						return -1;
+					}
+
+					RawPtr += KiloSize;
+					KiloPtr = 0;
 				}
 
-				RawPtr += KiloSize;
-				KiloPtr = 0;
+				DestSectNum++;
 			}
-
-			DestSectNum++;
 		}
 
 		if ( CopySector )
@@ -585,7 +649,7 @@ int ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWO
 			DestSectNum++;
 		}
 
-		if ( ( iSector != Sectors.end() ) && ( Sect >= iSector->ID ) )
+		if ( ( iSector != SectorsCopy.end() ) && ( Sect >= iSector->ID ) )
 		{
 			iSector++;
 		}
@@ -1323,7 +1387,7 @@ int ISOSetPathTableSize( DataSource *pSource, DWORD SectorSize, DWORD TableSize,
 	return 0;
 }
 
-void MakeISOFilename( NativeFile *pFile, BYTE *StringBuf )
+void MakeISOFilename( NativeFile *pFile, BYTE *StringBuf, bool IncludeRevision )
 {
 	rstrncpy( StringBuf, pFile->Filename, 255 );
 
@@ -1386,6 +1450,9 @@ void MakeISOFilename( NativeFile *pFile, BYTE *StringBuf )
 
 	if ( ( pFile->Flags & FF_Directory ) == 0 )
 	{
-		rstrncat( StringBuf, Revs, 255 );
+		if ( IncludeRevision )
+		{
+			rstrncat( StringBuf, Revs, 255 );
+		}
 	}
 }

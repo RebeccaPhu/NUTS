@@ -15,10 +15,11 @@ public:
 	~ISO9660Directory(void);
 
 public:
-	int	ReadDirectory(void);
-	int	WriteDirectory(void);
+	int  ReadDirectory(void);
+	int  WriteDirectory(void);
+	void WriteJDirectory( DWORD DirSector, DWORD JParentSector, DWORD JParentSize );
 
-	DWORD ProjectedDirectorySize();
+	DWORD ProjectedDirectorySize( bool Joliet = false );
 
 	void  ConvertUnixTime( BYTE *pTimestamp, DWORD Unixtime );
 

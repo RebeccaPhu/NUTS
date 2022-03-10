@@ -3,9 +3,12 @@
 
 #include "libfuncs.h"
 #include "ISOFuncs.h"
+#include "FileDialogs.h"
 
 #include "resource.h"
+#include "EncodingEdit.h"
 
+#include <commctrl.h>
 #include <WindowsX.h>
 
 #define WRITABLE_TEST() if ( !WritableTest() ) { return -1; }
@@ -53,6 +56,7 @@ ISO9660FileSystem::ISO9660FileSystem( const ISO9660FileSystem &source ) : FileSy
 	pPathTable = nullptr;
 
 	pISODir->pPriVolDesc = &PriVolDesc;
+	pISODir->pJolietDesc = &JolietDesc;
 
 	pISODir->DirSector   = source.pISODir->DirSector;
 	pISODir->DirLength   = source.pISODir->DirLength;
@@ -118,13 +122,13 @@ void ISO9660FileSystem::ReadVolumeDescriptors( void )
 {
 	BYTE Buffer[ 2048 ];
 
-	QWORD VolDescLoc = 0x8000;
+	DWORD Sect = 16;
 
-	while ( VolDescLoc <= 0x100000 )
+	while ( Sect <= 32 )
 	{
 		ZeroMemory( Buffer, 2048 );
 
-		if ( pSource->ReadRaw( VolDescLoc, 2048, Buffer ) != DS_SUCCESS )
+		if ( pSource->ReadSectorLBA( Sect, Buffer, 2048 ) != DS_SUCCESS ) // Fixed size for VDs.
 		{
 			return;
 		}
@@ -202,6 +206,9 @@ void ISO9660FileSystem::ReadVolumeDescriptors( void )
 				ISOStrTerm( PriVolDesc.ModTime, 17 );
 				ISOStrTerm( PriVolDesc.ExpireTime, 17 );
 				ISOStrTerm( PriVolDesc.EffectiveTime, 17 );
+
+				PriVolDesc.SourceSector = Sect;
+				PriVolDesc.IsJoliet     = false;
 			}
 
 			if ( ( SecType == 0x02 ) && ( JolietBytes ) )
@@ -254,6 +261,9 @@ void ISO9660FileSystem::ReadVolumeDescriptors( void )
 				ISOStrTerm( JolietDesc.EffectiveTime, 17 );
 
 				HasJoliet = true;
+
+				JolietDesc.SourceSector = Sect;
+				JolietDesc.IsJoliet     = true;
 			}
 		}
 
@@ -309,10 +319,13 @@ void ISO9660FileSystem::ReadVolumeDescriptors( void )
 				ISOStrTerm( PriVolDesc.ModTime, 17 );
 				ISOStrTerm( PriVolDesc.ExpireTime, 17 );
 				ISOStrTerm( PriVolDesc.EffectiveTime, 17 );
+
+				PriVolDesc.SourceSector = Sect;
+				PriVolDesc.IsJoliet     = false;
 			}
 		}
 
-		VolDescLoc += 2048;
+		Sect++;
 	}
 
 	if ( pPathTable != nullptr )
@@ -330,6 +343,9 @@ int ISO9660FileSystem::Init( void )
 	pISODir->ProcessFOP = ProcessFOP;
 	pISODir->pSrcFS     = (void *) this;
 	pISODir->FSID       = FSID;
+
+	HasJoliet   = false;
+	UsingJoliet = false;
 
 	ReadVolumeDescriptors();
 
@@ -814,6 +830,17 @@ BYTE *ISO9660FileSystem::GetTitleString( NativeFile *pFile, DWORD Flags ) {
 
 	rstrncpy( ISOPath, (BYTE *) "CDROM:", 511 );
 
+	if ( UsingJoliet )
+	{
+		rstrncat( ISOPath, JolietDesc.VolID, 511 );
+	}
+	else
+	{
+		rstrncat( ISOPath, PriVolDesc.VolID, 511 );
+	}
+
+	rstrncat( ISOPath, (BYTE *) ":", 511 );
+
 	rstrncat( ISOPath, (BYTE *) CDPath.c_str(), 511 );
 
 	if ( pFile != nullptr )
@@ -1004,8 +1031,6 @@ LocalCommands ISO9660FileSystem::GetLocalCommands( void )
 		{
 			c1.Name = L"Browse ISO Tree";
 		}
-
-		c2.Name = L"Remove Joliet Volume Descriptor";
 	}
 	else
 	{
@@ -1019,8 +1044,14 @@ LocalCommands ISO9660FileSystem::GetLocalCommands( void )
 
 	if ( pSource->Flags & DS_ReadOnly )
 	{
+		c3.Flags = LC_Always | LC_Disabled;
 		c4.Flags = LC_Always | LC_Disabled;
 		c5.Flags = LC_Always | LC_Disabled;
+	}
+
+	if ( Writable )
+	{
+		c5.Flags |= LC_Disabled;
 	}
 
 	LocalCommands cmds;
@@ -1152,6 +1183,31 @@ int ISO9660FileSystem::ExecLocalCommand( DWORD CmdIndex, std::vector<NativeFile>
 		return CMDOP_REFRESH;
 	}
 
+	if ( CmdIndex == 2 ) // Add/remove Joliet
+	{
+		EnableWriting();
+
+		if ( HasJoliet )
+		{
+			RemoveJoliet();
+		}
+		else
+		{
+			AddJoliet();
+		}
+
+		Writable = false;
+
+		Init();
+	}
+
+	if ( CmdIndex == 3 )
+	{
+		EditVolumeDescriptors( hParentWnd );
+
+		return CMDOP_REFRESH;
+	}
+
 	if ( CmdIndex == 5 )
 	{
 		if ( !Writable )
@@ -1189,9 +1245,138 @@ int ISO9660FileSystem::ExecLocalCommand( DWORD CmdIndex, std::vector<NativeFile>
 	return 0;
 }
 
+void JolietScanDirs( FileSystem *pFS, ISOSectorList &sectors, ISOVolDesc &JolietDesc )
+{
+	for ( DWORD i = 0; i < pFS->pDirectory->Files.size(); i++ )
+	{
+		// DANGER WILL ROBINSON!
+		// References to directories will /always/ point to some Joliet-only blob. But a reference to a /file/
+		// might point to something pointed to by something in the /ISO/ structure. We must leave it alone,
+		// and hope that it doesn't get orphaned as a result. If it does, the user can use the "remove unused sectors"
+		// tool to clear it.
+
+		NativeFile *iFile = &pFS->pDirectory->Files[ i ];
+
+		if ( iFile->Flags & FF_Directory )
+		{
+			ISOSector sector;
+
+			DWORD DirSize = iFile->Length;
+			DWORD DirLoc  = iFile->Attributes[ ISOATTR_START_EXTENT ];
+
+			DWORD DirSects = ( DirSize + ( JolietDesc.SectorSize - 1 ) ) / JolietDesc.SectorSize;
+
+			for ( DWORD i=0; i<DirSects; i++ )
+			{
+				sector.ID = DirLoc + i; sectors.push_back( sector );
+			}
+
+			pFS->ChangeDirectory( i );
+
+			JolietScanDirs( pFS, sectors, JolietDesc );
+
+			pFS->Parent();
+		}
+	}
+}
+
 void ISO9660FileSystem::RemoveJoliet()
 {
+	// Oooh this is going to be very messy.
+	ISOSectorList sectors;
 
+	ISOSector sector;
+
+	sector.ID = JolietDesc.SourceSector; sectors.push_back( sector );
+
+	// Add the path tables
+	DWORD PathTableSects = ( JolietDesc.PathTableSize + ( JolietDesc.SectorSize - 1 ) ) / JolietDesc.SectorSize;
+
+	for ( DWORD i=0; i<PathTableSects; i++ )
+	{
+		sector.ID = JolietDesc.LTableLoc + i; sectors.push_back( sector );
+		sector.ID = JolietDesc.MTableLoc + i; sectors.push_back( sector );
+
+		if ( JolietDesc.LTableLocOpt != 0 )
+		{
+			sector.ID = JolietDesc.LTableLocOpt + i; sectors.push_back( sector );
+		}
+
+		if ( JolietDesc.MTableLocOpt != 0 )
+		{
+			sector.ID = JolietDesc.MTableLocOpt + i; sectors.push_back( sector );
+		}
+	}
+
+	// Now the icky part. Traversing the Joliet Structure.
+	FileSystem *pFS = Clone();
+
+	if ( !UsingJoliet )
+	{
+		// Put it in Joliet mode if we weren't.
+		std::vector<NativeFile> dummy;
+
+		pFS->ExecLocalCommand( 0, dummy, NULL );
+	}
+
+	// Get to root
+	while ( !pFS->IsRoot() ) { if ( pFS->Parent() != NUTS_SUCCESS ) { return; } }
+
+	// Add the root directory itself
+	DWORD RootSize = LEDWORD( &JolietDesc.DirectoryRecord[ 10 ] );
+	DWORD RootLoc  = LEDWORD( &JolietDesc.DirectoryRecord[  2 ] );
+
+	DWORD RootSects = ( RootSize + ( JolietDesc.SectorSize - 1 ) ) / JolietDesc.SectorSize;
+
+	for ( DWORD i=0; i<RootSects; i++ )
+	{
+		sector.ID = RootLoc + i; sectors.push_back( sector );
+	}
+
+	// And now, we traverse.
+	JolietScanDirs( pFS, sectors, JolietDesc );
+
+	// Blank out the Joliet descriptor sector, otherwise ISO restructure will try to restructure itself.
+	BYTE FakeDescriptor[ 7 ] = { 0x03, 'C', 'D', '0', '0', '1', 0x01 };
+
+	AutoBuffer secbuf( JolietDesc.SectorSize );
+
+	if ( pSource->ReadSectorLBA( JolietDesc.SourceSector, (BYTE *) secbuf, JolietDesc.SectorSize ) != DS_SUCCESS )
+	{
+		NUTSError::Report( L"Removing Joliet structure", hMainWnd );
+
+		return;
+	}
+
+	memcpy( (BYTE *) secbuf, FakeDescriptor, 7 );
+
+	if ( pSource->WriteSectorLBA( JolietDesc.SourceSector, (BYTE *) secbuf, JolietDesc.SectorSize ) != DS_SUCCESS )
+	{
+		NUTSError::Report( L"Removing Joliet structure", hMainWnd );
+
+		return;
+	}
+
+	// Now we have all the sectors. Remove them.
+	ISOJob job;
+
+	PrepareISOSectors( sectors );
+
+	job.FSID       = FSID;
+	job.IsoOp      = ISO_RESTRUCTURE_REM_SECTORS;
+	job.pSource    = pSource;
+	job.pVolDesc   = &PriVolDesc; // Because reasons
+	job.Sectors    = sectors;
+	job.SectorSize = PriVolDesc.SectorSize;
+
+	if ( PerformISOJob( &job ) != NUTS_SUCCESS )
+	{
+		NUTSError::Report( L"Removing Joliet structure", hMainWnd );
+
+		return;
+	}
+
+	Init();
 }
 
 bool ISO9660FileSystem::WritableTest()
@@ -2032,6 +2217,42 @@ int ISO9660FileSystem::DeleteFile( DWORD FileID )
 		}
 	}
 
+	// Post-script: If this is the root directory, and the filename was referenced by the descriptor, we must update the descriptor.
+	if ( IsRoot() )
+	{
+		BYTE ISOFilename[ 256 ];
+
+		bool WriteBack = false;
+
+		MakeISOFilename( &pDirectory->Files[ FileID ], ISOFilename, false );
+
+		if ( rstrncmp( PriVolDesc.CopyrightFilename, ISOFilename, 17 ) )
+		{
+			rstrncpy( PriVolDesc.CopyrightFilename, (BYTE *) "                 ", 17 );
+
+			WriteBack = true;
+		}
+
+		if ( rstrncmp( PriVolDesc.AbstractFilename, ISOFilename, 17 ) )
+		{
+			rstrncpy( PriVolDesc.AbstractFilename, (BYTE *) "                 ", 17 );
+
+			WriteBack = true;
+		}
+
+		if ( rstrncmp( PriVolDesc.BibliographicFilename, ISOFilename, 17 ) )
+		{
+			rstrncpy( PriVolDesc.BibliographicFilename, (BYTE *) "                 ", 17 );
+
+			WriteBack = true;
+		}
+
+		if ( WriteBack )
+		{
+			WriteVolumeDescriptor( PriVolDesc, PriVolDesc.SourceSector, FSID, false );
+		}
+	}
+
 	// Step 3) Directory shrinkage
 	(void) pDirectory->Files.erase( pDirectory->Files.begin() + FileID );
 
@@ -2658,14 +2879,23 @@ void ISO9660FileSystem::WriteVolumeDescriptor( ISOVolDesc &VolDesc, DWORD Sector
 		Buffer[ 0x58 ] = 0x25;
 		Buffer[ 0x59 ] = 0x2f;
 		Buffer[ 0x5a ] = 0x45;
+		Buffer[ 0x00 ] = 0x02;
 	}
 
 	if ( FSID == FSID_ISO9660 )
 	{
 		Buffer[ 7 ] = 1; // structure version
 
-		ISOStrStore( &Buffer[  8 ], VolDesc.SysID, 32 );
-		ISOStrStore( &Buffer[ 40 ], VolDesc.VolID, 32 );
+		if ( Joliet )
+		{
+			ISOJolietStore( &Buffer[  8 ], VolDesc.SysID, 32 );
+			ISOJolietStore( &Buffer[ 40 ], VolDesc.VolID, 32 );
+		}
+		else
+		{
+			ISOStrStore( &Buffer[  8 ], VolDesc.SysID, 32 );
+			ISOStrStore( &Buffer[ 40 ], VolDesc.VolID, 32 );
+		}
 
 		WLEDWORD( &Buffer[  80 ], VolDesc.VolSize );
 		WBEDWORD( &Buffer[  84 ], VolDesc.VolSize );
@@ -2685,14 +2915,28 @@ void ISO9660FileSystem::WriteVolumeDescriptor( ISOVolDesc &VolDesc, DWORD Sector
 
 		memcpy( &Buffer[ 156 ], &VolDesc.DirectoryRecord, 34 );
 
-		ISOStrStore( &Buffer[ 190 ], VolDesc.VolSetID, 128 );
-		ISOStrStore( &Buffer[ 318 ], VolDesc.Publisher, 128 );
-		ISOStrStore( &Buffer[ 446 ], VolDesc.Preparer, 128 );
-		ISOStrStore( &Buffer[ 574 ], VolDesc.AppID, 128 );
+		if ( Joliet )
+		{
+			ISOJolietStore( &Buffer[ 190 ], VolDesc.VolSetID, 128 );
+			ISOJolietStore( &Buffer[ 318 ], VolDesc.Publisher, 128 );
+			ISOJolietStore( &Buffer[ 446 ], VolDesc.Preparer, 128 );
+			ISOJolietStore( &Buffer[ 574 ], VolDesc.AppID, 128 );
 
-		ISOStrStore( &Buffer[ 702 ], VolDesc.CopyrightFilename, 37 );
-		ISOStrStore( &Buffer[ 739 ], VolDesc.AbstractFilename, 37 );
-		ISOStrStore( &Buffer[ 776 ], VolDesc.BibliographicFilename, 37 );
+			ISOJolietStore( &Buffer[ 702 ], VolDesc.CopyrightFilename, 37 );
+			ISOJolietStore( &Buffer[ 739 ], VolDesc.AbstractFilename, 37 );
+			ISOJolietStore( &Buffer[ 776 ], VolDesc.BibliographicFilename, 37 );
+		}
+		else
+		{
+			ISOStrStore( &Buffer[ 190 ], VolDesc.VolSetID, 128 );
+			ISOStrStore( &Buffer[ 318 ], VolDesc.Publisher, 128 );
+			ISOStrStore( &Buffer[ 446 ], VolDesc.Preparer, 128 );
+			ISOStrStore( &Buffer[ 574 ], VolDesc.AppID, 128 );
+
+			ISOStrStore( &Buffer[ 702 ], VolDesc.CopyrightFilename, 37 );
+			ISOStrStore( &Buffer[ 739 ], VolDesc.AbstractFilename, 37 );
+			ISOStrStore( &Buffer[ 776 ], VolDesc.BibliographicFilename, 37 );
+		}
 
 		memcpy( &Buffer[ 813 ], &VolDesc.CreationTime, 17 );
 		memcpy( &Buffer[ 830 ], &VolDesc.ModTime, 17 );
@@ -3289,4 +3533,1282 @@ int ISO9660FileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 	}
 
 	return -1;
+}
+
+static DataSource *pEditSource;
+static HWND        pCurrentTab = nullptr;
+static DWORD       VDEFSID;
+static ISOVolDesc  *pVD; // Used for any required disc params.
+static ISOVolDesc  *pIVD;
+static ISOVolDesc  *pJVD;
+static FileSystem  *pEditFS; // Used for locating files
+
+INT_PTR CALLBACK SysAreaFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if ( message == WM_INITDIALOG )
+	{
+		return (INT_PTR) TRUE;
+	}
+
+	if ( message == WM_COMMAND )
+	{
+		if ( LOWORD( wParam ) == IDC_ISO_NEWSYSAREA )
+		{
+			std::wstring Filename;
+
+			if ( OpenAnyFileDialog( hDlg, Filename, L"Select System Use Area Data File" ) )
+			{
+				CTempFile SysArea( Filename );
+
+				SysArea.Keep();
+
+				if ( SysArea.Ext() > ( 16 * pVD->SectorSize ) )
+				{
+					std::wstring bytes = std::to_wstring( (QWORD) 16 * pVD->SectorSize );
+
+					std::wstring msg = std::wstring(
+						L"The selected file is too large to be installed to the System Use Area. The maximum size allowed "
+						L"on this disc is " + bytes + L" bytes"
+					);
+
+					MessageBox( hDlg, msg.c_str(), L"NUTS ISO Volume Descriptor Editor", MB_ICONEXCLAMATION | MB_OK );
+				}
+				else
+				{
+					AutoBuffer buf( pVD->SectorSize );
+
+					DWORD BytesToGo = (DWORD) SysArea.Ext();
+
+					DWORD Sect = 0;
+
+					SysArea.Seek( 0 );
+
+					while ( BytesToGo > 0 )
+					{
+						DWORD BytesToRead = min( BytesToGo, pVD->SectorSize );
+
+						ZeroMemory( (BYTE *) buf, pVD->SectorSize );
+
+						SysArea.Read( (BYTE *) buf, BytesToRead );
+
+						if ( pEditSource->WriteSectorLBA( Sect, (BYTE *) buf, pVD->SectorSize ) != DS_SUCCESS )
+						{
+							NUTSError::Report( L"Installing System Use Area", hDlg );
+
+							break;
+						}
+
+						Sect++;
+
+						BytesToGo -= BytesToRead;
+					}
+
+					MessageBox( hDlg, L"System Use Area Installed", L"NUTS ISO Volume Descriptor Editor", MB_ICONINFORMATION | MB_OK );
+				}
+			}
+		}
+
+		if ( LOWORD( wParam ) == IDC_ISO_SAVESYSAREA )
+		{
+			std::wstring Filename;
+
+			if ( SaveFileDialog( hDlg, Filename, L"Binary File", L"bin", L"Save ISO System Use Area" ) )
+			{
+				CTempFile SysArea;
+
+				AutoBuffer buf( pVD->SectorSize );
+
+				// We don't know how much of the Sys Area is actually used, so just grab the lot
+				DWORD BytesToGo = 16 * pVD->SectorSize;
+
+				DWORD Sect = 0;
+
+				SysArea.Seek( 0 );
+
+				while ( BytesToGo > 0 )
+				{
+					DWORD BytesToRead = min( BytesToGo, pVD->SectorSize );
+
+					ZeroMemory( (BYTE *) buf, pVD->SectorSize );
+
+					if ( pEditSource->ReadSectorLBA( Sect, (BYTE *) buf, pVD->SectorSize ) != DS_SUCCESS )
+					{
+						NUTSError::Report( L"Saving System Use Area", hDlg );
+
+						break;
+					}
+
+					SysArea.Write( (BYTE *) buf, BytesToRead );
+
+					Sect++;
+
+					BytesToGo -= BytesToRead;
+				}
+
+				SysArea.SetExt( 16 * pVD->SectorSize );
+				SysArea.KeepAs( Filename );
+
+				MessageBox( hDlg, L"System Use Area Saved", L"NUTS ISO Volume Descriptor Editor", MB_ICONINFORMATION | MB_OK );
+			}
+		}
+
+		return (INT_PTR) TRUE;
+	}
+
+	return FALSE;
+}
+
+DWORD FindDescriptor( bool CreateIfNone, BYTE DescType )
+{
+	DWORD Sect = 16;
+
+	BYTE buf[ 2048 ];
+
+	while ( Sect < 32 ) // Let's be realistic
+	{
+		pEditSource->ReadSectorLBA( Sect, buf, 2048 );
+
+		BYTE DType = buf[ 0 ];
+
+		if ( VDEFSID == FSID_ISOHS )
+		{
+			DType = buf[ 8 ];
+		}
+
+		if ( DType == DescType )
+		{
+			// Aha!
+			return Sect;
+		}
+
+		if ( DType == 0xFF )
+		{
+			break;
+		}
+
+		Sect++;
+	}
+
+	if ( !CreateIfNone )
+	{
+		// Not found -\:)/-
+		return 0;
+	}
+
+	// Insert one then.
+	ISOSectorList sectors;
+	ISOSector     sector;
+	ISOJob        job;
+
+	sector.ID = 16;
+
+	sectors.push_back( sector );
+	
+	PrepareISOSectors( sectors );
+
+	job.FSID       = VDEFSID;
+	job.IsoOp      = ISO_RESTRUCTURE_ADD_SECTORS;
+	job.pSource    = pEditSource;
+	job.pVolDesc   = pVD;
+	job.Sectors    = sectors;
+	job.SectorSize = pVD->SectorSize;
+
+	(void) PerformISOJob( &job );
+
+	return 16;
+}
+
+INT_PTR CALLBACK BootDescFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if ( message == WM_NOTIFY )
+	{
+		return TRUE;
+	}
+
+	if ( message == WM_COMMAND )
+	{
+		if ( LOWORD( wParam ) == IDC_ISO_NEWBOOTCODE )
+		{
+			std::wstring Filename;
+
+			if ( OpenAnyFileDialog( hDlg, Filename, L"Select Boot Descriptor Data File" ) )
+			{
+				CTempFile BootFile( Filename );
+
+				BootFile.Keep();
+
+				// "Where does 2032 come from?"
+				// Well, a BVD still needs 8 bytes for the VD header. On High Sierra that's reduced a
+				// further 8 bytes for the Volume LBN. The sector can't be bigger than the smallest sector
+				// size (2048 bytes) because the sector size is not known at use time (only that it is
+				// at least 2048 bytes). 2048 - ( 8 + 8 ) = 2032.
+				// Technically, ISO9660 could reclaim 8 bytes for the BVD. But we'll just impose a limit
+				// here for simplicity.
+
+				if ( BootFile.Ext() > 2032 )
+				{
+					std::wstring msg = std::wstring(
+						L"The selected file is too large to be installed to a Boot Descriptor. The maximum size allowed "
+						L"is 2,032 bytes."
+					);
+
+					MessageBox( hDlg, msg.c_str(), L"NUTS ISO Volume Descriptor Editor", MB_ICONEXCLAMATION | MB_OK );
+				}
+				else
+				{
+					BYTE buf[ 2048 ];
+
+					BootFile.Seek( 0 );
+
+					ZeroMemory( (BYTE *) buf, 2048 );
+
+					BootFile.Read( &buf[ 7 ], min( BootFile.Ext(), 2032 ) );
+
+					DWORD Sect = FindDescriptor( true, 0x00 );
+
+					if ( pEditSource->WriteSectorLBA( Sect, (BYTE *) buf, 2048 ) != DS_SUCCESS )
+					{
+						NUTSError::Report( L"Installing Boot Descriptor", hDlg );
+					}
+					else
+					{
+						MessageBox( hDlg, L"Boot Descriptor Installed", L"NUTS ISO Volume Descriptor Editor", MB_ICONINFORMATION | MB_OK );
+					}
+				}
+			}
+		}
+
+		if ( LOWORD( wParam ) == IDC_ISO_SAVEBOOTCODE )
+		{
+			std::wstring Filename;
+
+			DWORD Sect = FindDescriptor( false, 0x00 );
+
+			if ( Sect != 0 )
+			{
+				if ( SaveFileDialog( hDlg, Filename, L"Binary File", L"bin", L"Save ISO Boot Descriptor" ) )
+				{
+					CTempFile BootFile;
+
+					BYTE buf[ 2048 ];
+
+					BootFile.Seek( 0 );
+
+					ZeroMemory( (BYTE *) buf, 2048 );
+
+					if ( pEditSource->ReadSectorLBA( Sect, (BYTE *) buf, 2048 ) != DS_SUCCESS )
+					{
+						NUTSError::Report( L"Saving Boot Descriptor hDlg", hDlg );
+					}
+					else
+					{
+						BootFile.Write( &buf[ 7 ], 2032 );
+
+						BootFile.KeepAs( Filename );
+
+						MessageBox( hDlg, L"Boot Descriptor Saved", L"NUTS ISO Volume Descriptor Editor", MB_ICONINFORMATION | MB_OK );
+					}
+				}
+			}
+			else
+			{
+				MessageBox( hDlg, L"No Boot Descriptor Found", L"NUTS ISO Volume Descriptor Editor", MB_ICONWARNING | MB_OK );
+			}
+		}
+
+		return (INT_PTR) TRUE;
+	}
+
+	return FALSE;
+}
+
+void ISODTToSystemTimeID( HWND hDlg, BYTE *pTime, DWORD id )
+{
+	SYSTEMTIME sTime;
+
+	int y,mo,d,h,m,s,ms;
+
+	int n = sscanf( (char *) pTime, "%04d%02d%02d%02d%02d%02d%02d",
+		&y, &mo, &d, &h, &m, &s, &ms
+	);
+
+	if ( y == 0 ) { n = 0; }
+
+	if ( n == 7 )
+	{
+		sTime.wYear         = y;
+		sTime.wMonth        = mo;
+		sTime.wDay          = d;
+		sTime.wHour         = h;
+		sTime.wMinute       = m;
+		sTime.wSecond       = s;
+		sTime.wMilliseconds = ms * 10;
+
+		::SendMessage( GetDlgItem( hDlg, (int) id ), DTM_SETSYSTEMTIME, (WPARAM) GDT_VALID, (LPARAM) &sTime );
+	}
+	else
+	{
+		::SendMessage( GetDlgItem( hDlg, (int) id ), DTM_SETSYSTEMTIME, (WPARAM) GDT_NONE, (LPARAM) &sTime );
+	}
+
+	::SendMessage( GetDlgItem( hDlg, (int) id ), DTM_SETFORMAT, 0, (LPARAM) L"dd/MM/yy hh:mm" );
+}
+
+static EncodingEdit *pSysID;
+static EncodingEdit *pVolID;
+static EncodingEdit *pVolSetID;
+static EncodingEdit *pPublisher;
+static EncodingEdit *pPreprarer;
+static EncodingEdit *pApplication;
+
+bool DChars( BYTE c )
+{
+	if ( ( c >= 'A' ) && ( c <= 'Z' ) ) { return true; }
+	if ( ( c >= '0' ) && ( c <= '9' ) ) { return true; }
+	if ( c == '_' ) { return true; }
+
+	return false;
+}
+
+bool AChars( BYTE c )
+{
+	if ( DChars( c ) ) { return true; }
+
+	const BYTE AX[ 20 ] = { '!', '"', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', ' ' };
+
+	for ( BYTE i=0; i<20; i++ )
+	{
+		if ( c == AX[ i ] ) { return true; }
+	}
+
+	return false;
+}
+
+
+EncodingEdit *CreateEditForISO( HWND hDlg, BYTE *pString, int x, int y, fnCharValidator pValidatorFunc )
+{
+	EncodingEdit *pEdit = new EncodingEdit( hDlg, x, y, 132, false );
+
+	pEdit->SetText( pString );
+
+	pEdit->Encoding     = ENCODING_ASCII;
+	pEdit->AllowedChars = EncodingEdit::textInputAny;
+	pEdit->MaxLen       = 37;
+	pEdit->pValidator   = pValidatorFunc;
+
+	return pEdit;
+}
+
+INT_PTR CALLBACK NullFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	return (INT_PTR) FALSE;
+}
+
+INT_PTR CALLBACK VDFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+		{
+			std::wstring AppDataPath;
+
+			if ( LOWORD( wParam ) == IDC_ISO_SAVEAPPDATA )
+			{
+				if ( SaveFileDialog( hDlg, AppDataPath, L"Binary Data", L"bin", L"Save Descriptor Applicatioin Data" ) )
+				{
+					CTempFile AppData;
+
+					AppData.Seek( 0 );
+
+					AppData.Write( pVD->ApplicationBytes, 512 );
+
+					AppData.KeepAs( AppDataPath );
+				}
+			}
+
+			if ( LOWORD( wParam ) == IDC_ISO_INSTALLAPPDATA )
+			{
+				if ( OpenAnyFileDialog( hDlg, AppDataPath, L"Select Descriptor Application Data File" ) )
+				{
+					CTempFile AppData( AppDataPath );
+
+					AppData.Keep();
+
+					AppData.Seek( 0 );
+
+					AppData.Read( pVD->ApplicationBytes, 512 );
+				}
+			}
+		}
+		break;
+
+	case WM_INITDIALOG:
+		{
+			DWORD FC = 1;
+
+			for ( int i=0; i < pEditFS->pDirectory->Files.size(); i++ )
+			{
+				BYTE ISOFilename[ 256 ];
+
+				std::string sfile;
+
+				if ( i == 0 )
+				{
+					sfile = "[None]";
+
+					::SendMessageA( GetDlgItem( hDlg, IDC_ISO_COPYRIGHTFILE ),     CB_ADDSTRING, 0, (LPARAM) sfile.c_str() );
+					::SendMessageA( GetDlgItem( hDlg, IDC_ISO_ABSTRACTFILE ),      CB_ADDSTRING, 0, (LPARAM) sfile.c_str() );
+					::SendMessageA( GetDlgItem( hDlg, IDC_ISO_BIBLIOGRAPHICFILE ), CB_ADDSTRING, 0, (LPARAM) sfile.c_str() );
+
+					::SendMessageA( GetDlgItem( hDlg, IDC_ISO_COPYRIGHTFILE ),     CB_SETCURSEL, 0, 0 );
+					::SendMessageA( GetDlgItem( hDlg, IDC_ISO_ABSTRACTFILE ),      CB_SETCURSEL, 0, 0 );
+					::SendMessageA( GetDlgItem( hDlg, IDC_ISO_BIBLIOGRAPHICFILE ), CB_SETCURSEL, 0, 0 );
+
+					::SetWindowPos( GetDlgItem( hDlg, IDC_ISO_BIBLIOGRAPHICFILE ), NULL, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE );
+					::SetWindowPos( GetDlgItem( hDlg, IDC_ISO_ABSTRACTFILE ),      NULL, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE );
+					::SetWindowPos( GetDlgItem( hDlg, IDC_ISO_COPYRIGHTFILE ),     NULL, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE );
+				}
+				else
+				{
+					if ( pEditFS->pDirectory->Files[ i ].Flags & FF_Directory )
+					{
+						continue;
+					}
+
+					MakeISOFilename( &pEditFS->pDirectory->Files[ i ], ISOFilename, false );
+
+					sfile = std::string( (char *) ISOFilename );
+
+					::SendMessageA( GetDlgItem( hDlg, IDC_ISO_COPYRIGHTFILE ), CB_ADDSTRING, 0, (LPARAM) sfile.c_str() );
+
+					if ( rstrcmp( ISOFilename, pVD->CopyrightFilename ) )
+					{
+						::SendMessageA( GetDlgItem( hDlg, IDC_ISO_COPYRIGHTFILE ), CB_SETCURSEL, FC, 0 );
+					}
+
+					::SendMessageA( GetDlgItem( hDlg, IDC_ISO_ABSTRACTFILE ), CB_ADDSTRING, 0, (LPARAM) sfile.c_str() );
+
+					if ( rstrcmp( ISOFilename, pVD->AbstractFilename ) )
+					{
+						::SendMessageA( GetDlgItem( hDlg, IDC_ISO_ABSTRACTFILE ), CB_SETCURSEL, FC, 0 );
+					}
+
+					if ( VDEFSID == FSID_ISO9660 )
+					{
+						::SendMessageA( GetDlgItem( hDlg, IDC_ISO_BIBLIOGRAPHICFILE ), CB_ADDSTRING, 0, (LPARAM) sfile.c_str() );
+
+						if ( rstrcmp( ISOFilename, pVD->BibliographicFilename ) )
+						{
+							::SendMessageA( GetDlgItem( hDlg, IDC_ISO_BIBLIOGRAPHICFILE ), CB_SETCURSEL, FC, 0 );
+						}
+					}
+
+					FC++;
+				}
+			}
+
+			ISODTToSystemTimeID( hDlg, pVD->CreationTime,  IDC_ISO_CREATION );
+			ISODTToSystemTimeID( hDlg, pVD->ModTime,       IDC_ISO_MODIFICATION );
+			ISODTToSystemTimeID( hDlg, pVD->ExpireTime,    IDC_ISO_EXPIRATION );
+			ISODTToSystemTimeID( hDlg, pVD->EffectiveTime, IDC_ISO_EFFECTIVE );
+
+			if ( VDEFSID == FSID_ISOHS )
+			{
+				::ShowWindow( GetDlgItem( hDlg, IDC_ISO_BIBPROMPT ), SW_HIDE );
+				::ShowWindow( GetDlgItem( hDlg, IDC_ISO_BIBLIOGRAPHICFILE ), SW_HIDE );
+			}
+
+			pSysID       = CreateEditForISO( hDlg, pVD->SysID,     100,  8, AChars );
+			pVolID       = CreateEditForISO( hDlg, pVD->VolID,     320,  8, nullptr ); // TECHNICALLY DChars, but many ISOs violate this
+			pVolSetID    = CreateEditForISO( hDlg, pVD->VolSetID,  100, 34, DChars );
+			pPublisher   = CreateEditForISO( hDlg, pVD->Publisher, 320, 34, AChars );
+			pPreprarer   = CreateEditForISO( hDlg, pVD->Preparer,  100, 60, AChars );
+			pApplication = CreateEditForISO( hDlg, pVD->AppID,     320, 60, AChars );
+
+			::SetWindowPos( pApplication->hWnd, NULL, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE );
+			::SetWindowPos( pPreprarer->hWnd,   NULL, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE );
+			::SetWindowPos( pPublisher->hWnd,   NULL, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE );
+			::SetWindowPos( pVolSetID->hWnd,    NULL, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE );
+			::SetWindowPos( pVolID->hWnd,       NULL, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE );
+			::SetWindowPos( pSysID->hWnd,       NULL, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE );
+
+			pSysID->MaxLen = 32;
+			pVolID->MaxLen = 32;
+
+			// Lets do the Path Tables then
+			CheckRadioButton( hDlg, IDC_LTABLE1, IDC_LTABLE1, IDC_LTABLE1 );
+			if ( pVD->LTableLocOpt != 0 ) { CheckRadioButton( hDlg, IDC_LTABLE1, IDC_LTABLE2, IDC_LTABLE1 ); }
+			if ( ( VDEFSID == FSID_ISOHS ) && ( pVD->LTableLocOptA != 0 ) ) { CheckRadioButton( hDlg, IDC_LTABLE1, IDC_LTABLE3, IDC_LTABLE1 ); }
+			if ( ( VDEFSID == FSID_ISOHS ) && ( pVD->LTableLocOptB != 0 ) ) { CheckRadioButton( hDlg, IDC_LTABLE1, IDC_LTABLE4, IDC_LTABLE1 ); }
+
+			CheckRadioButton( hDlg, IDC_MTABLE1, IDC_MTABLE1, IDC_MTABLE1 );
+			if ( pVD->MTableLocOpt != 0 ) { CheckRadioButton( hDlg, IDC_MTABLE1, IDC_MTABLE2, IDC_MTABLE1 ); }
+			if ( ( VDEFSID == FSID_ISOHS ) && ( pVD->MTableLocOptA != 0 ) ) { CheckRadioButton( hDlg, IDC_MTABLE1, IDC_MTABLE3, IDC_MTABLE1 ); }
+			if ( ( VDEFSID == FSID_ISOHS ) && ( pVD->MTableLocOptB != 0 ) ) { CheckRadioButton( hDlg, IDC_MTABLE1, IDC_MTABLE4, IDC_MTABLE1 ); }
+
+			if ( VDEFSID == FSID_ISO9660 )
+			{
+				ShowWindow( GetDlgItem( hDlg, IDC_LTABLE3 ), SW_HIDE );
+				ShowWindow( GetDlgItem( hDlg, IDC_LTABLE4 ), SW_HIDE );
+				ShowWindow( GetDlgItem( hDlg, IDC_MTABLE3 ), SW_HIDE );
+				ShowWindow( GetDlgItem( hDlg, IDC_MTABLE4 ), SW_HIDE );
+			}
+		}
+	}
+
+	return FALSE;
+}
+
+void SystemTimeToISOTimeID( HWND hDlg, BYTE *TimeSpec, int DID )
+{
+	SYSTEMTIME SysTime;
+
+	ZeroMemory( &SysTime, sizeof( SYSTEMTIME ) );
+
+	if ( ::SendMessage( GetDlgItem( hDlg, DID ), DTM_GETSYSTEMTIME, 0, (LPARAM) &SysTime ) == GDT_VALID )
+	{
+		rsprintf( TimeSpec, "%04d%02d%02d%02d%02d%02d%02d",
+			SysTime.wYear, SysTime.wMonth, SysTime.wDay,
+			SysTime.wHour, SysTime.wMinute, SysTime.wSecond,
+			SysTime.wMilliseconds / 10
+		);
+	}
+	else
+	{
+		rstrncpy( TimeSpec, (BYTE *) "0000000000000000", 17 );
+	}
+}
+
+void DeleteExtraEditBoxes()
+{
+	if ( pSysID != nullptr )       { delete pSysID;       pSysID       = nullptr; }
+	if ( pVolID != nullptr )       { delete pVolID;       pVolID       = nullptr; }
+	if ( pVolSetID != nullptr )    { delete pVolSetID;    pVolSetID    = nullptr; }
+	if ( pPublisher != nullptr )   { delete pPublisher;   pPublisher   = nullptr; }
+	if ( pPreprarer != nullptr )   { delete pPreprarer;   pPreprarer   = nullptr; }
+	if ( pApplication != nullptr ) { delete pApplication; pApplication = nullptr; }
+}
+
+void RecoverEditedVD( HWND hDlg )
+{
+	if ( pVD == nullptr )
+	{
+		return;
+	}
+
+	rstrncpy( pVD->SysID,     pSysID->GetText(),       32 );
+	rstrncpy( pVD->VolID,     pVolID->GetText(),       32 );
+	rstrncpy( pVD->VolSetID,  pVolSetID->GetText(),    37 );
+	rstrncpy( pVD->Publisher, pPublisher->GetText(),   37 );
+	rstrncpy( pVD->Preparer,  pPreprarer->GetText(),   37 );
+	rstrncpy( pVD->AppID,     pApplication->GetText(), 37 );
+
+	DeleteExtraEditBoxes();
+
+	SystemTimeToISOTimeID( hDlg, pVD->CreationTime,  IDC_ISO_CREATION );
+	SystemTimeToISOTimeID( hDlg, pVD->ModTime,       IDC_ISO_MODIFICATION );
+	SystemTimeToISOTimeID( hDlg, pVD->ExpireTime,    IDC_ISO_EXPIRATION );
+	SystemTimeToISOTimeID( hDlg, pVD->EffectiveTime, IDC_ISO_EFFECTIVE );
+
+	// Go through the files in the FS and match it up with the indices in the drop downs
+	DWORD CopyrightFile     = ::SendMessage( GetDlgItem( hDlg, IDC_ISO_COPYRIGHTFILE ),     CB_GETCURSEL, 0, 0 );
+	DWORD AbstractFile      = ::SendMessage( GetDlgItem( hDlg, IDC_ISO_ABSTRACTFILE ),      CB_GETCURSEL, 0, 0 );
+	DWORD BibliographicFile = ::SendMessage( GetDlgItem( hDlg, IDC_ISO_BIBLIOGRAPHICFILE ), CB_GETCURSEL, 0, 0 );
+
+	if ( CopyrightFile == 0 )     { rstrncpy( pVD->CopyrightFilename,     (BYTE *) "                 ", 17 ); }
+	if ( AbstractFile == 0 )      { rstrncpy( pVD->AbstractFilename,      (BYTE *) "                 ", 17 ); }
+	if ( BibliographicFile == 0 ) { rstrncpy( pVD->BibliographicFilename, (BYTE *) "                 ", 17 ); }
+
+	DWORD FC = 1;
+
+	for ( DWORD i=0; i<pEditFS->pDirectory->Files.size(); i++ )
+	{
+		if ( pEditFS->pDirectory->Files[ i ].Flags & FF_Directory )
+		{
+			continue;
+		}
+
+		if ( FC == CopyrightFile )
+		{
+			rstrncpy( pVD->CopyrightFilename, (BYTE *) pEditFS->pDirectory->Files[ i ].Filename, min( pEditFS->pDirectory->Files[ i ].Filename.length(), 17 ) );
+		}
+
+		if ( FC == AbstractFile )
+		{
+			rstrncpy( pVD->AbstractFilename, (BYTE *) pEditFS->pDirectory->Files[ i ].Filename, min( pEditFS->pDirectory->Files[ i ].Filename.length(), 17 ) );
+		}
+
+		if ( FC == BibliographicFile )
+		{
+			rstrncpy( pVD->BibliographicFilename, (BYTE *) pEditFS->pDirectory->Files[ i ].Filename, min( pEditFS->pDirectory->Files[ i ].Filename.length(), 17 ) );
+		}
+
+		FC++;
+	}
+
+	// Path table counts
+	DWORD LTables = 1;
+	DWORD MTables = 1;
+
+	if ( Button_GetState( GetDlgItem( hDlg, IDC_LTABLE2 ) ) == BST_CHECKED ) { LTables = 2 ; }
+	if ( Button_GetState( GetDlgItem( hDlg, IDC_LTABLE3 ) ) == BST_CHECKED ) { LTables = 3 ; }
+	if ( Button_GetState( GetDlgItem( hDlg, IDC_LTABLE4 ) ) == BST_CHECKED ) { LTables = 4 ; }
+
+	if ( Button_GetState( GetDlgItem( hDlg, IDC_MTABLE2 ) ) == BST_CHECKED ) { MTables = 2 ; }
+	if ( Button_GetState( GetDlgItem( hDlg, IDC_MTABLE3 ) ) == BST_CHECKED ) { MTables = 3 ; }
+	if ( Button_GetState( GetDlgItem( hDlg, IDC_MTABLE4 ) ) == BST_CHECKED ) { MTables = 4 ; }
+
+	// Cap for ISO9660
+	if ( VDEFSID == FSID_ISO9660 ) { LTables = min( 2, LTables ); MTables = min( 2, MTables ); }
+
+	// Now make the decisions
+	if ( ( pVD->LTableLocOpt == 0 ) && ( LTables > 1 ) ) { pVD->LTableLocOpt = 0xFFFFFFFF; }
+	if ( ( pVD->MTableLocOpt == 0 ) && ( MTables > 1 ) ) { pVD->MTableLocOpt = 0xFFFFFFFF; }
+
+	if ( ( pVD->LTableLocOpt != 0 ) && ( LTables < 2 ) ) { pVD->LTableLocOpt = 0x00000000; }
+	if ( ( pVD->MTableLocOpt != 0 ) && ( MTables < 2 ) ) { pVD->MTableLocOpt = 0x00000000; }
+
+	if ( VDEFSID == FSID_ISOHS )
+	{
+		if ( ( pVD->LTableLocOptA == 0 ) && ( LTables > 2 ) ) { pVD->LTableLocOptA = 0xFFFFFFFF; }
+		if ( ( pVD->LTableLocOptB == 0 ) && ( LTables > 3 ) ) { pVD->LTableLocOptB = 0xFFFFFFFF; }
+		if ( ( pVD->MTableLocOptA == 0 ) && ( MTables > 2 ) ) { pVD->MTableLocOptA = 0xFFFFFFFF; }
+		if ( ( pVD->MTableLocOptB == 0 ) && ( MTables > 3 ) ) { pVD->MTableLocOptB = 0xFFFFFFFF; }
+
+		if ( ( pVD->LTableLocOptA != 0 ) && ( LTables < 3 ) ) { pVD->LTableLocOptA = 0x00000000; }
+		if ( ( pVD->LTableLocOptB != 0 ) && ( LTables < 4 ) ) { pVD->LTableLocOptB = 0x00000000; }
+		if ( ( pVD->MTableLocOptA != 0 ) && ( MTables < 3 ) ) { pVD->MTableLocOptA = 0x00000000; }
+		if ( ( pVD->MTableLocOptB != 0 ) && ( MTables < 4 ) ) { pVD->MTableLocOptB = 0x00000000; }
+	}
+}
+
+INT_PTR CALLBACK VDEditBox(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+	{
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
+			if ( pVD != nullptr )
+			{
+				RecoverEditedVD( pCurrentTab );
+			}
+
+			EndDialog(hDlg, LOWORD(wParam));
+
+			return (INT_PTR)TRUE;
+		}
+	}
+	break;
+
+	case WM_DESTROY:
+		{
+			DeleteExtraEditBoxes();
+		}
+		break;
+
+	case WM_INITDIALOG:
+		{
+			TCITEM tie;
+
+			tie.mask = TCIF_TEXT;
+
+			tie.pszText = L"System Use Area";
+			TabCtrl_InsertItem( GetDlgItem( hDlg, IDC_VD_TABS ), 1, &tie );
+
+			tie.pszText = L"Boot";
+			TabCtrl_InsertItem( GetDlgItem( hDlg, IDC_VD_TABS ), 2, &tie );
+
+			if ( VDEFSID == FSID_ISO9660 )
+			{
+				tie.pszText = L"ISO Primary";
+				TabCtrl_InsertItem( GetDlgItem( hDlg, IDC_VD_TABS ), 3, &tie );
+
+				tie.pszText = L"Joliet Secondary";
+				TabCtrl_InsertItem( GetDlgItem( hDlg, IDC_VD_TABS ), 4, &tie );
+			}
+			else
+			{
+				tie.pszText = L"High Sierra Primary";
+				TabCtrl_InsertItem( GetDlgItem( hDlg, IDC_VD_TABS ), 3, &tie );
+			}
+
+			NMHDR nm;
+
+			TabCtrl_SetCurSel( GetDlgItem( hDlg, IDC_VD_TABS ), 0 );
+
+			nm.code = TCN_SELCHANGE;
+
+			::SendMessage( hDlg, WM_NOTIFY, 0, (LPARAM) &nm );
+
+			return (INT_PTR) TRUE;
+		}
+
+	case WM_NOTIFY:
+		{
+			NMHDR *pnm = (NMHDR *) lParam;
+
+			if ( pnm->code == TCN_SELCHANGING )
+			{
+				RecoverEditedVD( pCurrentTab );
+			}
+
+			if ( pnm->code == TCN_SELCHANGE )
+			{
+				/* New tab please */
+				if ( pCurrentTab != nullptr )
+				{
+					DestroyWindow( pCurrentTab );
+				}
+
+				int iSel = TabCtrl_GetCurSel( GetDlgItem( hDlg, IDC_VD_TABS ) );
+
+				if ( iSel == 0 )
+				{
+					pVD = nullptr;
+
+					HRSRC hRes = FindResource( hInst, MAKEINTRESOURCE( IDD_ISO_SYSUSEAREA ), RT_DIALOG );
+					HGLOBAL hG = LoadResource( hInst, hRes );
+
+					LPDLGTEMPLATEW dlg = (LPDLGTEMPLATEW) LockResource( hG );
+
+					pCurrentTab = CreateDialogIndirect( hInst, dlg, hDlg, SysAreaFunc );
+				}
+				
+				if ( iSel == 1 )
+				{
+					pVD = nullptr;
+
+					HRSRC hRes = FindResource( hInst, MAKEINTRESOURCE( IDD_ISO_BOOTDESC ), RT_DIALOG );
+					HGLOBAL hG = LoadResource( hInst, hRes );
+
+					LPDLGTEMPLATEW dlg = (LPDLGTEMPLATEW) LockResource( hG );
+
+					pCurrentTab = CreateDialogIndirect( hInst, dlg, hDlg, BootDescFunc );
+				}
+				
+				if ( iSel == 2 )
+				{
+					pVD = pIVD;
+
+					HRSRC hRes = FindResource( hInst, MAKEINTRESOURCE( IDD_ISO_VOLDESC ), RT_DIALOG );
+					HGLOBAL hG = LoadResource( hInst, hRes );
+
+					LPDLGTEMPLATEW dlg = (LPDLGTEMPLATEW) LockResource( hG );
+
+					pCurrentTab = CreateDialogIndirect( hInst, dlg, hDlg, VDFunc );
+				}
+				
+				if ( iSel == 3 )
+				{
+					pVD = pJVD;
+
+					HRSRC hRes;
+					
+					if ( pJVD != nullptr )
+					{
+						hRes = FindResource( hInst, MAKEINTRESOURCE( IDD_ISO_VOLDESC ), RT_DIALOG );
+					}
+					else
+					{
+						hRes = FindResource( hInst, MAKEINTRESOURCE( IDD_ISO_NOJOLIET ), RT_DIALOG );
+					}
+
+					HGLOBAL hG = LoadResource( hInst, hRes );
+
+					LPDLGTEMPLATEW dlg = (LPDLGTEMPLATEW) LockResource( hG );
+
+					if ( pJVD != nullptr )
+					{
+						pCurrentTab = CreateDialogIndirect( hInst, dlg, hDlg, VDFunc );
+					}
+					else
+					{
+						pCurrentTab = CreateDialogIndirect( hInst, dlg, hDlg, NullFunc );
+					}
+				}
+
+				// NONE OF THIS MAKES ANY SENSE WHATSOEVER. MICROSOFT YOU ARE ON ==DRUGS==
+				DWORD dwDlgBase = GetDialogBaseUnits();
+				int cxMargin = LOWORD(dwDlgBase) / 4; 
+				int cyMargin = HIWORD(dwDlgBase) / 8;
+
+				RECT r, tr;
+
+				GetWindowRect( GetDlgItem( hDlg, IDC_VD_TABS ), &tr );
+
+				MapWindowPoints( GetDesktopWindow(), hDlg, (LPPOINT) &tr, 2 );
+
+				r = tr;
+
+				TabCtrl_AdjustRect( GetDlgItem( hDlg, IDC_VD_TABS ), TRUE, &r );
+
+				OffsetRect(&r, cxMargin - r.left, cyMargin - r.top); 
+
+				TabCtrl_AdjustRect( GetDlgItem( hDlg, IDC_VD_TABS ), FALSE, &r );
+
+				tr.left -= cxMargin; tr.top -= cyMargin;
+				r.left  -= cxMargin; r.top  -= cyMargin;
+				r.left += tr.left; r.right += tr.left;
+				r.top  += tr.top; r.bottom += tr.top;
+
+				TabCtrl_GetItemRect( GetDlgItem( hDlg, IDC_VD_TABS ), iSel, &tr );
+
+				r.bottom -= ( tr.bottom - tr.top ) + ( cyMargin * 2 ) + 2;
+				r.right  -= ( cxMargin * 2 ) + 4;
+				r.top    += 2;
+
+				SetWindowPos( pCurrentTab, NULL, r.left, r.top, (r.right - r.left), (r.bottom - r.top), NULL );
+
+				ShowWindow( pCurrentTab, SW_SHOW );
+			}
+
+			return (INT_PTR) FALSE;
+		}
+	}
+
+	return (INT_PTR)FALSE;
+}
+
+void ISO9660FileSystem::EditVolumeDescriptors( HWND hParentWnd )
+{
+	pEditSource = pSource;
+	VDEFSID     = FSID;
+	pEditFS     = Clone();
+
+	ISOVolDesc TempISODesc = PriVolDesc; pIVD = &TempISODesc;
+	ISOVolDesc TempJOLDesc = JolietDesc; pJVD = &TempJOLDesc;
+
+	// Get to root
+	while ( !pEditFS->IsRoot() ) { pEditFS->Parent(); }
+
+	pCurrentTab = nullptr;
+
+	if ( !HasJoliet )
+	{
+		pJVD = nullptr;
+	}
+
+	if ( DialogBox( hInst, MAKEINTRESOURCE( IDD_VD_EDIT ), hParentWnd, VDEditBox ) == IDOK )
+	{
+		bool WasUnwritable = false;
+
+		if ( ( !Writable ) && ( ( pSource->Flags & DS_ReadOnly ) == 0 ) )
+		{
+			WasUnwritable = true;
+
+			EnableWriting(); // Temporarily!
+		}
+
+		// We need to do some cleaning up of path tables here.
+		// First look for path tables to remove:
+		ISOSectorList sectors;
+
+		DWORD PathTableSects = ( PriVolDesc.PathTableSize + ( PriVolDesc.SectorSize -1 ) ) / PriVolDesc.SectorSize;
+
+		for ( DWORD i=0; i<PathTableSects; i++ )
+		{
+			ISOSector sector;
+
+			// Note: There's always one Path Table.
+			if ( ( PriVolDesc.LTableLocOpt != 0 ) && ( TempISODesc.LTableLocOpt == 0 ) )
+			{
+				sector.ID = PriVolDesc.LTableLocOpt + i;
+				sectors.push_back( sector );
+			}
+
+			// Note: No Joliet with High Sierra
+
+			if ( HasJoliet )
+			{
+				if ( ( JolietDesc.LTableLocOpt != 0 ) && ( TempJOLDesc.LTableLocOpt == 0 ) )
+				{
+					sector.ID = JolietDesc.LTableLocOpt + i;
+					sectors.push_back( sector );
+				}
+			}
+
+			if ( FSID == FSID_ISOHS )
+			{
+				if ( ( PriVolDesc.LTableLocOptA != 0 ) && ( TempISODesc.LTableLocOptA == 0 ) )
+				{
+					sector.ID = PriVolDesc.LTableLocOpt + i;
+					sectors.push_back( sector );
+				}
+
+				if ( ( PriVolDesc.LTableLocOptB != 0 ) && ( TempISODesc.LTableLocOptB == 0 ) )
+				{
+					sector.ID = PriVolDesc.LTableLocOptB + i;
+					sectors.push_back( sector );
+				}
+			}
+
+			// Note: There's always one Path Table.
+			if ( ( PriVolDesc.MTableLocOpt != 0 ) && ( TempISODesc.MTableLocOpt == 0 ) )
+			{
+				sector.ID = PriVolDesc.LTableLocOpt + i;
+				sectors.push_back( sector );
+			}
+
+			// Note: No Joliet with High Sierra
+
+			if ( HasJoliet )
+			{
+				if ( ( JolietDesc.LTableLocOpt != 0 ) && ( TempJOLDesc.LTableLocOpt == 0 ) )
+				{
+					sector.ID = JolietDesc.LTableLocOpt + i;
+					sectors.push_back( sector );
+				}
+			}
+
+			if ( FSID == FSID_ISOHS )
+			{
+				if ( ( PriVolDesc.LTableLocOptA != 0 ) && ( TempISODesc.LTableLocOptA == 0 ) )
+				{
+					sector.ID = PriVolDesc.LTableLocOpt + i;
+					sectors.push_back( sector );
+				}
+
+				if ( ( PriVolDesc.LTableLocOptB != 0 ) && ( TempISODesc.LTableLocOptB == 0 ) )
+				{
+					sector.ID = PriVolDesc.LTableLocOptB + i;
+					sectors.push_back( sector );
+				}
+			}
+		}
+
+		if ( sectors.size() > 0 )
+		{
+			PrepareISOSectors( sectors );
+
+			ISOJob job;
+
+			job.FSID       = FSID;
+			job.IsoOp      = ISO_RESTRUCTURE_REM_SECTORS;
+			job.pSource    = pSource;
+			job.pVolDesc   = &PriVolDesc;
+			job.Sectors    = sectors;
+			job.SectorSize = PriVolDesc.SectorSize;
+
+			PerformISOJob( &job );
+		}
+
+		// Now look for new path table entries.
+		sectors.clear();
+
+		// We'll need the insertion point (we could just shunt the sectors on the end, but that's just not cricket).
+		DWORD StartTable = PriVolDesc.LTableLoc + PathTableSects;
+
+		if ( ( PriVolDesc.LTableLocOpt != 0 ) && ( ( PriVolDesc.LTableLocOpt + PathTableSects ) > StartTable ) ) { StartTable = PriVolDesc.LTableLocOpt + PathTableSects; }
+		if ( ( PriVolDesc.MTableLocOpt != 0 ) && ( ( PriVolDesc.MTableLocOpt + PathTableSects ) > StartTable ) ) { StartTable = PriVolDesc.MTableLocOpt + PathTableSects; }
+		if ( ( PriVolDesc.MTableLoc    != 0 ) && ( ( PriVolDesc.MTableLoc    + PathTableSects ) > StartTable ) ) { StartTable = PriVolDesc.MTableLoc    + PathTableSects; }
+
+		if ( FSID == FSID_ISOHS )
+		{
+			if ( ( PriVolDesc.LTableLocOptA != 0 ) && ( ( PriVolDesc.LTableLocOptA + PathTableSects ) > StartTable ) ) { StartTable = PriVolDesc.LTableLocOptA + PathTableSects; }
+			if ( ( PriVolDesc.LTableLocOptB != 0 ) && ( ( PriVolDesc.LTableLocOptB + PathTableSects ) > StartTable ) ) { StartTable = PriVolDesc.LTableLocOptB + PathTableSects; }
+			if ( ( PriVolDesc.MTableLocOptA != 0 ) && ( ( PriVolDesc.MTableLocOptA + PathTableSects ) > StartTable ) ) { StartTable = PriVolDesc.MTableLocOptA + PathTableSects; }
+			if ( ( PriVolDesc.MTableLocOptB != 0 ) && ( ( PriVolDesc.MTableLocOptB + PathTableSects ) > StartTable ) ) { StartTable = PriVolDesc.MTableLocOptB + PathTableSects; }
+		}
+
+		for ( DWORD i=0; i<PathTableSects; i++ )
+		{
+			ISOSector sector;
+
+			sector.ID = StartTable;
+		
+			// Always one path table!
+		
+			if ( ( TempISODesc.LTableLocOpt != 0 ) && ( PriVolDesc.LTableLocOpt == 0 ) )
+			{
+				sectors.push_back( sector );
+			}
+
+			if ( ( TempISODesc.MTableLocOpt != 0 ) && ( PriVolDesc.MTableLocOpt == 0 ) )
+			{
+				sectors.push_back( sector );
+			}
+
+			if ( HasJoliet )
+			{
+				if ( ( TempJOLDesc.LTableLocOpt != 0 ) && ( JolietDesc.LTableLocOpt == 0 ) )
+				{
+					sectors.push_back( sector );
+				}
+
+				if ( ( TempJOLDesc.MTableLocOpt != 0 ) && ( JolietDesc.MTableLocOpt == 0 ) )
+				{
+					sectors.push_back( sector );
+				}
+			}
+
+			if ( FSID == FSID_ISOHS )
+			{
+				if ( ( TempISODesc.LTableLocOptA != 0 ) && ( PriVolDesc.LTableLocOptA == 0 ) )
+				{
+					sectors.push_back( sector );
+				}
+
+				if ( ( TempISODesc.MTableLocOptB != 0 ) && ( PriVolDesc.MTableLocOptB == 0 ) )
+				{
+					sectors.push_back( sector );
+				}
+			}
+		}
+
+		if ( sectors.size() > 0 )
+		{
+			PrepareISOSectors( sectors );
+
+			ISOJob job;
+
+			job.FSID       = FSID;
+			job.IsoOp      = ISO_RESTRUCTURE_ADD_SECTORS;
+			job.pSource    = pSource;
+			job.pVolDesc   = &PriVolDesc;
+			job.Sectors    = sectors;
+			job.SectorSize = PriVolDesc.SectorSize;
+
+			PerformISOJob( &job );
+		}
+
+		// Re-read the volume descriptors as they may have changed
+		ReadVolumeDescriptors();
+
+		// Copy the locations across
+		if ( ( TempISODesc.LTableLoc     != 0 ) && ( TempISODesc.LTableLoc     != 0xFFFFFFFF ) ) { TempISODesc.LTableLoc     = PriVolDesc.LTableLoc;     }
+		if ( ( TempISODesc.LTableLocOpt  != 0 ) && ( TempISODesc.LTableLocOpt  != 0xFFFFFFFF ) ) { TempISODesc.LTableLocOpt  = PriVolDesc.LTableLocOpt;  }
+		if ( ( TempISODesc.LTableLocOptA != 0 ) && ( TempISODesc.LTableLocOptA != 0xFFFFFFFF ) ) { TempISODesc.LTableLocOptA = PriVolDesc.LTableLocOptA; }
+		if ( ( TempISODesc.LTableLocOptB != 0 ) && ( TempISODesc.LTableLocOptB != 0xFFFFFFFF ) ) { TempISODesc.LTableLocOptB = PriVolDesc.LTableLocOptB; }
+		if ( ( TempJOLDesc.LTableLoc     != 0 ) && ( TempJOLDesc.LTableLoc     != 0xFFFFFFFF ) ) { TempJOLDesc.LTableLoc     = JolietDesc.LTableLoc;     }
+		if ( ( TempJOLDesc.LTableLocOpt  != 0 ) && ( TempJOLDesc.LTableLocOpt  != 0xFFFFFFFF ) ) { TempJOLDesc.LTableLocOpt  = JolietDesc.LTableLocOpt;  }
+
+		if ( ( TempISODesc.MTableLoc     != 0 ) && ( TempISODesc.MTableLoc     != 0xFFFFFFFF ) ) { TempISODesc.LTableLoc     = PriVolDesc.LTableLoc;     }
+		if ( ( TempISODesc.MTableLocOpt  != 0 ) && ( TempISODesc.MTableLocOpt  != 0xFFFFFFFF ) ) { TempISODesc.LTableLocOpt  = PriVolDesc.LTableLocOpt;  }
+		if ( ( TempISODesc.MTableLocOptA != 0 ) && ( TempISODesc.MTableLocOptA != 0xFFFFFFFF ) ) { TempISODesc.LTableLocOptA = PriVolDesc.LTableLocOptA; }
+		if ( ( TempISODesc.MTableLocOptB != 0 ) && ( TempISODesc.MTableLocOptB != 0xFFFFFFFF ) ) { TempISODesc.LTableLocOptB = PriVolDesc.LTableLocOptB; }
+		if ( ( TempJOLDesc.MTableLoc     != 0 ) && ( TempJOLDesc.MTableLoc     != 0xFFFFFFFF ) ) { TempJOLDesc.LTableLoc     = JolietDesc.LTableLoc;     }
+		if ( ( TempJOLDesc.MTableLocOpt  != 0 ) && ( TempJOLDesc.MTableLocOpt  != 0xFFFFFFFF ) ) { TempJOLDesc.LTableLocOpt  = JolietDesc.LTableLocOpt;  }
+
+		memcpy( TempISODesc.DirectoryRecord, PriVolDesc.DirectoryRecord, 34 );
+		memcpy( TempJOLDesc.DirectoryRecord, JolietDesc.DirectoryRecord, 34 );
+
+		// Now write out any path tables.
+		ISOPathTable *TempTable = new ISOPathTable( pSource, PriVolDesc.SectorSize );
+
+		TempTable->ReadPathTable( JolietDesc.LTableLoc, JolietDesc.SectorSize, FSID, true );
+
+		if ( TempISODesc.LTableLocOpt == 0xFFFFFFFF ) { TempTable->WritePathTable( StartTable, false, FSID, false ); TempISODesc.LTableLocOpt = StartTable; StartTable += PathTableSects; }
+	
+		if ( FSID == FSID_ISOHS )
+		{
+			if ( TempISODesc.LTableLocOptA == 0xFFFFFFFF  ) { TempTable->WritePathTable( StartTable, false, FSID, false ); TempISODesc.LTableLocOptA = StartTable; StartTable += PathTableSects; }
+			if ( TempISODesc.LTableLocOptB == 0xFFFFFFFF  ) { TempTable->WritePathTable( StartTable, false, FSID, false ); TempISODesc.LTableLocOptB = StartTable; StartTable += PathTableSects; }
+		}
+
+		if ( TempISODesc.MTableLocOpt == 0xFFFFFFFF  ) { TempTable->WritePathTable( StartTable, true, FSID, false ); TempISODesc.MTableLocOpt = StartTable; StartTable += PathTableSects; }
+	
+		if ( FSID == FSID_ISOHS )
+		{
+			if ( TempISODesc.LTableLocOptA == 0xFFFFFFFF  ) { TempTable->WritePathTable( StartTable, true, FSID, false ); TempISODesc.LTableLocOptA = StartTable; StartTable += PathTableSects; }
+			if ( TempISODesc.LTableLocOptB == 0xFFFFFFFF  ) { TempTable->WritePathTable( StartTable, true, FSID, false ); TempISODesc.LTableLocOptB = StartTable; StartTable += PathTableSects; }
+		}
+
+		delete TempTable;
+
+		if ( HasJoliet )
+		{
+			ISOPathTable *TempTable = new ISOPathTable( pSource, PriVolDesc.SectorSize );
+
+			TempTable->ReadPathTable( JolietDesc.LTableLoc, PriVolDesc.SectorSize, FSID );
+
+			if ( TempJOLDesc.LTableLocOpt ) { TempTable->WritePathTable( StartTable, false, FSID, true ); TempJOLDesc.LTableLocOpt = StartTable; StartTable += PathTableSects; }
+	
+			if ( TempISODesc.MTableLocOpt ) { TempTable->WritePathTable( StartTable, true, FSID, true ); TempJOLDesc.MTableLocOpt = StartTable; StartTable += PathTableSects; }
+	
+			delete TempTable;
+		}
+
+		// Put this back now, otherwise we might make a disc writable with a Joliet structure on it.
+		if ( WasUnwritable )
+		{
+			Writable = false;
+		}
+
+		WriteVolumeDescriptor( *pIVD, pIVD->SourceSector, FSID, false );
+
+		if ( HasJoliet )
+		{
+			WriteVolumeDescriptor( *pJVD, pJVD->SourceSector, FSID, true );
+		}
+	}
+
+	Init();
+
+	delete pEditFS;
+}
+
+static DWORD RunningSector;
+static DWORD DirDepth;
+
+void ISO9660FileSystem::JolietProcessDirectory( DWORD DirSector, DWORD DirSize, DWORD ParentSector, DWORD ParentSize, ISOPathTable *pJolietTable )
+{
+	if ( DirDepth >= 8 ) { return; }
+
+	DWORD fc = pDirectory->Files.size();
+
+	std::vector<std::pair<DWORD,DWORD>> DirEntries;
+
+	DWORD ThisParent = RunningSector;
+
+	if ( IsRoot() )
+	{
+		RunningSector += DirSize;
+	}
+
+	for ( DWORD i=0; i<fc; i++ ) 
+	{
+		NativeFile *pFile = &pDirectory->Files[ i ];
+
+		if ( pFile->Flags & FF_Directory )
+		{
+			DirDepth++;
+
+			DWORD Extent = RunningSector;
+
+			pJolietTable->AddDirectory( pFile->Filename, Extent, DirSector );
+
+			ChangeDirectory( i );
+
+			DWORD Size   = pISODir->ProjectedDirectorySize( true );
+
+			DirEntries.push_back( std::make_pair<DWORD,DWORD>( Extent, Size ) );
+
+			RunningSector += Size;
+
+			JolietProcessDirectory( Extent, Size, DirSector, DirSize, pJolietTable );
+
+			Parent();
+
+			DirDepth--;
+		}
+		else
+		{
+			DirEntries.push_back( std::make_pair<DWORD,DWORD>( 0, 0 ) );
+		}
+	}
+
+	for ( DWORD i=0; i<fc; i++ ) 
+	{
+		NativeFile *pFile = &pDirectory->Files[ i ];
+
+		if ( pFile->Flags & FF_Directory )
+		{
+			// Make a new location for this.
+			pFile->Attributes[ ISOATTR_START_EXTENT ] = DirEntries[ i ].first;
+			pFile->Length                             = DirEntries[ i ].second * JolietDesc.SectorSize;
+		}
+	}
+
+	// Write out the directory
+	pISODir->WriteJDirectory( DirSector, ParentSector, ParentSize * JolietDesc.SectorSize );
+}
+
+void ISO9660FileSystem::AddJoliet()
+{
+	// We can take the existing path table and just write out a couple of new ones, along with 
+	// a new Joliet descriptor.
+
+	ISOSectorList sectors;
+
+	ISOSector sector;
+
+	sector.ID = PriVolDesc.SourceSector + 1;
+
+	sectors.push_back( sector );
+
+	DWORD TableSize = pPathTable->GetProjectedSize( true );
+
+	DWORD TableSects = ( TableSize + ( PriVolDesc.SectorSize - 1 ) ) / PriVolDesc.SectorSize;
+
+	DWORD TotalSects = TableSects * 2; // At least one L-table and one M-Table.
+
+	if ( PriVolDesc.LTableLocOpt != 0 ) { TotalSects += TableSects; }
+	if ( PriVolDesc.MTableLocOpt != 0 ) { TotalSects += TableSects; }
+
+	DWORD TableSect = PriVolDesc.MTableLoc + TableSects;
+
+	for ( DWORD i = 0; i < TotalSects; i ++ )
+	{
+		sector.ID = TableSect; sectors.push_back( sector );
+	}
+
+	// Make the space
+	ISOJob job;
+
+	PrepareISOSectors( sectors );
+
+	job.FSID       = FSID;
+	job.IsoOp      = ISO_RESTRUCTURE_ADD_SECTORS;
+	job.pSource    = pSource;
+	job.pVolDesc   = &PriVolDesc;
+	job.Sectors    = sectors;
+	job.SectorSize = PriVolDesc.SectorSize;
+
+	PerformISOJob( &job );
+
+	Init();
+
+	// Recalculate this - it's probably moved
+	TableSect = PriVolDesc.MTableLoc + TableSects;
+
+	JolietDesc = PriVolDesc;
+
+	ISOPathTable JolietTable( pSource, JolietDesc.SectorSize );
+
+	JolietTable.BlankTable( PriVolDesc.VolSize );
+
+	WLEDWORD( &JolietDesc.DirectoryRecord[ 2 ], PriVolDesc.VolSize );
+	WBEDWORD( &JolietDesc.DirectoryRecord[ 6 ], PriVolDesc.VolSize );
+
+	JolietDesc.SourceSector = PriVolDesc.SourceSector + 1;
+
+	WriteVolumeDescriptor( JolietDesc, PriVolDesc.SourceSector + 1, FSID, true );
+
+	// Now we just need to collate the directories
+	DirDepth = 0;
+	RunningSector = PriVolDesc.VolSize;
+
+	JolietProcessDirectory(
+		RunningSector,
+		pISODir->ProjectedDirectorySize() * JolietDesc.SectorSize,
+		RunningSector,
+		pISODir->ProjectedDirectorySize() * JolietDesc.SectorSize,
+		&JolietTable
+	);
+
+	PriVolDesc.VolSize = RunningSector;
+	JolietDesc.VolSize = RunningSector;
+
+	WriteVolumeDescriptor( PriVolDesc, PriVolDesc.SourceSector, FSID, false );
+
+	JolietDesc.LTableLoc = PriVolDesc.MTableLoc + TableSects;
+	JolietDesc.MTableLoc = JolietDesc.LTableLoc + TableSects;
+
+	if ( PriVolDesc.LTableLocOpt != 0 ) { JolietDesc.LTableLocOpt = JolietDesc.LTableLoc    + TableSects; }
+	if ( PriVolDesc.MTableLocOpt != 0 ) { JolietDesc.MTableLocOpt = JolietDesc.LTableLocOpt + TableSects; }
+
+	JolietTable.WritePathTable( JolietDesc.LTableLoc, false, FSID, true );
+	JolietTable.WritePathTable( JolietDesc.MTableLoc, true,  FSID, true );
+
+	if ( JolietDesc.LTableLocOpt != 0 ) { JolietTable.WritePathTable( JolietDesc.LTableLocOpt, false, FSID, true ); }
+	if ( JolietDesc.MTableLocOpt != 0 ) { JolietTable.WritePathTable( JolietDesc.MTableLocOpt, true,  FSID, true ); }
+
+	WriteVolumeDescriptor( JolietDesc, JolietDesc.SourceSector, FSID, true );
+
+	Writable = false;
+
+	// Done
+	Init();
 }

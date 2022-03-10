@@ -38,6 +38,9 @@ typedef struct _ISOVolDesc
 	BYTE  ExpireTime[ 18 ];
 	BYTE  EffectiveTime[ 18 ];
 	BYTE  ApplicationBytes[ 512 ];
+
+	DWORD SourceSector;
+	bool  IsJoliet;
 } ISOVolDesc;
 
 #define ISOATTR_START_EXTENT 16
@@ -53,6 +56,7 @@ typedef struct _ISOSector
 {
 	DWORD ID;
 	DWORD Shift;
+	DWORD TotalSectors;
 } ISOSector;
 
 typedef std::vector<ISOSector> ISOSectorList;

@@ -872,6 +872,9 @@
     <None Include="repair.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\vdedit.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NUTS.rc">

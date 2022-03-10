@@ -8,6 +8,7 @@
 void ISOStrTerm( BYTE *p, WORD l );
 void ISOStrStore( BYTE *p, BYTE *s, WORD ml );
 void JolietStrTerm( BYTE *jp, WORD jl );
+void ISOJolietStore( BYTE *p, BYTE *s, WORD bl );
 
 DWORD RemapSector( DWORD OldSector, ISOSectorList &Sectors, BYTE IsoOp );
 
@@ -27,7 +28,7 @@ DWORD ISOChooseCapacity();
 
 void PrepareISOSectors( ISOSectorList &Sectors );
 
-void MakeISOFilename( NativeFile *pFile, BYTE *StringBuf );
+void MakeISOFilename( NativeFile *pFile, BYTE *StringBuf, bool IncludeRevision = true );
 
 void SetISOHints( DataSource *pSource, bool IsEOF, bool IsEOR );
 

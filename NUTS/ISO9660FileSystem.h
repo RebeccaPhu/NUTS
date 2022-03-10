@@ -62,6 +62,8 @@ private:
 
 	bool WritableTest();
 	void RemoveJoliet();
+	void AddJoliet();
+	void JolietProcessDirectory( DWORD DirSector, DWORD DirSize, DWORD ParentSector, DWORD ParentSize, ISOPathTable *pJolietTable );
 	void EnableWriting();
 	void SetMaxCapacity();
 
@@ -76,6 +78,8 @@ private:
 	int  GatherDirs( FileSystem *pCloneFS, ISOPathTable *pScanTable, DWORD ThisExtent );
 	int  CorrectDirs( FileSystem *pCloneFS, DWORD CurrentParent );
 	int  RecordDirectorySectors( FileSystem *pCloneFS );
+
+	void EditVolumeDescriptors( HWND hParentWnd );
 
 private:
 	ISO9660Directory *pISODir;
