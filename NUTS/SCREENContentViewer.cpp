@@ -1329,7 +1329,7 @@ void CSCREENContentViewer::DoSnow( DWORD **pPixels, BITMAPINFO *pBMI )
 	}
 }
 
-#define GLOW_THRESHOLD 0x88
+#define GLOW_THRESHOLD 0x77
 #define GLOW_RADIUS    4
 
 void CSCREENContentViewer::AddGlowSpot( BYTE *out, LONG px, LONG py, LONG pix, LONG r, LONG t, LONG mx, LONG my )
