@@ -51,6 +51,7 @@ void ResolveAppIcon( FileSystem *pFS, NativeFile *iFile, bool AllowISOFilename )
 		NativeFile *pSpriteFile;
 
 		DWORD PrefSpriteFileId = 0xFFFFFFFF;
+		DWORD ISOSpriteFileId  = 0xFFFFFFFF;
 
 		for ( iSpriteFile = pTempFS->pDirectory->Files.begin(); iSpriteFile != pTempFS->pDirectory->Files.end(); iSpriteFile++)
 		{
@@ -67,21 +68,26 @@ void ResolveAppIcon( FileSystem *pFS, NativeFile *iFile, bool AllowISOFilename )
 				PrefSpriteFileId = iSpriteFile->fileID;
 			}
 
-			if ( ( PrefSpriteFileId == 0xFFFFFFFF ) && ( AllowISOFilename ) )
+			if ( AllowISOFilename )
 			{
 				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "_Sprites" ) )
 				{
-					if ( PrefSpriteFileId == 0xFFFFFFFF )
+					if ( ISOSpriteFileId == 0xFFFFFFFF )
 					{
-						PrefSpriteFileId = iSpriteFile->fileID;
+						ISOSpriteFileId = iSpriteFile->fileID;
 					}
 				}
 
 				if ( rstricmp( iSpriteFile->Filename, (BYTE *) "_Sprites22" ) )
 				{
-					PrefSpriteFileId = iSpriteFile->fileID;
+					ISOSpriteFileId = iSpriteFile->fileID;
 				}
 			}
+		}
+
+		if ( ( PrefSpriteFileId == 0xFFFFFFFF ) && ( ISOSpriteFileId != 0xFFFFFFFF ) )
+		{
+			PrefSpriteFileId = ISOSpriteFileId;
 		}
 
 		if ( PrefSpriteFileId != 0xFFFFFFFF )
