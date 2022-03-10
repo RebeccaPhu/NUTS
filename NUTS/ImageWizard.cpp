@@ -227,6 +227,10 @@ INT_PTR CALLBACK Wiz3WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 				pFilename = new EncodingEdit( hwndDlg, p.x + 8, p.y + 16, FNW, (pExtn == nullptr ) );
 
+				// Set the tab order right
+				::SetWindowPos( pExtn->hWnd, NULL, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE );
+				::SetWindowPos( pFilename->hWnd, NULL, 0, 0, 0, 0, SWP_NOSIZE|SWP_NOMOVE );
+
 				if ( pExtn != nullptr )
 				{
 					pExtn->SetBuddy( pFilename );
