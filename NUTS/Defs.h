@@ -177,6 +177,7 @@ typedef enum _FSFlags {
 	FSF_Fake_Extensions  = 0x00100000, /* File extensions are provided visually by the originating system, but they are not changeable by the user */
 	FSF_NoDir_Extensions = 0x00200000, /* Directories may not have extensions (only files) */
 	FSF_Accepts_Sidecars = 0x00400000, /* Indicates this FS should have sidecars exported to/imported from it, if the other FS exports/imports sidecars */
+	FSF_Supports_FOP     = 0x00800000, /* Indicates this FS can contain "Foreign Objects" and so extra options (like dir type) should be presented */
 } FSFlags;
 
 typedef enum _DSFlags {
@@ -541,6 +542,7 @@ typedef struct _TapeIndex {
 #define WM_TBCLOSED         (WM_APP + 39)
 #define WM_OPENCHARMAP      (WM_APP + 40)
 #define WM_ENDSPLASH        (WM_APP + 41)
+#define WM_SETDIRTYPE       (WM_APP + 42)
 
 #define TUID_TEXT           0x80000001
 #define TUID_MOD_MUSIC      0x80000002
@@ -553,3 +555,5 @@ typedef struct _TapeIndex {
 #define IDM_ROOTFS    54003
 #define IDM_FONTSW    54004
 #define IDM_PARENT    54005
+#define IDM_DIRTYPE   54006
+

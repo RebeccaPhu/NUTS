@@ -238,8 +238,31 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 		LoadTranslators( &plugin );
 		LoadRootHooks( &plugin );
 		LoadRootCommands( &plugin );
+		LoadFOPDirectoryTypes( &plugin );
 
 		PluginID++;
+	}
+}
+
+void CPlugins::LoadFOPDirectoryTypes( NUTSPlugin *plugin )
+{
+	PluginCommand cmd;
+
+	cmd.CommandID = PC_GetFOPDirectoryTypes;
+
+	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+	{
+		for ( int i=0; i<8; i++ )
+		{
+			if ( cmd.OutParams[ i ].pPtr == nullptr )
+			{
+				break;
+			}
+
+			FOPDirectoryType *pFT = (FOPDirectoryType *) cmd.OutParams[ i ].pPtr;
+
+			DirectoryTypes[ pFT->Identifier ] = pFT->FriendlyName;
+		}
 	}
 }
 
@@ -362,6 +385,11 @@ TranslatorList CPlugins::GetTranslators( DWORD PUID, DWORD Type )
 	}
 
 	return Xlators;
+}
+
+FOPDirectoryTypes CPlugins::GetDirectoryTypes()
+{
+	return DirectoryTypes;
 }
 
 FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )

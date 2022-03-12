@@ -610,9 +610,6 @@
     <None Include="NUTS.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="small.ico">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\acorn.bmp">
       <Filter>Resource Files</Filter>
     </None>
@@ -689,25 +686,7 @@
     <None Include="..\data1.bin">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\bitmap1.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\icon1.ico">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\exec1.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\ico00001.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\ico00002.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\ico00003.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\icon2.ico">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\blank1.bmp">
@@ -722,16 +701,7 @@
     <None Include="..\graphic.bmp">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\bmp00001.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\bitmap2.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\WizBanner.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\ico00004.ico">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\fileopen.ico">
@@ -765,9 +735,6 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\newdir.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="..\avi1.bin">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\archive.bmp">
@@ -833,9 +800,6 @@
     <None Include="..\charmap.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\bitmap4.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\AudioControls.bmp">
       <Filter>Resource Files</Filter>
     </None>
@@ -854,9 +818,6 @@
     <None Include="..\cassetteplayer.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\bitmap5.bmp">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\NutsAcorn.bmp">
       <Filter>Resource Files</Filter>
     </None>
@@ -873,6 +834,18 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\vdedit.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\folder.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\icon1.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\ico00003.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\icon2.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

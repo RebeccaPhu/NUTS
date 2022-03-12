@@ -981,6 +981,10 @@ unsigned int __stdcall FSActionThread(void *param)
 			action.pane->NewDirectory();
 			break;
 
+		case ActionDoDirType:
+			action.pane->SetDirType();
+			break;
+
 		default:
 			break;
 		}
@@ -1671,6 +1675,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (wParam == (WPARAM) rightPane->hWnd)
 		{
 			DoAction( ActionDoRename, rightPane, &rightFS, &rightTitles, 0 );
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_SETDIRTYPE:
+		if (wParam == (WPARAM) leftPane->hWnd)
+		{
+			DoAction( ActionDoDirType, leftPane, &leftFS, &leftTitles, 0 );
+		} 
+		else if (wParam == (WPARAM) rightPane->hWnd)
+		{
+			DoAction( ActionDoDirType, rightPane, &rightFS, &rightTitles, 0 );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);

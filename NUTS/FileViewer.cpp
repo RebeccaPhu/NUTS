@@ -577,6 +577,14 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 					}
 					break;
 
+				case IDM_DIRTYPE:
+					{
+						if ( GetSelectionCount() == 1 ) { break; }
+
+						::SendMessage( ParentWnd, WM_SETDIRTYPE, (WPARAM) hWnd, 0 );
+					}
+					break;
+
 				case IDM_NEWFOLDER:
 					{
 						::SendMessage( ParentWnd, WM_NEW_DIR, (WPARAM) hWnd, 0 );
@@ -2162,6 +2170,52 @@ void CFileViewer::RenameFile( void )
 	Update();
 }
 
+INT_PTR CALLBACK CFileViewer::DirTypeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if ( message == WM_INITDIALOG )
+	{
+		FOPDirectoryTypes dirs = FSPlugins.GetDirectoryTypes();
+
+		::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_ADDSTRING, 0, (LPARAM) L"[Default]" );
+
+		for ( FOPDirectoryTypeIterator iType = dirs.begin(); iType != dirs.end(); iType++ )
+		{
+			::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_ADDSTRING, 0, (LPARAM) iType->second.c_str() );
+		}
+
+		::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_SETCURSEL, 0, 0 );
+	}
+	else if ( message == WM_COMMAND )
+	{
+		if ( LOWORD( wParam ) == IDOK )
+		{
+			// Gather type
+
+			EndDialog( hDlg, IDOK );
+
+			return (INT_PTR) TRUE;
+		}
+		else if ( LOWORD( wParam ) == IDCANCEL )
+		{
+			EndDialog( hDlg, IDCANCEL );
+
+			return (INT_PTR) TRUE;
+		}
+	}
+
+	return (INT_PTR) FALSE;
+}
+
+void CFileViewer::SetDirType( void )
+{
+	if ( DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_DIRTYPE ), hWnd, DirTypeDialogProc, NULL ) == IDOK )
+	{
+		// TODO: FOP the directory
+
+		// TODO: Call into the FS to update it.
+	}
+}
+
 void CFileViewer::NewDirectory( void )
 {
 	IgnoreKeys = 1;
@@ -2177,6 +2231,8 @@ void CFileViewer::NewDirectory( void )
 
 	CFileViewer::StaticEncoding = FS->GetEncoding();
 	CFileViewer::StaticFlags    = FS->Flags;
+
+	NewDirSupportsFOP = ( ( FS->Flags & FSF_Supports_FOP ) != 0 );
 
 	if ( DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_NEWDIR), hWnd, NewDirDialogProc, (LPARAM) 0 ) == IDOK )
 	{
@@ -2352,6 +2408,7 @@ BYTE *CFileViewer::pNewDir              = nullptr;
 EncodingEdit *CFileViewer::pNewDirEdit  = nullptr;
 BYTE *CFileViewer::pNewDirX             = nullptr;
 EncodingEdit *CFileViewer::pNewDirEditX = nullptr;
+bool CFileViewer::NewDirSupportsFOP     = false;
 
 INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -2359,10 +2416,19 @@ INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM w
 	{
 	case WM_INITDIALOG:
 		{
+			DWORD HOffset = 0;
+
+			if ( NewDirSupportsFOP )
+			{
+				HOffset = 80;
+
+				ShowWindow( GetDlgItem( hDlg, IDC_CHOOSEDIRTYPE ), SW_SHOW );
+			}
+
 			if ( ( StaticFlags & FSF_Uses_Extensions ) && ( ! (StaticFlags & FSF_NoDir_Extensions) ) )
 			{
-				pNewDirEdit  = new EncodingEdit( hDlg, 12, 52, 348, false );
-				pNewDirEditX = new EncodingEdit( hDlg, 362, 52, 105, true );
+				pNewDirEdit  = new EncodingEdit( hDlg, 12, 52, 348 - HOffset, false );
+				pNewDirEditX = new EncodingEdit( hDlg, 362 - HOffset, 52, 105, true );
 
 				pNewDirEditX->Encoding = StaticEncoding;
 
@@ -2382,7 +2448,7 @@ INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM w
 			}
 			else
 			{
-				pNewDirEdit = new EncodingEdit( hDlg, 12, 52, 455, true );
+				pNewDirEdit = new EncodingEdit( hDlg, 12, 52, 455 - HOffset, true );
 			}
 
 			pNewDirEdit->Encoding = CFileViewer::StaticEncoding;
@@ -2417,6 +2483,15 @@ INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM w
 				CFileViewer::pNewDir = nullptr;
 
 				EndDialog( hDlg, IDCANCEL );
+			}
+			else if ( LOWORD( wParam ) == IDC_CHOOSEDIRTYPE )
+			{
+				if ( DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_DIRTYPE ), hDlg, DirTypeDialogProc, NULL ) == IDOK )
+				{
+					// TODO: FOP the directory
+
+					// TODO: Call into the FS to update it.
+				}
 			}
 			else if ( pNewDirEditX != nullptr )
 			{
@@ -2822,7 +2897,25 @@ void CFileViewer::DoContextMenu( void )
 	{
 		if ( Selected == 1 )
 		{
-			PopulateXlatorMenus(hPopup);
+			if ( ( FS->pDirectory->Files[ GetSelectedIndex() ].Flags & FF_Directory ) == 0 )
+			{
+				PopulateXlatorMenus(hPopup);
+			}
+			else
+			{
+				if ( FS->Flags & FSF_Supports_FOP )
+				{
+					MENUITEMINFO mii;
+
+					mii.cbSize     = sizeof( MENUITEMINFO );
+					mii.fMask      = MIIM_ID | MIIM_FTYPE | MIIM_STRING;
+					mii.wID        = IDM_DIRTYPE;
+					mii.fType      = MFT_STRING;
+					mii.dwTypeData = L"Set Directory &Type ...";
+
+					InsertMenuItem( hSubMenu, (UINT) 10, TRUE, &mii );
+				}
+			}
 		}
 		else if ( Selected == 0 )
 		{

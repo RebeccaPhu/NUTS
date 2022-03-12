@@ -103,7 +103,7 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 		FSF_Creates_Image | FSF_Formats_Image | FSF_Formats_Raw |
 		FSF_Uses_Extensions | FSF_NoDir_Extensions |
 		FSF_Size |
-		FSF_Accepts_Sidecars;
+		FSF_Accepts_Sidecars | FSF_Supports_FOP;
 
 	DWORD ZIPFlags =
 		FSF_Creates_Image | FSF_Formats_Image | FSF_Formats_Raw |

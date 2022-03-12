@@ -42,6 +42,9 @@ typedef std::vector<DataTranslator> TranslatorList;
 typedef TranslatorList::iterator    TranslatorIterator;
 typedef RootHookList::iterator      RootHookIterator;
 
+typedef std::map<std::wstring,std::wstring> FOPDirectoryTypes;
+typedef FOPDirectoryTypes::iterator         FOPDirectoryTypeIterator;
+
 class CPlugins
 {
 public:
@@ -64,6 +67,7 @@ public:
 	TranslatorList    GetTranslators( DWORD PUID, DWORD Type );
 	RootHookList      GetRootHooks();
 	RootCommandSet    GetRootCommands();
+	FOPDirectoryTypes GetDirectoryTypes();
 
 	void  *LoadFont( DWORD ReqFontID );
 	DWORD FindFont( DWORD Encoding, BYTE Index );
@@ -108,6 +112,7 @@ private:
 	TranslatorList    Translators;
 	RootHookList      RootHooks;
 	RootCommandSet    RootCommands;
+	FOPDirectoryTypes DirectoryTypes;
 
 	std::map<DWORD, std::vector<DWORD>> EncodingFontMap;
 	std::map<DWORD, BYTE> EncodingFontSelectors[2];
@@ -121,6 +126,7 @@ private:
 	void LoadTranslators( NUTSPlugin *plugin );
 	void LoadRootHooks( NUTSPlugin *plugin );
 	void LoadRootCommands( NUTSPlugin *plugin );
+	void LoadFOPDirectoryTypes( NUTSPlugin *plugin );
 
 	void *pPC437Font;
 

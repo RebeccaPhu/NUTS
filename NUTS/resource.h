@@ -116,8 +116,10 @@
 #define IDB_VDEDITBANNER                187
 #define IDD_ISO_SYSUSEAREA              188
 #define IDD_ISO_VOLDESC                 189
+#define IDI_FOLDER                      189
 #define IDD_ISO_BOOTDESC                190
 #define IDD_ISO_NOJOLIET                191
+#define IDD_DIRTYPE                     192
 #define AFX_IDC_PRINT_DOCNAME           201
 #define AFX_IDC_PRINT_PRINTERNAME       202
 #define AFX_IDC_PRINT_PORTNAME          203
@@ -240,7 +242,10 @@
 #define AFX_IDC_COLOR_GREEN             1103
 #define IDC_ISO_SAVEAPPDATA             1103
 #define AFX_IDC_COLOR_BLUE              1104
+#define IDC_DIRTYPESEL                  1104
 #define AFX_IDC_COLOR_YELLOW            1105
+#define IDC_BUTTON1                     1105
+#define IDC_CHOOSEDIRTYPE               1105
 #define AFX_IDC_COLOR_MAGENTA           1106
 #define AFX_IDC_COLOR_CYAN              1107
 #define AFX_IDC_COLOR_GRAY              1108
@@ -799,9 +804,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        189
+#define _APS_NEXT_RESOURCE_VALUE        190
 #define _APS_NEXT_COMMAND_VALUE         40079
-#define _APS_NEXT_CONTROL_VALUE         1104
+#define _APS_NEXT_CONTROL_VALUE         1106
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

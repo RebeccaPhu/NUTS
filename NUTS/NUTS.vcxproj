@@ -366,20 +366,14 @@
     <None Include="..\archive.bmp" />
     <None Include="..\audio.ico" />
     <None Include="..\AudioControls.bmp" />
-    <None Include="..\avi1.bin" />
     <None Include="..\back.ico" />
     <None Include="..\basic.bmp" />
     <None Include="..\BASIC.ico" />
     <None Include="..\binary.bmp" />
-    <None Include="..\bitmap1.bmp" />
-    <None Include="..\bitmap2.bmp" />
-    <None Include="..\bitmap4.bmp" />
-    <None Include="..\bitmap5.bmp" />
     <None Include="..\blank-tzx.bmp" />
     <None Include="..\blank.bmp" />
     <None Include="..\blank1.bmp" />
     <None Include="..\blank2.bmp" />
-    <None Include="..\bmp00001.bmp" />
     <None Include="..\cassetteplayer.ico" />
     <None Include="..\cdimage.bmp" />
     <None Include="..\cdrom.bmp" />
@@ -398,16 +392,14 @@
     <None Include="..\fileopen.ico" />
     <None Include="..\filesave.ico" />
     <None Include="..\floppydi.bmp" />
+    <None Include="..\folder.ico" />
     <None Include="..\font.bmp" />
     <None Include="..\fontswitch.ico" />
     <None Include="..\graphic.bmp" />
     <None Include="..\harddisc.bmp" />
     <None Include="..\harddisk.bmp" />
     <None Include="..\hardimage.bmp" />
-    <None Include="..\ico00001.ico" />
-    <None Include="..\ico00002.ico" />
     <None Include="..\ico00003.ico" />
-    <None Include="..\ico00004.ico" />
     <None Include="..\icon1.ico" />
     <None Include="..\icon2.ico" />
     <None Include="..\jpeg.bmp" />
@@ -449,7 +441,6 @@
     <None Include="NUTS.ico" />
     <None Include="repair.bmp" />
     <None Include="SingleFile.cur" />
-    <None Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NUTS.rc" />

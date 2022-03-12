@@ -29,7 +29,7 @@ ISO9660FileSystem::ISO9660FileSystem( DataSource *pDataSource ) : FileSystem( pD
 		FSF_Creates_Image  | FSF_Formats_Image | FSF_Formats_Raw |
 		FSF_Uses_Extensions | FSF_NoDir_Extensions |
 		FSF_Size | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Capacity |
-		FSF_Accepts_Sidecars;
+		FSF_Accepts_Sidecars | FSF_Supports_FOP;
 
 	HasJoliet   = false;
 	UsingJoliet = false;

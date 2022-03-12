@@ -295,6 +295,19 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			}
 		}
 		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetFOPDirectoryTypes:
+		{
+			static FOPDirectoryType FT;
+
+			FT.FriendlyName = L"Apple";
+			FT.Identifier   = L"APPLE";
+
+			cmd->OutParams[ 0 ].pPtr = &FT;
+			cmd->OutParams[ 1 ].pPtr = nullptr;
+		}
+
+		return NUTS_PLUGIN_SUCCESS;
 	}
 
 	return NUTS_PLUGIN_UNRECOGNISED;

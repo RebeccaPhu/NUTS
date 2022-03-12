@@ -36,6 +36,7 @@ typedef enum _ActionType
 	ActionDoRefresh = 5,
 	ActionDoRename  = 6,
 	ActionDoNewDir  = 7,
+	ActionDoDirType = 8,
 } ActionType;
 
 typedef struct _FSAction

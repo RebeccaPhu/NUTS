@@ -47,6 +47,7 @@ typedef enum _PluginCommandID {
 	PC_ReportPluginCreditStats,
 	PC_GetIconLicensing,
 	PC_GetPluginCredits,
+	PC_GetFOPDirectoryTypes,
 } PluginCommandID;
 
 typedef union _PluginCommandParameter {
@@ -94,5 +95,11 @@ typedef struct _RootHook
 	BYTE         HookData[ 32 ];
 	DWORD        Flags;
 } RootHook;
+
+typedef struct _FOPDirectoryType
+{
+	std::wstring FriendlyName;
+	std::wstring Identifier;
+} FOPDirectoryType;
 
 #endif

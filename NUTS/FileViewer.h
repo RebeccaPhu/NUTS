@@ -54,6 +54,8 @@ public:
 	static EncodingEdit *pNewDirEdit;
 	static BYTE *pNewDirX;
 	static EncodingEdit *pNewDirEditX;
+	static bool NewDirSupportsFOP;
+	static INT_PTR CALLBACK DirTypeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 public:
 	FileSystem *FS;
@@ -196,6 +198,7 @@ public:
 
 	void RenameFile( void );
 	void NewDirectory( void );
+	void SetDirType( void );
 
 	void LockDisplay() { EnterCriticalSection( &CacheLock ); }
 	void UnlockDisplay() { EnterCriticalSection( &CacheLock ); }

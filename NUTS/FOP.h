@@ -13,6 +13,7 @@ typedef enum _FOPDirection
 	FOP_PreWrite    = 4,
 	FOP_ExtraAttrs  = 5,
 	FOP_AttrChanges = 6,
+	FOP_SetDirType  = 7,
 } FOPDirection;
 
 #define FOP_DATATYPE_ZIPATTR 0x071D071D
