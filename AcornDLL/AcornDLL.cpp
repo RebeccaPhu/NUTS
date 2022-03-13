@@ -50,6 +50,11 @@ const TXIdentifier GRAPHIC_SPRITE = L"RiscOS_Sprite";
 const TXIdentifier AUDIO_ARMADEUS = L"ARMadeus_Sample";
 const TXIdentifier BBCBASIC       = L"BBC_BASIC";
 
+const PluginIdentifier ACORN_PLUGINID = L"AcornNUTSPlugin";
+
+const ProviderIdentifier BBCMICRO_PROVIDER =L"BBCMicro_Provider";
+const ProviderIdentifier RISCOS_PROVIDER =L"RiscOS_Provider";
+
 HMODULE hInstance;
 
 DataSourceCollector *pCollector;
@@ -204,10 +209,10 @@ std::wstring ImageExtensions[] = { L"SSD", L"IMG", L"DSD", L"ADF", L"ADS", L"ADM
 #define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
 
 DataTranslator Translators[] = {
-	{ 0, L"BBC BASIC I - V",   0, TXTextTranslator },
-	{ 0, L"Acorn Modes 0 - 7", 0, TXGFXTranslator | GFXLogicalPalette | GFXMultipleModes },
-	{ 1, L"RISC OS Sprite",    0, TXGFXTranslator | GFXMultipleModes },
-	{ 1, L"ARMadeus Sample",   0, TXAUDTranslator }
+	{ BBCMICRO_PROVIDER, L"BBC BASIC I - V",   BBCBASIC,       TXTextTranslator },
+	{ BBCMICRO_PROVIDER, L"Acorn Modes 0 - 7", GRAPHIC_ACORN,  TXGFXTranslator | GFXLogicalPalette | GFXMultipleModes },
+	{ RISCOS_PROVIDER,   L"RISC OS Sprite",    GRAPHIC_SPRITE, TXGFXTranslator | GFXMultipleModes },
+	{ RISCOS_PROVIDER,   L"ARMadeus Sample",   AUDIO_ARMADEUS, TXAUDTranslator }
 };
 
 #define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
@@ -893,8 +898,8 @@ WCHAR *DescribeChar( BYTE Char, DWORD FontID )
 	return desc;
 }
 
-NUTSProvider ProviderBBCMicro = { L"BBC Micro", 0, 0 };
-NUTSProvider ProviderRISCOS   = { L"RISC OS", 0, 0 };
+NUTSProvider ProviderBBCMicro = { L"BBC Micro", ACORN_PLUGINID, BBCMICRO_PROVIDER };
+NUTSProvider ProviderRISCOS   = { L"RISC OS",   ACORN_PLUGINID, RISCOS_PROVIDER };
 
 WCHAR *pBBCMicroFontName = L"BBC Micro";
 WCHAR *pRiscOSFontName   = L"Risc OS";
@@ -911,6 +916,9 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
 		
 		LoadFonts();
+
+		cmd->OutParams[ 0 ].Value = 0x00000001;
+		cmd->OutParams[ 1 ].pPtr  = (void *) ACORN_PLUGINID.c_str();
 
 		return NUTS_PLUGIN_SUCCESS;
 
@@ -937,18 +945,14 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].Value = 0;
 
-			BYTE pid = (BYTE) cmd->InParams[ 0 ].Value;
+			FSIdentifier fsid = FSIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr );
 
-			if ( pid == 1 )
+			// Some emulators add a 512 byte header to their hard disk images.
+			if ( ( fsid == FSID_ADFS_HO ) || ( fsid == FSID_ADFS_HN ) || ( fsid == FSID_ADFS_HP ) )
 			{
-				BYTE fsid = (BYTE) cmd->InParams[ 1 ].Value;
-
-				if ( ( fsid == 7 ) || ( fsid == 8 ) || ( fsid == 9 ) )
-				{
-					cmd->OutParams[ 0 ].Value = 2;
-					cmd->OutParams[ 1 ].Value = 0;
-					cmd->OutParams[ 2 ].Value = 0x200;
-				}
+				cmd->OutParams[ 0 ].Value = 2;
+				cmd->OutParams[ 1 ].Value = 0;
+				cmd->OutParams[ 2 ].Value = 0x200;
 			}
 		}
 		return NUTS_PLUGIN_SUCCESS;
@@ -1104,7 +1108,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
-			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
+			cmd->OutParams[ 2 ].pPtr  = (void *) Translators[ tx ].ProviderID.c_str();
 		}
 
 		return NUTS_PLUGIN_SUCCESS;

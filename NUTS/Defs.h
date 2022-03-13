@@ -15,14 +15,22 @@
 #define FSID_NONE      L"Undefined_FileSystem"
 #define FSID_ISO9660   L"ISO9660"
 #define FSID_ISOHS     L"HighSierra"
+#define FS_Null        L"NULL_FileSystem"
+#define FS_Root        L"Root_FileSystem"
+#define FS_Windows     L"Windows_FileBrowser"
+#define TX_Null        L"NULL_Translator"
 
 typedef std::wstring FSIdentifier;
 typedef std::wstring FTIdentifier;
-typedef std::wstring FontIdentifer;
+typedef std::wstring FontIdentifier;
 typedef std::wstring EncodingIdentifier;
 typedef std::wstring TXIdentifier;
+typedef std::wstring PluginIdentifier;
+typedef std::wstring ProviderIdentifier;
 
 typedef unsigned long long QWORD;
+
+#define NUTS_PREFERRED_API_VERSION 0x00000001
 
 /* Generic filetypes, not necessary indicative within any given FS */
 typedef enum _FileType {
@@ -63,7 +71,8 @@ typedef struct _NativeFile {
 		Length          = 0;
 		Type            = FT_Arbitrary;
 		Icon            = FT_Arbitrary;
-		XlatorID        = ENCODING_ASCII;
+		XlatorID        = TX_Null;
+		EncodingID      = ENCODING_ASCII;
 		HasResolvedIcon = false;
 		ExtraForks      = 0;
 		pAuxData        = nullptr;
@@ -124,15 +133,9 @@ typedef enum _FileFlags {
 	FF_Pseudo           = 0x40000000, /* FS item is a pseudo item (e.g. Drive in AcornDSD) */
 } FileFlags;
 
-typedef enum _BuiltInFSIDs {
-	FS_Null    = 0x00000000,
-	FS_Root    = 0x80001001,
-	FS_Windows = 0x80001002,
-} BuiltInFSIDs;
-
 typedef struct _FormatMenu {
 	std::wstring FS;
-	DWORD ID;
+	FSIdentifier ID;
 } FormatMenu;
 
 typedef struct _FSMenu {
@@ -149,7 +152,7 @@ typedef std::vector<FSHint> FSHints;
 
 typedef struct _TitleComponent {
 	BYTE String[512];
-	DWORD Encoding;
+	EncodingIdentifier Encoding;
 } TitleComponent;
 
 typedef enum _TitleFlags {
@@ -197,8 +200,7 @@ typedef enum _DSFlags {
 typedef struct _FormatDesc {
 	std::wstring Format;
 	BYTEString   PreferredExtension;
-	DWORD        FUID;
-	DWORD        PUID;
+	FSIdentifier FSID;
 	DWORD        Flags;
 	QWORD        MaxSize;
 	DWORD        SectorSize;
@@ -400,7 +402,7 @@ typedef std::vector<FSTool> FSToolList;
 typedef FSToolList::iterator FSToolIterator;
 
 typedef struct _RootCommand {
-	DWORD PUID;
+	PluginIdentifier PLID;
 	DWORD CmdIndex;
 	std::wstring Text;
 } RootCommand;

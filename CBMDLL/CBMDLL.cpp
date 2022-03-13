@@ -36,6 +36,8 @@ const FTIdentifier FT_CBM_TAPE = L"C64_Tape_Object";
 
 const EncodingIdentifier ENCODING_PETSCII = L"PETSCII";
 
+const PluginIdentifier CBM_PLUGINID = L"CommodoreNUTSPlugin";
+
 FSDescriptor CBMFS[] = {
 	{
 		/* .FriendlyName = */ L"D64 Commodore Disk Image",
@@ -323,6 +325,9 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		
 		LoadFonts();
 		LoadHooks();
+
+		cmd->OutParams[ 0 ].Value = 0x00000001;
+		cmd->OutParams[ 1 ].pPtr  = (void *) CBM_PLUGINID.c_str();
 
 		return NUTS_PLUGIN_SUCCESS;
 

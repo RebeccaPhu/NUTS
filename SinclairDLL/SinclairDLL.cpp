@@ -32,6 +32,8 @@ const FTIdentifier       FT_SINCLAIR_TRD   = L"TRD File Object";
 const EncodingIdentifier ENCODING_SINCLAIR = L"SinclairEncoding";
 const TXIdentifier       GRAPHIC_SPECTRUM  = L"SpeccyScreen";
 const TXIdentifier       BASIC_SPECTRUM    = L"SpectrumBASIC";
+const PluginIdentifier   SINCLAIR_PLUGINID = L"SinclairNUTSPlugin";
+const ProviderIdentifier SINCLAIR_PROVIDER = L"Sinclair_Provider";
 
 FSDescriptor SinclairFS[] = {
 	{
@@ -92,8 +94,8 @@ std::wstring ImageExtensions[] = { L"DSK", L"TRD", L"TAP", L"TZX" };
 #define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
 
 DataTranslator Translators[] = {
-	{ 0, L"ZX Spectrum BASIC", 0, TXTextTranslator },
-	{ 0, L"ZX Spectrum",       0, TXGFXTranslator  }
+	{ SINCLAIR_PROVIDER, L"ZX Spectrum BASIC", BASIC_SPECTRUM,   TXTextTranslator },
+	{ SINCLAIR_PROVIDER, L"ZX Spectrum",       GRAPHIC_SPECTRUM, TXGFXTranslator  }
 };
 
 #define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
@@ -319,7 +321,7 @@ WCHAR *DescribeChar( BYTE Char )
 	return desc;
 }
 
-NUTSProvider ProviderSinclair = { L"Sinclair", 0, 0 };
+NUTSProvider ProviderSinclair = { L"Sinclair", SINCLAIR_PLUGINID, SINCLAIR_PROVIDER };
 
 WCHAR *pSinclairFontName = L"Sinclair";
 
@@ -334,6 +336,9 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
 		
 		LoadFonts();
+
+		cmd->OutParams[ 0 ].Value = 0x00000001;
+		cmd->OutParams[ 1 ].pPtr  = (void *) SINCLAIR_PLUGINID.c_str();
 
 		return NUTS_PLUGIN_SUCCESS;
 
@@ -457,7 +462,8 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
-			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
+			cmd->OutParams[ 2 ].pPtr  = (void *) Translators[ tx ].ProviderID.c_str();
+			cmd->OutParams[ 3 ].pPtr  = (void *) Translators[ tx ].TUID.c_str();
 		}
 
 		return NUTS_PLUGIN_SUCCESS;

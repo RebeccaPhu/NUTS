@@ -25,6 +25,8 @@ DataSourceCollector *pCollector;
 const FTIdentifier       FILE_AMIGA     = L"Amiga_File_Object";
 const EncodingIdentifier ENCODING_AMIGA = L"Amiga_Encoding";
 const TXIdentifier       TUID_ILBM      = L"ILBM_Translator";
+const PluginIdentifier   AMIGA_PLUGINID = L"AmigaNUTSPlugin";
+const ProviderIdentifier AMIGA_PROVIDER = L"Amiga_Provider";
 
 BYTE *NUTSSignature;
 
@@ -99,7 +101,7 @@ void *CreateFS( FSIdentifier FSID, DataSource *pSource )
 	return (void *) pFS;
 }
 
-NUTSProvider ProviderAmiga = { L"Amiga", 0, 0 };
+NUTSProvider ProviderAmiga = { L"Amiga", AMIGA_PLUGINID, AMIGA_PROVIDER };
 
 WCHAR *pTopaz1FontName = L"Topaz 1";
 WCHAR *pTopaz2FontName = L"Topaz 2";
@@ -134,7 +136,7 @@ void LoadFonts()
 }
 
 DataTranslator Translators[] = {
-	{ 0, L"Interleaved Bitmap",   0, TXGFXTranslator },
+	{ AMIGA_PROVIDER, L"Interleaved Bitmap", TUID_ILBM, TXGFXTranslator },
 };
 
 #define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
@@ -162,6 +164,9 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
 		
 		LoadFonts();
+
+		cmd->OutParams[ 0 ].Value = 0x00000001;
+		cmd->OutParams[ 1 ].pPtr  = (void *) AMIGA_PLUGINID.c_str();
 
 		return NUTS_PLUGIN_SUCCESS;
 
@@ -273,7 +278,7 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
-			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
+			cmd->OutParams[ 2 ].pPtr  = (void *) Translators[ tx ].ProviderID.c_str();
 		}
 
 		return NUTS_PLUGIN_SUCCESS;

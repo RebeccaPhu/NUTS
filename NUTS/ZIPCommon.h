@@ -7,6 +7,8 @@
 
 #include <vector>
 
+extern const FSIdentifier FSID_ZIP;
+
 class ZIPCommon
 {
 public:

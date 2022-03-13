@@ -24,10 +24,12 @@ DataSourceCollector *pCollector;
 
 BYTE *NUTSSignature;
 
-const FTIdentifier       FILE_AMSTRAD    = L"Amstrad_AMSDOS_Object";
-const EncodingIdentifier ENCODING_CPC    = L"Amstrad_Text_Encoding";
-const TXIdentifier       TUID_LOCO       = L"Amstrad_Locomotive_BASIC";
-const FTIdentifier       FT_AMSTRAD_TAPE = L"Amstrad_Tape_Object";
+const FTIdentifier       FILE_AMSTRAD     = L"Amstrad_AMSDOS_Object";
+const EncodingIdentifier ENCODING_CPC     = L"Amstrad_Text_Encoding";
+const TXIdentifier       TUID_LOCO        = L"Amstrad_Locomotive_BASIC";
+const FTIdentifier       FT_AMSTRAD_TAPE  = L"Amstrad_Tape_Object";
+const PluginIdentifier   AMSTRAD_PLUGINID = L"AmstradNUTSPlugin";
+const ProviderIdentifier AMSTRAD_PROVIDER = L"Amstrad_Provider";
 
 FSDescriptor AmstradFS[] = {
 	{
@@ -54,7 +56,7 @@ std::wstring ImageExtensions[] = { L"DSK", L"CDT" };
 
 
 DataTranslator Translators[] = {
-	{ 0, L"Amstrad/Locomotive BASIC", 0, TXTextTranslator }
+	{ AMSTRAD_PROVIDER, L"Amstrad/Locomotive BASIC", TUID_LOCO, TXTextTranslator }
 };
 
 #define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
@@ -130,7 +132,7 @@ void *CreateTranslator( TXIdentifier TUID )
 	return pXlator;
 }
 
-NUTSProvider ProviderAmstrad = { L"Amstrad", 0, 0 };
+NUTSProvider ProviderAmstrad = { L"Amstrad", AMSTRAD_PLUGINID, AMSTRAD_PROVIDER };
 
 WCHAR *pCPCFontName = L"Amstrad";
 
@@ -145,6 +147,9 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
 		
 		LoadFonts();
+
+		cmd->OutParams[ 0 ].Value = 0x00000001;
+		cmd->OutParams[ 1 ].pPtr  = (void *) AMSTRAD_PLUGINID.c_str();
 
 		return NUTS_PLUGIN_SUCCESS;
 
@@ -266,7 +271,7 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
-			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
+			cmd->OutParams[ 2 ].pPtr  = (void *) Translators[ tx ].ProviderID.c_str();
 		}
 
 		return NUTS_PLUGIN_SUCCESS;

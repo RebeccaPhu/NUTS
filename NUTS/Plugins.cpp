@@ -29,7 +29,7 @@ static bool _ProcessFOPData( FOPData *pFOP )
 	return FSPlugins.ProcessFOP( pFOP );
 }
 
-static void *_LoadFOPFS( DWORD FSID, void *source )
+static void *_LoadFOPFS( FSIdentifier FSID, void *source )
 {
 	return (void *) FSPlugins.LoadFS( FSID, (DataSource *) source );
 }
@@ -70,7 +70,7 @@ CPlugins::~CPlugins()
 
 void CPlugins::LoadPlugins()
 {
-	EncodingFontMap[ ENCODING_ASCII ] = std::vector<DWORD>();
+	EncodingFontMap[ ENCODING_ASCII ] = std::vector<FontIdentifier>();
 	EncodingFontMap[ ENCODING_ASCII ].push_back( FONTID_PC437 );
 
 	EncodingFontSelectors[ 0 ][ ENCODING_ASCII ] = 0;
@@ -78,12 +78,7 @@ void CPlugins::LoadPlugins()
 
 	Providers = NUTSBuiltIns.GetBuiltInProviders();
 
-	PluginID   = 0x0001;
-	EncodingID = 0x01000000;
-	FontID     = 0x01000000;
-	IconID     = 0x01000000;
-	FSFTID     = 0x01000000;
-	TXID       = 0x00000001;
+	IconID = 0x1000;
 
 	WIN32_FIND_DATA wfd;
 
@@ -138,7 +133,6 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 		}
 
 		plugin.Handle         = hModule;
-		plugin.PluginID       = PluginID;
 		plugin.CommandHandler = (fnNUTSPluginFunction)   GetProcAddress( hModule, "NUTSCommandHandler" );
 
 		if ( plugin.CommandHandler == nullptr )
@@ -154,7 +148,7 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 		cmd.CommandID = PC_SetPluginConnectors;
 		cmd.InParams[ 0 ].pPtr  = (void *) pCollector;
 		cmd.InParams[ 1 ].pPtr  = (void *) pGlobalError;
-		cmd.InParams[ 2 ].Value = plugin.PluginID;
+		cmd.InParams[ 2 ].Value = NUTS_PREFERRED_API_VERSION;
 
 		if ( plugin.CommandHandler( &cmd ) != NUTS_PLUGIN_SUCCESS )
 		{
@@ -162,6 +156,9 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 
 			return;
 		}
+
+		plugin.PluginID = PluginIdentifier( (WCHAR *) cmd.OutParams[ 1 ].pPtr );
+		plugin.MaxAPI   = min( NUTS_PREFERRED_API_VERSION, cmd.OutParams[ 0 ].Value );
 
 		Plugins.push_back( plugin );
 
@@ -187,9 +184,6 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 
 			NUTSProvider p = * (NUTSProvider *) cmd.OutParams[ 0 ].pPtr;
 			
-			p.PluginID   = PluginID;
-			p.ProviderID = MAKEPROVID( PluginID, pid );
-
 			Providers.push_back( p );
 
 			SetSplash( L"Loaded Plugin: " + p.FriendlyName );
@@ -211,25 +205,9 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 
 			for ( BYTE fsid = 0; fsid<NumFS; fsid++ )
 			{
-				GetFileSystemDetails( &plugin, pid, fsid );
+				GetFileSystemDetails( &plugin, pid, fsid, p.ProviderID, p.PluginID );
 			}
 
-		}
-
-		/* Set the FS FileTypes */
-		cmd.CommandID = PC_ReportFSFileTypeCount;
-
-		if ( plugin.CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
-		{
-			DWORD FSFTs = cmd.OutParams[ 0 ].Value;
-
-			cmd.CommandID           = PC_SetFSFileTypeBase;
-			cmd.InParams[ 0 ].Value = FSFTID;
-
-			if ( plugin.CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
-			{
-				FSFTID += FSFTs;
-			}
 		}
 
 		LoadFonts( &plugin );
@@ -239,8 +217,6 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 		LoadRootHooks( &plugin );
 		LoadRootCommands( &plugin );
 		LoadFOPDirectoryTypes( &plugin );
-
-		PluginID++;
 	}
 }
 
@@ -266,7 +242,7 @@ void CPlugins::LoadFOPDirectoryTypes( NUTSPlugin *plugin )
 	}
 }
 
-void CPlugins::GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid )
+void CPlugins::GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid, ProviderIdentifier PVID, PluginIdentifier PLID )
 {
 	PluginCommand cmd;
 
@@ -281,15 +257,28 @@ void CPlugins::GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid )
 
 	FSDescriptor fs = * ( FSDescriptor *) cmd.OutParams[ 0 ].pPtr;
 
-	fs.PUID = MAKEFSID( PluginID, pid, fsid );
-
 	FSDescriptors.push_back( fs );
 
+	if ( ProviderFS.find( PVID ) == ProviderFS.end() )
+	{
+		ProviderFS[ PVID ] = std::vector<FSIdentifier>();
+	}
+
+	ProviderFS[ PVID ].push_back( fs.FSID );
+
+	if ( PluginFS.find( PLID ) == PluginFS.end() )
+	{
+		PluginFS[ PLID ] = std::vector<FSIdentifier>();
+	}
+
+	PluginFS[ PLID ].push_back( fs.FSID );
+
 	cmd.CommandID = PC_GetOffsetLists;
+	cmd.InParams[ 0 ].pPtr = (void *) fs.FSID.c_str();
 
 	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 	{
-		BYTE oc = cmd.OutParams[ 0 ].Value;
+		BYTE oc = (BYTE) cmd.OutParams[ 0 ].Value;
 		
 		if ( oc > 0 )
 		{
@@ -302,7 +291,7 @@ void CPlugins::GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid )
 				ol.push_back( ofs );
 			}
 
-			ImageOffsets[ fs.PUID ] = ol;
+			ImageOffsets[ fs.FSID ] = ol;
 		}
 	}
 }
@@ -312,17 +301,19 @@ NUTSProviderList CPlugins::GetProviders( void )
 	return Providers;
 }
 
-FSDescriptorList CPlugins::GetFilesystems( DWORD ProviderID )
+FSDescriptorList CPlugins::GetFilesystems( ProviderIdentifier ProviderID )
 {
 	FSDescriptorList l;
 
 	FSDescriptor_iter i;
 
-	for ( i = FSDescriptors.begin(); i != FSDescriptors.end(); i++ )
+	std::vector<FSIdentifier>::iterator iProviderFS;
+
+	for ( iProviderFS = ProviderFS[ ProviderID ].begin(); iProviderFS != ProviderFS[ ProviderID ].end(); iProviderFS++ )
 	{
-		if ( PROVIDERID( i->PUID ) == PROVIDERID (ProviderID ) )
+		for ( i = FSDescriptors.begin(); i != FSDescriptors.end(); i++ )
 		{
-			if ( PLUGINID( i->PUID ) == PLUGINID( ProviderID ) )
+			if ( *iProviderFS == i->FSID )
 			{
 				l.push_back( *i );
 			}
@@ -332,11 +323,11 @@ FSDescriptorList CPlugins::GetFilesystems( DWORD ProviderID )
 	return l;
 }
 
-FormatList CPlugins::GetFormats( DWORD PUID )
+FormatList CPlugins::GetFormats( ProviderIdentifier ProviderID )
 {
 	FormatList Formats;
 
-	Formats = NUTSBuiltIns.GetBuiltinFormatList( PUID );
+	Formats = NUTSBuiltIns.GetBuiltinFormatList( ProviderID );
 
 	if ( Formats.size() > 0 )
 	{
@@ -345,29 +336,33 @@ FormatList CPlugins::GetFormats( DWORD PUID )
 
 	FSDescriptor_iter iFS;
 
-	for ( iFS = FSDescriptors.begin(); iFS != FSDescriptors.end(); iFS++ )
+	std::vector<FSIdentifier>::iterator iProviderFS;
+
+	for ( iProviderFS = ProviderFS[ ProviderID ].begin(); iProviderFS != ProviderFS[ ProviderID ].end(); iProviderFS++ )
 	{
-		if ( PROVID( iFS->PUID ) == PUID )
+		for ( iFS = FSDescriptors.begin(); iFS != FSDescriptors.end(); iFS++ )
 		{
-			FormatDesc Format;
+			if ( iFS->FSID == *iProviderFS )
+			{
+				FormatDesc Format;
 
-			Format.Format     = iFS->FriendlyName;
-			Format.FUID       = iFS->PUID;
-			Format.PUID       = PROVID( iFS->PUID );
-			Format.Flags      = iFS->Flags;
-			Format.MaxSize    = iFS->MaxSize;
-			Format.SectorSize = iFS->SectorSize;
+				Format.Format     = iFS->FriendlyName;
+				Format.FSID       = iFS->FSID;
+				Format.Flags      = iFS->Flags;
+				Format.MaxSize    = iFS->MaxSize;
+				Format.SectorSize = iFS->SectorSize;
 
-			Format.PreferredExtension = iFS->FavouredExtension;
+				Format.PreferredExtension = iFS->FavouredExtension;
 
-			Formats.push_back( Format );
+				Formats.push_back( Format );
+			}
 		}
 	}
 
 	return Formats;
 }
 
-TranslatorList CPlugins::GetTranslators( DWORD PUID, DWORD Type )
+TranslatorList CPlugins::GetTranslators( ProviderIdentifier PVID, DWORD Type )
 {
 	TranslatorList Xlators;
 
@@ -375,9 +370,9 @@ TranslatorList CPlugins::GetTranslators( DWORD PUID, DWORD Type )
 
 	for ( iter = Translators.begin(); iter != Translators.end(); iter++ )
 	{
-		if ( ( iter->Flags & Type ) || ( PUID == NULL ) )
+		if ( iter->Flags & Type )
 		{
-			if ( (PROVID( iter->ProviderID) == PUID ) || ( PUID == NULL ) )
+			if ( iter->ProviderID == PVID )
 			{
 				Xlators.push_back( *iter );
 			}
@@ -402,7 +397,7 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 	{
 		FSHint hint  = { 0, 0 };
 
-		FileSystem *pFS = LoadFS( iter->PUID, pSource );
+		FileSystem *pFS = LoadFS( iter->FSID, pSource );
 
 		if ( pFS == nullptr )
 		{
@@ -411,7 +406,7 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 			continue;
 		}
 
-		pFS->FSID = iter->PUID;
+		pFS->FSID = iter->FSID;
 
 		if ( pFile == nullptr )
 		{
@@ -422,7 +417,7 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 			hint = pFS->Offer( pFile->Extension );
 		}
 
-		hint.FSID = iter->PUID;
+		hint.FSID = iter->FSID;
 
 		if ( hint.Confidence > 0 )
 		{
@@ -444,7 +439,8 @@ FileSystem *CPlugins::FindAndLoadFS( DataSource *pSource, NativeFile *pFile )
 	FSHints hints = FindFS( pSource, pFile );
 
 	WORD Confidence = 0;
-	DWORD FSID      = FS_Null;
+
+	FSIdentifier FSID = FS_Null;
 	
 	FileSystem *newFS = nullptr;
 
@@ -465,7 +461,7 @@ FileSystem *CPlugins::FindAndLoadFS( DataSource *pSource, NativeFile *pFile )
 	return newFS;
 }
 
-FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
+FileSystem *CPlugins::LoadFS( FSIdentifier FSID, DataSource *pSource )
 {
 	FileSystem *pBuiltIn = NUTSBuiltIns.LoadFS( FSID, pSource );
 
@@ -489,7 +485,7 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 
 	while ( iter != FSDescriptors.end() )
 	{
-		if ( iter->PUID == FSID )
+		if ( iter->FSID == FSID )
 		{
 			std::vector<QWORD> Offsets;
 
@@ -545,9 +541,8 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 					PluginCommand cmd;
 
 					cmd.CommandID = PC_CreateFileSystem;
-					cmd.InParams[ 0 ].Value = PROVIDERID( FSID );
-					cmd.InParams[ 1 ].Value = FSIDID( FSID );
-					cmd.InParams[ 2 ].pPtr  = (void *) pCloneSource;
+					cmd.InParams[ 0 ].pPtr = (void * ) FSID.c_str();
+					cmd.InParams[ 2 ].pPtr = (void *) pCloneSource;
 				
 					if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 					{
@@ -565,7 +560,6 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 				}
 
 				pFS->FSID = FSID;
-				pFS->PLID = PLUGINID( FSID );
 
 				if ( pAuxSource != nullptr )
 				{
@@ -618,9 +612,8 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 				PluginCommand cmd;
 
 				cmd.CommandID = PC_CreateFileSystem;
-				cmd.InParams[ 0 ].Value = PROVIDERID( FSID );
-				cmd.InParams[ 1 ].Value = FSIDID( FSID );
-				cmd.InParams[ 2 ].pPtr  = (void *) pSource;
+				cmd.InParams[ 0 ].pPtr = (void *) FSID.c_str();
+				cmd.InParams[ 2 ].pPtr = (void *) pSource;
 
 				if ( p->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 				{
@@ -647,11 +640,26 @@ FileSystem *CPlugins::LoadFS( DWORD FSID, DataSource *pSource )
 	return nullptr;
 }
 
-NUTSPlugin *CPlugins::GetPlugin( DWORD FSID )
+NUTSPlugin *CPlugins::GetPlugin( FSIdentifier FSID )
 {
+	PluginIdentifier PLID = L"";
+
+	PluginFSMap::iterator iPL;
+
+	for ( iPL = PluginFS.begin(); iPL != PluginFS.end(); iPL++ )
+	{
+		for ( std::vector<FSIdentifier>::iterator iFS = iPL->second.begin(); iFS != iPL->second.end(); iFS++ )
+		{
+			if ( *iFS == FSID )
+			{
+				PLID = iPL->first;
+			}
+		}
+	}
+
 	for ( Plugin_iter i = Plugins.begin(); i != Plugins.end(); i++ )
 	{
-		if ( i->PluginID == PLUGINID( FSID ) )
+		if ( i->PluginID == PLID )
 		{
 			return &*i;
 		}
@@ -660,7 +668,7 @@ NUTSPlugin *CPlugins::GetPlugin( DWORD FSID )
 	return nullptr;
 }
 
-std::wstring CPlugins::ProviderName( DWORD PRID )
+std::wstring CPlugins::ProviderName( ProviderIdentifier PRID )
 {
 	std::wstring BuiltInProviderName = NUTSBuiltIns.ProviderName( PRID );
 
@@ -686,7 +694,7 @@ std::wstring CPlugins::ProviderName( DWORD PRID )
 	return name;
 }
 
-std::wstring CPlugins::FSName( DWORD FSID )
+std::wstring CPlugins::FSName( FSIdentifier FSID )
 {
 	std::wstring BuiltInFSName = NUTSBuiltIns.FSName( FSID );
 
@@ -701,7 +709,7 @@ std::wstring CPlugins::FSName( DWORD FSID )
 
 	for ( fi = FSDescriptors.begin(); fi != FSDescriptors.end(); fi++ )
 	{
-		if ( fi->PUID ==FSID )
+		if ( fi->FSID == FSID )
 		{
 			name = fi->FriendlyName;
 
@@ -712,24 +720,24 @@ std::wstring CPlugins::FSName( DWORD FSID )
 	return name;
 }
 
-WCHAR *CPlugins::FontName( DWORD ReqFontID )
+FontIdentifier CPlugins::FontName( FontIdentifier ReqFontID )
 {
 	static WCHAR *PC437Name = L"PC437";
 
 	if ( ReqFontID == FONTID_PC437 )
 	{
-		return PC437Name;
+		return FontIdentifier( PC437Name );
 	}
 
 	if ( FontNames.find( ReqFontID ) != FontNames.end() )
 	{
-		return (WCHAR *) FontNames[ ReqFontID ].c_str();
+		return FontNames[ ReqFontID ];
 	}
 
 	return PC437Name;
 }
 
-void *CPlugins::LoadFont( DWORD ReqFontID )
+void *CPlugins::LoadFont( FontIdentifier ReqFontID )
 {
 	if ( ReqFontID == FONTID_PC437 )
 	{
@@ -757,21 +765,21 @@ void *CPlugins::LoadFont( DWORD ReqFontID )
 	return nullptr;
 }
 
-DWORD CPlugins::FindFont( DWORD Encoding, BYTE Index )
+FontIdentifier CPlugins::FindFont( EncodingIdentifier Encoding, BYTE Index )
 {
 	if ( Encoding == ENCODING_ASCII )
 	{
 		return FONTID_PC437;
 	}
 
-	DWORD RFontID = EncodingFontMap[ Encoding ][ EncodingFontSelectors[ Index ][ Encoding ] ];
+	FontIdentifier RFontID = EncodingFontMap[ Encoding ][ EncodingFontSelectors[ Index ][ Encoding ] ];
 	
 	return RFontID;
 }
 
-std::vector<DWORD> CPlugins::FontListForEncoding( DWORD Encoding )
+std::vector<FontIdentifier> CPlugins::FontListForEncoding( EncodingIdentifier Encoding )
 {
-	std::vector<DWORD> RFontList;
+	std::vector<FontIdentifier> RFontList;
 
 	if ( EncodingFontMap.find( Encoding ) != EncodingFontMap.end() )
 	{
@@ -786,7 +794,7 @@ NUTSFontNames CPlugins::FullFontList( void )
 	return FontNames;
 }
 
-void CPlugins::NextFont( DWORD Encoding, BYTE Index )
+void CPlugins::NextFont( EncodingIdentifier Encoding, BYTE Index )
 {
 	EncodingFontSelectors[ Index ][ Encoding ] =
 		( EncodingFontSelectors[ Index ][ Encoding ] + 1 ) %
@@ -814,7 +822,7 @@ std::vector<FSMenu> CPlugins::GetFSMenu()
 {
 	std::vector<FSMenu> menus = NUTSBuiltIns.GetBuiltInMenuList();
 
-	DWORD CProviderID = 0xFFFF;
+	ProviderIdentifier CProviderID = L"No_Provider";
 
 	FSDescriptor_iter fi;
 	FSMenu            menu;
@@ -823,11 +831,24 @@ std::vector<FSMenu> CPlugins::GetFSMenu()
 
 	while ( fi != FSDescriptors.end() )
 	{
-		DWORD ThisProvID = MAKEPROVID( PLUGINID( fi->PUID ), PROVIDERID( fi->PUID ) );
+		ProviderIdentifier PVID = L"Unset_Provider";
 
-		if ( ThisProvID != CProviderID )
+		ProviderFSMap::iterator iPFS;
+
+		for ( iPFS = ProviderFS.begin(); iPFS != ProviderFS.end(); iPFS++ )
 		{
-			if ( CProviderID != 0xFFFF )
+			for ( std::vector<FSIdentifier>::iterator iFS = iPFS->second.begin(); iFS != iPFS->second.end(); iFS++ )
+			{
+				if ( fi->FSID == *iFS )
+				{
+					PVID = iPFS->first;
+				}
+			}
+		}
+
+		if ( PVID != CProviderID )
+		{
+			if ( CProviderID != L"No_Provider" )
 			{
 				menus.push_back( menu );
 			}
@@ -836,19 +857,19 @@ std::vector<FSMenu> CPlugins::GetFSMenu()
 
 			for ( NUTSProvider_iter pi = Providers.begin(); pi != Providers.end(); pi++ )
 			{
-				if ( PROVID( pi->ProviderID ) == PROVID( fi->PUID ) )
+				if ( pi->ProviderID == PVID )
 				{
 					menu.Provider = pi->FriendlyName;
 				}
 			}
 
-			CProviderID = ThisProvID;
+			CProviderID = PVID;
 		}
 
 		FormatMenu format;
 
 		format.FS = fi->FriendlyName;
-		format.ID = fi->PUID;
+		format.ID = fi->FSID;
 
 		menu.FS.push_back( format );
 
@@ -862,7 +883,7 @@ std::vector<FSMenu> CPlugins::GetFSMenu()
 	return menus;
 }
 
-void *CPlugins::LoadTranslator( DWORD TUID )
+void *CPlugins::LoadTranslator( TXIdentifier TUID )
 {
 	void *pXlator = nullptr;
 	
@@ -873,7 +894,7 @@ void *CPlugins::LoadTranslator( DWORD TUID )
 		PluginCommand cmd;
 
 		cmd.CommandID = PC_CreateTranslator;
-		cmd.InParams[ 0 ].Value = TUID;
+		cmd.InParams[ 0 ].pPtr = (void *) TUID.c_str();
 
 		if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 		{
@@ -894,9 +915,9 @@ RootCommandSet CPlugins::GetRootCommands()
 	return RootCommands;
 }
 
-int CPlugins::PerformRootCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex )
+int CPlugins::PerformRootCommand( HWND hWnd, PluginIdentifier PUID, DWORD CmdIndex )
 {
-	NUTSPlugin *plugin = GetPlugin( MAKEFSID( PUID, 0, 0 ) );
+	NUTSPlugin *plugin = GetPlugin( PUID );
 
 	PluginCommand cmd;
 
@@ -970,68 +991,51 @@ void CPlugins::LoadFonts( NUTSPlugin *plugin )
 {
 	PluginCommand cmd;
 
-	cmd.CommandID = PC_ReportEncodingCount;
+	cmd.CommandID = PC_ReportFonts;
 
 	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 	{
-		DWORD EncodingCount = cmd.OutParams[ 0 ].Value;
+		DWORD NumFonts = cmd.OutParams[ 0 ].Value;
 
-		cmd.CommandID = PC_SetEncodingBase;
-		cmd.InParams[ 0 ].Value = EncodingID;
-
-		if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+		for ( DWORD i = 0; i < NumFonts; i++ )
 		{
-			cmd.CommandID = PC_ReportFonts;
+			cmd.CommandID = PC_GetFontPointer;
+			cmd.InParams[ 0 ].Value = i;
 
 			if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 			{
-				DWORD NumFonts = cmd.OutParams[ 0 ].Value;
+				BYTE *pFont             = (BYTE *)  cmd.OutParams[ 0 ].pPtr;
+				std::wstring   FontName = (WCHAR *) cmd.OutParams[ 1 ].pPtr;
+				FontIdentifier FontID   = (WCHAR *) cmd.OutParams[ 2 ].pPtr;
 
-				for ( DWORD i = 0; i < NumFonts; i++ )
+				FontList[ FontID ]  = pFont;
+				FontNames[ FontID ] = FontName;
+
+				for ( BYTE e=3; e<8; e++ )
 				{
-					cmd.CommandID = PC_GetFontPointer;
-					cmd.InParams[ 0 ].Value = i;
-					cmd.InParams[ 1 ].Value = FontID;
-
-					if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+					if ( cmd.OutParams[ e ].pPtr != nullptr )
 					{
-						BYTE *pFont      = (BYTE *) cmd.OutParams[ 0 ].pPtr;
-						WCHAR *pFontName = (WCHAR *) cmd.OutParams[ 1 ].pPtr;
+						EncodingIdentifier Encoding = EncodingIdentifier( (WCHAR *) cmd.OutParams[ e ].pPtr );
 
-						FontList[ FontID ]  = pFont;
-						FontNames[ FontID ] = pFontName;
-
-						for ( BYTE e=2; e<8; e++ )
+						if ( EncodingFontMap.find( Encoding ) == EncodingFontMap.end() )
 						{
-							DWORD Encoding = cmd.OutParams[ e ].Value;
-
-							if ( Encoding != 0U )
-							{
-								if ( EncodingFontMap.find( Encoding ) == EncodingFontMap.end() )
-								{
-									EncodingFontMap[ Encoding ] = std::vector<DWORD>();
-								}
-
-								EncodingFontMap[ Encoding ].push_back( FontID );
-
-								EncodingFontSelectors[ 0 ][ Encoding ] = 0;
-								EncodingFontSelectors[ 1 ][ Encoding ] = 0;
-
-							}
-							else
-							{
-								break;
-							}
+							EncodingFontMap[ Encoding ] = std::vector<FontIdentifer>();
 						}
 
-						FontMap[ FontID ] = PluginID;
+						EncodingFontMap[ Encoding ].push_back( FontID );
 
-						FontID++;
+						EncodingFontSelectors[ 0 ][ Encoding ] = 0;
+						EncodingFontSelectors[ 1 ][ Encoding ] = 0;
+
+					}
+					else
+					{
+						break;
 					}
 				}
-			}
 
-			EncodingID += EncodingCount;
+				FontMap[ FontID ] = plugin->PluginID;
+			}
 		}
 	}
 }
@@ -1083,8 +1087,6 @@ void CPlugins::LoadTranslators( NUTSPlugin *plugin )
 		{
 			cmd.CommandID = PC_DescribeTranslator;
 			cmd.InParams[ 0 ].Value = TX;
-			cmd.InParams[ 1 ].Value = TXID;
-			cmd.InParams[ 2 ].Value = plugin->PluginID;
 
 			if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 			{
@@ -1092,10 +1094,8 @@ void CPlugins::LoadTranslators( NUTSPlugin *plugin )
 
 				DT.FriendlyName = std::wstring( (WCHAR *) cmd.OutParams[ 0 ].pPtr);
 				DT.Flags        = cmd.OutParams[ 1 ].Value;
-				DT.TUID         = TXID;
-				DT.ProviderID   = MAKEFSID( plugin->PluginID, cmd.OutParams[ 2 ].Value, TXID );
-
-				TXID++;
+				DT.TUID         = std::wstring( (WCHAR *) cmd.OutParams[ 3 ].pPtr);
+				DT.ProviderID   = std::wstring( (WCHAR *) cmd.OutParams[ 2 ].pPtr);
 
 				Translators.push_back( DT );
 			}
@@ -1111,12 +1111,11 @@ void CPlugins::LoadRootHooks( NUTSPlugin *plugin )
 
 	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 	{
-		BYTE RHs = cmd.OutParams[ 0 ].Value;
+		BYTE RHs = (BYTE) cmd.OutParams[ 0 ].Value;
 
 		for ( BYTE RH=0; RH<RHs; RH++ )
 		{
 			cmd.InParams[ 0 ].Value = RH;
-			cmd.InParams[ 1 ].Value = PluginID;
 
 			cmd.CommandID = PC_DescribeRootHook;
 
@@ -1136,7 +1135,7 @@ void CPlugins::LoadRootCommands( NUTSPlugin *plugin )
 
 	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 	{
-		BYTE RCs = cmd.OutParams[ 0 ].Value;
+		BYTE RCs = (BYTE ) cmd.OutParams[ 0 ].Value;
 
 		for ( BYTE RC=0; RC<RCs; RC++ )
 		{
@@ -1149,7 +1148,7 @@ void CPlugins::LoadRootCommands( NUTSPlugin *plugin )
 				RootCommand c;
 
 				c.CmdIndex = RC;
-				c.PUID = PluginID;
+				c.PLID = plugin->PluginID;
 				c.Text = std::wstring( (WCHAR *) cmd.OutParams[ 0 ].pPtr );
 
 				RootCommands.push_back( c );
@@ -1158,18 +1157,18 @@ void CPlugins::LoadRootCommands( NUTSPlugin *plugin )
 	}
 }
 
-std::wstring CPlugins::GetCharacterDescription( DWORD FontID, BYTE Char )
+std::wstring CPlugins::GetCharacterDescription( FontIdentifier FontID, BYTE Char )
 {
 	std::wstring desc = L"";
 
 	if ( ( FontID != FONTID_PC437 ) &&  ( FontMap.find( FontID ) != FontMap.end() ) )
 	{
-		NUTSPlugin *plugin = GetPlugin( MAKEFSID( FontMap[ FontID ], 0, 0 ) );
+		NUTSPlugin *plugin = GetPlugin( FontMap[ FontID ] );
 
 		PluginCommand cmd;
 
 		cmd.CommandID = PC_DescribeChar;
-		cmd.InParams[ 0 ].Value = FontID;
+		cmd.InParams[ 0 ].pPtr  = (void *) FontID.c_str();
 		cmd.InParams[ 1 ].Value = Char;
 
 		if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )

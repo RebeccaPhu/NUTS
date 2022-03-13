@@ -22,6 +22,7 @@ BYTE *NUTSSignature;
 
 const FTIdentifier       FILE_MACINTOSH     = L"MacintoshFileObject";
 const EncodingIdentifier ENCODING_MACINTOSH = L"MacintoshEncoding";
+const PluginIdentifier   APPLE_PLUGINID     = L"AppleNUTSPlugin";
 
 BYTE *pChicago = nullptr;
 
@@ -96,6 +97,9 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
 		
 		LoadFonts();
+
+		cmd->OutParams[ 0 ].Value = 0x00000001;
+		cmd->OutParams[ 1 ].pPtr  = (void *) APPLE_PLUGINID.c_str();
 
 		return NUTS_PLUGIN_SUCCESS;
 

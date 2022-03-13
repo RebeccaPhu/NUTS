@@ -11,6 +11,9 @@ typedef std::wstring FTIdentifier;
 typedef std::wstring FontIdentifer;
 typedef std::wstring EncodingIdentifier;
 typedef std::wstring TXIdentifier;
+typedef std::wstring PluginIdentifier;
+typedef std::wstring ProviderIdentifier;
+
 typedef unsigned long long QWORD;
 
 typedef enum _PluginCommandID {
@@ -62,8 +65,8 @@ typedef struct _PluginCommand {
 
 typedef struct _NUTSProvider {
 	std::wstring FriendlyName;
-	DWORD        PluginID;
-	DWORD        ProviderID;
+	PluginIdentifier   PluginID;
+	ProviderIdentifier ProviderID;
 } NUTSProvider;
 
 typedef struct _FileDescriptor {
@@ -76,7 +79,7 @@ typedef struct _FileDescriptor {
 } FSDescriptor;
 
 typedef struct _DataTranslator {
-	DWORD ProviderID;
+	ProviderIdentifier ProviderID;
 	std::wstring FriendlyName;
 	TXIdentifier TUID;
 	DWORD Flags;

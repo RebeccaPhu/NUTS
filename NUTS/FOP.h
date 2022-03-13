@@ -58,6 +58,6 @@ typedef struct _FOPData
 } FOPData;
 
 typedef bool ( * FOPTranslateFunction ) ( FOPData * );
-typedef void * ( * FOPLoadFSFunction ) ( DWORD, void * );
+typedef void * ( * FOPLoadFSFunction ) ( FSIdentifier, void * );
 
 #endif

@@ -6,6 +6,8 @@
 
 #include "zip.h"
 
+const FSIdentifier FSID_ZIP = L"ZIP_File_FileSystem";
+
 ZIPCommon::ZIPCommon(void)
 {
 	ReadPtr  = 0;

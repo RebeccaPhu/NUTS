@@ -1314,7 +1314,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			if ( RootCommandMap.find( wmId ) != RootCommandMap.end() )
 			{
-				RootCommandResult r = (RootCommandResult) FSPlugins.PerformRootCommand( hMainWnd, RootCommandMap[ wmId ].PUID, RootCommandMap[ wmId ].CmdIndex );
+				RootCommandResult r = (RootCommandResult) FSPlugins.PerformRootCommand( hMainWnd, RootCommandMap[ wmId ].PLID, RootCommandMap[ wmId ].CmdIndex );
 
 				if ( r == GC_ResultRefresh )
 				{

@@ -12,27 +12,30 @@
 
 #include "SCREENTranslator.h"
 
-#define FONTID_PC437 0x00000437
+#define FONTID_PC437 L"Font_PC437"
 
 typedef int (*fnNUTSPluginFunction)(PluginCommand *);
 
 typedef struct _NUTSPlugin {
-	HMODULE Handle;
-	fnNUTSPluginFunction   CommandHandler;
-	DWORD                  PluginID;
+	HMODULE              Handle;
+	fnNUTSPluginFunction CommandHandler;
+	PluginIdentifier     PluginID;
+	DWORD                MaxAPI;
 } NUTSPlugin;
 
 typedef std::vector<NUTSProvider> NUTSProviderList;
 typedef std::vector<NUTSProvider>::iterator NUTSProvider_iter;
 typedef std::vector<FSDescriptor> FSDescriptorList;
 typedef std::vector<FSDescriptor>::iterator FSDescriptor_iter;
-typedef std::map<DWORD, BYTE *> NUTSFontList;
-typedef std::map<DWORD, BYTE *>::iterator FontList_iter;
-typedef std::map<DWORD, std::wstring> NUTSFontNames;
-typedef std::map<DWORD, std::wstring>::iterator FontName_iter;
-typedef std::map<DWORD, DWORD> PluginFontMap;
-typedef std::map<DWORD, DWORD> PluginFontMap_iter;
-typedef std::map< DWORD, std::vector< QWORD > > FSImageOffsets;
+typedef std::map<FontIdentifier, BYTE *> NUTSFontList;
+typedef std::map<FontIdentifier, BYTE *>::iterator FontList_iter;
+typedef std::map<FontIdentifier, std::wstring> NUTSFontNames;
+typedef std::map<FontIdentifier, std::wstring>::iterator FontName_iter;
+typedef std::map<FontIdentifier, PluginIdentifier> PluginFontMap;
+typedef std::map<FontIdentifier, PluginIdentifier> PluginFontMap_iter;
+typedef std::map< FSIdentifier, std::vector< QWORD > > FSImageOffsets;
+typedef std::map<ProviderIdentifier, std::vector<FSIdentifier>> ProviderFSMap;
+typedef std::map<PluginIdentifier, std::vector<FSIdentifier>> PluginFSMap;
 
 typedef std::vector<NUTSPlugin> PluginList;
 typedef std::vector<NUTSPlugin>::iterator Plugin_iter;
@@ -55,37 +58,37 @@ public:
 	void LoadPlugins();
 	FSHints FindFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *FindAndLoadFS( DataSource *pSource, NativeFile *pFile = nullptr );
-	FileSystem *LoadFS( DWORD FSID, DataSource *pSource );
-	std::wstring ProviderName( DWORD PRID );
-	std::wstring FSName( DWORD FSID );
+	FileSystem *LoadFS( FSIdentifier FSID, DataSource *pSource );
+	std::wstring ProviderName( ProviderIdentifier PRID );
+	std::wstring FSName( FSIdentifier FSID );
 	std::vector<FSMenu> GetFSMenu();
-	void *LoadTranslator( DWORD TUID );
+	void *LoadTranslator( TXIdentifier TUID );
 
 	NUTSProviderList  GetProviders( void );
-	FSDescriptorList  GetFilesystems( DWORD ProviderID );
-	FormatList        GetFormats( DWORD PUID );
-	TranslatorList    GetTranslators( DWORD PUID, DWORD Type );
+	FSDescriptorList  GetFilesystems( ProviderIdentifier ProviderID );
+	FormatList        GetFormats( ProviderIdentifier ProviderID );
+	TranslatorList    GetTranslators( ProviderIdentifier PVID, DWORD Type );
 	RootHookList      GetRootHooks();
 	RootCommandSet    GetRootCommands();
 	FOPDirectoryTypes GetDirectoryTypes();
 
-	void  *LoadFont( DWORD ReqFontID );
-	DWORD FindFont( DWORD Encoding, BYTE Index );
-	void  NextFont( DWORD Encoding, BYTE Index );
-	WCHAR *FontName( DWORD ReqFontID );
+	void  *LoadFont( FontIdentifier ReqFontID );
+	FontIdentifier FindFont( EncodingIdentifier Encoding, BYTE Index );
+	void  NextFont( EncodingIdentifier Encoding, BYTE Index );
+	FontIdentifier FontName( FontIdentifer ReqFontID );
 
-	std::vector<DWORD> FontListForEncoding( DWORD Encoding );
+	std::vector<FontIdentifier> FontListForEncoding( EncodingIdentifier Encoding );
 	NUTSFontNames      FullFontList( void );
 
-	int PerformRootCommand( HWND hWnd, DWORD PUID, DWORD CmdIndex );
+	int PerformRootCommand( HWND hWnd, PluginIdentifier PUID, DWORD CmdIndex );
 
 	bool ProcessFOP( FOPData *_FOPData );
 
-	std::wstring GetCharacterDescription( DWORD FontID, BYTE Char );
+	std::wstring GetCharacterDescription( FontIdentifier FontID, BYTE Char );
 
 	void UnloadPlugins();
 
-	NUTSPlugin *GetPlugin( DWORD FSID );
+	NUTSPlugin *GetPlugin( FSIdentifier FSID );
 
 	std::wstring GetSplash( )
 	{
@@ -104,6 +107,8 @@ public:
 private:
 	NUTSProviderList  Providers;
 	FSDescriptorList  FSDescriptors;
+	ProviderFSMap     ProviderFS;
+	PluginFSMap       PluginFS;
 	NUTSFontList      FontList;
 	NUTSFontNames     FontNames;
 	PluginFontMap     FontMap;
@@ -114,12 +119,12 @@ private:
 	RootCommandSet    RootCommands;
 	FOPDirectoryTypes DirectoryTypes;
 
-	std::map<DWORD, std::vector<DWORD>> EncodingFontMap;
-	std::map<DWORD, BYTE> EncodingFontSelectors[2];
+	std::map<EncodingIdentifier, std::vector<FontIdentifier>> EncodingFontMap;
+	std::map<EncodingIdentifier, BYTE> EncodingFontSelectors[2];
 
 private:
 	void LoadPlugin( WCHAR *plugin );
-	void GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid );
+	void GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid, ProviderIdentifier PVID, PluginIdentifier PLID );
 	void LoadImageExtensions( NUTSPlugin *plugin );
 	void LoadFonts( NUTSPlugin *plugin );
 	void LoadIcons( NUTSPlugin *plugin );
@@ -130,16 +135,11 @@ private:
 
 	void *pPC437Font;
 
-	DWORD IconID;
-	DWORD PluginID;
-	DWORD EncodingID;
-	DWORD FontID;
-	DWORD FSFTID;
-	DWORD TXID;
-
 	CRITICAL_SECTION SplashLock;
 
 	std::wstring PluginSplash;
+
+	DWORD IconID;
 
 	void SetSplash( std::wstring t )
 	{

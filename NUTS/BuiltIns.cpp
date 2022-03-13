@@ -12,6 +12,10 @@
 
 #include "Defs.h"
 
+const ProviderIdentifier ISO_PROVIDER   = L"ISO_CDROM_Provider";
+const ProviderIdentifier ZIP_PROVIDER   = L"ZIP_FILE_Provider";
+const PluginIdentifier   BUILTIN_PLUGIN = L"NUTS_BuiltIn";
+
 BuiltIns::BuiltIns(void)
 {
 }
@@ -48,7 +52,7 @@ BuiltInTranslators BuiltIns::GetBuiltInTranslators( void )
 	return tx;
 }
 
-void *BuiltIns::LoadTranslator( DWORD TUID )
+void *BuiltIns::LoadTranslator( TXIdentifier TUID )
 {
 	void *pXlator = nullptr;
 
@@ -77,23 +81,23 @@ BuiltInProviderList BuiltIns::GetBuiltInProviders()
 	NUTSProvider ZIPProvider;
 
 	ZIPProvider.FriendlyName = L"PKWare";
-	ZIPProvider.PluginID     = PUID_ZIP;
-	ZIPProvider.ProviderID   = PUID_ZIP;
+	ZIPProvider.PluginID     = BUILTIN_PLUGIN;
+	ZIPProvider.ProviderID   = ZIP_PROVIDER;
 
 	pvl.push_back( ZIPProvider );
 
 	NUTSProvider ISOProvider;
 
 	ISOProvider.FriendlyName = L"CD/DVD";
-	ISOProvider.PluginID     = PUID_ISO;
-	ISOProvider.ProviderID   = PUID_ISO;
+	ISOProvider.PluginID     = BUILTIN_PLUGIN;
+	ISOProvider.ProviderID   = ISO_PROVIDER;
 
 	pvl.push_back( ISOProvider );
 
 	return pvl;
 }
 
-FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
+FormatList BuiltIns::GetBuiltinFormatList( ProviderIdentifier PUID )
 {
 	FormatList Formats;
 
@@ -113,12 +117,12 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 		FSF_Uses_Extensions |
 		FSF_Accepts_Sidecars;
 
-	if ( PUID == PUID_ZIP )
+	if ( PUID == ZIP_PROVIDER )
 	{
 		FormatDesc Format;
 
 		Format.Flags  = ZIPFlags;
-		Format.FUID   = FSID_ZIP;
+		Format.FSID   = FSID_ZIP;
 		Format.Format = L"ZIP File";
 
 		Format.PreferredExtension = (BYTE *) "ZIP";
@@ -128,12 +132,12 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 		return Formats;
 	}
 
-	if ( PUID == PUID_ISO )
+	if ( PUID == ISO_PROVIDER )
 	{
 		FormatDesc Format;
 
 		Format.Flags  = ISOFlags;
-		Format.FUID   = FSID_ISOHS;
+		Format.FSID   = FSID_ISOHS;
 		Format.Format = L"High Sierra";
 
 		Format.PreferredExtension = (BYTE *) "ISO";
@@ -141,7 +145,7 @@ FormatList BuiltIns::GetBuiltinFormatList( DWORD PUID )
 		Formats.push_back( Format );
 
 		Format.Flags  = ISOFlags;
-		Format.FUID   = FSID_ISO9660;
+		Format.FSID   = FSID_ISO9660;
 		Format.Format = L"ISO 9660";
 
 		Format.PreferredExtension = (BYTE *) "ISO";
@@ -261,9 +265,9 @@ FileSystem *BuiltIns::LoadFS( FSIdentifier FSID, DataSource *pSource )
 	return pFS;
 }
 
-std::wstring BuiltIns::ProviderName( DWORD PRID )
+std::wstring BuiltIns::ProviderName( ProviderIdentifier PRID )
 {
-	if( PRID == FSID_ZIP )
+	if( PRID == ZIP_PROVIDER )
 	{
 		return L"PKWare";
 	}
@@ -275,7 +279,7 @@ std::wstring BuiltIns::ProviderName( DWORD PRID )
 	{
 		return L"NUTS";
 	}
-	else if ( PRID == PUID_ISO )
+	else if ( PRID == ISO_PROVIDER )
 	{
 		return L"CD/DVD";
 	}

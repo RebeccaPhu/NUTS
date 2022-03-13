@@ -10,7 +10,7 @@
 
 typedef struct _BuiltInTranslator
 {
-	DWORD TUID;
+	TXIdentifier TUID;
 	DWORD TXFlags;
 	std::wstring FriendlyName;
 } BuiltInTranslator;
@@ -29,18 +29,18 @@ public:
 
 	BuiltInTranslators GetBuiltInTranslators( void );
 
-	void *LoadTranslator( DWORD TUID );
+	void *LoadTranslator( TXIdentifier TUID );
 
 	BuiltInProviderList GetBuiltInProviders();
-	FormatList          GetBuiltinFormatList( DWORD PUID );
+	FormatList          GetBuiltinFormatList( ProviderIdentifier PUID );
 	BuiltInMenuList     GetBuiltInMenuList();
 
 	FSHints GetOffers( DataSource *pSource, NativeFile *pFile );
 
-	FileSystem *LoadFS( DWORD FSID, DataSource *pSource );
+	FileSystem *LoadFS( FSIdentifier FSID, DataSource *pSource );
 
-	std::wstring ProviderName( DWORD PRID );
-	std::wstring FSName( DWORD FSID );
+	std::wstring ProviderName( ProviderIdentifier PRID );
+	std::wstring FSName( FSIdentifier FSID );
 };
 
 extern BuiltIns NUTSBuiltIns;
