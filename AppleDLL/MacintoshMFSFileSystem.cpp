@@ -90,7 +90,7 @@ void MacintoshMFSFileSystem::ReadVolumeRecord()
 
 int MacintoshMFSFileSystem::Init(void)
 {
-	if ( MYFSID == FSID_MFS_HD )
+	if ( FSID == FSID_MFS_HD )
 	{
 		TopicIcon = FT_HardImage;
 	}
@@ -137,11 +137,11 @@ FSHint MacintoshMFSFileSystem::Offer( BYTE *Extension )
 
 		DWORD Size = BlockSize * NumBlocks;
 
-		if ( ( Size < 500000U ) && ( MYFSID == FSID_MFS ) )
+		if ( ( Size < 500000U ) && ( FSID == FSID_MFS ) )
 		{
 			hint.Confidence = 30;
 		}
-		else if ( ( Size > 300000U ) && ( MYFSID == FSID_MFS_HD ) )
+		else if ( ( Size > 300000U ) && ( FSID == FSID_MFS_HD ) )
 		{
 			hint.Confidence = 30;
 		}
@@ -325,8 +325,6 @@ int MacintoshMFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd 
 {
 	ResetEvent( hCancelFree );
 
-	BYTE Sector[ 1024 ];
-
 	static FSSpace Map;
 
 	DWORD NumBlocks = VolRecord.AllocBlocks;
@@ -499,6 +497,8 @@ int MacintoshMFSFileSystem::WriteVolumeRecord()
 	{
 		return -1;
 	}
+
+	return 0;
 }
 
 FSToolList MacintoshMFSFileSystem::GetToolsList( void )
@@ -1601,7 +1601,7 @@ int MacintoshMFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	static WCHAR * const RootMsg  = L"Creating Root Directory";
 	static WCHAR * const DoneMsg  = L"Complete";
 
-	if ( MYFSID == FSID_MFS )
+	if ( FSID == FSID_MFS )
 	{
 		SetShape();
 	}
@@ -1614,7 +1614,7 @@ int MacintoshMFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	{
 		ZeroMemory( SectorBuf, 512 );
 
-		if ( MYFSID == FSID_MFS )
+		if ( FSID == FSID_MFS )
 		{
 			WORD Secs = 0;
 
@@ -1636,7 +1636,7 @@ int MacintoshMFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 			}
 		}
 
-		if ( MYFSID == FSID_MFS_HD )
+		if ( FSID == FSID_MFS_HD )
 		{
 			DWORD Secs = pSource->PhysicalDiskSize / (QWORD) 0x200;
 
@@ -1664,7 +1664,7 @@ int MacintoshMFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		// We need to calculate some stuff now.
 		DWORD Secs = 80 * 10;
 
-		if ( MYFSID == FSID_MFS_HD )
+		if ( FSID == FSID_MFS_HD )
 		{
 			Secs = pSource->PhysicalDiskSize / (QWORD) 0x200;
 		}

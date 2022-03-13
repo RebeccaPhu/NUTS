@@ -38,16 +38,17 @@ BYTE *pAcornFont;
 BYTE *pTeletextFont;
 BYTE *pRiscOSFont;
 
-DWORD ENCODING_ACORN;
-DWORD ENCODING_RISCOS;
-DWORD FT_ACORN;
-DWORD FT_SPRITE;
-DWORD FT_ACORNX;
-DWORD GRAPHIC_ACORN;
-DWORD GRAPHIC_SPRITE;
-DWORD AUDIO_ARMADEUS;
-DWORD BBCBASIC;
-DWORD MyPLID;
+const EncodingIdentifier ENCODING_ACORN  = L"BBCMicro_Encoding";
+const EncodingIdentifier ENCODING_RISCOS = L"RiscOS_Encoding";
+
+const FTIdentifier FT_ACORN  = L"BBCMicro_Std_File";
+const FTIdentifier FT_SPRITE = L"RiscOS_Sprite_Object";
+const FTIdentifier FT_ACORNX = L"Acorn_Extended_File";
+
+const TXIdentifier GRAPHIC_ACORN  = L"BBCMicro_Screen";
+const TXIdentifier GRAPHIC_SPRITE = L"RiscOS_Sprite";
+const TXIdentifier AUDIO_ARMADEUS = L"ARMadeus_Sample";
+const TXIdentifier BBCBASIC       = L"BBC_BASIC";
 
 HMODULE hInstance;
 
@@ -240,90 +241,72 @@ RISCOSIcon AcornIcons[] = {
 
 #define NumIcons ( sizeof(AcornIcons) / sizeof(RISCOSIcon) )
 
-ACORNDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
+void *CreateFS( FSIdentifier FSID, DataSource *pSource )
 {
 	FileSystem *pFS = nullptr;
 
-	switch ( PUID )
+	if ( FSID == FSID_DFS_DSD )
 	{
-	case FSID_DFS_40:
-	case FSID_DFS_80:
-		pFS = new AcornDFSFileSystem( pSource );
-		break;
-
-	case FSID_DFS_DSD:
 		pFS = new AcornDFSDSD( pSource );
-		break;
-
-	case FSID_ADFS_S:
-	case FSID_ADFS_M:
-	case FSID_ADFS_H:
-	case FSID_ADFS_H8:
-	case FSID_ADFS_HO:
-	case FSID_ADFS_D:
-	case FSID_ADFS_L2:
-		{
-			if ( PUID == FSID_ADFS_HO )
-			{
-				ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
-
-				pFS = pADFS;
-			}
-			else if ( PUID == FSID_ADFS_H8 )
-			{
-				IDE8Source *pIDE8 = new IDE8Source( pSource );
-
-				ADFSFileSystem *pADFS = new ADFSFileSystem( pIDE8 );
-
-				pFS = pADFS;
-
-				DS_RELEASE( pIDE8 );
-			}
-			else
-			{
-				ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
-
-				pFS = pADFS;
-			}
-		}
-
-		break;
-
-	case FSID_ADFS_E:
-	case FSID_ADFS_F:
-	case FSID_ADFS_G:
-	case FSID_ADFS_EP:
-	case FSID_ADFS_FP:
-	case FSID_ADFS_HN:
-	case FSID_ADFS_HP:
-		{
-			pFS = new ADFSEFileSystem( pSource );
-		}
-		break;
-
-	case FSID_ADFS_L:
+	}
+	else if ( FSID.substr( 0, 9 ) == L"Acorn_DFS" )
+	{
+		pFS = new AcornDFSFileSystem( pSource );
+	}
+	else if (
+		( FSID == FSID_ADFS_S ) || ( FSID == FSID_ADFS_M ) || ( FSID == FSID_ADFS_H ) || ( FSID == FSID_ADFS_H8 ) || 
+		( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_L2 )
+		)
+	{
+		if ( FSID == FSID_ADFS_HO )
 		{
 			ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
 
 			pFS = pADFS;
 		}
-		break;
-
-	case FSID_SPRITE:
+		else if ( FSID == FSID_ADFS_H8 )
 		{
-			SpriteFile *pSprite = new SpriteFile( pSource );
+			IDE8Source *pIDE8 = new IDE8Source( pSource );
 
-			pFS = pSprite;
+			ADFSFileSystem *pADFS = new ADFSFileSystem( pIDE8 );
+
+			pFS = pADFS;
+
+			DS_RELEASE( pIDE8 );
 		}
-		break;
-	};
+		else
+		{
+			ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
 
-	pFS->FSID = PUID;
+			pFS = pADFS;
+		}
+	}
+	else if (
+		( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_EP ) ||
+		( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP )
+		)
+	{
+		pFS = new ADFSEFileSystem( pSource );
+	}
+	else if ( FSID == FSID_ADFS_L )
+	{
+		ADFSFileSystem *pADFS = new ADFSFileSystem( pSource );
+
+		pFS = pADFS;
+	}
+	else if ( FSID == FSID_SPRITE )
+	{
+		SpriteFile *pSprite = new SpriteFile( pSource );
+
+		pFS = pSprite;
+	}
+
+	pFS->FSID = FSID;
 
 	return pFS;
 }
 
-void *CreateTranslator( DWORD TUID )
+void *CreateTranslator( TXIdentifier TUID )
 {
 	void *pXlator = nullptr;
 
@@ -473,7 +456,7 @@ bool TranslateISOContent( FOPData *fop )
 
 			if ( File->RISCTYPE == 0xFF9 )
 			{
-				fop->ReturnData.ProposedFS = MAKEFSID( MyPLID, 0x01, 0x0A );
+				fop->ReturnData.ProposedFS = FSID_SPRITE;
 			}
 
 			return true;
@@ -926,7 +909,6 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_SetPluginConnectors:
 		pCollector   = (DataSourceCollector *) cmd->InParams[ 0 ].pPtr;
 		pGlobalError = (NUTSError *)           cmd->InParams[ 1 ].pPtr;
-		MyPLID       =                         cmd->InParams[ 2 ].Value;
 		
 		LoadFonts();
 
@@ -1020,12 +1002,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
 
-			DWORD ProviderID = cmd->InParams[ 0 ].Value;
-			DWORD FSID       = cmd->InParams[ 1 ].Value;
-
-			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
-
-			void *pFS = (void *) CreateFS( FullFSID, pSource );
+			void *pFS = (void *) CreateFS( FSIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ), pSource );
 
 			cmd->OutParams[ 0 ].pPtr = pFS;
 
@@ -1042,12 +1019,6 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetEncodingBase:
-		ENCODING_ACORN  = cmd->InParams[ 0 ].Value + 0;
-		ENCODING_RISCOS = cmd->InParams[ 0 ].Value + 1;
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportFonts:
 		cmd->OutParams[ 0 ].Value = 3;
 
@@ -1058,7 +1029,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pAcornFont;
 			cmd->OutParams[ 1 ].pPtr  = (void *) pBBCMicroFontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_ACORN;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_ACORN.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			FontID1 = cmd->InParams[ 1 ].Value;
@@ -1069,7 +1040,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pRiscOSFont;
 			cmd->OutParams[ 1 ].pPtr  = (void *) pRiscOSFontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_RISCOS;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_RISCOS.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			FontID2 = cmd->InParams[ 1 ].Value;
@@ -1081,8 +1052,8 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pTeletextFont;
 			cmd->OutParams[ 1 ].pPtr  = (void *) pTTXFontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_ACORN;
-			cmd->OutParams[ 3 ].Value = ENCODING_RISCOS;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_ACORN.c_str();
+			cmd->OutParams[ 3 ].pPtr  = (void *) ENCODING_RISCOS.c_str();
 			cmd->OutParams[ 4 ].Value = NULL;
 
 			FontID3 = cmd->InParams[ 1 ].Value;
@@ -1122,17 +1093,6 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetFSFileTypeBase:
-		{
-			DWORD Base = cmd->InParams[ 0 ].Value;
-
-			FT_ACORN  = Base + 0;
-			FT_SPRITE = Base + 1;
-			FT_ACORNX = Base + 2;
-		}
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportTranslators:
 		cmd->OutParams[ 0 ].Value = TRANSLATOR_COUNT;
 
@@ -1142,22 +1102,15 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			BYTE tx = (BYTE) cmd->InParams[ 0 ].Value;
 
-			Translators[ tx ].TUID = cmd->InParams[ 1 ].Value;
-
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
 			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
-
-			BBCBASIC       = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 0 ].TUID );
-			GRAPHIC_ACORN  = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 1 ].TUID );
-			GRAPHIC_SPRITE = MAKEFSID( cmd->InParams[ 2 ].Value, 1, Translators[ 2 ].TUID );
-			AUDIO_ARMADEUS = MAKEFSID( cmd->InParams[ 2 ].Value, 1, Translators[ 3 ].TUID );
 		}
 
 		return NUTS_PLUGIN_SUCCESS;
 
 	case PC_CreateTranslator:
-		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
+		cmd->OutParams[ 0 ].pPtr = CreateTranslator( TXIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ) );
 
 		return NUTS_PLUGIN_SUCCESS;
 
@@ -1196,36 +1149,44 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		return NUTS_PLUGIN_SUCCESS;
 
 	case PC_ReportPluginCreditStats:
-		if ( PROVIDERID( cmd->InParams[ 0 ].Value ) == 0 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_BBCMICRO ) );
-			cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
-			cmd->OutParams[ 2 ].Value = 0;
-			cmd->OutParams[ 3 ].Value = 0;
+			std::wstring Provider = std::wstring( (WCHAR *) cmd->InParams[ 0 ].pPtr );
 
-			return NUTS_PLUGIN_SUCCESS;
-		}
+			if ( Provider == L"BBCMicro" )
+			{
+				cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_BBCMICRO ) );
+				cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+				cmd->OutParams[ 2 ].Value = 0;
+				cmd->OutParams[ 3 ].Value = 0;
 
-		if ( PROVIDERID( cmd->InParams[ 0 ].Value ) == 1 )
-		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_RISCOS ) );
-			cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
-			cmd->OutParams[ 2 ].Value = 15;
-			cmd->OutParams[ 3 ].Value = 1;
+				return NUTS_PLUGIN_SUCCESS;
+			}
 
-			return NUTS_PLUGIN_SUCCESS;
+			if ( Provider == L"RiscOS" )
+			{
+				cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_RISCOS ) );
+				cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
+				cmd->OutParams[ 2 ].Value = 15;
+				cmd->OutParams[ 3 ].Value = 1;
+
+				return NUTS_PLUGIN_SUCCESS;
+			}
 		}
 
 		break;
 
 	case PC_GetPluginCredits:
-		if ( PROVIDERID( cmd->InParams[ 0 ].Value ) ==  1 )
 		{
-			static WCHAR *pGerald = L"Gerald Holdsworth: RiscOS Sprite and ADFS New Map/Big Directory descriptions. See http://www.geraldholdsworth.co.uk";
+			std::wstring Provider = std::wstring( (WCHAR *) cmd->InParams[ 0 ].pPtr );
 
-			cmd->OutParams[ 0 ].pPtr = (void *) pGerald;
+			if ( Provider == L"BBCMicro" )
+			{
+				static WCHAR *pGerald = L"Gerald Holdsworth: RiscOS Sprite and ADFS New Map/Big Directory descriptions. See http://www.geraldholdsworth.co.uk";
 
-			return NUTS_PLUGIN_SUCCESS;
+				cmd->OutParams[ 0 ].pPtr = (void *) pGerald;
+
+				return NUTS_PLUGIN_SUCCESS;
+			}
 		}
 		break;
 

@@ -30,7 +30,6 @@ public:
 		Drive.Icon            = FT_DiskImage;
 		Drive.Type            = FT_MiscImage;
 		Drive.Length          = 0;
-		Drive.XlatorID        = 0;
 		Drive.HasResolvedIcon = false;
 
 		Drive.Filename = (BYTE *) "Drive 0";
@@ -142,7 +141,7 @@ public:
 		return title;
 	}
 
-	DWORD GetEncoding(void )
+	EncodingIdentifier GetEncoding(void )
 	{
 		return ENCODING_ACORN;
 	}

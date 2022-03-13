@@ -20,9 +20,8 @@ DataSourceCollector *pCollector;
 
 BYTE *NUTSSignature;
 
-DWORD FILE_MACINTOSH;
-DWORD ENCODING_MACINTOSH;
-DWORD FT_AMSTRAD_TAPE;
+const FTIdentifier       FILE_MACINTOSH     = L"MacintoshFileObject";
+const EncodingIdentifier ENCODING_MACINTOSH = L"MacintoshEncoding";
 
 BYTE *pChicago = nullptr;
 
@@ -54,17 +53,13 @@ NUTSProvider ProviderAmstrad = { L"Apple", 0, 0 };
 
 WCHAR *pChicagoName = L"Chicago";
 
-APPLEDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
+void *CreateFS( FSIdentifier FSID, DataSource *pSource )
 {
 	void *pFS = NULL;
 
-	switch ( PUID )
+	if ( ( FSID == FSID_MFS ) || ( FSID == FSID_MFS_HD ) )
 	{
-	case FSID_MFS:
-	case FSID_MFS_HD:
 		pFS = (void *) new MacintoshMFSFileSystem( pSource );
-
-		break;
 	}
 
 	return pFS;
@@ -152,12 +147,7 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
 
-			DWORD ProviderID = cmd->InParams[ 0 ].Value;
-			DWORD FSID       = cmd->InParams[ 1 ].Value;
-
-			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
-
-			void *pFS = (void *) CreateFS( FullFSID, pSource );
+			void *pFS = (void *) CreateFS( FSIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ), pSource );
 
 			cmd->OutParams[ 0 ].pPtr = pFS;
 
@@ -174,11 +164,6 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetEncodingBase:
-		ENCODING_MACINTOSH = cmd->InParams[ 0 ].Value + 0;
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportFonts:
 		cmd->OutParams[ 0 ].Value = 1;
 
@@ -189,7 +174,7 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pChicago;
 			cmd->OutParams[ 1 ].pPtr  = (void *) pChicagoName;
-			cmd->OutParams[ 2 ].Value = ENCODING_MACINTOSH;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_MACINTOSH.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			return NUTS_PLUGIN_SUCCESS;
@@ -199,15 +184,6 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 	case PC_ReportFSFileTypeCount:
 		cmd->OutParams[ 0 ].Value = 2;
-
-		return NUTS_PLUGIN_SUCCESS;
-
-	case PC_SetFSFileTypeBase:
-		{
-			DWORD Base = cmd->InParams[ 0 ].Value;
-
-			FILE_MACINTOSH   = Base + 0;
-		}
 
 		return NUTS_PLUGIN_SUCCESS;
 

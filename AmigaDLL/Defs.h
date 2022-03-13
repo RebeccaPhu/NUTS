@@ -1,10 +1,12 @@
 #pragma once
 
-#define FSID_AMIGAO    0x00000000
-#define FSID_AMIGAF    0x00000001
-#define FSID_AMIGADMS  0x00000002
+#include "../NUTS/PluginDescriptor.h"
 
-extern DWORD FILE_AMIGA;
-extern DWORD ENCODING_AMIGA;
+#define FSID_AMIGAO    L"Amiga_OFS"
+#define FSID_AMIGAF    L"Amiga_FFS"
+#define FSID_AMIGADMS  L"Amiga_DiskMasher"
 
-extern DWORD TUID_ILBM;
+extern const FTIdentifier FILE_AMIGA;
+extern const EncodingIdentifier ENCODING_AMIGA;
+
+extern const TXIdentifier TUID_ILBM;

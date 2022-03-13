@@ -5,17 +5,22 @@
 
 #include "BYTEString.h"
 
-#define ENCODING_ASCII 0x000A5C11
-#define FT_WINDOWS     0x80000000
-#define FT_ROOT        0x00000000
-#define FT_UNSET       0xFFFFFFFF
-#define FT_ZIP         0xC0000000
-#define FT_ISO         0xD0000000
-#define PUID_ZIP       0xF000021D
-#define FSID_ZIP       0xF000021D
-#define PUID_ISO       0xF0000150
-#define FSID_ISO9660   0xF0000150
-#define FSID_ISOHS     0xF0000151
+#define ENCODING_ASCII L"ASCII_Encoding"
+#define FT_NONE        L"NOT_USED_OBJECT"
+#define FT_WINDOWS     L"WindowsFiletype"
+#define FT_ROOT        L"RootObject"
+#define FT_UNSET       L"UNSET_FILE_OBJECT"
+#define FT_ZIP         L"ZIPFileContent"
+#define FT_ISO         L"ISOFileContent"
+#define FSID_NONE      L"Undefined_FileSystem"
+#define FSID_ISO9660   L"ISO9660"
+#define FSID_ISOHS     L"HighSierra"
+
+typedef std::wstring FSIdentifier;
+typedef std::wstring FTIdentifier;
+typedef std::wstring FontIdentifer;
+typedef std::wstring EncodingIdentifier;
+typedef std::wstring TXIdentifier;
 
 typedef unsigned long long QWORD;
 
@@ -58,13 +63,13 @@ typedef struct _NativeFile {
 		Length          = 0;
 		Type            = FT_Arbitrary;
 		Icon            = FT_Arbitrary;
-		XlatorID        = NULL;
+		XlatorID        = ENCODING_ASCII;
 		HasResolvedIcon = false;
 		ExtraForks      = 0;
 		pAuxData        = nullptr;
 		lAuxData        = 0;
-		FSFileType      = 0;
-		FSFileTypeX     = 0;
+		FSFileType      = FT_NONE;
+		FSFileTypeX     = FT_NONE;
 	}
 	DWORD fileID;          // File index into the pDirectory->Files vector
 	BYTEString  Filename;  // Filename, in EncodingID encoding
@@ -74,10 +79,10 @@ typedef struct _NativeFile {
 	DWORD Attributes[32];  // Arbitrary set of FS-specific attributes
 	FileType Type;         // Type of file in terms of content (see below)
 	DWORD Icon;            // Icon number to display (can be FT)
-	DWORD EncodingID;      // Text encoding of filename/extension
-	DWORD FSFileType;      // Type of file in terms of filesystem, e.g. "This is a C64 file".
-	DWORD FSFileTypeX;     // Type of file in terms of filesystem containing it, e.g. "This is a CDROM ISO file".
-	DWORD XlatorID;        // ID of a translator plugin that can deal with this file
+	EncodingIdentifier EncodingID;      // Text encoding of filename/extension
+	FTIdentifier       FSFileType;      // Type of file in terms of filesystem, e.g. "This is a C64 file".
+	FTIdentifier       FSFileTypeX;     // Type of file in terms of filesystem containing it, e.g. "This is a CDROM ISO file".
+	TXIdentifier       XlatorID;        // ID of a translator plugin that can deal with this file
 	bool  HasResolvedIcon; // Has a icon resolved from the file system itself (Dynamic icon)
 	BYTE  ExtraForks;      // Number of forks (additional to the data fork) used by this file
 	BYTE  *pAuxData;       // Pointer to auxilliary directory data
@@ -136,7 +141,7 @@ typedef struct _FSMenu {
 } FSMenu;
 
 typedef struct _FSHint {
-	DWORD FSID;
+	FSIdentifier FSID;
 	WORD  Confidence;
 } FSHint;
 
@@ -341,7 +346,7 @@ typedef struct _TXTTranslateOptions {
 	BYTE **pTextBuffer;
 	DWORD  TextBodyLength;
 	std::vector<DWORD> LinePointers;
-	DWORD EncodingID;
+	EncodingIdentifier EncodingID;
 	HWND  ProgressWnd;
 	HANDLE hStop;
 	WORD  CharacterWidth;
@@ -544,9 +549,9 @@ typedef struct _TapeIndex {
 #define WM_ENDSPLASH        (WM_APP + 41)
 #define WM_SETDIRTYPE       (WM_APP + 42)
 
-#define TUID_TEXT           0x80000001
-#define TUID_MOD_MUSIC      0x80000002
-#define TUID_HEX            0x80000003
+#define TUID_TEXT           L"Text_Translator"
+#define TUID_MOD_MUSIC      L"MOD_Music_Translator"
+#define TUID_HEX            L"Hex_Dump_Translator"
 
 
 

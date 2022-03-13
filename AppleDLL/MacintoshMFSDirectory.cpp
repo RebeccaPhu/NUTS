@@ -103,7 +103,6 @@ int MacintoshMFSDirectory::ReadDirectory(void)
 			file.HasResolvedIcon = false;
 			file.Icon            = BLANK_ICON;
 			file.Type            = FT_Arbitrary;
-			file.XlatorID        = NULL;
 			file.Length          = BEDWORD( &Buffer[ EntryPtr + 24 ] );
 		
 			file.Filename = BYTEString( &Buffer[ EntryPtr + 51 ], Buffer[ EntryPtr + 50 ] );

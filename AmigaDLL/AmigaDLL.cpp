@@ -22,9 +22,9 @@ BYTE *pTopaz2 = nullptr;
 
 DataSourceCollector *pCollector;
 
-DWORD FILE_AMIGA;
-DWORD ENCODING_AMIGA;
-DWORD TUID_ILBM;
+const FTIdentifier       FILE_AMIGA     = L"Amiga_File_Object";
+const EncodingIdentifier ENCODING_AMIGA = L"Amiga_Encoding";
+const TXIdentifier       TUID_ILBM      = L"ILBM_Translator";
 
 BYTE *NUTSSignature;
 
@@ -57,48 +57,43 @@ std::wstring ImageExtensions[] = { L"ADF", L"DMS" };
 
 #define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
 
-void *CreateFS( DWORD PUID, DataSource *pSource )
+void *CreateFS( FSIdentifier FSID, DataSource *pSource )
 {
 	FileSystem *pFS = NULL;
 
-	switch ( PUID )
+	if ( ( FSID == FSID_AMIGAO ) || ( FSID == FSID_AMIGAF ) )
 	{
-	case FSID_AMIGAO:
-	case FSID_AMIGAF:
 		pFS = new AmigaFileSystem( pSource );
-		break;
+	}
+	else if ( FSID == FSID_AMIGADMS )
+	{
+		CTempFile nestObj;
 
-	case FSID_AMIGADMS:
+		nestObj.Keep();
+
+		BYTE sig[4];
+
+		if ( pSource->ReadRaw( 0, 4, sig ) != DS_SUCCESS )
 		{
-			CTempFile nestObj;
-
-			nestObj.Keep();
-
-			BYTE sig[4];
-
-			if ( pSource->ReadRaw( 0, 4, sig ) != DS_SUCCESS )
-			{
-				return nullptr;
-			}
-
-			if ( !rstrncmp( sig, (BYTE *) "DMS!", 4 ) )
-			{
-				return nullptr;
-			}
-
-			if ( ExtractDMS( pSource, nestObj ) == NUTS_SUCCESS )
-			{
-				NestedImageSource *pNest = new NestedImageSource( nullptr, nullptr, nestObj.Name() );
-
-				pFS = new AmigaFileSystem( pNest );
-			}
+			return nullptr;
 		}
-		break;
+
+		if ( !rstrncmp( sig, (BYTE *) "DMS!", 4 ) )
+		{
+			return nullptr;
+		}
+
+		if ( ExtractDMS( pSource, nestObj ) == NUTS_SUCCESS )
+		{
+			NestedImageSource *pNest = new NestedImageSource( nullptr, nullptr, nestObj.Name() );
+
+			pFS = new AmigaFileSystem( pNest );
+		}
 	}
 
 	if ( pFS != nullptr )
 	{
-		pFS->FSID = PUID;
+		pFS->FSID = FSID;
 	}
 
 	return (void *) pFS;
@@ -111,11 +106,6 @@ WCHAR *pTopaz2FontName = L"Topaz 2";
 
 void LoadFonts()
 {
-	HRSRC   hResource;
-	HGLOBAL hMemory;
-	DWORD   dwSize;
-	LPVOID  lpAddress;
-
 	if ( pTopaz1 == nullptr )
 	{
 		HRSRC hResource  = FindResource(hInstance, MAKEINTRESOURCE( IDF_TOPAZ1 ), RT_RCDATA);
@@ -149,7 +139,7 @@ DataTranslator Translators[] = {
 
 #define TRANSLATOR_COUNT ( sizeof(Translators) / sizeof(DataTranslator) )
 
-void *CreateTranslator( DWORD TUID )
+void *CreateTranslator( TXIdentifier TUID )
 {
 	void *pXlator = nullptr;
 
@@ -223,12 +213,7 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
 
-			DWORD ProviderID = cmd->InParams[ 0 ].Value;
-			DWORD FSID       = cmd->InParams[ 1 ].Value;
-
-			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
-
-			void *pFS = (void *) CreateFS( FullFSID, pSource );
+			void *pFS = (void *) CreateFS( FSIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ), pSource );
 
 			cmd->OutParams[ 0 ].pPtr = pFS;
 
@@ -245,11 +230,6 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetEncodingBase:
-		ENCODING_AMIGA  = cmd->InParams[ 0 ].Value + 0;
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportFonts:
 		cmd->OutParams[ 0 ].Value = 2;
 
@@ -260,7 +240,7 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pTopaz1;
 			cmd->OutParams[ 1 ].pPtr  = (void *) pTopaz1FontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_AMIGA;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_AMIGA.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			return NUTS_PLUGIN_SUCCESS;
@@ -269,7 +249,7 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pTopaz2;
 			cmd->OutParams[ 1 ].pPtr  = (void *) pTopaz2FontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_AMIGA;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_AMIGA.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			return NUTS_PLUGIN_SUCCESS;
@@ -282,15 +262,6 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetFSFileTypeBase:
-		{
-			DWORD Base = cmd->InParams[ 0 ].Value;
-
-			FILE_AMIGA = Base + 0;
-		}
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportTranslators:
 		cmd->OutParams[ 0 ].Value = TRANSLATOR_COUNT;
 
@@ -300,19 +271,15 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			BYTE tx = (BYTE) cmd->InParams[ 0 ].Value;
 
-			Translators[ tx ].TUID = cmd->InParams[ 1 ].Value;
-
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
 			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
-
-			TUID_ILBM = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 0 ].TUID );
 		}
 
 		return NUTS_PLUGIN_SUCCESS;
 
 	case PC_CreateTranslator:
-		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
+		cmd->OutParams[ 0 ].pPtr = CreateTranslator( TXIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ) );
 
 		return NUTS_PLUGIN_SUCCESS;
 

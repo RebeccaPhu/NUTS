@@ -199,7 +199,6 @@ int CPMDirectory::ReadDirectory(void)
 				file.Icon       = FT_Arbitrary;
 				file.Type       = FT_Arbitrary;
 				file.Length     = ( pEntry[ 0x0F ] * 0x80 ) + pEntry[ 0x0D ];
-				file.XlatorID   = 0;
 
 				if ( pEntry[ 0x0D ] == 0 ) { file.Length += 128; }
 

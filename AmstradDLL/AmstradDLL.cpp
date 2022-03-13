@@ -24,10 +24,10 @@ DataSourceCollector *pCollector;
 
 BYTE *NUTSSignature;
 
-DWORD FILE_AMSTRAD;
-DWORD ENCODING_CPC;
-DWORD TUID_LOCO;
-DWORD FT_AMSTRAD_TAPE;
+const FTIdentifier       FILE_AMSTRAD    = L"Amstrad_AMSDOS_Object";
+const EncodingIdentifier ENCODING_CPC    = L"Amstrad_Text_Encoding";
+const TXIdentifier       TUID_LOCO       = L"Amstrad_Locomotive_BASIC";
+const FTIdentifier       FT_AMSTRAD_TAPE = L"Amstrad_Tape_Object";
 
 FSDescriptor AmstradFS[] = {
 	{
@@ -87,7 +87,7 @@ void LoadFonts()
 	}
 }
 
-AMSTRADDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
+void *CreateFS( FSIdentifier FSID, DataSource *pSource )
 {
 	void *pFS = NULL;
 
@@ -106,23 +106,19 @@ AMSTRADDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 		}
 	}
 
-	switch ( PUID )
+	if ( FSID == FSID_AMSDOS )
 	{
-	case FSID_AMSDOS:
 		pFS = (void *) new AMSDOSFileSystem( pSource );
-
-		break;
-
-	case FSID_AMSTRAD_CDT:
+	}
+	else if ( FSID == FSID_AMSTRAD_CDT )
+	{
 		pFS = (void *) new AmstradCDTFileSystem( pSource );
-
-		break;
 	}
 
 	return pFS;
 }
 
-AMSTRADDLL_API void *CreateTranslator( DWORD TUID )
+void *CreateTranslator( TXIdentifier TUID )
 {
 	void *pXlator = nullptr;
 
@@ -200,12 +196,7 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
 
-			DWORD ProviderID = cmd->InParams[ 0 ].Value;
-			DWORD FSID       = cmd->InParams[ 1 ].Value;
-
-			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
-
-			void *pFS = (void *) CreateFS( FullFSID, pSource );
+			void *pFS = (void *) CreateFS( FSIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ), pSource );
 
 			cmd->OutParams[ 0 ].pPtr = pFS;
 
@@ -222,11 +213,6 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetEncodingBase:
-		ENCODING_CPC = cmd->InParams[ 0 ].Value + 0;
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportFonts:
 		cmd->OutParams[ 0 ].Value = 1;
 
@@ -237,7 +223,7 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pCPCF;
 			cmd->OutParams[ 1 ].pPtr  = (void *) pCPCFontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_CPC;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_CPC.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			return NUTS_PLUGIN_SUCCESS;
@@ -247,16 +233,6 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 	case PC_ReportFSFileTypeCount:
 		cmd->OutParams[ 0 ].Value = 2;
-
-		return NUTS_PLUGIN_SUCCESS;
-
-	case PC_SetFSFileTypeBase:
-		{
-			DWORD Base = cmd->InParams[ 0 ].Value;
-
-			FILE_AMSTRAD    = Base + 0;
-			FT_AMSTRAD_TAPE = Base + 1;
-		}
 
 		return NUTS_PLUGIN_SUCCESS;
 
@@ -288,19 +264,15 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			BYTE tx = (BYTE) cmd->InParams[ 0 ].Value;
 
-			Translators[ tx ].TUID = cmd->InParams[ 1 ].Value;
-
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
 			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
-
-			TUID_LOCO = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 0 ].TUID );
 		}
 
 		return NUTS_PLUGIN_SUCCESS;
 
 	case PC_CreateTranslator:
-		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
+		cmd->OutParams[ 0 ].pPtr = CreateTranslator( TXIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ) );
 
 		return NUTS_PLUGIN_SUCCESS;
 

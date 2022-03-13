@@ -8,7 +8,7 @@ FSHint AmigaFileSystem::Offer( BYTE *Extension )
 {
 	FSHint hint;
 
-	hint.FSID       = MYFSID;
+	hint.FSID       = FSID;
 	hint.Confidence = 0;
 
 	BYTE Sector[512];
@@ -17,17 +17,17 @@ FSHint AmigaFileSystem::Offer( BYTE *Extension )
 
 	if ( rstrncmp( Sector, (BYTE *) "DOS", 3 ) )
 	{
-		if ( ( Sector[ 3 ] & 1 ) && ( MYFSID == FSID_AMIGAF ) )
+		if ( ( Sector[ 3 ] & 1 ) && ( FSID == FSID_AMIGAF ) )
 		{
 			hint.Confidence = 20;
 		}
 
-		if ( ( ( Sector[ 3 ] & 1 ) == 0 ) && ( MYFSID == FSID_AMIGAO ) )
+		if ( ( ( Sector[ 3 ] & 1 ) == 0 ) && ( FSID == FSID_AMIGAO ) )
 		{
 			hint.Confidence = 20;
 		}		
 
-		if ( MYFSID ==  FSID_AMIGADMS )
+		if ( FSID ==  FSID_AMIGADMS )
 		{
 			/* If we're here then the DMS extract worked. If the first 3 bytes are "DOS" then that worked too */
 

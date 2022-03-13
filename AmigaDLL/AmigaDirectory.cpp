@@ -56,7 +56,6 @@ void AmigaDirectory::ProcessHashChain( DWORD NSector )
 	file.HasResolvedIcon = false;
 	file.Icon            = FT_Arbitrary;
 	file.Type            = FT_Arbitrary;
-	file.XlatorID        = 0;
 	file.Length          = BEDWORD( &FSector[ 0x144 ] );
 
 	file.Filename = BYTEString( &FSector[ 0x1b1 ], FSector[ 0x1b0 ] );

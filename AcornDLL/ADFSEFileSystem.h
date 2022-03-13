@@ -108,7 +108,7 @@ public:
 
 	int ResolveAuxFileType( NativeFile *pSprite, NativeFile *pFile, SpriteFile &spriteFile );
 
-	DWORD GetEncoding(void )
+	EncodingIdentifier GetEncoding(void )
 	{
 		return ENCODING_RISCOS;
 	}

@@ -176,7 +176,7 @@ public:
 		return 0;
 	}
 
-	virtual DWORD GetEncoding(void )
+	virtual EncodingIdentifier GetEncoding(void )
 	{
 		return ENCODING_ASCII;
 	}
@@ -571,8 +571,7 @@ public:
 		FileOpsAction = AA_NONE;
 	}
 
-	DWORD FSID;
-	DWORD PLID;
+	FSIdentifier FSID;
 	DWORD EnterIndex;
 	bool  IsRaw;
 	DWORD Flags;

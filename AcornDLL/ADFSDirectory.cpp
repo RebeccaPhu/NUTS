@@ -122,10 +122,9 @@ int	ADFSDirectory::ReadDirectory( void ) {
 		file.Length   = * (DWORD *) &DirBytes[ptr + 18];
 		file.SSector  = * (DWORD *) &DirBytes[ptr + 22]; file.SSector &= 0xFFFFFF;
 		file.SeqNum   = DirBytes[ptr + 25];
-		file.XlatorID = NULL;
 		file.HasResolvedIcon = false;
 
-		if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
+		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 		{
 			file.EncodingID = ENCODING_RISCOS;
 		}
@@ -162,7 +161,7 @@ int	ADFSDirectory::ReadDirectory( void ) {
 
 	for ( iFile = Files.begin(); iFile != Files.end(); iFile++ )
 	{
-		if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
+		if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 		{
 			TranslateType( &*iFile );
 		}

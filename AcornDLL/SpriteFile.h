@@ -75,7 +75,7 @@ public:
 	int  ResolveIcons( void );
 	int  FreeIcons( void );
 
-	DWORD GetEncoding( void )
+	EncodingIdentifier GetEncoding( void )
 	{
 		return ENCODING_RISCOS;
 	}

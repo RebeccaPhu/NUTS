@@ -31,11 +31,10 @@ DataSourceCollector *pCollector;
 
 BYTE *NUTSSignature;
 
-DWORD FT_C64;
-DWORD FT_CBM_TAPE;
+const FTIdentifier FT_C64      = L"C64_File_Object";
+const FTIdentifier FT_CBM_TAPE = L"C64_Tape_Object";
 
-DWORD ENCODING_PETSCII;
-DWORD PLUGINID_CBM;
+const EncodingIdentifier ENCODING_PETSCII = L"PETSCII";
 
 FSDescriptor CBMFS[] = {
 	{
@@ -142,6 +141,7 @@ void LoadHooks( void )
 				Hooks[ HookID ].Flags         = RHF_CreatesFileSystem;
 				Hooks[ HookID ].HookIcon      = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
 				Hooks[ HookID ].HookData[ 0 ] = device;
+				Hooks[ HookID ].HookFSID      = FSID_OPENCBM;
 
 				HookID++;
 
@@ -155,49 +155,45 @@ void LoadHooks( void )
 /* Serial Port: Port Icon, FatCow Hosting Icons, FatCow, CC Attribution 3.0 United States */
 
 
-CBMDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
+void *CreateFS( FSIdentifier FSID, DataSource *pSource )
 {
 	void *pFS = NULL;
 
-	switch ( PUID )
+	if ( FSID == FSID_D64 )
 	{
-	case FSID_D64:
 		pFS = (void *) new D64FileSystem( pSource );
-		break;
-
-	case FSID_T64:
+	}
+	else if ( FSID == FSID_T64 )
+	{
 		pFS = (void *) new T64FileSystem( pSource );
-		break;
+	}
+	else if ( FSID == FSID_OPENCBM )
+	{
+		BYTE DriveNum = 0;
 
-	case FSID_OPENCBM:
-		{
-			BYTE DriveNum = 0;
+		pSource->ReadRaw( 0, 1, &DriveNum );
 
-			pSource->ReadRaw( 0, 1, &DriveNum );
+		OpenCBMSource *pOpenCBMSource = new OpenCBMSource( DriveNum );
 
-			OpenCBMSource *pOpenCBMSource = new OpenCBMSource( DriveNum );
+		D64FileSystem *newFS = new D64FileSystem( pOpenCBMSource );
 
-			D64FileSystem *newFS = new D64FileSystem( pOpenCBMSource );
+		newFS->pDir->NoLengthChase = true;
+		newFS->Drive               = DriveNum;
+		newFS->pBAM->Drive         = DriveNum;
+		newFS->pDir->Drive         = DriveNum;
+		newFS->IsOpenCBM           = true;
+		newFS->pBAM->IsOpenCBM     = true;
+		newFS->pDir->IsOpenCBM     = true;
 
-			newFS->pDir->NoLengthChase = true;
-			newFS->Drive               = DriveNum;
-			newFS->pBAM->Drive         = DriveNum;
-			newFS->pDir->Drive         = DriveNum;
-			newFS->IsOpenCBM           = true;
-			newFS->pBAM->IsOpenCBM     = true;
-			newFS->pDir->IsOpenCBM     = true;
+		pFS = (void *) newFS;
 
-			pFS = (void *) newFS;
+		DS_RELEASE( pOpenCBMSource );
 
-			DS_RELEASE( pOpenCBMSource );
-
-		}
-		break;
-
-	case FSID_IECATA:
+	}
+	else if ( FSID == FSID_IECATA )
+	{
 		pFS = (void *) new IECATAFileSystem( pSource );
-		break;
-	};
+	}
 
 	return pFS;
 }
@@ -378,12 +374,7 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
 
-			DWORD ProviderID = cmd->InParams[ 0 ].Value;
-			DWORD FSID       = cmd->InParams[ 1 ].Value;
-
-			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
-
-			void *pFS = (void *) CreateFS( FullFSID, pSource );
+			void *pFS = (void *) CreateFS( FSIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ), pSource );
 
 			cmd->OutParams[ 0 ].pPtr = pFS;
 
@@ -400,11 +391,6 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetEncodingBase:
-		ENCODING_PETSCII  = cmd->InParams[ 0 ].Value + 0;
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportFonts:
 		cmd->OutParams[ 0 ].Value = 2;
 
@@ -415,7 +401,7 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pPETSCIIs[ 0 ];
 			cmd->OutParams[ 1 ].pPtr  = (void *) pPETSCII1FontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_PETSCII;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_PETSCII.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			FontID1 = cmd->InParams[ 1 ].Value;
@@ -426,7 +412,7 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pPETSCIIs[ 1 ];
 			cmd->OutParams[ 1 ].pPtr  = (void *) pPETSCII2FontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_PETSCII;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_PETSCII.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			FontID2 = cmd->InParams[ 1 ].Value;
@@ -441,16 +427,6 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetFSFileTypeBase:
-		{
-			DWORD Base = cmd->InParams[ 0 ].Value;
-
-			FT_C64      = Base + 0;
-			FT_CBM_TAPE = Base + 1;
-		}
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportRootHooks:
 		cmd->OutParams[ 0 ].Value = NumHooks;
 
@@ -459,9 +435,6 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_DescribeRootHook:
 		{
 			BYTE HookID = (BYTE) cmd->InParams[ 0 ].Value;
-			DWORD PID   = cmd->InParams[ 1 ].Value;
-
-			Hooks[ HookID ].HookFSID = MAKEFSID( PID, 0, FSID_OPENCBM );
 
 			cmd->OutParams[ 0 ].pPtr = &Hooks[ HookID ];
 		}

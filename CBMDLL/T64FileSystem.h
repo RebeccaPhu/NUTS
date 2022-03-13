@@ -34,7 +34,7 @@ public:
 
 public:
 	FSHint Offer( BYTE *Extension );
-	DWORD  GetEncoding(void ) { return ENCODING_PETSCII; }
+	EncodingIdentifier GetEncoding(void ) { return ENCODING_PETSCII; }
 	int    ReadFile(DWORD FileID, CTempFile &store);
 	int    WriteFile(NativeFile *pFile, CTempFile &store);
 	int    DeleteFile( DWORD FileID );

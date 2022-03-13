@@ -1130,7 +1130,7 @@ inline void NewFSMap::IDExtend( DWORD *pID )
 	}
 }
 
-void NewFSMap::ConfigureDisk( DWORD FSID )
+void NewFSMap::ConfigureDisk( FSIdentifier FSID )
 {
 	QWORD PhysicalDiskSize = pSource->PhysicalDiskSize;
 
@@ -1180,22 +1180,15 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 	}
 
 	/* We'll need Sector Size presetting, as it features in many calculations */
-	switch ( FSID )
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) )
 	{
-	case FSID_ADFS_E:
-	case FSID_ADFS_F:
-	case FSID_ADFS_EP:
-	case FSID_ADFS_FP:
-	case FSID_ADFS_G:
 		LogSecSize = 0xA;
 		SecSize    = 0x400;
-		break;
-
-	case FSID_ADFS_HN:
-	case FSID_ADFS_HP:
+	}
+	else if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP ) )
+	{
 		LogSecSize = 0x9;
 		SecSize    = 0x200;
-		break;
 	}
 
 	/* Add on 32 bits for the header in the next block */
@@ -1221,34 +1214,34 @@ void NewFSMap::ConfigureDisk( DWORD FSID )
 	BootOption   = 0;
 	Skew         = 1;
 
-	switch ( FSID )
+	if ( FSID == FSID_ADFS_G )
 	{
-	case FSID_ADFS_G:
 		Density += 4;
 		SecsPerTrack += 10;
-	case FSID_ADFS_F:
-	case FSID_ADFS_FP:
+	}
+	else if ( ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ) )
+	{
 		SecsPerTrack += 5;
 		Density      += 2;
-	case FSID_ADFS_E:
-	case FSID_ADFS_EP:
+	}
+	else if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_EP ) )
+	{
 		Heads    = 2;
 		DiscType = 0;
-		break;
-
-	case FSID_ADFS_HN:
+	}
+	else if ( FSID == FSID_ADFS_HN )
+	{
 		Heads        = 16;
 		DiscType     = 0x00040000;
 		SecsPerTrack = 0x3F;
 		Density      = 0;
-		break;
-
-	case FSID_ADFS_HP:
+	}
+	else if ( FSID ==  FSID_ADFS_HP )
+	{
 		Heads        = 16;
 		DiscType     = 0x00040000;
 		SecsPerTrack = 0x3F;
 		Density      = 0;
-		break;
 	}
 
 	/* Now we must determine the location of the root cluster. For ADFS E/E+, this is sector 0. For everything else,

@@ -3,16 +3,16 @@
 #include "../nuts/Directory.h"
 
 typedef struct _TZXPB {
-	DWORD FSID;
+	FSIdentifier FSID;
 	std::wstring LocalMenu;
 	BYTE  FSName[ 32 ];
-	DWORD Encoding;
-	DWORD FT;
+	EncodingIdentifier Encoding;
+	FTIdentifier FT;
 	BYTE  Extension[ 4 ];
 	std::wstring RegistryPrefix;
 } TZXPB;
 
-#define FT_TZX 0x07240724
+#define FT_TZX L"Generic_TZX_Object"
 
 class TZXDirectory :
 	public Directory

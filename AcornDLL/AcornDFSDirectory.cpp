@@ -53,7 +53,6 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 				FakeSubDir.Filename        = BYTEString( &ThisDir, 1 );
 				FakeSubDir.FSFileType      = FT_ACORN;
 				FakeSubDir.HasResolvedIcon = false;
-				FakeSubDir.XlatorID        = 0;
 				FakeSubDir.Flags           = FF_Directory;
 				FakeSubDir.Icon            = FT_Directory;
 				FakeSubDir.Type            = FT_Directory;
@@ -102,7 +101,6 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 			file.LoadAddr |= 0xFFFF0000;
 
 		file.Type            = FT_Binary;
-		file.XlatorID        = NULL;
 		file.HasResolvedIcon = false;
 
 		if (
@@ -193,7 +191,6 @@ int	AcornDFSDirectory::ReadDirectory(void) {
 			FakeSubDir.Filename        = BYTEString( &iExtra->first, 1 );
 			FakeSubDir.FSFileType      = FT_ACORN;
 			FakeSubDir.HasResolvedIcon = false;
-			FakeSubDir.XlatorID        = 0;
 			FakeSubDir.Flags           = FF_Directory;
 			FakeSubDir.Icon            = FT_Directory;
 			FakeSubDir.Type            = FT_Directory;

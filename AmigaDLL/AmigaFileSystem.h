@@ -53,7 +53,7 @@ public:
 
 	int ChangeDirectory( DWORD FileID );
 	int Parent();
-	DWORD GetEncoding( void ) { return ENCODING_AMIGA; }
+	EncodingIdentifier GetEncoding( void ) { return ENCODING_AMIGA; }
 
 	int Init(void) {
 		pDirectory->ReadDirectory();

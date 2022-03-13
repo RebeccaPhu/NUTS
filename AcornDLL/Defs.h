@@ -20,8 +20,8 @@
    of new map discs indicates what sector size is to be used, and all
    sector references are in terms of the recorded sector size.
 */
-#define DSector( X ) ( (MYFSID==FSID_ADFS_D)?(X>>2):X )
-#define DSectorSize ( (MYFSID==FSID_ADFS_D)?1024:256 )
+#define DSector( X ) ( (FSID==FSID_ADFS_D)?(X>>2):X )
+#define DSectorSize ( (FSID==FSID_ADFS_D)?1024:256 )
 
 #define PlusFormat ( ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) || ( FSID == FSID_ADFS_HP ) )
 
@@ -37,26 +37,26 @@
 #define TimeStamp  Attributes[8]
 #define AttrExec   Attributes[9]
 
-#define FSID_DFS_40    0x00000000
-#define FSID_DFS_80    0x00000001
-#define FSID_DFS_DSD   0x00000002
-#define FSID_ADFS_S    0x00000003
-#define FSID_ADFS_M    0x00000004
-#define FSID_ADFS_L    0x00000005
-#define FSID_ADFS_H    0x00000006
-#define FSID_ADFS_H8   0x00000007
+#define FSID_DFS_40    L"Acorn_DFS_40T"
+#define FSID_DFS_80    L"Acorn_DFS_80T"
+#define FSID_DFS_DSD   L"Acorn_DFS_DS_Interleave"
+#define FSID_ADFS_S    L"Acorn_ADFS_40T"
+#define FSID_ADFS_M    L"Acorn_ADFS_80T"
+#define FSID_ADFS_L    L"Acorn_ADFS_DS_Interleave"
+#define FSID_ADFS_H    L"Acorn_ADFS_8Bit_HD"
+#define FSID_ADFS_H8   L"Acorn_ADFS_8Bit_IDE_HD"
 
-#define FSID_ADFS_L2   0x00000100
-#define FSID_ADFS_D    0x00000101
-#define FSID_ADFS_E    0x00000102
-#define FSID_ADFS_EP   0x00000103
-#define FSID_ADFS_F    0x00000104
-#define FSID_ADFS_FP   0x00000105
-#define FSID_ADFS_G    0x00000106
-#define FSID_ADFS_HO   0x00000107
-#define FSID_ADFS_HN   0x00000108
-#define FSID_ADFS_HP   0x00000109
-#define FSID_SPRITE    0x0000010A
+#define FSID_ADFS_L2   L"RiscOS_640K_L"
+#define FSID_ADFS_D    L"RiscOS_800K_D"
+#define FSID_ADFS_E    L"RiscOS_800K_E"
+#define FSID_ADFS_EP   L"RiscOS_800K_E+"
+#define FSID_ADFS_F    L"RiscOS_1.6M_F"
+#define FSID_ADFS_FP   L"RiscOS_1.6M_F+"
+#define FSID_ADFS_G    L"RiscOS_3.2M_G"
+#define FSID_ADFS_HO   L"RiscOS_OldMap_HD"
+#define FSID_ADFS_HN   L"RiscOS_NewMap_HD"
+#define FSID_ADFS_HP   L"RiscOS_HD+"
+#define FSID_SPRITE    L"RiscOS_SpritFile"
 
 typedef struct _FreeSpace {
 	long	StartSector;
@@ -97,14 +97,14 @@ typedef struct _CompactionObject
 	DWORD ReferenceFileID;
 } CompactionObject;
 
-extern DWORD ENCODING_ACORN;
-extern DWORD ENCODING_RISCOS;
+extern const EncodingIdentifier ENCODING_ACORN;
+extern const EncodingIdentifier ENCODING_RISCOS;
 
-extern DWORD FT_ACORN;
-extern DWORD FT_SPRITE;
-extern DWORD FT_ACORNX;
+extern const FTIdentifier FT_ACORN;
+extern const FTIdentifier FT_SPRITE;
+extern const FTIdentifier FT_ACORNX;
 
-extern DWORD GRAPHIC_ACORN;
-extern DWORD GRAPHIC_SPRITE;
-extern DWORD BBCBASIC;
-extern DWORD AUDIO_ARMADEUS;
+extern const TXIdentifier GRAPHIC_ACORN;
+extern const TXIdentifier GRAPHIC_SPRITE;
+extern const TXIdentifier BBCBASIC;
+extern const TXIdentifier AUDIO_ARMADEUS;

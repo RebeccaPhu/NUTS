@@ -480,7 +480,7 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 
 			BytesToGo -= 2;
 		}
-		else if ( pIncoming->FSFileType = FT_CBM_TAPE )
+		else if ( pIncoming->FSFileType == FT_CBM_TAPE )
 		{
 			if ( pIncoming->Attributes[ 3 ] == 0x05 )
 			{

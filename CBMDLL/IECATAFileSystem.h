@@ -61,7 +61,7 @@ public:
 
 	FSHint Offer( BYTE *Extension );
 
-	DWORD GetEncoding(void )
+	EncodingIdentifier GetEncoding(void )
 	{
 		return ENCODING_PETSCII;
 	}

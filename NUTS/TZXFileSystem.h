@@ -38,7 +38,7 @@ public:
 	}
 
 	virtual FSHint Offer( BYTE *Extension );
-	virtual DWORD GetEncoding(void ) { return tzxpb.Encoding; }
+	virtual EncodingIdentifier GetEncoding(void ) { return tzxpb.Encoding; }
 
 	virtual int ReadFile(DWORD FileID, CTempFile &store);
 	virtual int ReadBlock(DWORD FileID, CTempFile &store);

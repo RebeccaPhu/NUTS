@@ -79,7 +79,6 @@ int TAPDirectory::ReadDirectory(void)
 			File.FSFileType      = FT_SINCLAIR;
 			File.EncodingID      = ENCODING_SINCLAIR;
 			File.Length          = 0xFFFFFFFF;
-			File.XlatorID        = NULL;
 			File.HasResolvedIcon = false;
 
 			File.Attributes[ 2 ] = HeaderBlock[ 3 ];
@@ -168,7 +167,6 @@ int TAPDirectory::ReadDirectory(void)
 				File.Icon            = FT_Arbitrary;
 				File.Type            = FT_Arbitrary;
 				File.Attributes[ 2 ] = 0xFFFFFFFF;
-				File.XlatorID        = NULL;
 
 				File.Filename = (BYTE *) "ORPHAN BLK";
 

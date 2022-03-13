@@ -62,7 +62,6 @@ int T64Directory::ReadDirectory( void )
 		file.FSFileType = FT_CBM_TAPE;
 		file.Icon       = FT_Arbitrary;
 		file.Type       = FT_Arbitrary;
-		file.XlatorID   = NULL;
 
 		/* Heh. File type. You assholes. */
 		const BYTE *extns[ 6 ] = { (BYTE *) "DEL", (BYTE *) "SEQ", (BYTE *) "PRG", (BYTE *) "USR", (BYTE *) "REL", (BYTE *) "FRZ" };

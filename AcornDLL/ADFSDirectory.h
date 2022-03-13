@@ -30,7 +30,7 @@ public:
 
 	DWORD DirSector;
 	DWORD ParentSector;
-	DWORD FSID;
+	FSIdentifier FSID;
 
 	bool  UseLFormat;
 	bool  UseDFormat;

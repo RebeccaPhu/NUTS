@@ -110,7 +110,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	pFile->Filename = t;
 
-	if ( MYFSID==FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		if ( pDirectory->Files.size() >= 77 )
 		{
@@ -151,7 +151,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	}
 
 	/* Account for the sector size discrepency */
-	if ( MYFSID==FSID_ADFS_D )
+	if ( FSID==FSID_ADFS_D )
 	{
 		SectorsRequired <<= 2;
 	}
@@ -214,7 +214,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		DestFile.AttrLocked = 0x00000000;
 		DestFile.AttrExec   = 0x00000000;
 
-		if ( ( MYFSID == FSID_ADFS_HO ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_L2 ) )
+		if ( ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_L2 ) )
 		{
 			InterpretImportedType( &DestFile );
 		}
@@ -226,7 +226,7 @@ int	ADFSFileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 		}
 	}
 
-	if ( ( MYFSID == FSID_ADFS_HO ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_L2 ) )
+	if ( ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_L2 ) )
 	{
 		SetTimeStamp( &DestFile );
 	}
@@ -270,7 +270,7 @@ int ADFSFileSystem::ChangeDirectory( DWORD FileID )
 }
 
 bool ADFSFileSystem::IsRoot() {
-	if ( ! (MYFSID==FSID_ADFS_D) )
+	if ( FSID != FSID_ADFS_D )
 	{
 		if ( pADFSDirectory->GetSector() == 2)
 		{
@@ -293,7 +293,7 @@ BYTE *ADFSFileSystem::DescribeFile(DWORD FileIndex) {
 
 	NativeFile	*pFile	= &pDirectory->Files[FileIndex];
 
-	if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 	{
 		sprintf_s( (char *) status, 128, "[%s%s%s%s] %06X bytes, &%08X/&%08X",
 			(pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
@@ -341,7 +341,7 @@ BYTE *ADFSFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 	{
 		NativeFile *pFile = &pDirectory->Files[FileIndex];
 
-		if ( ( MYFSID != FSID_ADFS_L2 ) && ( MYFSID != FSID_ADFS_D ) && ( MYFSID != FSID_ADFS_HO ) )
+		if ( ( FSID != FSID_ADFS_L2 ) && ( FSID != FSID_ADFS_D ) && ( FSID != FSID_ADFS_HO ) )
 		{
 			rsprintf( status, "%s | [%s%s%s%s] - %0X bytes - Load: &%08X Exec: &%08X",
 				(BYTE *) pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
@@ -451,7 +451,7 @@ int	ADFSFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 
 	unsigned char DirectorySector[0x800];
 
-	if ( MYFSID==FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		if ( pDirectory->Files.size() >= 77 )
 		{
@@ -468,7 +468,7 @@ int	ADFSFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 
 	DirectorySector[0x005]	= 0;	// No directory entries
 
-	if ( MYFSID==FSID_ADFS_D )
+	if ( FSID==FSID_ADFS_D )
 	{
 		DirectorySector[0x000]	= 0;
 		DirectorySector[0x001]	= 'N';
@@ -519,13 +519,13 @@ int	ADFSFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 
 	FreeSpace space;
 
-	space.OccupiedSectors = (MYFSID==FSID_ADFS_D)?8:5;
+	space.OccupiedSectors = ( FSID == FSID_ADFS_D ) ? 8 : 5;
 
 	pFSMap->GetStartSector(space);
 
 	int Err = DS_SUCCESS;
 
-	if ( ! (MYFSID==FSID_ADFS_D) )
+	if ( FSID != FSID_ADFS_D )
 	{
 		Err += WriteTranslatedSector( space.StartSector + 0, &DirectorySector[ 0x000 ], 256, pSource );
 		Err += WriteTranslatedSector( space.StartSector + 1, &DirectorySector[ 0x100 ], 256, pSource );
@@ -572,7 +572,7 @@ int	ADFSFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 		DirEnt.AttrExec   = SourceDir.AttrExec;
 
 		/* On RISCOS formats, the load and exec addresses are used to hold a timestamp */
-		if ( ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) || ( MYFSID == FSID_ADFS_L2 ) )
+		if ( ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_L2 ) )
 		{
 			DirEnt.ExecAddr = SourceDir.ExecAddr;
 			DirEnt.LoadAddr = SourceDir.LoadAddr;
@@ -636,13 +636,13 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 		hint.FSID       = FSID;
 		hint.Confidence = 20;
 
-		if ( ( Sectors == 0x280 ) && ( MYFSID == FSID_ADFS_S )  ) { hint.Confidence = 30; }
-		if ( ( Sectors == 0x500 ) && ( MYFSID == FSID_ADFS_M )  ) { hint.Confidence = 30; }
-		if ( ( Sectors == 0xA00 ) && ( MYFSID == FSID_ADFS_L2 ) ) { hint.Confidence = 30; }
-		if ( ( Sectors >  0xA00 ) && ( MYFSID == FSID_ADFS_H )  ) { hint.Confidence = 30; }
-		if ( ( Sectors >  0xA00 ) && ( MYFSID == FSID_ADFS_H8 ) ) { hint.Confidence = 30; }
+		if ( ( Sectors == 0x280 ) && ( FSID == FSID_ADFS_S )  ) { hint.Confidence = 30; }
+		if ( ( Sectors == 0x500 ) && ( FSID == FSID_ADFS_M )  ) { hint.Confidence = 30; }
+		if ( ( Sectors == 0xA00 ) && ( FSID == FSID_ADFS_L2 ) ) { hint.Confidence = 30; }
+		if ( ( Sectors >  0xA00 ) && ( FSID == FSID_ADFS_H )  ) { hint.Confidence = 30; }
+		if ( ( Sectors >  0xA00 ) && ( FSID == FSID_ADFS_H8 ) ) { hint.Confidence = 30; }
 
-		if ( ( Extension ) && ( memcmp( Extension, "ADL", 3 ) == 0 ) && ( MYFSID == FSID_ADFS_L ) )
+		if ( ( Extension ) && ( memcmp( Extension, "ADL", 3 ) == 0 ) && ( FSID == FSID_ADFS_L ) )
 		{
 			hint.Confidence = 30;
 		}
@@ -653,7 +653,7 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 		return hint;
 	}
 
-	if ( (memcmp(&SectorBuf[1], "Hugo", 4) == 0) && ( MYFSID == FSID_ADFS_D ) )
+	if ( (memcmp(&SectorBuf[1], "Hugo", 4) == 0) && ( FSID == FSID_ADFS_D ) )
 	{
 		hint.Confidence = 30;
 		hint.FSID       = FSID;
@@ -662,7 +662,7 @@ FSHint ADFSFileSystem::Offer( BYTE *Extension )
 	/* Some D format disks have Nick as the identifier instead of Hugo */
 	pSource->ReadSectorCHS( 0, 0, 1, SectorBuf );
 
-	if ( ( memcmp(&SectorBuf[1], "Nick", 4) == 0) && ( MYFSID == FSID_ADFS_D ) )
+	if ( ( memcmp(&SectorBuf[1], "Nick", 4) == 0) && ( FSID == FSID_ADFS_D ) )
 	{
 		hint.Confidence = 30;
 		hint.FSID       = FSID;
@@ -677,7 +677,7 @@ BYTE *ADFSFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 
 	rstrncpy( ADFSPath, (BYTE *) "ADFS::", 511 );
 
-	if ( MYFSID == FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		rstrncat( ADFSPath, DiscName, 511 );
 	}
@@ -740,7 +740,7 @@ int ADFSFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 
 	DWORD FixedBlks = 7;
 
-	if ( MYFSID == FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		FixedBlks = 12;
 	}
@@ -821,7 +821,7 @@ AttrDescriptors ADFSFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 	Attrs.push_back( Attr );
 
 	/* Execute - Not ADFS D/L2/HO */
-	if ( ( MYFSID != FSID_ADFS_D ) && ( MYFSID != FSID_ADFS_L2 ) && ( MYFSID != FSID_ADFS_HO ) )
+	if ( ( FSID != FSID_ADFS_D ) && ( FSID != FSID_ADFS_L2 ) && ( FSID != FSID_ADFS_HO ) )
 	{
 		Attr.Index = 9;
 		Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDanger;
@@ -842,7 +842,7 @@ AttrDescriptors ADFSFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 	Attrs.push_back( Attr );
 
 	/* Sequence number. Hex. Not in D Format. */
-	if ( ! (MYFSID==FSID_ADFS_D) )
+	if ( FSID != FSID_ADFS_D )
 	{
 		Attr.Index = 6;
 		Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrFile  | AttrDir;
@@ -850,7 +850,7 @@ AttrDescriptors ADFSFileSystem::GetAttributeDescriptions( NativeFile *pFile )
 		Attrs.push_back( Attr );
 	}
 
-	if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 	{
 		/* File Type. Hex. */
 		Attr.Index = 7;
@@ -980,68 +980,56 @@ void ADFSFileSystem::SetShape(void)
 	FloppyFormat = false;
 
 	/* Set the disk shape according to the format */
-	switch ( MYFSID )
+	if ( ( FSID == FSID_ADFS_S ) || ( FSID == FSID_ADFS_M ) || ( FSID == FSID_ADFS_L ) || ( FSID == FSID_ADFS_D ) )
 	{
-		case FSID_ADFS_S:
-		case FSID_ADFS_M:
-		case FSID_ADFS_L:
-		case FSID_ADFS_D:
-			{
-				DiskShape shape;
+		DiskShape shape;
 
-				shape.Heads            = 2;
-				shape.InterleavedHeads = false;
-				shape.Sectors          = 16;
-				shape.SectorSize       = 256;
-				shape.Tracks           = 80;
+		shape.Heads            = 2;
+		shape.InterleavedHeads = false;
+		shape.Sectors          = 16;
+		shape.SectorSize       = 256;
+		shape.Tracks           = 80;
 
-				if ( MYFSID == FSID_ADFS_L )
-				{
-					shape.InterleavedHeads = true;
-				}
+		if ( FSID == FSID_ADFS_L )
+		{
+			shape.InterleavedHeads = true;
+		}
 
-				if ( MYFSID == FSID_ADFS_S )
-				{
-					shape.Tracks = 40;
-					shape.Heads  = 1;
-				}
+		if ( FSID == FSID_ADFS_S )
+		{
+			shape.Tracks = 40;
+			shape.Heads  = 1;
+		}
 
-				if ( MYFSID == FSID_ADFS_M )
-				{
-					shape.Heads = 1;
-				}
+		if ( FSID == FSID_ADFS_M )
+		{
+			shape.Heads = 1;
+		}
 
-				if ( MYFSID == FSID_ADFS_D )
-				{
-					shape.Sectors    = 5;
-					shape.SectorSize = 1024;
-				}
+		if ( FSID == FSID_ADFS_D )
+		{
+			shape.Sectors    = 5;
+			shape.SectorSize = 1024;
+		}
 
-				pSource->SetDiskShape( shape );
+		pSource->SetDiskShape( shape );
 
-				MediaShape = shape;
+		MediaShape = shape;
 
-				if ( pADFSDirectory != nullptr )
-				{
-					pADFSDirectory->MediaShape = shape;
-				}
+		if ( pADFSDirectory != nullptr )
+		{
+			pADFSDirectory->MediaShape = shape;
+		}
 
-				FloppyFormat = true;
-			}
-			break;
-
-		case FSID_ADFS_H:
-		case FSID_ADFS_H8:
-			{
-				FloppyFormat = false;
-			}
-			break;
-
-		default:
-			{
-				FloppyFormat = false;
-			}
-			break;
+		FloppyFormat = true;
+	}
+	else if ( ( FSID == FSID_ADFS_H ) || ( FSID == FSID_ADFS_H8 ) )
+	{
+		FloppyFormat = false;
+	}
+	else
+	{
+		FloppyFormat = false;
 	}
 
 	if ( pADFSDirectory != nullptr )
@@ -1064,20 +1052,20 @@ int ADFSFileSystem::Init(void) {
 
 	SetShape();
 
-	if ( MYFSID==FSID_ADFS_L )
+	if (  FSID == FSID_ADFS_L )
 	{
 		pADFSDirectory->SetLFormat();
 	}
 
 	pADFSDirectory->SetSector( 2 );
 
-	if ( MYFSID==FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		pADFSDirectory->SetDFormat();
 		pADFSDirectory->SetSector( 4 );
 	}
 
-	if ( ( MYFSID==FSID_ADFS_H ) || ( MYFSID==FSID_ADFS_H8 ) )
+	if ( ( FSID == FSID_ADFS_H ) || ( FSID == FSID_ADFS_H8 ) )
 	{
 		TopicIcon = FT_HardImage;
 	}
@@ -1102,7 +1090,7 @@ int ADFSFileSystem::Init(void) {
 		return -1;
 	}
 
-	if ( MYFSID==FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		BYTE Sectors[ 1024 ];
 
@@ -1132,7 +1120,7 @@ int ADFSFileSystem::Init(void) {
 	}
 
 	pFSMap->FloppyFormat = FloppyFormat;
-	pFSMap->UseDFormat   = MYFSID==FSID_ADFS_D;
+	pFSMap->UseDFormat   = FSID == FSID_ADFS_D;
 
 	ResolveAppIcons( this );
 
@@ -1157,7 +1145,7 @@ int ADFSFileSystem::Refresh( void )
 
 WCHAR *ADFSFileSystem::Identify( DWORD FileID )
 {
-	if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
+	if ( ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) )
 	{
 		return FileSystem::Identify( FileID );
 	}
@@ -1280,8 +1268,8 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	FreeSpace space;
 
-	space.StartSector =  (MYFSID==FSID_ADFS_D)?0x04:0x02; // D starts at sector 4, S/M/L at sector 2
-	space.StartSector += (MYFSID==FSID_ADFS_D)?0x8:0x05; // D is 8 sectors long, S/M/L is 5 sectors
+	space.StartSector =  ( FSID == FSID_ADFS_D ) ?0x04 : 0x02; // D starts at sector 4, S/M/L at sector 2
+	space.StartSector += ( FSID == FSID_ADFS_D ) ?0x08 : 0x05; // D is 8 sectors long, S/M/L is 5 sectors
 	space.Length      =  Sectors - space.StartSector;
 
 	pFSMap->Spaces.push_back(space);
@@ -1304,7 +1292,7 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		pDirectory     = (Directory *) pADFSDirectory;
 	}
 		
-	pADFSDirectory->DirSector    = (MYFSID==FSID_ADFS_D)?0x4:0x02;
+	pADFSDirectory->DirSector    = ( FSID == FSID_ADFS_D ) ? 0x4 : 0x02;
 	pADFSDirectory->ParentSector = pADFSDirectory->DirSector;
 	pADFSDirectory->MasterSeq    = 0;
 
@@ -1320,7 +1308,7 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	rstrncpy( (BYTE *) pADFSDirectory->DirTitle,  Title, 19 );
 	rstrncpy( (BYTE *) pADFSDirectory->DirString, (BYTE *) "$", 10 );
 
-	if ( MYFSID == FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		pADFSDirectory->SetDFormat();
 	}
@@ -1332,7 +1320,7 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		return -1;
 	}
 
-	if ( MYFSID==FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		/* Fixup disc name */
 		if ( ReadTranslatedSector( 0, SectorBuf, 1024, pSource ) != DS_SUCCESS ) { return -1; }
@@ -1369,7 +1357,7 @@ int ADFSFileSystem::DeleteFile( DWORD FileID )
 			
 	if ( pFile->Flags & FF_Directory )
 	{
-		FileSectors = (MYFSID==FSID_ADFS_D)?0x08:0x05;
+		FileSectors = ( FSID == FSID_ADFS_D) ? 0x08 : 0x05;
 	}
 	else
 	{
@@ -1380,7 +1368,7 @@ int ADFSFileSystem::DeleteFile( DWORD FileID )
 			FileSectors++;
 		}
 
-		if ( MYFSID == FSID_ADFS_D )
+		if ( FSID == FSID_ADFS_D )
 		{
 			/* Must round this up to whole sectors */
 			FileSectors <<= 2;
@@ -1483,8 +1471,8 @@ int ADFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 		pFSMap->Spaces.clear();
 
 		FreeSpace space;
-		space.Length      = TotalSectors - ( ( MYFSID == FSID_ADFS_D )?0x0C:0x07 );
-		space.StartSector = ( MYFSID == FSID_ADFS_D )?0x0C:0x07;
+		space.Length      = TotalSectors - ( ( FSID == FSID_ADFS_D ) ? 0x0C : 0x07 );
+		space.StartSector = ( FSID == FSID_ADFS_D ) ? 0x0C : 0x07;
 
 		pFSMap->Spaces.push_back( space );
 
@@ -1494,12 +1482,12 @@ int ADFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 		}
 
 		ValidateItems  = TotalSectors;
-		ValidatedItems = (MYFSID==FSID_ADFS_D)?0x08:0x05;
+		ValidatedItems = ( FSID == FSID_ADFS_D ) ? 0x08 : 0x05;
 		ValidateWnd    = ProgressWnd;
 
 		::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 2, 3, 0, (int) TotalSectors, false), 0 );
 
-		if ( ValidateDirectory ( (MYFSID==FSID_ADFS_D)?0x04:0x02, (MYFSID==FSID_ADFS_D)?0x04:0x02, FixedParentLinks, FixedDirSigs ) != DS_SUCCESS )
+		if ( ValidateDirectory ( ( FSID == FSID_ADFS_D ) ? 0x04 : 0x02, ( FSID == FSID_ADFS_D ) ? 0x04 : 0x02, FixedParentLinks, FixedDirSigs ) != DS_SUCCESS )
 		{
 			return -1;
 		}
@@ -1537,7 +1525,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 
 	DWORD DirSectors = 5;
 
-	if ( MYFSID == FSID_ADFS_D )
+	if ( FSID == FSID_ADFS_D )
 	{
 		DirSectors = 2;
 	}
@@ -1555,7 +1543,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 	{
 		FixedSigs++;
 
-		if ( MYFSID == FSID_ADFS_D )
+		if ( FSID == FSID_ADFS_D )
 		{
 			rstrncpy( &DirBytes[ 1 ], (BYTE *) "Nick", 4 );
 		}
@@ -1565,7 +1553,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 		}
 	}
 
-	DWORD SecondSig = (MYFSID == FSID_ADFS_D)?0x7fa:0x4fa;
+	DWORD SecondSig = ( FSID == FSID_ADFS_D) ? 0x7fa : 0x4fa;
 
 	if ( !rstrncmp( &DirBytes[ 0 ], &DirBytes[ SecondSig ], 5 ) )
 	{
@@ -1574,7 +1562,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 		rstrncpy( &DirBytes[ 0 ], &DirBytes[ SecondSig ], 5 );
 	}
 
-	DWORD PSectorOffset = (MYFSID == FSID_ADFS_D)?0x7da:0x4d6;
+	DWORD PSectorOffset = ( FSID == FSID_ADFS_D ) ? 0x7da : 0x4d6;
 
 	/* Check the parent sector matches - fix it if it doesn't */
 	DWORD ApparentParentSector = * (DWORD *) &DirBytes[ PSectorOffset ]; ApparentParentSector &= 0xFFFFFF;
@@ -1592,7 +1580,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 	DWORD MaxPtr = 1227;
 	DWORD ptr    = 5;
 
-	if ( MYFSID==FSID_ADFS_D ) { MaxPtr = 3162; }
+	if ( FSID == FSID_ADFS_D ) { MaxPtr = 3162; }
 
 	bool IsDir;
 
@@ -1602,7 +1590,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 
 		IsDir = false;
 
-		if ( ! ( MYFSID==FSID_ADFS_D ) )
+		if ( FSID != FSID_ADFS_D )
 		{
 			if (DirBytes[ptr+3] & 128)
 			{
@@ -1622,7 +1610,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 
 		if ( IsDir )
 		{
-			Length = (MYFSID==FSID_ADFS_D)?0x0800:0x0500;
+			Length = ( FSID == FSID_ADFS_D ) ? 0x0800 : 0x0500;
 		}
 
 		FreeSpace space;
@@ -1635,7 +1623,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 			space.Length++;
 		}
 
-		if ( MYFSID==FSID_ADFS_D )
+		if ( FSID == FSID_ADFS_D )
 		{
 			/* D format requires objects align on a 1024-byte sector boundary == 4x256-sectors boundary */
 			while (  space.Length % 4 )
@@ -1673,7 +1661,7 @@ int ADFSFileSystem::ValidateDirectory( DWORD DirSector, DWORD ParentSector, DWOR
 
 		IsDir = false;
 
-		if ( ! (MYFSID==FSID_ADFS_D) )
+		if ( FSID != FSID_ADFS_D )
 		{
 			if (DirBytes[ptr+3] & 128)
 			{
@@ -1724,7 +1712,7 @@ FileSystem *ADFSFileSystem::FileFilesystem( DWORD FileID )
 
 		FileSystem *pNewFS = new SpriteFile( pSource );
 
-		pNewFS->FSID = MAKEFSID( PLID, 0x01, 0x0A );
+		pNewFS->FSID = FSID_SPRITE;
 
 		DS_RELEASE( pSource );
 
@@ -1744,7 +1732,7 @@ int ADFSFileSystem::SetProps( DWORD FileID, NativeFile *Changes )
 	}
 
 	/* If this is a RISC OS filesystem, translate the type to the load/exec addrs */
-	if ( ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) || ( MYFSID == FSID_ADFS_L2 ) )
+	if ( ( FSID == FSID_ADFS_D ) || ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_L2 ) )
 	{
 		DWORD PostType = pDirectory->Files[ FileID ].RISCTYPE;
 
@@ -1805,7 +1793,7 @@ int ADFSFileSystem::CompactImage( void )
 
 		DWORD SeekSector = FirstSpace.StartSector + FirstSpace.Length;
 
-		CompactionObject obj = FindCompactableObject( (MYFSID==FSID_ADFS_D)?0x04:0x02, SeekSector );
+		CompactionObject obj = FindCompactableObject( ( FSID == FSID_ADFS_D ) ? 0x04 : 0x02, SeekSector );
 
 		if ( obj.StartSector == 0 )
 		{
@@ -1890,7 +1878,7 @@ CompactionObject ADFSFileSystem::FindCompactableObject( DWORD DirSector, DWORD S
 
 			if ( iFile->Flags & FF_Directory )
 			{
-				obj.NumSectors = (MYFSID==FSID_ADFS_D)?0x02:0x05;
+				obj.NumSectors = ( FSID == FSID_ADFS_D ) ? 0x02 : 0x05;
 			}
 			else
 			{

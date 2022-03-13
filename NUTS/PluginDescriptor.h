@@ -6,14 +6,11 @@
 #include <string>
 #include <list>
 
-#define MAKEFSID( plid, pid, fid ) ( (DWORD) ( plid << 16 ) | (DWORD) ( pid << 8 ) | (DWORD) fid )
-#define MAKEPROVID( plid, pid ) ( (DWORD) ( plid << 16 ) | (DWORD) ( pid << 8 ) )
-#define PLUGINID( cid ) ( (WORD) ( ( cid >> 16 ) & 0xFFFF ) )
-#define PROVIDERID( cid ) ( (BYTE) ( ( cid >> 8 ) & 0xFF ) )
-#define FSIDID( cid ) ( (BYTE) ( cid & 0xFF ) )
-#define PROVID( cid ) ( (DWORD) ( (DWORD) cid & 0xFFFFFF00 ) )
-#define MYFSID ( FSID & 0xFFFF )
-
+typedef std::wstring FSIdentifier;
+typedef std::wstring FTIdentifier;
+typedef std::wstring FontIdentifer;
+typedef std::wstring EncodingIdentifier;
+typedef std::wstring TXIdentifier;
 typedef unsigned long long QWORD;
 
 typedef enum _PluginCommandID {
@@ -27,13 +24,11 @@ typedef enum _PluginCommandID {
 	PC_ReportImageExtensions,
 	PC_GetImageExtension,
 	PC_ReportEncodingCount,
-	PC_SetEncodingBase,
 	PC_ReportFonts,
 	PC_GetFontPointer,
 	PC_ReportIconCount,
 	PC_DescribeIcon,
 	PC_ReportFSFileTypeCount,
-	PC_SetFSFileTypeBase,
 	PC_ReportTranslators,
 	PC_DescribeTranslator,
 	PC_CreateTranslator,
@@ -73,7 +68,7 @@ typedef struct _NUTSProvider {
 
 typedef struct _FileDescriptor {
 	std::wstring FriendlyName;
-	DWORD PUID;
+	FSIdentifier FSID;
 	DWORD Flags;
 	DWORD SectorSize;
 	QWORD MaxSize;
@@ -83,14 +78,14 @@ typedef struct _FileDescriptor {
 typedef struct _DataTranslator {
 	DWORD ProviderID;
 	std::wstring FriendlyName;
-	DWORD TUID;
+	TXIdentifier TUID;
 	DWORD Flags;
 } DataTranslator;
 
 typedef struct _RootHook
 {
 	std::wstring FriendlyName;
-	DWORD        HookFSID;
+	FSIdentifier HookFSID;
 	HBITMAP      HookIcon;
 	BYTE         HookData[ 32 ];
 	DWORD        Flags;

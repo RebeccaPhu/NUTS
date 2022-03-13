@@ -3,11 +3,11 @@
 #ifndef APPLEDEFS_H
 #define APPLEDEFS_H
 
-#define FSID_MFS     0x00000000
-#define FSID_MFS_HD  0x00000001
+#define FSID_MFS     L"Macintosh_FileSystem"
+#define FSID_MFS_HD  L"Macintosh_Filesystem_OnHD"
 
-extern DWORD FILE_MACINTOSH;
-extern DWORD ENCODING_MACINTOSH;
+extern const FTIdentifier       FILE_MACINTOSH;
+extern const EncodingIdentifier ENCODING_MACINTOSH;
 
 typedef struct _MFSVolumeRecord
 {

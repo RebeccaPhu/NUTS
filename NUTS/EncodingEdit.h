@@ -41,7 +41,7 @@ public:
 	static std::map<HWND, EncodingEdit *> _EncodingEditClassMap;
 	static bool _HasWindowClass;
 
-	DWORD Encoding;
+	EncodingIdentifier Encoding;
 	HWND  hWnd;
 	bool  Disabled;
 	bool  SoftDisable;

@@ -114,9 +114,9 @@ public:
 	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 	AttrDescriptors GetFSAttributeDescriptions( void );
 
-	DWORD GetEncoding(void )
+	EncodingIdentifier GetEncoding(void )
 	{
-		if ( ( MYFSID == FSID_ADFS_L2 ) || ( MYFSID == FSID_ADFS_D ) || ( MYFSID == FSID_ADFS_HO ) )
+		if ( FSID.substr( 0, 6 ) == L"RiscOS" )
 		{
 			return ENCODING_RISCOS;
 		}

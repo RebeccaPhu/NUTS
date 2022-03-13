@@ -54,7 +54,6 @@ int	D64Directory::ReadDirectory(void) {
 				file.Type          = ftypes[ ft ];
 				file.Icon          = ftypes[ ft ];
 				file.FSFileType    = FT_C64;
-				file.XlatorID      = NULL;
 				file.HasResolvedIcon = false;
 
 				file.Extension = (BYTE *) extns[ ft ];

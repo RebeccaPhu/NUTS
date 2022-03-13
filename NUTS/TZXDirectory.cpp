@@ -40,7 +40,6 @@ int TZXDirectory::ReadDirectory( void )
 		file.Length           = BlockSize;
 		file.Type             = FT_Arbitrary;
 		file.Icon             = IconMap[ BlockID ];
-		file.XlatorID         = NULL;
 
 		file.Flags |= FF_Audio;
 

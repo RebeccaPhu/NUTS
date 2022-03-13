@@ -1,19 +1,21 @@
 #pragma once
 
+#include "../NUTS/PluginDescriptor.h"
+
 #define PLUGINID_SINCLAIR 0x5A3C7A00
 
-#define FSID_SPECTRUM_TAP 0x00000000
-#define FSID_SPECTRUM_TZX 0x00000001
-#define FSID_DOS3         0x00000002
-#define FSID_TRD_80DS     0x00000003
-#define FSID_TRD_40DS     0x00000004
-#define FSID_TRD_80SS     0x00000005
-#define FSID_TRD_40SS     0x00000006
+#define FSID_SPECTRUM_TAP L"SpeccyTAP"
+#define FSID_SPECTRUM_TZX L"SpeccyTZX"
+#define FSID_DOS3         L"+3DOS"
+#define FSID_TRD_80DS     L"TRD_80_DS"
+#define FSID_TRD_40DS     L"TRD_40_DS"
+#define FSID_TRD_80SS     L"TRD_80_SS"
+#define FSID_TRD_40SS     L"TRD_40_SS"
 
-extern DWORD FT_SINCLAIR;
-extern DWORD FT_SINCLAIR_DOS;
-extern DWORD FT_SINCLAIR_TZX;
-extern DWORD FT_SINCLAIR_TRD;
-extern DWORD ENCODING_SINCLAIR;
-extern DWORD GRAPHIC_SPECTRUM;
-extern DWORD BASIC_SPECTRUM;
+extern const FTIdentifier FT_SINCLAIR;
+extern const FTIdentifier FT_SINCLAIR_DOS;
+extern const FTIdentifier FT_SINCLAIR_TZX;
+extern const FTIdentifier FT_SINCLAIR_TRD;
+extern const EncodingIdentifier ENCODING_SINCLAIR;
+extern const EncodingIdentifier GRAPHIC_SPECTRUM;
+extern const EncodingIdentifier BASIC_SPECTRUM;

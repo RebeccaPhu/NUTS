@@ -1,13 +1,13 @@
 #pragma once
 
-#define FSID_D64     0x00000000
-#define FSID_T64     0x00000001
-#define FSID_IECATA  0x00000002
-#define FSID_OPENCBM 0x00000003
+#define FSID_D64     L"D64_FileSystem"
+#define FSID_T64     L"T64_TapeImage"
+#define FSID_IECATA  L"IECATA_HardDisk"
+#define FSID_OPENCBM L"OpenCBM_RootHook"
 
-extern DWORD FT_C64;
-extern DWORD FT_CBM_TAPE;
+extern const FTIdentifier FT_C64;
+extern const FTIdentifier FT_CBM_TAPE;
 
-extern DWORD ENCODING_PETSCII;
+extern const EncodingIdentifier ENCODING_PETSCII;
 
 

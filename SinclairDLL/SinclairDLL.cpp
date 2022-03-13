@@ -25,13 +25,13 @@ DataSourceCollector *pCollector;
 
 BYTE *NUTSSignature;
 
-DWORD FT_SINCLAIR;
-DWORD FT_SINCLAIR_DOS;
-DWORD FT_SINCLAIR_TZX;
-DWORD FT_SINCLAIR_TRD;
-DWORD ENCODING_SINCLAIR;
-DWORD GRAPHIC_SPECTRUM;
-DWORD BASIC_SPECTRUM;
+const FTIdentifier       FT_SINCLAIR       = L"SinclairFileObject";
+const FTIdentifier       FT_SINCLAIR_DOS   = L"+3DOS_FileObject";
+const FTIdentifier       FT_SINCLAIR_TZX   = L"Sinclair_TZX_Object";
+const FTIdentifier       FT_SINCLAIR_TRD   = L"TRD File Object";
+const EncodingIdentifier ENCODING_SINCLAIR = L"SinclairEncoding";
+const TXIdentifier       GRAPHIC_SPECTRUM  = L"SpeccyScreen";
+const TXIdentifier       BASIC_SPECTRUM    = L"SpectrumBASIC";
 
 FSDescriptor SinclairFS[] = {
 	{
@@ -200,7 +200,7 @@ void LoadFonts()
 	}
 }
 
-SINCLAIRDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
+void *CreateFS( FSIdentifier FSID, DataSource *pSource )
 {
 	void *pFS = NULL;
 
@@ -219,35 +219,30 @@ SINCLAIRDLL_API void *CreateFS( DWORD PUID, DataSource *pSource )
 		}
 	}
 
-	switch ( PUID )
+	if ( FSID ==  FSID_SPECTRUM_TAP )
 	{
-	case FSID_SPECTRUM_TAP:
 		pFS = (void *) new TAPFileSystem( pSource );
-		break;
-	case FSID_SPECTRUM_TZX:
+	}
+	else if ( FSID == FSID_SPECTRUM_TZX )
+	{
 		pFS = (void *) new SinclairTZXFileSystem( pSource );
-		break;
-	case FSID_DOS3:
+	}
+	else if ( FSID == FSID_DOS3 )
+	{
 		pFS = (void *) new DOS3FileSystem( pSource );
-		break;
+	}
+	else if ( ( FSID == FSID_TRD_80SS ) || ( FSID == FSID_TRD_40SS ) || ( FSID == FSID_TRD_80DS ) || ( FSID == FSID_TRD_40DS ) )
+	{
+		TRDFileSystem *pTRD = new TRDFileSystem( pSource );
+		pFS = (void *) pTRD;
 
-	case FSID_TRD_80SS:
-	case FSID_TRD_40SS:
-	case FSID_TRD_80DS:
-	case FSID_TRD_40DS:
-		{
-			TRDFileSystem *pTRD = new TRDFileSystem( pSource );
-			pFS = (void *) pTRD;
-
-			pTRD->FSID = PUID;
-		}
-		break;
-	};
+		pTRD->FSID = FSID;
+	}
 
 	return pFS;
 }
 
-SINCLAIRDLL_API void *CreateTranslator( DWORD TUID )
+void *CreateTranslator( TXIdentifier TUID )
 {
 	void *pXlator = nullptr;
 
@@ -390,12 +385,9 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
 
-			DWORD ProviderID = cmd->InParams[ 0 ].Value;
-			DWORD FSID       = cmd->InParams[ 1 ].Value;
+			FSIdentifier FSID( (WCHAR *) cmd->InParams[ 0 ].pPtr );
 
-			DWORD FullFSID = MAKEFSID( 0, ProviderID, FSID );
-
-			void *pFS = (void *) CreateFS( FullFSID, pSource );
+			void *pFS = (void *) CreateFS( FSID, pSource );
 
 			cmd->OutParams[ 0 ].pPtr = pFS;
 
@@ -412,11 +404,6 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetEncodingBase:
-		ENCODING_SINCLAIR  = cmd->InParams[ 0 ].Value + 0;
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportFonts:
 		cmd->OutParams[ 0 ].Value = 1;
 
@@ -427,7 +414,7 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			cmd->OutParams[ 0 ].pPtr  = (void *) pSinclairFont;
 			cmd->OutParams[ 1 ].pPtr  = (void *) pSinclairFontName;
-			cmd->OutParams[ 2 ].Value = ENCODING_SINCLAIR;
+			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_SINCLAIR.c_str();
 			cmd->OutParams[ 3 ].Value = NULL;
 
 			return NUTS_PLUGIN_SUCCESS;
@@ -459,18 +446,6 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_SUCCESS;
 
-	case PC_SetFSFileTypeBase:
-		{
-			DWORD Base = cmd->InParams[ 0 ].Value;
-
-			FT_SINCLAIR     = Base + 0;
-			FT_SINCLAIR_DOS = Base + 1;
-			FT_SINCLAIR_TZX = Base + 2;
-			FT_SINCLAIR_TRD = Base + 3;
-		}
-
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportTranslators:
 		cmd->OutParams[ 0 ].Value = TRANSLATOR_COUNT;
 
@@ -480,20 +455,15 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			BYTE tx = (BYTE) cmd->InParams[ 0 ].Value;
 
-			Translators[ tx ].TUID = cmd->InParams[ 1 ].Value;
-
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
 			cmd->OutParams[ 2 ].Value = Translators[ tx ].ProviderID;
-
-			BASIC_SPECTRUM   = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 0 ].TUID );
-			GRAPHIC_SPECTRUM = MAKEFSID( cmd->InParams[ 2 ].Value, 0, Translators[ 1 ].TUID );
 		}
 
 		return NUTS_PLUGIN_SUCCESS;
 
 	case PC_CreateTranslator:
-		cmd->OutParams[ 0 ].pPtr = CreateTranslator( cmd->InParams[ 0 ].Value );
+		cmd->OutParams[ 0 ].pPtr = CreateTranslator( TXIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ) );
 
 		return NUTS_PLUGIN_SUCCESS;
 

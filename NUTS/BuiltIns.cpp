@@ -227,7 +227,7 @@ FSHints BuiltIns::GetOffers( DataSource *pSource, NativeFile *pFile )
 	return hints;
 }
 
-FileSystem *BuiltIns::LoadFS( DWORD FSID, DataSource *pSource )
+FileSystem *BuiltIns::LoadFS( FSIdentifier FSID, DataSource *pSource )
 {
 	FileSystem *pFS = nullptr;
 
@@ -283,7 +283,7 @@ std::wstring BuiltIns::ProviderName( DWORD PRID )
 	return L"";
 }
 
-std::wstring BuiltIns::FSName( DWORD FSID )
+std::wstring BuiltIns::FSName( FSIdentifier FSID )
 {
 	if( FSID == FSID_ZIP )
 	{

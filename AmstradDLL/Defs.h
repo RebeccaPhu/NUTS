@@ -1,10 +1,10 @@
 #pragma once
 
-#define FSID_AMSDOS      0x00000000
-#define FSID_AMSTRAD_CDT 0x00000001
+#define FSID_AMSDOS      L"Amstrad_AMDSOS"
+#define FSID_AMSTRAD_CDT L"Amstrad_CDT_TZX"
 
-extern DWORD FILE_AMSTRAD;
-extern DWORD ENCODING_CPC;
-extern DWORD TUID_LOCO;
-extern DWORD FT_AMSTRAD_TAPE;
+extern const FTIdentifier       FILE_AMSTRAD;
+extern const EncodingIdentifier ENCODING_CPC;
+extern const TXIdentifier       TUID_LOCO;
+extern const FTIdentifier       FT_AMSTRAD_TAPE;
 

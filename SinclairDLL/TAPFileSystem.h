@@ -27,7 +27,7 @@ public:
 		return 0;
 	}
 
-	DWORD GetEncoding(void )
+	EncodingIdentifier GetEncoding(void )
 	{
 		return ENCODING_SINCLAIR;
 	}

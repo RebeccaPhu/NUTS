@@ -45,7 +45,6 @@ int TRDDirectory::ReadDirectory(void)
 			file.Flags      = FF_Extension;
 			file.FSFileType = FT_SINCLAIR_TRD;
 			file.Length     = * (WORD *) &pEnt[ 11 ];
-			file.XlatorID   = NULL;
 			file.Type       = FT_Arbitrary;
 			file.Icon       = FT_Arbitrary;
 

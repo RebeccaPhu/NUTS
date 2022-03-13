@@ -47,7 +47,6 @@ int	IECATADirectory::ReadDirectory(void) {
 				file.AttrLocked      = (fp[0x2] & 64)?true:false;
 				file.AttrClosed      = (fp[26])?true:false;	//	Used to mean "closed"
 				file.AttrType        = fp[24] & 0x03;
-				file.XlatorID        = NULL;
 				file.HasResolvedIcon = false;
 
 				file.Type = ftypes[fp[24] & 0x3];

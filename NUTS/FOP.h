@@ -24,7 +24,7 @@ typedef struct _FOPReturn
 	std::wstring Identifier;
 	BYTE		 StatusString[ 128 ];
 	BYTE         Descriptor[ 128 ];
-	DWORD        ProposedFS;
+	FSIdentifier ProposedFS;
 } FOPReturn;
 
 typedef struct _FOPData
@@ -42,7 +42,7 @@ typedef struct _FOPData
 		ReturnData.Identifier        = L"";
 		ReturnData.StatusString[ 0 ] = 0;
 		ReturnData.Descriptor[ 0 ]   = 0;
-		ReturnData.ProposedFS        = 0;
+		ReturnData.ProposedFS        = FSID_NONE;
 	}
 
 	/* out to plugin */

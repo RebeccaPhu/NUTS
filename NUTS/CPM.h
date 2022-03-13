@@ -47,7 +47,7 @@ public:
 	virtual	int	  ReplaceFile(NativeFile *pFile, CTempFile &store);
 	virtual int   Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 
-	virtual DWORD GetEncoding(void ) { return dpb.Encoding; }
+	virtual EncodingIdentifier GetEncoding(void ) { return dpb.Encoding; }
 
 	virtual int   CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd );
 

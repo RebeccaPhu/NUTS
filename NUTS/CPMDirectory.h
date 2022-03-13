@@ -15,12 +15,12 @@ typedef enum _CPMFlags
 typedef struct _CPMDPB
 {
 	BYTE  ShortFSName[ 16 ];
-	DWORD Encoding;
-	DWORD FSFileType;
+	EncodingIdentifier Encoding;
+	FTIdentifier       FSFileType;
 	BYTE  SysTracks;
 	BYTE  SecsPerTrack;
 	WORD  SecSize;
-	DWORD FSID;
+	FSIdentifier FSID;
 	DWORD DirSecs;
 	DWORD ExtentSize;
 	DWORD Flags;

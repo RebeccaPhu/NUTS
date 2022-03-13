@@ -41,7 +41,7 @@ int ADFSEFileSystem::Init(void) {
 
 	ResolveAppIcons( this );
 
-	if ( ( MYFSID==FSID_ADFS_HO ) || ( MYFSID==FSID_ADFS_HN ) || ( MYFSID==FSID_ADFS_HP ) )
+	if ( ( FSID==FSID_ADFS_HO ) || ( FSID==FSID_ADFS_HN ) || ( FSID==FSID_ADFS_HP ) )
 	{
 		TopicIcon = FT_HardImage;
 	}
@@ -66,7 +66,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 
 	BYTE CheckByte;
 
-	if ( ( MYFSID == FSID_ADFS_HN ) || ( MYFSID == FSID_ADFS_HP ) ) 
+	if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP ) ) 
 	{
 		AlternateOffsets.clear();
 
@@ -74,7 +74,7 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		AlternateOffsets.push_back( 0x200 );
 	}
 
-	if ( ( MYFSID == FSID_ADFS_E ) || ( MYFSID == FSID_ADFS_EP ) )
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_EP ) )
 	{
 		pSource->ReadSectorCHS( 0, 0, 0, SectorBuf );
 
@@ -84,14 +84,14 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		{
 			pSource->ReadSectorCHS( 0, 0, 2, SectorBuf );
 
-			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( MYFSID == FSID_ADFS_E ) )
+			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( FSID == FSID_ADFS_E ) )
 			{
 				hint.Confidence = 25;
 
 				return hint;
 			}
 
-			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( MYFSID == FSID_ADFS_EP ) )
+			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( FSID == FSID_ADFS_EP ) )
 			{
 				hint.Confidence = 25;
 
@@ -109,14 +109,14 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		{
 			pSource->ReadSectorCHS( 0, 0, 2, SectorBuf );
 
-			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( MYFSID == FSID_ADFS_E ) )
+			if ( ( rstrncmp( &SectorBuf[ 1 ], (BYTE *) "Nick", 4 ) ) && ( FSID == FSID_ADFS_E ) )
 			{
 				hint.Confidence = 25;
 
 				return hint;
 			}
 
-			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( MYFSID == FSID_ADFS_EP ) )
+			if ( ( rstrncmp( &SectorBuf[ 4 ], (BYTE *) "SBPr", 4 ) ) && ( FSID == FSID_ADFS_EP ) )
 			{
 				hint.Confidence = 25;
 
@@ -200,24 +200,20 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 		hint.Confidence = 25;
 
 		/* So it looks like new-map, but what kind? Could be F,E+,F+,G or a hard disc */
-		switch ( MYFSID )
+		if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP ) )
 		{
-		case FSID_ADFS_HN:
-		case FSID_ADFS_HP:
 			if ( TypeByte == 0 ) { hint.Confidence += 5; }
-			break;
-
-		case FSID_ADFS_F:
-		case FSID_ADFS_FP:
+		}
+		else if ( ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ) )
+		{
 			if ( SecsTrack == 10 ) { hint.Confidence += 5; }
-			break;
-
-		case FSID_ADFS_G:
+		}
+		else if ( FSID == FSID_ADFS_G )
+		{
 			if ( SecsTrack == 20 ) { hint.Confidence += 5; }
-			break;
 		}
 
-		if ( ( MYFSID == FSID_ADFS_FP ) || ( MYFSID == FSID_ADFS_HP ) || ( MYFSID == FSID_ADFS_G ) )
+		if ( ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_HP ) || ( FSID == FSID_ADFS_G ) )
 		{
 			if ( pFSMap->FormatVersion == 1 )
 			{
@@ -670,7 +666,7 @@ FileSystem *ADFSEFileSystem::FileFilesystem( DWORD FileID )
 
 		if ( pSpriteFS != nullptr )
 		{
-			pSpriteFS->FSID = MAKEFSID( PLID, 0x01, 0x0A );
+			pSpriteFS->FSID = FSID_SPRITE;
 		}
 
 		return pSpriteFS;
@@ -1442,64 +1438,51 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00200006 );
 			::PostMessage( GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETRANGE, (WPARAM) TRUE, (LPARAM) 0x00150006 );
 
-			switch ( pSystem->FSID & 0xFFFF )
+			if ( ( pSystem->FSID == FSID_ADFS_E ) || ( pSystem->FSID ==  FSID_ADFS_EP ) )
 			{
-			case FSID_ADFS_E:
-			case FSID_ADFS_EP:
-				{
-					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0007 );
-					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
-					::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "128 bytes" );
-					::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0007 );
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "128 bytes" );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
 
-					pSystem->pFSMap->LogBPMB = 7;
-					pSystem->pFSMap->BPMB    = 128;
-					pSystem->pFSMap->IDLen   = 15;
-				}
-				break;
+				pSystem->pFSMap->LogBPMB = 7;
+				pSystem->pFSMap->BPMB    = 128;
+				pSystem->pFSMap->IDLen   = 15;
+			}
+			else if ( ( pSystem->FSID == FSID_ADFS_F ) || ( pSystem->FSID == FSID_ADFS_FP ) )
+			{
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "64 bytes" );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
 
-			case FSID_ADFS_F:
-			case FSID_ADFS_FP:
-				{
-					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
-					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
-					::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "64 bytes" );
-					::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+				pSystem->pFSMap->LogBPMB = 6;
+				pSystem->pFSMap->BPMB    = 64;
+				pSystem->pFSMap->IDLen   = 15;
+			}
+			else if ( pSystem->FSID == FSID_ADFS_G )
+			{
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "64 bytes" );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
 
-					pSystem->pFSMap->LogBPMB = 6;
-					pSystem->pFSMap->BPMB    = 64;
-					pSystem->pFSMap->IDLen   = 15;
-				}
-				break;
+				pSystem->pFSMap->LogBPMB = 6;
+				pSystem->pFSMap->BPMB    = 64;
+				pSystem->pFSMap->IDLen   = 15;
+			}
+			else if ( ( pSystem->FSID == FSID_ADFS_HN ) || ( pSystem->FSID == FSID_ADFS_HP ) )
+			{
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000A );
+				::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "1024 bytes" );
+				::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
 
-			case FSID_ADFS_G:
-				{
-					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x0006 );
-					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
-					::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "64 bytes" );
-					::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
+				pSystem->pFSMap->LogBPMB = 0x0A;
+				pSystem->pFSMap->BPMB    = 1024;
+				pSystem->pFSMap->IDLen   = 15;
 
-					pSystem->pFSMap->LogBPMB = 6;
-					pSystem->pFSMap->BPMB    = 64;
-					pSystem->pFSMap->IDLen   = 15;
-				}
-				break;
-
-			case FSID_ADFS_HN:
-			case FSID_ADFS_HP:
-				{
-					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER1 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000A );
-					::PostMessage(  GetDlgItem( hwndDlg, IDC_SLIDER2 ), TBM_SETPOS, (WPARAM) TRUE, (LPARAM) 0x000F );
-					::SendMessageA( GetDlgItem( hwndDlg, IDC_BPMB ), WM_SETTEXT, 0, (LPARAM)  "1024 bytes" );
-					::SendMessageA( GetDlgItem( hwndDlg, IDC_IDLEN ), WM_SETTEXT, 0, (LPARAM) "15 bits" );
-
-					pSystem->pFSMap->LogBPMB = 0x0A;
-					pSystem->pFSMap->BPMB    = 1024;
-					pSystem->pFSMap->IDLen   = 15;
-
-					::EnableWindow( GetDlgItem( hwndDlg, IDC_EMUHEADER ), TRUE );
-				}
-				break;
+				::EnableWindow( GetDlgItem( hwndDlg, IDC_EMUHEADER ), TRUE );
 			}
 
 			return TRUE;
@@ -1612,7 +1595,7 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	DWORD SecSize = 512;
 
-	if ( ( MYFSID == FSID_ADFS_E ) || ( MYFSID == FSID_ADFS_F ) || ( MYFSID == FSID_ADFS_EP ) || ( MYFSID == FSID_ADFS_FP ) || ( MYFSID == FSID_ADFS_G ) )
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G ) )
 	{
 		SecSize = 1024;
 	}
@@ -1646,7 +1629,7 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 3, 0, 1, false ), (LPARAM) MapMsg );
 
-	pFSMap->ConfigureDisk( MYFSID );
+	pFSMap->ConfigureDisk( FSID );
 
 	if ( pDirectory == nullptr )
 	{
@@ -1656,7 +1639,7 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		pEDirectory->pMap = pFSMap;
 	}
 		
-	if ( ( MYFSID == FSID_ADFS_E ) || ( MYFSID==FSID_ADFS_F ) || ( MYFSID == FSID_ADFS_EP ) || ( MYFSID==FSID_ADFS_FP ) || ( MYFSID==FSID_ADFS_G ) )
+	if ( ( FSID == FSID_ADFS_E ) || ( FSID==FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID==FSID_ADFS_FP ) || ( FSID==FSID_ADFS_G ) )
 	{
 		time_t t = time(NULL);
 		struct tm *pT = localtime( &t );
@@ -1741,57 +1724,46 @@ void ADFSEFileSystem::SetShape(void)
 	/* Set the disk shape according to the format - NOTE this will be
 	   reset after reading the disc record !
 	*/
-	switch ( MYFSID )
+
+	if (
+		( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_EP ) || ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ) || ( FSID == FSID_ADFS_G )
+		) {
+		DiskShape shape;
+
+		shape.Heads            = 2;
+		shape.InterleavedHeads = false;
+		shape.Sectors          = 5;
+		shape.SectorSize       = 1024;
+		shape.Tracks           = 80;
+
+		if ( ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ) )
+		{
+			shape.Sectors = 10;
+		}
+
+		if ( FSID == FSID_ADFS_G )
+		{
+			shape.Sectors = 20;
+		}
+
+		pSource->SetDiskShape( shape );
+
+		MediaShape = shape;
+
+		if ( pEDirectory != nullptr )
+		{
+			pEDirectory->MediaShape = shape;
+		}
+
+		FloppyFormat = true;
+	}
+	else if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP ) )
 	{
-		case FSID_ADFS_E:
-		case FSID_ADFS_EP:
-		case FSID_ADFS_F:
-		case FSID_ADFS_FP:
-		case FSID_ADFS_G:
-			{
-				DiskShape shape;
-
-				shape.Heads            = 2;
-				shape.InterleavedHeads = false;
-				shape.Sectors          = 5;
-				shape.SectorSize       = 1024;
-				shape.Tracks           = 80;
-
-				if (( MYFSID == FSID_ADFS_F ) || ( MYFSID == FSID_ADFS_FP ))
-				{
-					shape.Sectors = 10;
-				}
-
-				if ( MYFSID == FSID_ADFS_G )
-				{
-					shape.Sectors = 20;
-				}
-
-				pSource->SetDiskShape( shape );
-
-				MediaShape = shape;
-
-				if ( pEDirectory != nullptr )
-				{
-					pEDirectory->MediaShape = shape;
-				}
-
-				FloppyFormat = true;
-			}
-			break;
-
-		case FSID_ADFS_HN:
-		case FSID_ADFS_HP:
-			{
-				FloppyFormat = false;
-			}
-			break;
-
-		default:
-			{
-				FloppyFormat = false;
-			}
-			break;
+		FloppyFormat = false;
+	}
+	else
+	{
+		FloppyFormat = false;
 	}
 
 	if ( pEDirectory != nullptr )

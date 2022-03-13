@@ -111,7 +111,6 @@ int	ADFSEDirectory::ReadEDirectory( void )
 		file.ExecAddr = * (DWORD *) &DirBytes[ptr + 14];
 		file.Length   = * (DWORD *) &DirBytes[ptr + 18];
 		file.SSector  = * (DWORD *) &DirBytes[ptr + 22]; file.SSector &= 0xFFFFFF;
-		file.XlatorID = NULL;
 		file.HasResolvedIcon = false;
 
 		TranslateType( &file );
@@ -260,7 +259,6 @@ int	ADFSEDirectory::ReadPDirectory( void ) {
 		file.ExecAddr = * (DWORD *) &DirBytes[ ptr + 0x04 ];
 		file.Length   = * (DWORD *) &DirBytes[ ptr + 0x08 ];
 		file.SSector  = * (DWORD *) &DirBytes[ ptr + 0x0C ];
-		file.XlatorID = NULL;
 		file.HasResolvedIcon = false;
 
 		TranslateType( &file );

@@ -43,7 +43,7 @@ public:
 	static BYTE ZoneCheck( BYTE *map_base, DWORD SSize );
 	static BYTE BootBlockCheck( BYTE *block );
 
-	void ConfigureDisk( DWORD FSID );
+	void ConfigureDisk( FSIdentifier FSID );
 
 	DWORD RootLoc;
 	BYTE  DiscName[ 11 ];

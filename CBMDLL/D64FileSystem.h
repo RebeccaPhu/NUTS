@@ -79,7 +79,7 @@ public:
 
 	int  Format_Process( DWORD FT, HWND hWnd );
 
-	DWORD GetEncoding(void )
+	EncodingIdentifier GetEncoding(void )
 	{
 		return ENCODING_PETSCII;
 	}

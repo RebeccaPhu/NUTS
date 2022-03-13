@@ -45,7 +45,7 @@ public:
 		shape.SectorSize       = 256;
 		shape.Tracks           = 40;
 
-		if ( MYFSID == FSID_DFS_80 )
+		if ( FSID == FSID_DFS_80 )
 		{
 			shape.Tracks = 80;
 		}
@@ -69,7 +69,7 @@ public:
 	BYTE *GetTitleString( NativeFile *pFile, DWORD Flags ) {
 		static BYTE title[512];
 
-		if ( ( pParentFS->FSID & 0xFFFF ) == FSID_DFS_DSD )
+		if ( pParentFS->FSID == FSID_DFS_DSD )
 		{
 			rsprintf( title, ".%c", pDFSDirectory->CurrentDir );
 		}
@@ -85,7 +85,7 @@ public:
 	AttrDescriptors GetFSAttributeDescriptions( void );
 	AttrDescriptors GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
-	DWORD GetEncoding(void )
+	EncodingIdentifier GetEncoding(void )
 	{
 		return ENCODING_ACORN;
 	}
