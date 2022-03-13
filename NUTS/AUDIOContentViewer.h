@@ -10,7 +10,7 @@
 class AUDIOContentViewer : DXAudioCallback
 {
 public:
-	AUDIOContentViewer( CTempFile &fileObj, DWORD TUID );
+	AUDIOContentViewer( CTempFile &fileObj, TXIdentifier TUID );
 	~AUDIOContentViewer(void);
 
 public:
@@ -40,7 +40,7 @@ private:
 
 	AUDIOTranslator *pXlator;
 
-	DWORD   TID;
+	TXIdentifier TID;
 
 	DWORD TimeIndex;
 	DWORD TimeTotal;

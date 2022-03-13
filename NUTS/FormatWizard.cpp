@@ -20,8 +20,9 @@ DWORD   Format_FT = 0;
 HANDLE	hFormatEvent;
 HANDLE	hFormatThread;
 HWND	hFormatWindow;
-DWORD   FormatFSID      = FS_Null;
-bool    Formatting      = false;
+bool    Formatting = false;
+
+FSIdentifier FormatFSID = FS_Null;
 
 FontBitmap *srcName = nullptr;
 
@@ -287,8 +288,8 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 				if ( FormatSet )
 				{
-					SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_PROVIDER), WM_SETTEXT, 0, (LPARAM) FSPlugins.ProviderName( ChosenFS.PUID ).c_str() );
-					SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_FORMAT), WM_SETTEXT, 0, (LPARAM) FSPlugins.FSName( ChosenFS.FUID ).c_str() );
+					SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_PROVIDER), WM_SETTEXT, 0, (LPARAM) FSPlugins.ProviderName( ChosenFS.FSID ).c_str() );
+					SendMessage(GetDlgItem(hwndDlg, IDC_FORMAT_FORMAT), WM_SETTEXT, 0, (LPARAM) FSPlugins.FSName( ChosenFS.FSID ).c_str() );
 
 					SetOptions( hwndDlg, ChosenFS.Flags );
 				}
@@ -362,7 +363,7 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 					::SendMessage( GetDlgItem( hwndDlg, IDC_FORMAT_CANCEL), WM_SETTEXT, 0, (LPARAM) L"Cancel" );
 
 					// PUID here is both plugin and provider ID.
-					pFormatter = FSPlugins.LoadFS( ChosenFS.FUID, pSource );
+					pFormatter = FSPlugins.LoadFS( ChosenFS.FSID, pSource );
 
 					if ( pFormatter == nullptr )
 					{

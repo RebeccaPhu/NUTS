@@ -47,10 +47,10 @@ typedef struct _FSAction
 	std::vector<TitleComponent> *pTitleStack;
 	int                         EnterIndex;
 	FileSystem                  *FS;
-	DWORD                       FSID;
+	FSIdentifier                FSID;
 } FSAction;
 
 
 /* Action Thread */
-void DoAction( ActionType t, CFileViewer *p, std::vector<FileSystem *> *s, std::vector<TitleComponent> *pT, int i, DWORD TargetFSID = 0 );
+void DoAction( ActionType t, CFileViewer *p, std::vector<FileSystem *> *s, std::vector<TitleComponent> *pT, int i, FSIdentifier TargetFSID = FS_Null );
 unsigned int __stdcall FSActionThread(void *param);

@@ -48,7 +48,7 @@ public:
 	static EncodingEdit *pRenameEditX;
 	static DWORD StaticFlags;
 	static DWORD StaticFileFlags;
-	static DWORD StaticEncoding;
+	static EncodingIdentifier StaticEncoding;
 	static INT_PTR CALLBACK NewDirDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static BYTE *pNewDir;
 	static EncodingEdit *pNewDirEdit;
@@ -61,7 +61,6 @@ public:
 	FileSystem *FS;
 	HWND       hWnd;
 	bool       Updated;
-	DWORD      CurrentFSID;
 	BYTE       PaneIndex;
 
 	std::vector<FileSystem *> *pFSStack;
@@ -151,7 +150,7 @@ private:
 	void  GetCliRect( RECT &client );
 	void  DoSelections( UINT Msg, WPARAM wParam, LPARAM lParam );
 	DWORD GetSelectionCount( void );
-	void  DoContentViewer( DWORD PrefTUID = NULL );
+	void  DoContentViewer( TXIdentifier PrefTUID = TX_Null );
 	void  DoSwapFiles( BYTE UpDown );
 	void  DoKeyControls( UINT message, WPARAM wParam, LPARAM lParam );
 	void  DoContextMenu( void );
@@ -163,8 +162,8 @@ private:
 	void  DoTitleBarToolTip();
 
 
-	std::map<UINT, DWORD> MenuFSMap;
-	std::map<UINT, DWORD> MenuXlatorMap;
+	std::map<UINT, FSIdentifier> MenuFSMap;
+	std::map<UINT, TXIdentifier> MenuXlatorMap;
 
 	DisplayType Displaying;
 

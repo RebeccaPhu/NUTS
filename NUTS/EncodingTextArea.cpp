@@ -599,7 +599,7 @@ int EncodingTextArea::SaveText( FILE *fFile )
 	return 0;
 }
 
-int EncodingTextArea::SetFont( DWORD FontID )
+int EncodingTextArea::SetFont( FontIdentifier FontID )
 {
 	Font = FontID;
 
@@ -612,7 +612,7 @@ int EncodingTextArea::SetFont( DWORD FontID )
 	return 0;
 }
 
-int EncodingTextArea::SetTextBody( DWORD FontID, BYTE *pBody, DWORD lBody, std::vector<DWORD> &rLinePointers )
+int EncodingTextArea::SetTextBody( FontIdentifier FontID, BYTE *pBody, DWORD lBody, std::vector<DWORD> &rLinePointers )
 {
 	EnterCriticalSection( &cs );
 

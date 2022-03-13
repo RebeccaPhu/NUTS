@@ -219,7 +219,7 @@ DWORD ProcessedDirs    = 0;
 
 static WORD RecursedDirs = 0;
 
-int RemapDirectoryRecord( DataSource *pSource, CTempFile &WorkSource, ISOSectorList &Sectors, BYTE IsoOp, DWORD DirSector, DWORD DirSize, DWORD SectorSize, DWORD FSID )
+int RemapDirectoryRecord( DataSource *pSource, CTempFile &WorkSource, ISOSectorList &Sectors, BYTE IsoOp, DWORD DirSector, DWORD DirSize, DWORD SectorSize, FSIdentifier FSID )
 {
 	AutoBuffer SectorBuffer( SectorSize );
 
@@ -403,7 +403,7 @@ int RemapPathTable( DataSource *pSource, CTempFile &WorkSource, ISOSectorList &S
 	return DS_SUCCESS;
 }
 
-int AdjustISOStructures( DataSource *pSource, CTempFile &WorkSource, ISOSectorList &Sectors, BYTE IsoOp, DWORD SectorSize, DWORD FSID )
+int AdjustISOStructures( DataSource *pSource, CTempFile &WorkSource, ISOSectorList &Sectors, BYTE IsoOp, DWORD SectorSize, FSIdentifier FSID )
 {
 	// There are 3 things we need to do here:
 	// 1) Adjust all of the volume descriptors to point to the adjusted sectors
@@ -542,7 +542,7 @@ int AdjustISOStructures( DataSource *pSource, CTempFile &WorkSource, ISOSectorLi
 	return DS_SUCCESS;
 }
 
-int ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWORD SectorSize, DWORD FSID )
+int ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWORD SectorSize, FSIdentifier FSID )
 {
 	SendMessage( GetDlgItem( hJobWindow, IDC_JOB_NAME ), WM_SETTEXT, 0, (LPARAM) std::wstring( L"Duplicating data..." ).c_str() );
 
@@ -788,7 +788,7 @@ int PerformISOJob( ISOJob *pJob )
 	return CurrentISOJob.Result;
 }
 
-int ISOExtendDataArea( DataSource *pSource, DWORD SectorSize, DWORD Sectors, DWORD FSID )
+int ISOExtendDataArea( DataSource *pSource, DWORD SectorSize, DWORD Sectors, FSIdentifier FSID )
 {
 	DWORD SectorID = 16;
 
@@ -840,7 +840,7 @@ int ISOExtendDataArea( DataSource *pSource, DWORD SectorSize, DWORD Sectors, DWO
 	return 0;
 }
 
-int ISOSetRootSize( DataSource *pSource, DWORD SectorSize, DWORD RootSize, DWORD FSID )
+int ISOSetRootSize( DataSource *pSource, DWORD SectorSize, DWORD RootSize, FSIdentifier FSID )
 {
 	DWORD SectorID = 16;
 
@@ -896,7 +896,7 @@ int ISOSetRootSize( DataSource *pSource, DWORD SectorSize, DWORD RootSize, DWORD
 }
 
 
-int ISOSetDirSize( DataSource *pSource, DWORD SectorSize, DWORD DirSize, DWORD ParentSector, DWORD ParentLength, DWORD DirSector, DWORD FSID )
+int ISOSetDirSize( DataSource *pSource, DWORD SectorSize, DWORD DirSize, DWORD ParentSector, DWORD ParentLength, DWORD DirSector, FSIdentifier FSID )
 {
 	AutoBuffer SectorBuffer( SectorSize );
 
@@ -968,7 +968,7 @@ int ISOSetDirSize( DataSource *pSource, DWORD SectorSize, DWORD DirSize, DWORD P
 	return DS_SUCCESS;
 }
 
-int ISOSetSubDirParentSize( DataSource *pSource, DWORD SectorSize, DWORD DirSize, DWORD ParentSector, DWORD ParentLength, DWORD DirSector, DWORD FSID )
+int ISOSetSubDirParentSize( DataSource *pSource, DWORD SectorSize, DWORD DirSize, DWORD ParentSector, DWORD ParentLength, DWORD DirSector, FSIdentifier FSID )
 {
 	AutoBuffer SectorBuffer( SectorSize );
 
@@ -1040,7 +1040,7 @@ int ISOSetSubDirParentSize( DataSource *pSource, DWORD SectorSize, DWORD DirSize
 	return DS_SUCCESS;
 }
 
-void ScanRealImageSizeDir( DataSource *pSource, ISOVolDesc *pVolDesc, DWORD &LastSector, DWORD DirExtent, DWORD DirSize, DWORD FSID )
+void ScanRealImageSizeDir( DataSource *pSource, ISOVolDesc *pVolDesc, DWORD &LastSector, DWORD DirExtent, DWORD DirSize, FSIdentifier FSID )
 {
 	AutoBuffer SectorBuffer( pVolDesc->SectorSize );
 
@@ -1131,7 +1131,7 @@ void ScanRealImageSizeDir( DataSource *pSource, ISOVolDesc *pVolDesc, DWORD &Las
 	}
 }
 
-void ScanRealImageSize( DataSource *pSource, ISOVolDesc *pVolDesc, DWORD FSID )
+void ScanRealImageSize( DataSource *pSource, ISOVolDesc *pVolDesc, FSIdentifier FSID )
 {
 	// The ISO and High Sierra Formats tend to lie a bit about the actual size of the image. As a reader,
 	// nothing really cares - the files point to the data, so meh. But for writing, we do need to know
@@ -1339,7 +1339,7 @@ DWORD ISOChooseCapacity()
 	return 0;
 }
 
-int ISOSetPathTableSize( DataSource *pSource, DWORD SectorSize, DWORD TableSize, DWORD FSID )
+int ISOSetPathTableSize( DataSource *pSource, DWORD SectorSize, DWORD TableSize, FSIdentifier FSID )
 {
 	DWORD SectorID = 16;
 

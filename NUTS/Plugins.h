@@ -75,7 +75,7 @@ public:
 	void  *LoadFont( FontIdentifier ReqFontID );
 	FontIdentifier FindFont( EncodingIdentifier Encoding, BYTE Index );
 	void  NextFont( EncodingIdentifier Encoding, BYTE Index );
-	FontIdentifier FontName( FontIdentifer ReqFontID );
+	std::wstring FontName( FontIdentifer ReqFontID );
 
 	std::vector<FontIdentifier> FontListForEncoding( EncodingIdentifier Encoding );
 	NUTSFontNames      FullFontList( void );

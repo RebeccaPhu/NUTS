@@ -402,7 +402,7 @@ unsigned int __stdcall CreationThread(void *param)
 
 	if ( pSource != nullptr )
 	{
-		FileSystem *FS = (FileSystem *) FSPlugins.LoadFS( ChosenFS.FUID, pSource );
+		FileSystem *FS = (FileSystem *) FSPlugins.LoadFS( ChosenFS.FSID, pSource );
 
 		DS_RELEASE( pSource );
 
@@ -427,7 +427,7 @@ unsigned int __stdcall CreationThread(void *param)
 		file.EncodingID   = pContain->GetEncoding();
 		file.fileID       = 0;
 		file.Flags        = 0;
-		file.FSFileType   = 0;
+		file.FSFileType   = FT_NULL;
 		file.Icon         = FT_MiscImage;
 		file.Length       = NewImage.Ext();
 		file.Type         = FT_MiscImage;

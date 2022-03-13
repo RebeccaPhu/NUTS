@@ -9,7 +9,8 @@
 
 extern HWND  hMainWnd;
 extern HWND  hCharmapFocusWnd;
-extern DWORD CharmapFontID;
+
+extern FontIdentifier CharmapFontID;
 
 #endif
 
@@ -95,7 +96,7 @@ private:
 	bool  FontChanged;
 
 #ifndef FONTBITMAP_PLUGIN
-	std::vector<DWORD> FontSelection;
+	std::vector<FontIdentifier> FontSelection;
 	WORD               FontNum;
 #endif
 
@@ -105,7 +106,8 @@ private:
 	HBITMAP hAreaCanvas;
 
 	EncodingEdit *pBuddyControl;
-	DWORD   CurrentFontID;
+
+	FontIdentifier CurrentFontID;
 
 private:
 	void PaintControl( void );

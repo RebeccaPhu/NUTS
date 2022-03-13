@@ -5,7 +5,7 @@
 #include <malloc.h>
 
 #ifndef FONTBITMAP_PLUGIN
-FontBitmap::FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected )
+FontBitmap::FontBitmap( FontIdentifier FontID, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected )
 {
 	BYTE *pFontData = (BYTE *) FSPlugins.LoadFont( FontID );
 

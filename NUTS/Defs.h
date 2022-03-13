@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <map>
+#include <string>
 
 #include "BYTEString.h"
 
@@ -10,6 +11,7 @@
 #define FT_WINDOWS     L"WindowsFiletype"
 #define FT_ROOT        L"RootObject"
 #define FT_UNSET       L"UNSET_FILE_OBJECT"
+#define FT_NULL        L"NullObject"
 #define FT_ZIP         L"ZIPFileContent"
 #define FT_ISO         L"ISOFileContent"
 #define FSID_NONE      L"Undefined_FileSystem"
@@ -369,7 +371,7 @@ typedef struct _Panel {
 	BYTE  Text[ 256 ];
 	DWORD Width;
 	DWORD Flags;
-	DWORD FontID;
+	FontIdentifier FontID;
 } Panel;
 
 typedef std::map<DWORD, Panel> PanelList;

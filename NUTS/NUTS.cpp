@@ -88,7 +88,8 @@ std::deque<FSAction> ActionQueue;
 HANDLE hActionEvent, hActionShutdown, hFSActionThread;
 
 HWND  hCharmapFocusWnd;
-DWORD CharmapFontID;
+
+FontIdentifier CharmapFontID;
 
 void InitFSActions( void )
 {
@@ -607,8 +608,8 @@ unsigned int DoParent( FSAction *pVars )
 
 		FS = pVars->pStack->back();
 
-		pVars->pane->FS          = FS;
-		pVars->pane->CurrentFSID = FS->FSID;
+		pVars->pane->FS       = FS;
+		pVars->pane->FS->FSID = FS->FSID;
 	} else {
 		if ( FS->Parent() != NUTS_SUCCESS )
 		{
@@ -692,7 +693,7 @@ unsigned int DoEnter( FSAction *pVars )
 			pVars->pStack->push_back( pNewFS );
 
 			pVars->pane->FS	      = pNewFS;
-			pVars->pane->CurrentFSID = pNewFS->FSID;
+			pVars->pane->FS->FSID = pNewFS->FSID;
 
 			pVars->pane->SelectionStack.push_back( -1 );
 		}
@@ -728,10 +729,10 @@ unsigned int DoEnter( FSAction *pVars )
 
 					pVars->pStack->push_back( pNewFS );
 
-					pVars->pane->FS	           = pNewFS;
-					pVars->pane->CurrentFSID   = pNewFS->FSID;
-					pNewFS->hMainWindow        = hMainWnd;
-					pNewFS->hPaneWindow        = pVars->pane->hWnd;
+					pVars->pane->FS	      = pNewFS;
+					pVars->pane->FS->FSID = pNewFS->FSID;
+					pNewFS->hMainWindow   = hMainWnd;
+					pNewFS->hPaneWindow   = pVars->pane->hWnd;
 
 					pVars->pane->SelectionStack.push_back( -1 );
 				}
@@ -843,7 +844,7 @@ unsigned int DoEnterAs( FSAction *pVars )
 
 			pVars->pStack->push_back( newFS );
 
-			pVars->pane->CurrentFSID = newFS->FSID;
+			pVars->pane->FS->FSID = newFS->FSID;
 
 			pVars->pane->SelectionStack.push_back( -1 );
 		}
@@ -895,7 +896,6 @@ void DoRootFS( FSAction *pVars )
 	}
 
 	pVars->pane->FS = pVars->pStack->front();
-	pVars->pane->CurrentFSID = pVars->pane->FS->FSID;
 	pVars->pane->SelectionStack.clear();
 	pVars->pane->SelectionStack.push_back( -1 );
 
@@ -1267,11 +1267,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				PIndex = 1;
 			}
 
-			WCHAR *FontName = FSPlugins.FontName( (DWORD) lParam );
+			std::wstring FontName = FSPlugins.FontName( FontIdentifier( (WCHAR *) lParam ) );
 
-			if ( FontName != nullptr )
+			if ( FontName != L"" )
 			{
-				pStatusBar->SetPanelText( Panel, FONTID_PC437, (BYTE *) AString( (WCHAR *) FontName ) );
+				pStatusBar->SetPanelText( Panel, FONTID_PC437, (BYTE *) AString( (WCHAR *) FontName.c_str() ) );
 				pStatusBar->SetPanelFont( SPanel, FSPlugins.FindFont( pane->FS->GetEncoding(), PIndex ) );
 			}
 		}
@@ -1570,11 +1570,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			if (wParam == (WPARAM) leftPane->hWnd)
 			{
-				DoAction( ActionDoEnterAs, leftPane, &leftFS, &leftTitles, 0, lParam );
+				DoAction( ActionDoEnterAs, leftPane, &leftFS, &leftTitles, 0, FSIdentifier( (WCHAR *) lParam ) );
 			} 
 			else if (wParam == (WPARAM) rightPane->hWnd)
 			{
-				DoAction( ActionDoEnterAs, rightPane, &rightFS, &rightTitles, 0, lParam );
+				DoAction( ActionDoEnterAs, rightPane, &rightFS, &rightTitles, 0, FSIdentifier( (WCHAR *) lParam ) );
 			}
 		}
 
@@ -1812,7 +1812,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-void DoAction( ActionType t, CFileViewer *p, std::vector<FileSystem *> *s, std::vector<TitleComponent> *pT, int i, DWORD TargetFSID )
+void DoAction( ActionType t, CFileViewer *p, std::vector<FileSystem *> *s, std::vector<TitleComponent> *pT, int i, FSIdentifier TargetFSID )
 {
 	FSAction a;
 

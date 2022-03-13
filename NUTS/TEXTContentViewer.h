@@ -12,7 +12,7 @@
 class CTEXTContentViewer
 {
 public:
-	CTEXTContentViewer( CTempFile &FileObj, DWORD TUID );
+	CTEXTContentViewer( CTempFile &FileObj, TXIdentifier TUID );
 	~CTEXTContentViewer(void);
 
 public:
@@ -29,7 +29,8 @@ public:
 
 	BYTE  *pContent;
 	QWORD lContent;
-	DWORD FSEncodingID;
+
+	EncodingIdentifier FSEncodingID;
 
 public:
 	static LRESULT CALLBACK TEXTViewerProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
@@ -47,13 +48,13 @@ private:
 	BYTE  *pTextBuffer;
 	long  lTextBuffer;
 
-	DWORD XlatorID;
+	TXIdentifier XlatorID;
 
 	TEXTTranslator *pXlator;
 
 	std::wstring TempPath;
 
-	std::vector<DWORD> FontList;
+	std::vector<FontIdentifier> FontList;
 
 	DWORD  FontNum;
 

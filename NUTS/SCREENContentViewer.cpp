@@ -33,7 +33,7 @@ LRESULT CALLBACK CSCREENContentViewer::SCViewerProc(HWND hWnd, UINT message, WPA
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-CSCREENContentViewer::CSCREENContentViewer( CTempFile &FileObj, DWORD TUID ) {
+CSCREENContentViewer::CSCREENContentViewer( CTempFile &FileObj, TXIdentifier TUID ) {
 	if ( !WndClassReg )
 	{
 		WNDCLASSEX wcex;

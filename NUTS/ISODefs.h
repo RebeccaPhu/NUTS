@@ -73,7 +73,7 @@ typedef struct _ISOJob
 	ISOSectorList Sectors;
 	BYTE          IsoOp;
 	DWORD         SectorSize;
-	DWORD         FSID;
+	FSIdentifier  FSID;
 	HWND          ProgressWnd;
 	int           Result;
 	ISOVolDesc    *pVolDesc;

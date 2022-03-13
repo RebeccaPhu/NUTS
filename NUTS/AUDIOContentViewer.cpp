@@ -28,7 +28,7 @@ LRESULT CALLBACK AUDIOContentViewer::AUViewerProc(HWND hWnd, UINT message, WPARA
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-AUDIOContentViewer::AUDIOContentViewer( CTempFile &fileObj, DWORD TUID )
+AUDIOContentViewer::AUDIOContentViewer( CTempFile &fileObj, TXIdentifier TUID )
 {
 	hWnd           = NULL;
 	ParentWnd      = NULL;
@@ -649,7 +649,7 @@ void AUDIOContentViewer::DrawBiText( AudioCuePoint *cue, int x, int y, int w, DW
 {
 	if ( cue->UseEncoding )
 	{
-		std::vector<DWORD> fonts = FSPlugins.FontListForEncoding( cue->EncodingID );
+		std::vector<FontIdentifier> fonts = FSPlugins.FontListForEncoding( cue->EncodingID );
 
 		if ( fonts.size() > 0 )
 		{

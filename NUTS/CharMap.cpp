@@ -44,7 +44,7 @@ LRESULT CALLBACK CharMapWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	return DefWindowProc( hWnd, uMsg, wParam, lParam );
 }
 
-void CharMap::OpenTheMap( HWND hParent, DWORD FontID )
+void CharMap::OpenTheMap( HWND hParent, FontIdentifier FontID )
 {
 	if ( CharMap::TheCharMap == nullptr )
 	{
@@ -58,7 +58,7 @@ void CharMap::OpenTheMap( HWND hParent, DWORD FontID )
 	}
 }
 
-CharMap::CharMap( HWND hParent, DWORD FontID )
+CharMap::CharMap( HWND hParent, FontIdentifier FontID )
 {
 	if ( !_HasWindowClass )
 	{
@@ -357,7 +357,7 @@ void CharMap::RemoveFocus( HWND hParent )
 	}
 }
 
-void CharMap::SetFont( DWORD FontID )
+void CharMap::SetFont( FontIdentifier FontID )
 {
 	CFontID = FontID;
 

@@ -169,7 +169,7 @@ int EncodingStatusBar::DoPaint( void )
 	return FALSE;
 }
 
-int EncodingStatusBar::AddPanel( DWORD PanelID, DWORD Width, BYTE *Text, DWORD FontID, DWORD Flags )
+int EncodingStatusBar::AddPanel( DWORD PanelID, DWORD Width, BYTE *Text, FontIdentifier FontID, DWORD Flags )
 {
 	Panel panel;
 
@@ -207,7 +207,7 @@ int EncodingStatusBar::SetPanelWidth( DWORD PanelID, DWORD NewWidth )
 	return 0;
 }
 
-int EncodingStatusBar::SetPanelText( DWORD PanelID, DWORD FontID, BYTE *Text )
+int EncodingStatusBar::SetPanelText( DWORD PanelID, FontIdentifier FontID, BYTE *Text )
 {
 	if ( Panels.find( PanelID ) != Panels.end() )
 	{
@@ -225,7 +225,7 @@ int EncodingStatusBar::SetPanelText( DWORD PanelID, DWORD FontID, BYTE *Text )
 	return 0;
 }
 
-int EncodingStatusBar::SetPanelFont( DWORD PanelID, DWORD FontID )
+int EncodingStatusBar::SetPanelFont( DWORD PanelID, FontIdentifier FontID )
 {
 	if ( Panels.find( PanelID ) != Panels.end() )
 	{

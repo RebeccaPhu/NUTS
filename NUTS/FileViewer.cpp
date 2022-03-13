@@ -84,7 +84,6 @@ CFileViewer::CFileViewer(void) {
 	DragType       = 0;
 	dragX          = -1;
 	dragY          = -1;
-	CurrentFSID    = FS_Root;
 	PaneIndex      = 0;
 	Displaying     = DisplayLargeIcons;
 
@@ -364,7 +363,7 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 				if ( items == 1 )
 				{
-					::SendMessage( ParentWnd, WM_DOENTERAS, (WPARAM) hWnd, MenuFSMap[ LOWORD( wParam ) ] );
+					::SendMessage( ParentWnd, WM_DOENTERAS, (WPARAM) hWnd, (LPARAM) MenuFSMap[ LOWORD( wParam ) ].c_str() );
 				}
 
 				if ( items > 1 )
@@ -475,7 +474,7 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 				case IDM_NEWIMAGE:
 					{
-						static DWORD Encoding = ENCODING_ASCII;
+						static EncodingIdentifier Encoding = ENCODING_ASCII;
 						
 						Encoding = FS->GetEncoding();
 
@@ -921,7 +920,7 @@ void CFileViewer::DrawFile(int i, NativeFile *pFile, DWORD Icon, bool Selected) 
 	DWORD      rw = 34;
 	DWORD      rh = 34;
 
-	DWORD FontID = FSPlugins.FindFont( pFile->EncodingID, PaneIndex );
+	FontIdentifier FontID = FSPlugins.FindFont( pFile->EncodingID, PaneIndex );
 
 	BYTE FullName[ 64 ];
 	int  Truncs = 8;
@@ -1199,7 +1198,7 @@ void CFileViewer::Redraw() {
 
 		long NewScrollStartY = ScrollStartY;
 
-		SendMessage( ParentWnd, WM_IDENTIFYFONT, (WPARAM) this, (LPARAM) FSPlugins.FindFont( FS->GetEncoding(), PaneIndex ) );
+		SendMessage( ParentWnd, WM_IDENTIFYFONT, (WPARAM) this, (LPARAM) FSPlugins.FindFont( FS->GetEncoding(), PaneIndex ).c_str() );
 
 		for (iFile=TheseFiles.begin(); iFile != TheseFiles.end(); iFile++) {
 			NativeFile file = *iFile;
@@ -1354,7 +1353,7 @@ void CFileViewer::ActivateItem(int x, int y) {
 		{
 			if ( ( FileSelections[ i->fileID ] ) || ( i->fileID == ix ) )
 			{
-				if ( i->XlatorID != NULL )
+				if ( i->XlatorID != TX_Null )
 				{
 					Translateable = true;
 				}
@@ -1975,7 +1974,7 @@ std::vector<TitleComponent> CFileViewer::GetTitleStack( void )
 	return TitleStack;
 }
 
-void CFileViewer::DoContentViewer( DWORD PrefTUID )
+void CFileViewer::DoContentViewer( TXIdentifier PrefTUID )
 {
 	RECT rect;
 	NativeFileIterator iter;
@@ -1998,7 +1997,7 @@ void CFileViewer::DoContentViewer( DWORD PrefTUID )
 
 	for ( iter = Selection.begin(); iter != Selection.end(); iter++ )
 	{
-		DWORD UseID = ((PrefTUID != NULL)?PrefTUID: ( iter->XlatorID ) );
+		TXIdentifier UseID = ( ( PrefTUID != TX_Null ) ? PrefTUID : ( iter->XlatorID ) );
 
 		CTempFile FileObj;
 
@@ -2296,8 +2295,9 @@ BYTE *CFileViewer::pRenameExt           = nullptr;
 EncodingEdit *CFileViewer::pRenameEditX = nullptr;
 
 DWORD CFileViewer::StaticFlags    = 0;
-DWORD CFileViewer::StaticEncoding = 0;
 DWORD CFileViewer::StaticFileFlags = 0;
+
+EncodingIdentifier CFileViewer::StaticEncoding = ENCODING_ASCII;
 
 INT_PTR CALLBACK CFileViewer::RenameDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -2843,7 +2843,7 @@ void CFileViewer::DoContextMenu( void )
 	HMENU hPopup;
 	HMENU hSubMenu;
 
-	if ( CurrentFSID == FS_Root )
+	if ( FS->FSID == FS_Root )
 	{
 		hPopup	= LoadMenu(hInst, MAKEINTRESOURCE(IDR_ROOT_POPUP));
 	}
@@ -2856,7 +2856,7 @@ void CFileViewer::DoContextMenu( void )
 
 	hSubMenu	= GetSubMenu(hPopup, 0);
 
-	if ( CurrentFSID == FS_Root )
+	if ( FS->FSID == FS_Root )
 	{
 		EnableMenuItem(hSubMenu, IDM_PROPERTIES, MF_BYCOMMAND | MF_DISABLED );
 	}
@@ -2893,7 +2893,7 @@ void CFileViewer::DoContextMenu( void )
 	if ( Displaying == DisplayDetails )    { CheckMenuItem( hSubMenu, IDM_DETAILS, MF_BYCOMMAND | MF_CHECKED );    } else { CheckMenuItem( hSubMenu, IDM_DETAILS, MF_BYCOMMAND | MF_UNCHECKED ); }
 	if ( Displaying == DisplayList )       { CheckMenuItem( hSubMenu, IDM_FILELIST, MF_BYCOMMAND | MF_CHECKED );   } else { CheckMenuItem( hSubMenu, IDM_FILELIST, MF_BYCOMMAND | MF_UNCHECKED ); }
 
-	if ( CurrentFSID != FS_Root)
+	if ( FS->FSID != FS_Root)
 	{
 		if ( Selected == 1 )
 		{
@@ -3182,7 +3182,7 @@ void CFileViewer::UpdateSidePanelFlags()
 
 	DWORD sc = GetSelectionCount();
 
-	if ( CurrentFSID == FS_Root )
+	if ( FS->FSID == FS_Root )
 	{
 		f |= SPF_RootFS;
 	}

@@ -492,7 +492,7 @@ void CreditProvider( NUTSProvider *pProvider, int &sy, int cpass )
 {
 	PluginCommand cmd;
 
-	NUTSPlugin *pPlugin = FSPlugins.GetPlugin( MAKEPROVID( pProvider->PluginID, 0 ) );
+	NUTSPlugin *pPlugin = FSPlugins.GetPlugin( pProvider->PluginID );
 
 	if ( pPlugin == nullptr )
 	{
@@ -500,7 +500,7 @@ void CreditProvider( NUTSProvider *pProvider, int &sy, int cpass )
 	}
 
 	cmd.CommandID = PC_ReportPluginCreditStats;
-	cmd.InParams[ 0 ].Value = pProvider->ProviderID;
+	cmd.InParams[ 0 ].pPtr = (void *) pProvider->ProviderID.c_str();
 
 	WCHAR *pAuthor = nullptr;
 	DWORD  Icons   = 0;
@@ -684,7 +684,7 @@ void CreditProvider( NUTSProvider *pProvider, int &sy, int cpass )
 		for ( DWORD i=0; i<Thanks; i++ )
 		{
 			cmd.CommandID = PC_GetPluginCredits;
-			cmd.InParams[ 0 ].Value = pProvider->ProviderID;
+			cmd.InParams[ 0 ].pPtr  = (void *) pProvider->ProviderID.c_str();
 			cmd.InParams[ 1 ].Value = i;
 
 			if ( pPlugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )

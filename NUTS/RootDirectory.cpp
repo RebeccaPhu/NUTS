@@ -69,7 +69,6 @@ int	RootDirectory::ReadDirectory(void) {
 		file.Flags      = FF_NotRenameable;
 		file.FSFileType = FT_ROOT;
 		file.EncodingID = ENCODING_ASCII;
-		file.XlatorID   = NULL;
 		file.HasResolvedIcon = false;
 
 		DType	= GetDriveType(dirEnt);
@@ -162,7 +161,6 @@ int	RootDirectory::ReadDirectory(void) {
 		file.Flags      = FF_NotRenameable;
 		file.FSFileType = FT_ROOT;
 		file.EncodingID = ENCODING_ASCII;
-		file.XlatorID   = NULL;
 		file.Icon       = FT_HardDisc;
 		file.Type       = FT_MiscImage;
 
@@ -187,12 +185,11 @@ int	RootDirectory::ReadDirectory(void) {
 			file.EncodingID      = ENCODING_ASCII;
 			file.fileID          = FileID;
 			file.Flags           = FF_NotRenameable | FF_Pseudo;
-			file.FSFileType      = NULL;
+			file.FSFileType      = FT_NULL;
 			file.HasResolvedIcon = false;
 			file.Icon            = FT_Directory;
 			file.Type            = FT_MiscImage;
 			file.Length          = 0;
-			file.XlatorID        = NULL;
 
 			file.Filename = BYTEString( (BYTE *) AString( (WCHAR *) Folders[ fIndex ].FolderName.c_str() ), 32 );
 
@@ -211,12 +208,11 @@ int	RootDirectory::ReadDirectory(void) {
 		file.EncodingID      = ENCODING_ASCII;
 		file.fileID          = FileID;
 		file.Flags           = FF_NotRenameable | FF_Pseudo;
-		file.FSFileType      = NULL;
+		file.FSFileType      = FT_NULL;
 		file.HasResolvedIcon = false;
 		file.Icon            = FT_ROMDisk;
 		file.Type            = FT_MiscImage;
 		file.Length          = 0;
-		file.XlatorID        = NULL;
 		file.Attributes[ 2 ] = ROOT_OBJECT_ROMDISK;
 
 		file.Filename = BYTEString( (BYTE *) "ROM Disk", 8 );
@@ -240,12 +236,11 @@ int	RootDirectory::ReadDirectory(void) {
 		file.EncodingID      = ENCODING_ASCII;
 		file.fileID          = FileID;
 		file.Flags           = FF_NotRenameable | FF_Pseudo;
-		file.FSFileType      = NULL;
+		file.FSFileType      = FT_NULL;
 		file.HasResolvedIcon = false;
 		file.Icon            = FT_Arbitrary;
 		file.Type            = FT_MiscImage;
 		file.Length          = 0;
-		file.XlatorID        = NULL;
 
 		file.Filename = BYTEString( (BYTE *) AString( (WCHAR *) iHook->FriendlyName.c_str() ) );
 

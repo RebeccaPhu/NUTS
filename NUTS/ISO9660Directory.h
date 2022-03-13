@@ -39,7 +39,7 @@ public:
 	DWORD ParentSector;
 	DWORD ParentLength;
 
-	DWORD FSID;
+	FSIdentifier FSID;
 
 	FOPTranslateFunction ProcessFOP;
 

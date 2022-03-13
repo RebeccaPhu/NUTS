@@ -58,7 +58,7 @@ public:
 
 private:
 	void ReadVolumeDescriptors( void );
-	void WriteVolumeDescriptor( ISOVolDesc &VolDesc, DWORD Sector, DWORD FSID, bool Joliet );
+	void WriteVolumeDescriptor( ISOVolDesc &VolDesc, DWORD Sector, FSIdentifier FSID, bool Joliet );
 
 	bool WritableTest();
 	void RemoveJoliet();

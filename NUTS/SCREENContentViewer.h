@@ -13,7 +13,7 @@
 class CSCREENContentViewer
 {
 public:
-	CSCREENContentViewer( CTempFile &FileObj, DWORD TUID );
+	CSCREENContentViewer( CTempFile &FileObj, TXIdentifier TUID );
 	~CSCREENContentViewer(void);
 
 public:
@@ -68,7 +68,7 @@ private:
 	CPaletteWindow	*palWnd;
 
 	SCREENTranslator *pXlator;
-	DWORD            XlatorID;
+	TXIdentifier     XlatorID;
 	std::wstring     Path;
 
 	typedef enum _EffectID {

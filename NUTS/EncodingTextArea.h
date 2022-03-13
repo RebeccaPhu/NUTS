@@ -24,9 +24,9 @@ public:
 	static LRESULT CALLBACK EncodingTextAreaWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	LRESULT WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam );
-	int     SetTextBody( DWORD FontID, BYTE *pBody, DWORD lBody, std::vector<DWORD> &rLinePointers );
+	int     SetTextBody( FontIdentifier FontID, BYTE *pBody, DWORD lBody, std::vector<DWORD> &rLinePointers );
 	int     DoResize( int w, int h );
-	int     SetFont( DWORD FontID );
+	int     SetFont( FontIdentifier FontID );
 	int     SaveText( FILE *fFile );
 	int     PrintText( HDC hDC, int pw, int ph );
 	int     CopySelection( void );
@@ -43,7 +43,8 @@ private:
 	HGDIOBJ hAreaOld;
 	BYTE  *pTextBody;
 	DWORD lTextBody;
-	DWORD Font;
+
+	FontIdentifier Font;
 
 	DWORD StartLine;
 	DWORD MaxWinLines;

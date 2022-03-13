@@ -12,17 +12,17 @@ void ISOJolietStore( BYTE *p, BYTE *s, WORD bl );
 
 DWORD RemapSector( DWORD OldSector, ISOSectorList &Sectors, BYTE IsoOp );
 
-int  ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWORD SectorSize, DWORD FSID );
+int  ISORestructure( DataSource *pSource, ISOSectorList &Sectors, BYTE IsoOp, DWORD SectorSize, FSIdentifier FSID );
 
 int  PerformISOJob( ISOJob *pJob );
 
-int  ISOExtendDataArea( DataSource *pSource, DWORD SectorSize, DWORD Sectors, DWORD FSID );
-int  ISOSetPathTableSize( DataSource *pSource, DWORD SectorSize, DWORD TableSize, DWORD FSID );
-int  ISOSetRootSize( DataSource *pSource, DWORD SectorSize, DWORD RootSize, DWORD FSID );
-int  ISOSetDirSize( DataSource *pSource, DWORD SectorSize, DWORD RootSize, DWORD ParentSector, DWORD ParentLength, DWORD DirSector, DWORD FSID );
-int  ISOSetSubDirParentSize( DataSource *pSource, DWORD SectorSize, DWORD DirSize, DWORD ParentSector, DWORD ParentLength, DWORD DirSector, DWORD FSID );
+int  ISOExtendDataArea( DataSource *pSource, DWORD SectorSize, DWORD Sectors, FSIdentifier FSID );
+int  ISOSetPathTableSize( DataSource *pSource, DWORD SectorSize, DWORD TableSize, FSIdentifier FSID );
+int  ISOSetRootSize( DataSource *pSource, DWORD SectorSize, DWORD RootSize, FSIdentifier FSID );
+int  ISOSetDirSize( DataSource *pSource, DWORD SectorSize, DWORD RootSize, DWORD ParentSector, DWORD ParentLength, DWORD DirSector, FSIdentifier FSID );
+int  ISOSetSubDirParentSize( DataSource *pSource, DWORD SectorSize, DWORD DirSize, DWORD ParentSector, DWORD ParentLength, DWORD DirSector, FSIdentifier FSID );
 
-void ScanRealImageSize( DataSource *pSource, ISOVolDesc *pVolDesc, DWORD FSID );
+void ScanRealImageSize( DataSource *pSource, ISOVolDesc *pVolDesc, FSIdentifier FSID );
 
 DWORD ISOChooseCapacity();
 

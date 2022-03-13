@@ -601,7 +601,7 @@ void AudioPlayerElement::DrawBiText( AudioCuePoint *cue, int x, int y, int w, DW
 {
 	if ( cue->UseEncoding )
 	{
-		std::vector<DWORD> fonts = FSPlugins.FontListForEncoding( cue->EncodingID );
+		std::vector<FontIdentifier> fonts = FSPlugins.FontListForEncoding( cue->EncodingID );
 
 		if ( fonts.size() > 0 )
 		{

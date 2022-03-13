@@ -3,10 +3,12 @@
 #include <vector>
 #include <map>
 
+#include "Defs.h"
+
 class CharMap
 {
 public:
-	CharMap( HWND hParent, DWORD FontID );
+	CharMap( HWND hParent, FontIdentifier FontID );
 	~CharMap(void);
 
 public:
@@ -17,14 +19,14 @@ public:
 	static HWND    hMainWnd;
 	static HWND    hParentWnd;
 
-	static void OpenTheMap( HWND hParent, DWORD FontID );
+	static void OpenTheMap( HWND hParent, FontIdentifier FontID );
 	static void SetFocusWindow( HWND hParent );
 	static void RemoveFocus( HWND hParent );
 
 public:
 	LRESULT WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam );
 
-	void SetFont( DWORD FontID );
+	void SetFont( FontIdentifier FontID );
 
 public:
 	HWND  hWnd;
@@ -38,11 +40,11 @@ private:
 	HGDIOBJ hCharOld;
 	HBITMAP hCharDescCanvas;
 
-	DWORD   CFontID;
+	FontIdentifier CFontID;
 
 	long    ci;
 
-	std::vector<DWORD> FontMap;
+	std::vector<FontIdentifier> FontMap;
 
 private:
 	void PaintWindow( void );

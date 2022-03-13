@@ -102,7 +102,6 @@ int	WindowsDirectory::ReadDirectory(void) {
 		file.Length |= fdata.nFileSizeLow;
 
 		file.EncodingID = ENCODING_ASCII;
-		file.XlatorID   = NULL;
 		file.HasResolvedIcon = false;
 
 		// Copy some attributes - these are all read only

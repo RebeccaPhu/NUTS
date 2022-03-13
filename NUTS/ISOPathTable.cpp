@@ -21,7 +21,7 @@ ISOPathTable::~ISOPathTable(void)
 }
 
 
-void ISOPathTable::ReadPathTable( DWORD Extent, DWORD Size, DWORD FSID, bool IsJoliet )
+void ISOPathTable::ReadPathTable( DWORD Extent, DWORD Size, FSIdentifier FSID, bool IsJoliet )
 {
 	// This functon rather naïvely assumes the path table is an L-Table,
 	// as it will be called by ISO19960FileSystem to read the primary L-Table,
@@ -214,7 +214,7 @@ void ISOPathTable::CompilePathTree()
 	}
 }
 
-void ISOPathTable::WritePathTable( DWORD Extent, bool IsMTable, DWORD FSID, bool IsJoliet )
+void ISOPathTable::WritePathTable( DWORD Extent, bool IsMTable, FSIdentifier FSID, bool IsJoliet )
 {
 	DWORD Size       = GetProjectedSize();
 	DWORD TableSects = ( Size + ( SectorSize -1 ) ) / SectorSize;

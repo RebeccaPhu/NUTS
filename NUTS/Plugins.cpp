@@ -720,7 +720,7 @@ std::wstring CPlugins::FSName( FSIdentifier FSID )
 	return name;
 }
 
-FontIdentifier CPlugins::FontName( FontIdentifier ReqFontID )
+std::wstring CPlugins::FontName( FontIdentifier ReqFontID )
 {
 	static WCHAR *PC437Name = L"PC437";
 

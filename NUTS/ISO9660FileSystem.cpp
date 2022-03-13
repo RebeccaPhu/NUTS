@@ -1093,7 +1093,7 @@ FileSystem *ISO9660FileSystem::FileFilesystem( DWORD FileID )
 {
 	if ( pISODir->FileFOPData.find( FileID ) != pISODir->FileFOPData.end() )
 	{
-		DWORD FSID = pISODir->FileFOPData[ FileID ].ProposedFS;
+		FSIdentifier FSID = pISODir->FileFOPData[ FileID ].ProposedFS;
 
 		DataSource *pSource = FileDataSource( FileID );
 
@@ -1266,9 +1266,9 @@ void JolietScanDirs( FileSystem *pFS, ISOSectorList &sectors, ISOVolDesc &Joliet
 
 			DWORD DirSects = ( DirSize + ( JolietDesc.SectorSize - 1 ) ) / JolietDesc.SectorSize;
 
-			for ( DWORD i=0; i<DirSects; i++ )
+			for ( DWORD j=0; j<DirSects; i++ )
 			{
-				sector.ID = DirLoc + i; sectors.push_back( sector );
+				sector.ID = DirLoc + j; sectors.push_back( sector );
 			}
 
 			pFS->ChangeDirectory( i );
@@ -2733,8 +2733,6 @@ int ISO9660FileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 		static const char * const days[8] = { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN" };
 
-		BYTE Title[ 20 ];
-
 		rsprintf( FormatDesc.VolSetID, "VOLUME AT %s %02d %02d %04d %02d:%02d",
 			days[ pT->tm_wday ],
 			pT->tm_mday, pT->tm_mon + 1, pT->tm_year + 1900,
@@ -2851,7 +2849,7 @@ int ISO9660FileSystem::Format_Process( DWORD FT, HWND hWnd )
 	return 0;
 }
 
-void ISO9660FileSystem::WriteVolumeDescriptor( ISOVolDesc &VolDesc, DWORD Sector, DWORD FSID, bool Joliet )
+void ISO9660FileSystem::WriteVolumeDescriptor( ISOVolDesc &VolDesc, DWORD Sector, FSIdentifier FSID, bool Joliet )
 {
 	AutoBuffer SectorBuf( VolDesc.SectorSize );
 
@@ -3535,13 +3533,13 @@ int ISO9660FileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 	return -1;
 }
 
-static DataSource *pEditSource;
-static HWND        pCurrentTab = nullptr;
-static DWORD       VDEFSID;
-static ISOVolDesc  *pVD; // Used for any required disc params.
-static ISOVolDesc  *pIVD;
-static ISOVolDesc  *pJVD;
-static FileSystem  *pEditFS; // Used for locating files
+static DataSource   *pEditSource;
+static HWND         pCurrentTab = nullptr;
+static FSIdentifier VDEFSID;
+static ISOVolDesc   *pVD; // Used for any required disc params.
+static ISOVolDesc   *pIVD;
+static ISOVolDesc   *pJVD;
+static FileSystem   *pEditFS; // Used for locating files
 
 INT_PTR CALLBACK SysAreaFunc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {

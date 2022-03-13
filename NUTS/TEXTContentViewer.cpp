@@ -31,7 +31,7 @@ LRESULT CALLBACK CTEXTContentViewer::TEXTViewerProc(HWND hWnd, UINT message, WPA
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, DWORD TUID )
+CTEXTContentViewer::CTEXTContentViewer( CTempFile &FileObj, TXIdentifier TUID )
 {
 	if ( !WndClassReg )
 	{
@@ -261,7 +261,7 @@ LRESULT	CTEXTContentViewer::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPAR
 						FontNum = ( FontNum + 1 ) % FontList.size();
 
 						pTextArea->SetFont( FontList[ FontNum ] );
-						pStatusBar->SetPanelText( 0, FONTID_PC437, (BYTE *) AString( FSPlugins.FontName( FontList[ FontNum ] ) ) );
+						pStatusBar->SetPanelText( 0, FONTID_PC437, (BYTE *) AString( (WCHAR *) FSPlugins.FontName( FontList[ FontNum ] ).c_str() ) );
 					}
 				}
 
@@ -329,7 +329,7 @@ void CTEXTContentViewer::Translate( void )
 
 		pTextArea->SetTextBody( FontList[ FontNum ], *opts.pTextBuffer, opts.TextBodyLength, opts.LinePointers );
 
-		pStatusBar->SetPanelText( 0, FONTID_PC437, (BYTE *) AString( FSPlugins.FontName( FontList[ FontNum ] ) ) );
+		pStatusBar->SetPanelText( 0, FONTID_PC437, (BYTE *) AString( (WCHAR *) FSPlugins.FontName( FontList[ FontNum ] ).c_str() ) );
 
 		pTextBuffer = *opts.pTextBuffer;
 

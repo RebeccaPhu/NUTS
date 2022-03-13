@@ -10,7 +10,7 @@ public:
 	FontBitmap( BYTE *pFontData, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected );
 
 #ifndef FONTBITMAP_PLUGIN
-	FontBitmap( DWORD FontID, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected );
+	FontBitmap( FontIdentifier FontID, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected );
 #endif
 
 	void Init( BYTE *pFontData, const BYTE *pText, const WORD MaxLen, const bool Proportionate, const bool Selected );

@@ -11,7 +11,8 @@ typedef struct _AudioCuePoint
 	std::wstring Name;
 	BYTEString   EncodingName;
 	bool         UseEncoding;
-	DWORD        EncodingID;
+
+	EncodingIdentifier EncodingID;
 } AudioCuePoint;
 
 typedef struct _AudioTranslateOptions

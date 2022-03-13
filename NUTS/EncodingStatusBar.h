@@ -17,10 +17,10 @@ public:
 
 	HWND hWnd;
 
-	int AddPanel( DWORD PanelID, DWORD Width, BYTE *Text, DWORD FontID, DWORD Flags );
+	int AddPanel( DWORD PanelID, DWORD Width, BYTE *Text, FontIdentifier FontID, DWORD Flags );
 	int SetPanelWidth( DWORD PanelID, DWORD NewWidth );
-	int SetPanelText( DWORD PanelID, DWORD FontID, BYTE *Text );
-	int SetPanelFont( DWORD PanelID, DWORD FontID );
+	int SetPanelText( DWORD PanelID, FontIdentifier FontID, BYTE *Text );
+	int SetPanelFont( DWORD PanelID, FontIdentifier FontID );
 
 	int NotifyWindowSizeChanged( void );
 

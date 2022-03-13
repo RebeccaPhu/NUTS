@@ -76,7 +76,6 @@ int ZIPDirectory::ReadDirectory(void)
 				file.Type       = FT_Directory;
 				file.Flags      = FF_Directory;
 				file.Length     = 0;
-				file.XlatorID   = 0;
 
 				file.Filename = BYTEString( pDir );
 
@@ -146,7 +145,6 @@ int ZIPDirectory::ReadDirectory(void)
 			file.Icon       = FT_Arbitrary;
 			file.Length     = zs.size;
 			file.Type       = FT_Arbitrary;
-			file.XlatorID   = 0;
 
 			file.HasResolvedIcon= false;
 

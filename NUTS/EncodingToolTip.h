@@ -7,7 +7,7 @@
 
 typedef struct _TooltipRow
 {
-	DWORD FontID;
+	FontIdentifier FontID;
 	BYTEString Text;
 } TooltipRow;
 
