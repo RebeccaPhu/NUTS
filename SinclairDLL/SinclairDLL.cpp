@@ -34,6 +34,7 @@ const TXIdentifier       GRAPHIC_SPECTRUM  = L"SpeccyScreen";
 const TXIdentifier       BASIC_SPECTRUM    = L"SpectrumBASIC";
 const PluginIdentifier   SINCLAIR_PLUGINID = L"SinclairNUTSPlugin";
 const ProviderIdentifier SINCLAIR_PROVIDER = L"Sinclair_Provider";
+const FontIdentifier     SINCLAIR_FONT     = L"Sinclair_Font";
 
 FSDescriptor SinclairFS[] = {
 	{
@@ -417,10 +418,11 @@ SINCLAIRDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_GetFontPointer:
 		if ( cmd->InParams[ 0 ].Value == 0 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pSinclairFont;
-			cmd->OutParams[ 1 ].pPtr  = (void *) pSinclairFontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_SINCLAIR.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pSinclairFont;
+			cmd->OutParams[ 1 ].pPtr = (void *) pSinclairFontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) SINCLAIR_FONT.c_str();
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_SINCLAIR.c_str();
+			cmd->OutParams[ 4 ].pPtr = nullptr;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}

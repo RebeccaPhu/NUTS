@@ -31,6 +31,8 @@ const FTIdentifier       FT_AMSTRAD_TAPE  = L"Amstrad_Tape_Object";
 const PluginIdentifier   AMSTRAD_PLUGINID = L"AmstradNUTSPlugin";
 const ProviderIdentifier AMSTRAD_PROVIDER = L"Amstrad_Provider";
 
+const FontIdentifier     AMSTRAD_FONT     = L"Amstrad_Font";
+
 FSDescriptor AmstradFS[] = {
 	{
 		/* .FriendlyName = */ L"Amstrad AMSDOS",
@@ -226,10 +228,11 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_GetFontPointer:
 		if ( cmd->InParams[ 0 ].Value == 0 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pCPCF;
-			cmd->OutParams[ 1 ].pPtr  = (void *) pCPCFontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_CPC.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pCPCF;
+			cmd->OutParams[ 1 ].pPtr = (void *) pCPCFontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) AMSTRAD_FONT.c_str();
+			cmd->OutParams[ 2 ].pPtr = (void *) ENCODING_CPC.c_str();
+			cmd->OutParams[ 3 ].pPtr = nullptr;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}
@@ -272,6 +275,7 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
 			cmd->OutParams[ 2 ].pPtr  = (void *) Translators[ tx ].ProviderID.c_str();
+			cmd->OutParams[ 3 ].pPtr  = (void *) Translators[ tx ].TUID.c_str();
 		}
 
 		return NUTS_PLUGIN_SUCCESS;

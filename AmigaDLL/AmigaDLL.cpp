@@ -28,6 +28,9 @@ const TXIdentifier       TUID_ILBM      = L"ILBM_Translator";
 const PluginIdentifier   AMIGA_PLUGINID = L"AmigaNUTSPlugin";
 const ProviderIdentifier AMIGA_PROVIDER = L"Amiga_Provider";
 
+const FontIdentifier     TOPAZ1         = L"Topaz1_Font";
+const FontIdentifier     TOPAZ2         = L"Topaz2_Font";
+
 BYTE *NUTSSignature;
 
 FSDescriptor AmigaFS[] = {
@@ -243,19 +246,21 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_GetFontPointer:
 		if ( cmd->InParams[ 0 ].Value == 0 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pTopaz1;
-			cmd->OutParams[ 1 ].pPtr  = (void *) pTopaz1FontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_AMIGA.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pTopaz1;
+			cmd->OutParams[ 1 ].pPtr = (void *) pTopaz1FontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) TOPAZ1.c_str();
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_AMIGA.c_str();
+			cmd->OutParams[ 4 ].pPtr = nullptr;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}
 		if ( cmd->InParams[ 0 ].Value == 1 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pTopaz2;
-			cmd->OutParams[ 1 ].pPtr  = (void *) pTopaz2FontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_AMIGA.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pTopaz2;
+			cmd->OutParams[ 1 ].pPtr = (void *) pTopaz2FontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) TOPAZ2.c_str();
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_AMIGA.c_str();
+			cmd->OutParams[ 4 ].pPtr = nullptr;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}
@@ -279,6 +284,7 @@ AMIGADLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
 			cmd->OutParams[ 2 ].pPtr  = (void *) Translators[ tx ].ProviderID.c_str();
+			cmd->OutParams[ 3 ].pPtr  = (void *) Translators[ tx ].TUID.c_str();
 		}
 
 		return NUTS_PLUGIN_SUCCESS;

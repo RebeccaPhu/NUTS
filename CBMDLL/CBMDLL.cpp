@@ -38,6 +38,11 @@ const EncodingIdentifier ENCODING_PETSCII = L"PETSCII";
 
 const PluginIdentifier CBM_PLUGINID = L"CommodoreNUTSPlugin";
 
+const ProviderIdentifier CBM_PROVIDER = L"CommodoreProvider";
+
+const FontIdentifier PETSCII1 = L"PETSCII_1";
+const FontIdentifier PETSCII2 = L"PETSCII_2";
+
 FSDescriptor CBMFS[] = {
 	{
 		/* .FriendlyName = */ L"D64 Commodore Disk Image",
@@ -306,7 +311,7 @@ WCHAR *DescribeChar( BYTE Char, DWORD FontID )
 	return desc;
 }
 
-NUTSProvider ProviderCBM = { L"Commodore", 0, 0 };
+NUTSProvider ProviderCBM = { L"Commodore", CBM_PLUGINID, CBM_PROVIDER };
 
 WCHAR *pPETSCII1FontName = L"PETSCII 1";
 WCHAR *pPETSCII2FontName = L"PETSCII 2";
@@ -404,10 +409,11 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_GetFontPointer:
 		if ( cmd->InParams[ 0 ].Value == 0 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pPETSCIIs[ 0 ];
-			cmd->OutParams[ 1 ].pPtr  = (void *) pPETSCII1FontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_PETSCII.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pPETSCIIs[ 0 ];
+			cmd->OutParams[ 1 ].pPtr = (void *) pPETSCII1FontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) PETSCII1.c_str();
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_PETSCII.c_str();
+			cmd->OutParams[ 4 ].pPtr = nullptr;
 
 			FontID1 = cmd->InParams[ 1 ].Value;
 
@@ -415,10 +421,11 @@ CBMDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		}
 		if ( cmd->InParams[ 0 ].Value == 1 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pPETSCIIs[ 1 ];
-			cmd->OutParams[ 1 ].pPtr  = (void *) pPETSCII2FontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_PETSCII.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pPETSCIIs[ 1 ];
+			cmd->OutParams[ 1 ].pPtr = (void *) pPETSCII2FontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) PETSCII2.c_str();
+			cmd->OutParams[ 2 ].pPtr = (void *) ENCODING_PETSCII.c_str();
+			cmd->OutParams[ 3 ].pPtr = nullptr;
 
 			FontID2 = cmd->InParams[ 1 ].Value;
 

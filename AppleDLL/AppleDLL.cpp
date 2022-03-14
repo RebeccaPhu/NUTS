@@ -23,6 +23,8 @@ BYTE *NUTSSignature;
 const FTIdentifier       FILE_MACINTOSH     = L"MacintoshFileObject";
 const EncodingIdentifier ENCODING_MACINTOSH = L"MacintoshEncoding";
 const PluginIdentifier   APPLE_PLUGINID     = L"AppleNUTSPlugin";
+const ProviderIdentifier APPLE_PROVIDER     = L"Apple_Provider";
+const FontIdentifier     CHICAGO            = L"Chicago_Font";
 
 BYTE *pChicago = nullptr;
 
@@ -50,7 +52,7 @@ std::wstring ImageExtensions[] = { L"DSK", L"IMG" };
 #define IMAGE_EXT_COUNT ( sizeof(ImageExtensions) / sizeof( std::wstring ) )
 
 
-NUTSProvider ProviderAmstrad = { L"Apple", 0, 0 };
+NUTSProvider ProviderAmstrad = { L"Apple", APPLE_PLUGINID, APPLE_PROVIDER };
 
 WCHAR *pChicagoName = L"Chicago";
 
@@ -176,10 +178,11 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_GetFontPointer:
 		if ( cmd->InParams[ 0 ].Value == 0 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pChicago;
-			cmd->OutParams[ 1 ].pPtr  = (void *) pChicagoName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_MACINTOSH.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pChicago;
+			cmd->OutParams[ 1 ].pPtr = (void *) pChicagoName;
+			cmd->OutParams[ 2 ].pPtr = (void *) CHICAGO.c_str();
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_MACINTOSH.c_str();
+			cmd->OutParams[ 4 ].pPtr = nullptr;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}

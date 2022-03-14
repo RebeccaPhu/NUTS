@@ -55,6 +55,10 @@ const PluginIdentifier ACORN_PLUGINID = L"AcornNUTSPlugin";
 const ProviderIdentifier BBCMICRO_PROVIDER =L"BBCMicro_Provider";
 const ProviderIdentifier RISCOS_PROVIDER =L"RiscOS_Provider";
 
+const FontIdentifier BBCMicroFontID = L"BBCMicro_Font";
+const FontIdentifier RiscOSFontID   = L"RiscOS_Font";
+const FontIdentifier TeletextFontID = L"Teletext_Font";
+
 HMODULE hInstance;
 
 DataSourceCollector *pCollector;
@@ -1031,10 +1035,11 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 	case PC_GetFontPointer:
 		if ( cmd->InParams[ 0 ].Value == 0 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pAcornFont;
-			cmd->OutParams[ 1 ].pPtr  = (void *) pBBCMicroFontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_ACORN.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pAcornFont;
+			cmd->OutParams[ 1 ].pPtr = (void *) pBBCMicroFontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) BBCMicroFontID.c_str();
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_ACORN.c_str();
+			cmd->OutParams[ 4 ].pPtr = nullptr;
 
 			FontID1 = cmd->InParams[ 1 ].Value;
 
@@ -1042,10 +1047,11 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		}
 		if ( cmd->InParams[ 0 ].Value == 1 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pRiscOSFont;
-			cmd->OutParams[ 1 ].pPtr  = (void *) pRiscOSFontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_RISCOS.c_str();
-			cmd->OutParams[ 3 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pRiscOSFont;
+			cmd->OutParams[ 1 ].pPtr = (void *) pRiscOSFontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) RiscOSFontID.c_str();
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_RISCOS.c_str();
+			cmd->OutParams[ 4 ].pPtr = nullptr;
 
 			FontID2 = cmd->InParams[ 1 ].Value;
 
@@ -1054,11 +1060,12 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		if ( cmd->InParams[ 0 ].Value == 2 )
 		{
-			cmd->OutParams[ 0 ].pPtr  = (void *) pTeletextFont;
-			cmd->OutParams[ 1 ].pPtr  = (void *) pTTXFontName;
-			cmd->OutParams[ 2 ].pPtr  = (void *) ENCODING_ACORN.c_str();
-			cmd->OutParams[ 3 ].pPtr  = (void *) ENCODING_RISCOS.c_str();
-			cmd->OutParams[ 4 ].Value = NULL;
+			cmd->OutParams[ 0 ].pPtr = (void *) pTeletextFont;
+			cmd->OutParams[ 1 ].pPtr = (void *) pTTXFontName;
+			cmd->OutParams[ 2 ].pPtr = (void *) TeletextFontID.c_str();
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_ACORN.c_str();
+			cmd->OutParams[ 4 ].pPtr = (void *) ENCODING_RISCOS.c_str();
+			cmd->OutParams[ 5 ].pPtr = nullptr;
 
 			FontID3 = cmd->InParams[ 1 ].Value;
 
@@ -1109,6 +1116,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 0 ].pPtr  = (void *) Translators[ tx ].FriendlyName.c_str();
 			cmd->OutParams[ 1 ].Value = Translators[ tx ].Flags;
 			cmd->OutParams[ 2 ].pPtr  = (void *) Translators[ tx ].ProviderID.c_str();
+			cmd->OutParams[ 3 ].pPtr  = (void *) Translators[ tx ].TUID.c_str();
 		}
 
 		return NUTS_PLUGIN_SUCCESS;
