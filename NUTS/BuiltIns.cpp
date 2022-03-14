@@ -163,9 +163,7 @@ FSHints BuiltIns::GetOffers( DataSource *pSource, NativeFile *pFile )
 	FSHints hints;
 
 	{ // ZIP files
-		FSHint hint = { 0, 0 };
-
-		hint.FSID      = FSID_ZIP;
+		FSHint hint = { FSID_ZIP, 0 };
 
 		BYTE Buf[ 4 ];
 
@@ -185,9 +183,7 @@ FSHints BuiltIns::GetOffers( DataSource *pSource, NativeFile *pFile )
 	}
 
 	{ // ISO 9660
-		FSHint hint = { 0, 0 };
-
-		hint.FSID      = FSID_ISO9660;
+		FSHint hint = { FSID_ISO9660, 0 };
 
 		BYTE Buf[ 5 ];
 
@@ -207,9 +203,7 @@ FSHints BuiltIns::GetOffers( DataSource *pSource, NativeFile *pFile )
 	}
 
 	{ // ISO High Sierra
-		FSHint hint = { 0, 0 };
-
-		hint.FSID      = FSID_ISOHS;
+		FSHint hint = { FSID_ISOHS, 0 };
 
 		BYTE Buf[ 5 ];
 

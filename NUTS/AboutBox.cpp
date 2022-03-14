@@ -492,7 +492,7 @@ void CreditProvider( NUTSProvider *pProvider, int &sy, int cpass )
 {
 	PluginCommand cmd;
 
-	NUTSPlugin *pPlugin = FSPlugins.GetPlugin( pProvider->PluginID );
+	NUTSPlugin *pPlugin = FSPlugins.GetPluginByID( pProvider->PluginID );
 
 	if ( pPlugin == nullptr )
 	{

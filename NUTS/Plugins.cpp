@@ -372,7 +372,7 @@ TranslatorList CPlugins::GetTranslators( ProviderIdentifier PVID, DWORD Type )
 	{
 		if ( iter->Flags & Type )
 		{
-			if ( iter->ProviderID == PVID )
+			if ( ( iter->ProviderID == PVID ) || ( PVID == Provider_Null ) )
 			{
 				Xlators.push_back( *iter );
 			}
@@ -395,7 +395,7 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 
 	while ( iter != FSDescriptors.end() )
 	{
-		FSHint hint  = { 0, 0 };
+		FSHint hint  = { FS_Null, 0 };
 
 		FileSystem *pFS = LoadFS( iter->FSID, pSource );
 
@@ -668,6 +668,52 @@ NUTSPlugin *CPlugins::GetPlugin( FSIdentifier FSID )
 	return nullptr;
 }
 
+NUTSPlugin *CPlugins::GetTXPlugin( TXIdentifier TXID )
+{
+	PluginIdentifier PLID = L"";
+
+	TranslatorIterator iTX;
+
+	for ( iTX = Translators.begin(); iTX != Translators.end(); iTX++ )
+	{
+		if ( iTX->TUID == TXID )
+		{
+			NUTSProvider_iter iPV;
+
+			for ( iPV = Providers.begin(); iPV != Providers.end(); iPV++ )
+			{
+				if ( iPV->ProviderID == iTX->ProviderID )
+				{
+					PLID = iPV->PluginID;
+				}
+			}
+		}
+	}
+
+	for ( Plugin_iter i = Plugins.begin(); i != Plugins.end(); i++ )
+	{
+		if ( i->PluginID == PLID )
+		{
+			return &*i;
+		}
+	}
+
+	return nullptr;
+}
+
+NUTSPlugin *CPlugins::GetPluginByID( PluginIdentifier PLID )
+{
+	for ( Plugin_iter i = Plugins.begin(); i != Plugins.end(); i++ )
+	{
+		if ( i->PluginID == PLID )
+		{
+			return &*i;
+		}
+	}
+
+	return nullptr;
+}
+
 std::wstring CPlugins::ProviderName( ProviderIdentifier PRID )
 {
 	std::wstring BuiltInProviderName = NUTSBuiltIns.ProviderName( PRID );
@@ -887,7 +933,7 @@ void *CPlugins::LoadTranslator( TXIdentifier TUID )
 {
 	void *pXlator = nullptr;
 	
-	NUTSPlugin *plugin = GetPlugin( TUID );
+	NUTSPlugin *plugin = GetTXPlugin( TUID );
 
 	if ( plugin != nullptr )
 	{
@@ -1163,17 +1209,20 @@ std::wstring CPlugins::GetCharacterDescription( FontIdentifier FontID, BYTE Char
 
 	if ( ( FontID != FONTID_PC437 ) &&  ( FontMap.find( FontID ) != FontMap.end() ) )
 	{
-		NUTSPlugin *plugin = GetPlugin( FontMap[ FontID ] );
+		NUTSPlugin *plugin = GetPluginByID( FontMap[ FontID ] );
 
-		PluginCommand cmd;
-
-		cmd.CommandID = PC_DescribeChar;
-		cmd.InParams[ 0 ].pPtr  = (void *) FontID.c_str();
-		cmd.InParams[ 1 ].Value = Char;
-
-		if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+		if ( plugin != nullptr )
 		{
-			desc = (WCHAR *) cmd.OutParams[ 0 ].pPtr;
+			PluginCommand cmd;
+
+			cmd.CommandID = PC_DescribeChar;
+			cmd.InParams[ 0 ].pPtr  = (void *) FontID.c_str();
+			cmd.InParams[ 1 ].Value = Char;
+
+			if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+			{
+				desc = (WCHAR *) cmd.OutParams[ 0 ].pPtr;
+			}
 		}
 	}
 

@@ -1164,7 +1164,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			std::wstring Provider = std::wstring( (WCHAR *) cmd->InParams[ 0 ].pPtr );
 
-			if ( Provider == L"BBCMicro" )
+			if ( Provider == BBCMICRO_PROVIDER )
 			{
 				cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_BBCMICRO ) );
 				cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;
@@ -1174,7 +1174,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 				return NUTS_PLUGIN_SUCCESS;
 			}
 
-			if ( Provider == L"RiscOS" )
+			if ( Provider == RISCOS_PROVIDER )
 			{
 				cmd->OutParams[ 0 ].pPtr  = (void *) LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_RISCOS ) );
 				cmd->OutParams[ 1 ].pPtr  = (void *) PluginAuthor;

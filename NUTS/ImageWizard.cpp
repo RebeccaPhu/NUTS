@@ -22,8 +22,9 @@ static HFONT hFont = NULL;
 NUTSProviderList Providers;
 
 FormatList   Formats;
-DWORD        Encoding;
 FormatDesc   ChosenFS;
+
+EncodingIdentifier Encoding;
 
 std::vector<FormatDesc> FSList;
 
@@ -555,7 +556,7 @@ int ImageWiz_Handler( AppAction Action )
 {
 	CurrentAction	= Action;
 
-	DWORD *pEncoding = (DWORD *) Action.pData;
+	EncodingIdentifier *pEncoding = (EncodingIdentifier *) Action.pData;
 
 	pContain = (FileSystem *) Action.FS;
 

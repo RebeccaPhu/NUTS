@@ -70,14 +70,14 @@ int	ADFSEDirectory::ReadEDirectory( void )
 
 	DWORD FileID = 0;
 
-	NativeFile file;
-
 	MasterSeq = DirBytes[0];
 
 	memcpy( DirTitle, &DirBytes[0x7DD], 18);
 	memcpy( DirName,  &DirBytes[0x7F0], 10);
 
 	while ( ptr < 2007 ) {
+		NativeFile file;
+
 		for ( c=0; c<16; c++) { file.Attributes[ c ] = 0; }
 
 		file.Flags    = 0;

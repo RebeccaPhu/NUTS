@@ -89,6 +89,8 @@ public:
 	void UnloadPlugins();
 
 	NUTSPlugin *GetPlugin( FSIdentifier FSID );
+	NUTSPlugin *GetTXPlugin( TXIdentifier TXID );
+	NUTSPlugin *GetPluginByID( PluginIdentifier PLID );
 
 	std::wstring GetSplash( )
 	{

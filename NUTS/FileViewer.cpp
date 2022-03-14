@@ -1639,7 +1639,7 @@ void CFileViewer::PopulateXlatorMenus( HMENU hPopup )
 		{
 			AppendMenu( hGraphixMenu, MF_STRING, (UINT) GFXindex, gfx->FriendlyName.c_str() );
 
-			MenuXlatorMap[ GFXindex ] = gfx->ProviderID;
+			MenuXlatorMap[ GFXindex ] = gfx->TUID;
 
 			GFXindex++;
 		}
@@ -1652,7 +1652,7 @@ void CFileViewer::PopulateXlatorMenus( HMENU hPopup )
 		{
 			AppendMenu( hTextMenu, MF_STRING, (UINT) TXTindex, txt->FriendlyName.c_str() );
 
-			MenuXlatorMap[ TXTindex ] = txt->ProviderID;
+			MenuXlatorMap[ TXTindex ] = txt->TUID;
 
 			TXTindex++;
 		}
@@ -1665,7 +1665,7 @@ void CFileViewer::PopulateXlatorMenus( HMENU hPopup )
 		{
 			AppendMenu( hAudioMenu, MF_STRING, (UINT) AUDindex, aud->FriendlyName.c_str() );
 
-			MenuXlatorMap[ AUDindex ] = aud->ProviderID;
+			MenuXlatorMap[ AUDindex ] = aud->TUID;
 
 			AUDindex++;
 		}
@@ -1986,7 +1986,7 @@ void CFileViewer::DoContentViewer( TXIdentifier PrefTUID )
 		Selection.push_back( TheseFiles[ DIndex ] );
 	}
 
-	TranslatorList TXList = FSPlugins.GetTranslators( NULL, NULL );
+	TranslatorList TXList = FSPlugins.GetTranslators( Provider_Null, ALL_TX );
 
 	GetWindowRect(ParentWnd, &rect);
 
@@ -1997,6 +1997,8 @@ void CFileViewer::DoContentViewer( TXIdentifier PrefTUID )
 
 	for ( iter = Selection.begin(); iter != Selection.end(); iter++ )
 	{
+		if ( iter->Flags & FF_Directory ) { continue; }
+
 		TXIdentifier UseID = ( ( PrefTUID != TX_Null ) ? PrefTUID : ( iter->XlatorID ) );
 
 		CTempFile FileObj;
@@ -2046,29 +2048,32 @@ void CFileViewer::DoContentViewer( TXIdentifier PrefTUID )
 
 			for ( iTx = TXList.begin(); iTx != TXList.end(); iTx++ )
 			{
-				if ( ( UseID == iTx->ProviderID ) && ( iTx->Flags & TXTextTranslator ) )
+				if ( UseID == iTx->TUID )
 				{
-					TXFlags = iTx->Flags;
+					if ( iTx->Flags & TXTextTranslator )
+					{
+						TXFlags = iTx->Flags;
 
-					pXv = new CTEXTContentViewer( FileObj, UseID );
-				}
+						pXv = new CTEXTContentViewer( FileObj, UseID );
+					}
 
-				if ( ( UseID == iTx->ProviderID ) && ( iTx->Flags & TXGFXTranslator ) )
-				{
-					TXFlags = iTx->Flags;
+					if ( iTx->Flags & TXGFXTranslator )
+					{
+						TXFlags = iTx->Flags;
 
-					pXv = new CSCREENContentViewer( FileObj, UseID );
+						pXv = new CSCREENContentViewer( FileObj, UseID );
 
-					wInd++;
-				}
+						wInd++;
+					}
 
-				if ( ( UseID == iTx->ProviderID ) && ( iTx->Flags & TXAUDTranslator ) )
-				{
-					TXFlags = iTx->Flags;
+					if ( iTx->Flags & TXAUDTranslator )
+					{
+						TXFlags = iTx->Flags;
 
-					pXv = new AUDIOContentViewer( FileObj, UseID );
+						pXv = new AUDIOContentViewer( FileObj, UseID );
 
-					wInd++;
+						wInd++;
+					}
 				}
 			}
 		}

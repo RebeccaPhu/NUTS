@@ -259,9 +259,12 @@ int CSCREENContentViewer::Create(HWND Parent, HINSTANCE hInstance, int x, int w,
 
 	CreateToolbar();
 
-	PhysicalPalette = pXlator->GetPhysicalPalette();
-	LogicalPalette  = pXlator->GetLogicalPalette( Mode );
-	PhysicalColours = pXlator->GetPhysicalColours( );
+	if ( pXlator != nullptr )
+	{
+		PhysicalPalette = pXlator->GetPhysicalPalette();
+		LogicalPalette  = pXlator->GetLogicalPalette( Mode );
+		PhysicalColours = pXlator->GetPhysicalColours( );
+	}
 
 	hTerminate = CreateEvent( NULL, TRUE, FALSE, NULL );
 	hPoke      = CreateEvent( NULL, FALSE, TRUE, NULL );
@@ -573,9 +576,12 @@ int CSCREENContentViewer::TranslateThread( void )
 				
 				if ( FirstTranslate )
 				{
-					PhysicalPalette = pXlator->GetPhysicalPalette();
-					LogicalPalette  = pXlator->GetLogicalPalette( Mode );
-					PhysicalColours = pXlator->GetPhysicalColours( );
+					if ( pXlator != nullptr )
+					{
+						PhysicalPalette = pXlator->GetPhysicalPalette();
+						LogicalPalette  = pXlator->GetLogicalPalette( Mode );
+						PhysicalColours = pXlator->GetPhysicalColours( );
+					}
 				}
 
 				FirstTranslate = false;
@@ -706,49 +712,52 @@ int CSCREENContentViewer::Translate( void ) {
 	}
 
 	/* Figure out what our window size should be. Must be at least 640 */
-	AspectRatio aspect = pXlator->GetAspect();
-
-	DWORD pw = OriginalWidth;
-	
-	while ( pw < 640 )
+	if ( pXlator != nullptr )
 	{
-		pw += OriginalWidth;
-	}
+		AspectRatio aspect = pXlator->GetAspect();
 
-	double dpw = (double) pw;
-
-	dpw /= (double) aspect.first;
-	dpw *= (double) aspect.second;
-
-	DWORD ph = (DWORD) (dpw);
-
-	AspectWidth  = pw;
-	AspectHeight = ph;
-
-	int	brdx	= GetSystemMetrics(SM_CXBORDER);
-	int	brdy	= GetSystemMetrics(SM_CYBORDER);
-	int	tity	= GetSystemMetrics(SM_CYCAPTION);
-	int	frmx	= GetSystemMetrics(SM_CXFIXEDFRAME);
-	int	frmy	= GetSystemMetrics(SM_CYFIXEDFRAME);
-
-	DisplayPref pref = pXlator->GetDisplayPref();
-
-	DWORD ow = AspectWidth;
-	DWORD oh = AspectHeight;
+		DWORD pw = OriginalWidth;
 	
-	wh = AspectHeight;
-	ww = AspectWidth;
-
-	if ( pref == DisplayNatural )
-	{
-		if ( ( ow >= bmi->bmiHeader.biWidth ) && ( oh >= bmi->bmiHeader.biHeight ) )
+		while ( pw < 640 )
 		{
-			wh = bmi->bmiHeader.biHeight;
-			ww = 640;
+			pw += OriginalWidth;
 		}
-	}
 
-	::SetWindowPos( hWnd, NULL, 0, 0, ww + (2 * frmx), wh + (2 * frmy) + tity + 36, SWP_NOMOVE | SWP_NOZORDER | SWP_NOREPOSITION );
+		double dpw = (double) pw;
+
+		dpw /= (double) aspect.first;
+		dpw *= (double) aspect.second;
+
+		DWORD ph = (DWORD) (dpw);
+
+		AspectWidth  = pw;
+		AspectHeight = ph;
+
+		int	brdx	= GetSystemMetrics(SM_CXBORDER);
+		int	brdy	= GetSystemMetrics(SM_CYBORDER);
+		int	tity	= GetSystemMetrics(SM_CYCAPTION);
+		int	frmx	= GetSystemMetrics(SM_CXFIXEDFRAME);
+		int	frmy	= GetSystemMetrics(SM_CYFIXEDFRAME);
+
+		DisplayPref pref = pXlator->GetDisplayPref();
+
+		DWORD ow = AspectWidth;
+		DWORD oh = AspectHeight;
+	
+		wh = AspectHeight;
+		ww = AspectWidth;
+
+		if ( pref == DisplayNatural )
+		{
+			if ( ( ow >= bmi->bmiHeader.biWidth ) && ( oh >= bmi->bmiHeader.biHeight ) )
+			{
+				wh = bmi->bmiHeader.biHeight;
+				ww = 640;
+			}
+		}
+
+		::SetWindowPos( hWnd, NULL, 0, 0, ww + (2 * frmx), wh + (2 * frmy) + tity + 36, SWP_NOMOVE | SWP_NOZORDER | SWP_NOREPOSITION );
+	}
 
 	return 0;
 }

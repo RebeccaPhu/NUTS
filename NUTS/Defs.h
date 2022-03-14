@@ -21,6 +21,7 @@
 #define FS_Root        L"Root_FileSystem"
 #define FS_Windows     L"Windows_FileBrowser"
 #define TX_Null        L"NULL_Translator"
+#define Provider_Null  L"NULL_Provider"
 
 typedef std::wstring FSIdentifier;
 typedef std::wstring FTIdentifier;
@@ -281,6 +282,8 @@ typedef enum _TXFlags {
 	GFXMultipleModes  = 0x00000008,
 	TXAUDTranslator   = 0x00000010,
 } TXFlags;
+
+#define ALL_TX ( TXTextTranslator | TXGFXTranslator | TXAUDTranslator )
 
 typedef enum _RootHookFlags {
 	RHF_CreatesFileSystem = 0x00000001,
