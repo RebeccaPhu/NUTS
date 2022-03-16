@@ -31,7 +31,7 @@ public:
 			FSF_Supports_Spaces | FSF_Supports_Dirs |
 			FSF_Size |
 			FSF_Uses_Extensions |
-			FSF_Accepts_Sidecars;
+			FSF_Accepts_Sidecars | FSF_Supports_FOP | FSF_NoInPlaceAttrs;
 
 		FSID = FSID_ZIP;
 
@@ -109,6 +109,8 @@ public:
 
 		return CloneFS;
 	}
+
+	std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
 private:
 	ZIPDirectory *pZDir;

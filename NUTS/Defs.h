@@ -189,6 +189,7 @@ typedef enum _FSFlags {
 	FSF_NoDir_Extensions = 0x00200000, /* Directories may not have extensions (only files) */
 	FSF_Accepts_Sidecars = 0x00400000, /* Indicates this FS should have sidecars exported to/imported from it, if the other FS exports/imports sidecars */
 	FSF_Supports_FOP     = 0x00800000, /* Indicates this FS can contain "Foreign Objects" and so extra options (like dir type) should be presented */
+	FSF_NoInPlaceAttrs   = 0x01000000, /* This FS does not support changing attributes in place. Attributes can only be set by writing a file. */
 } FSFlags;
 
 typedef enum _DSFlags {

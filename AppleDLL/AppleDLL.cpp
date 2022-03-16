@@ -284,7 +284,7 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			static FOPDirectoryType FT;
 
 			FT.FriendlyName = L"Apple";
-			FT.Identifier   = L"APPLE";
+			FT.Identifier   = FILE_MACINTOSH;
 
 			cmd->OutParams[ 0 ].pPtr = &FT;
 			cmd->OutParams[ 1 ].pPtr = nullptr;

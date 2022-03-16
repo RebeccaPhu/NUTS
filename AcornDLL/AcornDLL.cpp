@@ -388,6 +388,87 @@ WCHAR *FOPIdentify( DWORD risctype )
 	return ArbFile;
 }
 
+bool TranslateGenericContent( FOPData *fop )
+{
+	if ( fop->Direction == FOP_ExtraAttrs )
+	{
+		NativeFile *pFile = (NativeFile *) fop->pFile;
+		std::vector<AttrDesc> *pDescs = (std::vector<AttrDesc> *) fop->pXAttr;
+
+		// Don't do this for a BBC Micro (!?!) file
+		if ( ( pFile->FSFileType == FT_ACORNX ) && ( pFile->EncodingID == ENCODING_RISCOS ) )
+		{
+			AttrDesc Attr;
+
+			/* Locked */
+			Attr.Index = 1;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
+			Attr.Name  = L"Locked";
+			pDescs->push_back( Attr );
+
+			/* Read */
+			Attr.Index = 2;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
+			Attr.Name  = L"Read";
+			pDescs->push_back( Attr );
+
+			/* Write */
+			Attr.Index = 3;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
+			Attr.Name  = L"Write";
+			pDescs->push_back( Attr );
+
+			/* Load address. Hex. */
+			Attr.Index = 4;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrWarning | AttrFile;
+			Attr.Name  = L"Load address";
+			pDescs->push_back( Attr );
+
+			/* Exec address. Hex. */
+			Attr.Index = 5;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrWarning | AttrFile;
+			Attr.Name  = L"Execute address";
+			pDescs->push_back( Attr );
+
+			/* File Type. Hex. */
+			Attr.Index = 7;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrCombo | AttrHex | AttrFile;
+			Attr.Name  = L"File Type";
+
+			static DWORD    FileTypes[ ] = {
+				0xFFB, 0xFFD, 0xAFF, 0xFFE, 0xFF7, 0xC85, 0xFFA, 0xFEB, 0xFF9, 0xFFF, 0xFFC
+			};
+
+			static std::wstring Names[ ] = {
+				L"BASIC Program", L"Data", L"Draw File", L"Exec (Spool)", L"Font", L"JPEG Image", L"Module", L"Obey (Script)", L"Sprite", L"Text File", L"Utility"
+			};
+
+			for ( BYTE i=0; i<11; i++ )
+			{
+				AttrOption opt;
+
+				opt.Name            = Names[ i ];
+				opt.EquivalentValue = FileTypes[ i ];
+				opt.Dangerous       = false;
+
+				Attr.Options.push_back( opt );
+			}
+
+			pDescs->push_back( Attr );
+
+			/* Time Stamp */
+			Attr.Index = 8;
+			Attr.Type  = AttrVisible | AttrEnabled | AttrTime | AttrFile | AttrDir;
+			Attr.Name  = L"Time Stamp";
+			pDescs->push_back( Attr );
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool TranslateISOContent( FOPData *fop )
 {
 	NativeFile *File = (NativeFile *) fop->pFile;
@@ -518,80 +599,9 @@ bool TranslateISOContent( FOPData *fop )
 		}
 	}
 
-	if ( fop->Direction == FOP_ExtraAttrs )
+	if ( TranslateGenericContent( fop ) )
 	{
-		NativeFile *pFile = (NativeFile *) fop->pFile;
-		std::vector<AttrDesc> *pDescs = (std::vector<AttrDesc> *) fop->pXAttr;
-
-		// Don't do this for a BBC Micro (!?!) file
-		if ( ( pFile->FSFileType == FT_ACORNX ) && ( pFile->EncodingID == ENCODING_RISCOS ) )
-		{
-			AttrDesc Attr;
-
-			/* Locked */
-			Attr.Index = 1;
-			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
-			Attr.Name  = L"Locked";
-			pDescs->push_back( Attr );
-
-			/* Read */
-			Attr.Index = 2;
-			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
-			Attr.Name  = L"Read";
-			pDescs->push_back( Attr );
-
-			/* Write */
-			Attr.Index = 3;
-			Attr.Type  = AttrVisible | AttrEnabled | AttrBool | AttrFile | AttrDir;
-			Attr.Name  = L"Write";
-			pDescs->push_back( Attr );
-
-			/* Load address. Hex. */
-			Attr.Index = 4;
-			Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrWarning | AttrFile;
-			Attr.Name  = L"Load address";
-			pDescs->push_back( Attr );
-
-			/* Exec address. Hex. */
-			Attr.Index = 5;
-			Attr.Type  = AttrVisible | AttrEnabled | AttrNumeric | AttrHex | AttrWarning | AttrFile;
-			Attr.Name  = L"Execute address";
-			pDescs->push_back( Attr );
-
-			/* File Type. Hex. */
-			Attr.Index = 7;
-			Attr.Type  = AttrVisible | AttrEnabled | AttrCombo | AttrHex | AttrFile;
-			Attr.Name  = L"File Type";
-
-			static DWORD    FileTypes[ ] = {
-				0xFFB, 0xFFD, 0xAFF, 0xFFE, 0xFF7, 0xC85, 0xFFA, 0xFEB, 0xFF9, 0xFFF, 0xFFC
-			};
-
-			static std::wstring Names[ ] = {
-				L"BASIC Program", L"Data", L"Draw File", L"Exec (Spool)", L"Font", L"JPEG Image", L"Module", L"Obey (Script)", L"Sprite", L"Text File", L"Utility"
-			};
-
-			for ( BYTE i=0; i<11; i++ )
-			{
-				AttrOption opt;
-
-				opt.Name            = Names[ i ];
-				opt.EquivalentValue = FileTypes[ i ];
-				opt.Dangerous       = false;
-
-				Attr.Options.push_back( opt );
-			}
-
-			pDescs->push_back( Attr );
-
-			/* Time Stamp */
-			Attr.Index = 8;
-			Attr.Type  = AttrVisible | AttrEnabled | AttrTime | AttrFile | AttrDir;
-			Attr.Name  = L"Time Stamp";
-			pDescs->push_back( Attr );
-
-			return true;
-		}
+		return true;
 	}
 
 	if ( fop->Direction == FOP_AttrChanges )
@@ -621,6 +631,22 @@ bool TranslateISOContent( FOPData *fop )
 			
 			return true;
 		}
+	}
+
+	if ( fop->Direction == FOP_SetDirType )
+	{
+		NativeFile *pFile = (NativeFile *) fop->pFile;
+
+		if ( pFile->FSFileType == FT_ACORNX )
+		{
+			pFile->AttrLocked = 0x00000000;
+			pFile->AttrRead   = 0xFFFFFFFF;
+			pFile->AttrWrite  = 0xFFFFFFFF;
+			pFile->AttrExec   = 0x00000000;
+			pFile->TimeStamp  = (DWORD) time( NULL  );
+		}
+
+		return true;
 	}
 
 	return DidTranslate;
@@ -687,51 +713,59 @@ bool TranslateZIPContent( FOPData *fop )
 			}
 		}
 	}
-	else if ( ( File->FSFileType == FT_ACORN ) || ( File->FSFileType == FT_ACORNX ) )
+	else if ( fop->Direction == FOP_WriteEntry )
 	{
-		ZeroMemory( pData, fop->lXAttr );
-
-		if ( fop->lXAttr >= 0x18 )
+		if ( ( File->FSFileType == FT_ACORN ) || ( File->FSFileType == FT_ACORNX ) )
 		{
-			pData[ 0 ] = 0x41;
-			pData[ 1 ] = 0x43;
-			pData[ 2 ] = 0x18;
-			pData[ 3 ] = 0x00;
+			ZeroMemory( pData, fop->lXAttr );
 
-			rstrncpy( &pData[ 0x04 ], (BYTE *) "ARC0", 4 );
-
-			if ( File->FSFileType == FT_ACORN )
+			if ( fop->lXAttr >= 0x18 )
 			{
-				* (DWORD *) &pData[ 0x08 ] = 0;
-				* (DWORD *) &pData[ 0x0C ] = 0;
+				pData[ 0 ] = 0x41;
+				pData[ 1 ] = 0x43;
+				pData[ 2 ] = 0x18;
+				pData[ 3 ] = 0x00;
+
+				rstrncpy( &pData[ 0x04 ], (BYTE *) "ARC0", 4 );
+
+				if ( File->FSFileType == FT_ACORN )
+				{
+					* (DWORD *) &pData[ 0x08 ] = 0;
+					* (DWORD *) &pData[ 0x0C ] = 0;
+				}
+				else
+				{
+					* (DWORD *) &pData[ 0x08 ] = File->LoadAddr;
+					* (DWORD *) &pData[ 0x0C ] = File->ExecAddr;
+				}
+
+				DWORD Attrs = 0;
+
+				if ( File->AttrRead )   { Attrs |= ( 1 | 16 ); }
+				if ( File->AttrWrite )  { Attrs |= ( 2 | 32 ); }
+				if ( File->AttrLocked ) { Attrs |= 4; }
+
+				* (DWORD *) &pData[ 0x010 ] = Attrs;
+
+				File->FSFileType = FT_ZIP;
+
+				bool SidecarsAnyway = (bool) Preference( L"SidecarsAnyway", false );
+
+				if ( !SidecarsAnyway )
+				{
+					File->Flags |= FF_AvoidSidecar;
+				}
+
+				fop->lXAttr = 0x18;
+
+				return true;
 			}
-			else
-			{
-				* (DWORD *) &pData[ 0x08 ] = File->LoadAddr;
-				* (DWORD *) &pData[ 0x0C ] = File->ExecAddr;
-			}
-
-			DWORD Attrs = 0;
-
-			if ( File->AttrRead )   { Attrs |= ( 1 | 16 ); }
-			if ( File->AttrWrite )  { Attrs |= ( 2 | 32 ); }
-			if ( File->AttrLocked ) { Attrs |= 4; }
-
-			* (DWORD *) &pData[ 0x010 ] = Attrs;
-
-			File->FSFileType = FT_ZIP;
-
-			bool SidecarsAnyway = (bool) Preference( L"SidecarsAnyway", false );
-
-			if ( !SidecarsAnyway )
-			{
-				File->Flags |= FF_AvoidSidecar;
-			}
-
-			fop->lXAttr = 0x18;
-
-			return true;
 		}
+	}
+
+	if ( TranslateGenericContent( fop ) )
+	{
+		return true;
 	}
 
 	return false;
@@ -1267,7 +1301,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			static FOPDirectoryType FT;
 
 			FT.FriendlyName = L"Risc OS";
-			FT.Identifier   = L"ACORNRISCOS";
+			FT.Identifier   = FT_ACORNX;
 
 			cmd->OutParams[ 0 ].pPtr = &FT;
 			cmd->OutParams[ 1 ].pPtr = nullptr;

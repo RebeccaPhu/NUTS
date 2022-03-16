@@ -115,7 +115,7 @@ FormatList BuiltIns::GetBuiltinFormatList( ProviderIdentifier PUID )
 		FSF_Supports_Spaces | FSF_Supports_Dirs |
 		FSF_Size |
 		FSF_Uses_Extensions |
-		FSF_Accepts_Sidecars;
+		FSF_Accepts_Sidecars | FSF_Supports_FOP | FSF_NoInPlaceAttrs;
 
 	if ( PUID == ZIP_PROVIDER )
 	{

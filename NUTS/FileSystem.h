@@ -99,6 +99,13 @@ public:
 		return NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );
 	}
 
+	virtual int DirectoryTypeChanged( DWORD FileID )
+	{
+		NativeFile changes = pDirectory->Files[ FileID ];
+
+		return SetProps( FileID, &changes );
+	}
+
 	virtual FSHint Offer( BYTE *Extension )
 	{
 		NUTSError( ERROR_UNSUPPORTED, L"Operation not supported" );

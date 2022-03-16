@@ -578,7 +578,7 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 				case IDM_DIRTYPE:
 					{
-						if ( GetSelectionCount() == 1 ) { break; }
+						if ( GetSelectionCount() != 1 ) { break; }
 
 						::SendMessage( ParentWnd, WM_SETDIRTYPE, (WPARAM) hWnd, 0 );
 					}
@@ -2174,28 +2174,80 @@ void CFileViewer::RenameFile( void )
 	Update();
 }
 
+NativeFile *pEditingDir;
+FTIdentifier NDFT = FT_NULL;
+
 INT_PTR CALLBACK CFileViewer::DirTypeDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if ( message == WM_INITDIALOG )
 	{
+		NDFT = pEditingDir->FSFileType;
+
 		FOPDirectoryTypes dirs = FSPlugins.GetDirectoryTypes();
 
 		::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_ADDSTRING, 0, (LPARAM) L"[Default]" );
 
+		bool Selected = false;
+		int  iSelect  = 1;
+
 		for ( FOPDirectoryTypeIterator iType = dirs.begin(); iType != dirs.end(); iType++ )
 		{
 			::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_ADDSTRING, 0, (LPARAM) iType->second.c_str() );
+
+			if ( iType->first == pEditingDir->FSFileType )
+			{
+				::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_SETCURSEL, (WPARAM) iSelect, 0 );
+
+				Selected = true;
+			}
+
+			iSelect++;
 		}
 
-		::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_SETCURSEL, 0, 0 );
+		if ( !Selected )
+		{
+			::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_SETCURSEL, 0, 0 );
+		}
 	}
 	else if ( message == WM_COMMAND )
 	{
 		if ( LOWORD( wParam ) == IDOK )
 		{
-			// Gather type
+			FTIdentifier ProposedFT = FT_NULL;
 
-			EndDialog( hDlg, IDOK );
+			int i = ::SendMessage( GetDlgItem( hDlg, IDC_DIRTYPESEL ), CB_GETCURSEL, 0, 0 );
+
+			if ( i == 0 )
+			{
+				ProposedFT = FT_NULL;
+			}
+			else
+			{
+				FOPDirectoryTypes dirs = FSPlugins.GetDirectoryTypes();
+
+				int si = 1;
+
+				for ( FOPDirectoryTypeIterator iType = dirs.begin(); iType != dirs.end(); iType++ )
+				{
+					if ( si == i )
+					{
+						ProposedFT = iType->first;
+					}
+
+					si++;
+				}
+			}
+
+			if ( ProposedFT != NDFT )
+			{
+				pEditingDir->FSFileType = ProposedFT;
+
+				EndDialog( hDlg, IDOK );
+			}
+			else
+			{
+				EndDialog( hDlg, IDCANCEL );
+			}		
 
 			return (INT_PTR) TRUE;
 		}
@@ -2212,11 +2264,24 @@ INT_PTR CALLBACK CFileViewer::DirTypeDialogProc(HWND hDlg, UINT message, WPARAM 
 
 void CFileViewer::SetDirType( void )
 {
+	pEditingDir = &FS->pDirectory->Files[ GetSelectedIndex() ];
+
 	if ( DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_DIRTYPE ), hWnd, DirTypeDialogProc, NULL ) == IDOK )
 	{
-		// TODO: FOP the directory
+		FOPData fop;
 
-		// TODO: Call into the FS to update it.
+		fop.DataType  = NULL;
+		fop.Direction = FOP_SetDirType;
+		fop.lXAttr    = NULL;
+		fop.pFile     = (void *) pEditingDir;
+		fop.pFS       = (void *) NULL;
+		fop.pXAttr    = NULL;
+
+		FSPlugins.ProcessFOP( &fop );
+
+		FS->DirectoryTypeChanged( pEditingDir->fileID );
+
+		Update();
 	}
 }
 
@@ -2238,17 +2303,18 @@ void CFileViewer::NewDirectory( void )
 
 	NewDirSupportsFOP = ( ( FS->Flags & FSF_Supports_FOP ) != 0 );
 
+	NativeFile Dir;
+
+	Dir.EncodingID = StaticEncoding;
+	Dir.FSFileType = FT_UNSET;
+	Dir.Flags      = FF_Directory;
+
+	pEditingDir = &Dir;
+
 	if ( DialogBoxParam( hInst, MAKEINTRESOURCE(IDD_NEWDIR), hWnd, NewDirDialogProc, (LPARAM) 0 ) == IDOK )
 	{
 		if ( pNewDir != nullptr )
 		{
-			NativeFile Dir;
-
-			Dir.EncodingID = StaticEncoding;
-			Dir.FSFileType = FT_UNSET;
-			Dir.Filename   = pNewDir;
-			Dir.Flags      = FF_Directory;
-
 			if ( ( StaticFlags & FSF_Uses_Extensions ) && ( ! ( StaticFlags & FSF_NoDir_Extensions ) ) )
 			{
 				if ( rstrnlen( pNewDirX, 3 ) != 0 )
@@ -2258,6 +2324,7 @@ void CFileViewer::NewDirectory( void )
 				}
 			}
 
+			Dir.Filename   = pNewDir;
 			Dir.Type  = FT_Directory;
 
 			int RCode = FS->CreateDirectory( &Dir, CDF_MANUAL_OP );
@@ -2493,9 +2560,16 @@ INT_PTR CALLBACK CFileViewer::NewDirDialogProc(HWND hDlg, UINT message, WPARAM w
 			{
 				if ( DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_DIRTYPE ), hDlg, DirTypeDialogProc, NULL ) == IDOK )
 				{
-					// TODO: FOP the directory
+					FOPData fop;
 
-					// TODO: Call into the FS to update it.
+					fop.DataType  = NULL;
+					fop.Direction = FOP_SetDirType;
+					fop.lXAttr    = NULL;
+					fop.pFile     = (void *) pEditingDir;
+					fop.pFS       = (void *) NULL;
+					fop.pXAttr    = NULL;
+
+					FSPlugins.ProcessFOP( &fop );
 				}
 			}
 			else if ( pNewDirEditX != nullptr )
@@ -2908,7 +2982,7 @@ void CFileViewer::DoContextMenu( void )
 			}
 			else
 			{
-				if ( FS->Flags & FSF_Supports_FOP )
+				if ( ( FS->Flags & FSF_Supports_FOP ) && ( ( FS->Flags & FSF_NoInPlaceAttrs ) == 0 ) )
 				{
 					MENUITEMINFO mii;
 

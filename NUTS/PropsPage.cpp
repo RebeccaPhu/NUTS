@@ -941,6 +941,8 @@ void SetupAttributes( HWND hWnd, bool CreateWindows )
 		AttrWnds.clear();
 	}
 
+	bool AllDisabled = false;
+
 	static AttrDescriptors Attrs;
 
 	NativeFile *pTargetFile = nullptr;
@@ -952,9 +954,13 @@ void SetupAttributes( HWND hWnd, bool CreateWindows )
 		
 	Attrs = pHostFS->GetAttributeDescriptions( pTargetFile );
 
+	if ( pHostFS->Flags & FSF_NoInPlaceAttrs ) { AllDisabled = true; }
+
 	if ( ( CurrentAction.Selection.size() == 0 ) && ( pHostFS->FSID != FS_Root ) )
 	{
 		Attrs = pHostFS->pParentFS->GetAttributeDescriptions();
+
+		if ( pHostFS->pParentFS->Flags & FSF_NoInPlaceAttrs ) { AllDisabled = true; }
 	}
 
 	if ( pHostFS != nullptr )
@@ -996,7 +1002,7 @@ void SetupAttributes( HWND hWnd, bool CreateWindows )
 
 			DWORD Styles = WS_VISIBLE | WS_CHILD;
 
-			if ( ! (iAttr->Type & AttrEnabled ) )
+			if ( ( ! (iAttr->Type & AttrEnabled ) ) || ( AllDisabled ) )
 			{
 				Styles |= WS_DISABLED;
 			}
@@ -1024,7 +1030,7 @@ void SetupAttributes( HWND hWnd, bool CreateWindows )
 
 					A.ControlWnd = pEdit->hWnd;
 
-					if ( ! ( iAttr->Type & AttrEnabled ) )
+					if ( ( ! ( iAttr->Type & AttrEnabled ) ) || ( AllDisabled ) )
 					{
 						pEdit->Disabled = true;
 					}

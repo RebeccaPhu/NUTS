@@ -627,3 +627,26 @@ int ZIPFile::RenameIncomingDirectory( NativeFile *pDir, Directory *pDirectory )
 
 	return 0;
 }
+
+std::vector<AttrDesc> ZIPFile::GetAttributeDescriptions( NativeFile *pFile )
+{
+	static std::vector<AttrDesc> Attrs;
+
+	Attrs.clear();
+
+	if ( pFile != nullptr )
+	{
+		FOPData fop;
+
+		fop.DataType  = FOP_DATATYPE_ZIPATTR;
+		fop.Direction = FOP_ExtraAttrs;
+		fop.lXAttr    = 0;
+		fop.pXAttr    = (BYTE *) &Attrs;
+		fop.pFile     = (void *) pFile;
+		fop.pFS       = nullptr;
+	
+		ProcessFOP( &fop );
+	}
+
+	return Attrs;
+}
