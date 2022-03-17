@@ -492,13 +492,13 @@ WCHAR *WindowsFileSystem::Identify( DWORD FileID )
 
 BYTE *WindowsFileSystem::DescribeFile( DWORD FileIndex )
 {
-	BYTE desc[1024];
+	static BYTE desc[1024];
 
 	NativeFile *pFile = &pDirectory->Files[ FileIndex ];
 
 	if ( pFile->Flags & FF_Extension )
 	{
-		rstrncpy( desc, pFile->Extension, pFile->Extension.length() );
+		rstrncpy( desc, (BYTE *) pFile->Extension, pFile->Extension.length() );
 
 		rsprintf( &desc[ pFile->Extension.length() ], " File, %s bytes", DisplayNumber( pFile->Length ) );
 	}
