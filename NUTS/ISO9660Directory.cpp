@@ -106,7 +106,7 @@ int	ISO9660Directory::ReadDirectory(void)
 
 			file.EncodingID  = ENCODING_ASCII;
 			file.Filename    = BYTEString( &Sector[ BOffset + 33 ], Sector[ BOffset + 32 ] );
-			file.FSFileType  = FT_WINDOWS;
+			file.FSFileType  = FT_NULL;
 			file.FSFileTypeX = FT_ISO;
 			file.Type        = FT_Arbitrary;
 			file.Icon        = FT_Arbitrary;
@@ -507,6 +507,17 @@ static bool DirectorySort( NativeFile &a, NativeFile &b )
 
 int	ISO9660Directory::WriteDirectory(void)
 {
+	FOPData fop;
+
+	fop.DataType  = FOP_DATATYPE_CDISO;
+	fop.Direction = FOP_PreWrite;
+	fop.pFile     = nullptr;
+	fop.pFS       = pSrcFS;				
+	fop.pXAttr    = nullptr;
+	fop.lXAttr    = 0;
+
+	ProcessFOP( &fop );
+
 	AutoBuffer SectorBuffer( pPriVolDesc->SectorSize );
 
 	BYTE *sector = (BYTE *) SectorBuffer;

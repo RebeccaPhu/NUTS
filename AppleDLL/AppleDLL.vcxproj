@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClInclude Include="AppleDefs.h" />
     <ClInclude Include="AppleDLL.h" />
+    <ClInclude Include="MacIcon.h" />
     <ClInclude Include="MacintoshMFSDirectory.h" />
     <ClInclude Include="MacintoshMFSFileSystem.h" />
     <ClInclude Include="MFSFAT.h" />
@@ -180,6 +181,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="MacIcon.cpp" />
     <ClCompile Include="MacintoshMFSDirectory.cpp" />
     <ClCompile Include="MacintoshMFSFileSystem.cpp" />
     <ClCompile Include="MFSFAT.cpp" />

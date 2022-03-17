@@ -10,9 +10,13 @@
 #include "../NUTS/NUTSError.h"
 #include "../NUTS/TZXIcons.h"
 #include "AppleDefs.h"
+#include "../NUTS/Preference.h"
+#include "MacIcon.h"
 #include "resource.h"
 
 #include "MacintoshMFSFileSystem.h"
+
+#include <MMSystem.h>
 
 HMODULE hInstance;
 
@@ -82,6 +86,169 @@ void LoadFonts()
 		ZeroMemory( pChicago, 256 * 8 );
 		memcpy( pChicago, lpAddress, dwSize );
 	}
+}
+
+bool TranslateISOContent( FOPData *fop )
+{
+	NativeFile *pFile = (NativeFile *) fop->pFile;
+
+	if ( ( fop->Direction == FOP_ReadEntry ) && ( pFile->FSFileType == FT_NULL ) )
+	{
+		// The data block is basically Rock Ridge, but we only care about BA/AA and NM,
+		// the latter since Apple filenames are more expressive than the DChar limitation of ISO9660/High Sierra.
+		DWORD lXAttr = fop->lXAttr;
+		DWORD s = 0;
+
+		BYTEString NM = pFile->Filename;
+		DWORD FT_FCC = 0x20202020;
+		DWORD CT_FCC = 0x20202020;
+		bool  HaveAppleBlock = false;
+		bool  HaveNewerBlock = false;
+
+		while ( s< lXAttr )
+		{
+			if ( ( s + 3 ) > lXAttr )
+			{
+				break;
+			}
+
+			BYTE DLen = fop->pXAttr[ s + 2 ];
+
+			if (  ( fop->pXAttr[ s ] == 'B' ) && ( fop->pXAttr[ s + 1 ] == 'A' ) )
+			{
+				// The BA block is malformed. DLen is unreliable.
+				if ( fop->pXAttr[ s + 2 ] == 0x01 )
+				{
+					DLen = 6; // ProDOS block. Not used, but must skip it.
+				}
+
+				if ( fop->pXAttr[ s + 2 ] == 0x02 )
+				{
+					DLen = 13; // Mac block
+				}
+			}
+
+			if ( ( s + DLen ) > lXAttr )
+			{
+				break;
+			}
+
+			if ( ( fop->pXAttr[ s ] == 'N' ) && ( fop->pXAttr[ s + 1 ] == 'M' ) )
+			{
+				// Alternate name field.
+				NM = BYTEString( &fop->pXAttr[ s + 5 ], DLen - 5 );
+			}
+
+			if (  ( fop->pXAttr[ s ] == 'B' ) && ( fop->pXAttr[ s + 1 ] == 'A' ) )
+			{
+				// Make sure not a ProDOS entry (yes, Apple technically supported ProDOS on CDs).
+				if ( !HaveNewerBlock )
+				{
+					if ( fop->pXAttr[ s + 2 ] == 0x06 )
+					{
+						FT_FCC = BEDWORD( &fop->pXAttr[ s + 3 ] );
+						CT_FCC = BEDWORD( &fop->pXAttr[ s + 7 ] );
+
+						// Skip finder flags.
+						HaveAppleBlock = true;
+					}
+				}
+			}
+
+			if (  ( fop->pXAttr[ s ] == 'A' ) && ( fop->pXAttr[ s + 1 ] == 'A' ) )
+			{
+				// New style block - Rock Ridge compliant
+				if ( fop->pXAttr[ s + 3 ] == 0x02 )
+				{
+					FT_FCC = BEDWORD( &fop->pXAttr[ s + 4 ] );
+					CT_FCC = BEDWORD( &fop->pXAttr[ s + 8 ] );
+
+					// Skip finder flags.
+					HaveAppleBlock = true;
+				}
+
+				HaveNewerBlock = true;
+			}
+
+			s += DLen;
+		}
+
+		if ( HaveAppleBlock )
+		{
+			pFile->Attributes[ 11 ] = FT_FCC;
+			pFile->Attributes[ 12 ] = CT_FCC;
+			pFile->FSFileType = FILE_MACINTOSH;
+			pFile->EncodingID = ENCODING_MACINTOSH;
+			pFile->Filename   = NM;
+
+			// Process FT/CT string
+			BYTE FTCT[ 10 ] = { 0,0,0,0,0,0,0,0,0,0 };
+
+			WLEDWORD( &FTCT[ 0 ], FT_FCC );
+			WLEDWORD( &FTCT[ 5 ], CT_FCC );
+
+			rsprintf( fop->ReturnData.Descriptor, "Type: %s, Creator: %s", &FTCT[ 0 ], &FTCT[ 5 ] );
+
+			fop->ReturnData.Identifier = L"Apple Macintosh File";
+
+			if ( (bool) Preference( L"UseResolvedIcons" ) )
+			{
+				if ( pFile->ExtraForks > 0 )
+				{
+					FileSystem *pFS = (FileSystem *) fop->pFS;
+
+					CTempFile obj;
+
+					pFS->ReadFork( pFile->fileID, 0, obj );
+
+					ExtractIcon( pFile, obj, pFS->pDirectory );
+				}
+			}
+
+			return true;
+		}
+	}
+
+	if ( ( fop->Direction == FOP_WriteEntry ) && ( pFile->FSFileType == FILE_MACINTOSH ) )
+	{
+		fop->lXAttr = 14 + 5 + pFile->Filename.length();
+
+		fop->pXAttr[ 0 ] = 'A';
+		fop->pXAttr[ 1 ] = 'A';
+		fop->pXAttr[ 2 ] = 0x0E;
+		fop->pXAttr[ 3 ] = 0x02; // Mac type
+		WBEDWORD( &fop->pXAttr[ 4 ], pFile->Attributes[ 11 ] );
+		WBEDWORD( &fop->pXAttr[ 8 ], pFile->Attributes[ 12 ] );
+		WBEWORD(  &fop->pXAttr[ 0x0C ], 0x0100 ); // Finder flags - defaults.
+
+		// Write an NM entry.
+		fop->pXAttr[ 0x0E ] = 'N';
+		fop->pXAttr[ 0x0F ] = 'M';
+		fop->pXAttr[ 0x10 ] = 5 + pFile->Filename.length();
+		fop->pXAttr[ 0x11 ] = 1; // Version
+		fop->pXAttr[ 0x12 ] = 0; // Flags
+
+		memcpy( &fop->pXAttr[ 0x13 ], (BYTE *) pFile->Filename, pFile->Filename.length() );
+
+		bool SidecarsAnyway = (bool) Preference( L"SidecarsAnyway", false );
+
+		if ( !SidecarsAnyway )
+		{
+			pFile->Flags |= FF_AvoidSidecar;
+		}
+
+		return true;
+	}
+
+	if ( ( fop->Direction == FOP_SetDirType ) && ( pFile->FSFileType == FILE_MACINTOSH ) )
+	{
+		pFile->Attributes[ 11 ] = MAKEFOURCC( ' ', 'R', 'I', 'D' );
+		pFile->Attributes[ 12 ] = MAKEFOURCC( 'S', 'T', 'U', 'N' );
+
+		return true;
+	}
+
+	return false;
 }
 
 UINT APPL_ICON;
@@ -291,6 +458,22 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		}
 
 		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_TranslateFOPContent:
+		{
+			FOPData *fop = (FOPData *) cmd->InParams[ 0 ].pPtr;
+
+			if ( fop->DataType == FOP_DATATYPE_CDISO )
+			{
+				bool r= TranslateISOContent( fop );
+
+				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
+
+				return NUTS_PLUGIN_SUCCESS;
+			}
+		}
+		
+		break;
 	}
 
 	return NUTS_PLUGIN_UNRECOGNISED;

@@ -75,6 +75,9 @@
     <ClInclude Include="MFSFAT.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MacIcon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -124,6 +127,9 @@
     </ClCompile>
     <ClCompile Include="..\NUTS\FontBitmap.cpp">
       <Filter>Source Files\Imported Source</Filter>
+    </ClCompile>
+    <ClCompile Include="MacIcon.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

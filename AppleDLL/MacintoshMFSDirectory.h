@@ -29,8 +29,6 @@ public:
 private:
 	void ReadResourceFork( DWORD FileID, CTempFile &fileobj );
 	void ClearIcons();
-	void ExtractIcon( NativeFile *pFile, CTempFile &fileobj );
-	void MakeIconFromData( BYTE *InBuffer, IconDef *pIcon );
 	void SetFileType( NativeFile* pFile, BYTE *pFinderData );
 };
 
