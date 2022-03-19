@@ -80,7 +80,7 @@ typedef struct _NativeFile {
 		ExtraForks      = 0;
 		pAuxData        = nullptr;
 		lAuxData        = 0;
-		FSFileType      = FT_NONE;
+		FSFileType      = FT_NULL;
 		FSFileTypeX     = FT_NONE;
 	}
 	DWORD fileID;          // File index into the pDirectory->Files vector

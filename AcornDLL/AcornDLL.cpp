@@ -747,8 +747,6 @@ bool TranslateZIPContent( FOPData *fop )
 
 				* (DWORD *) &pData[ 0x010 ] = Attrs;
 
-				File->FSFileType = FT_ZIP;
-
 				bool SidecarsAnyway = (bool) Preference( L"SidecarsAnyway", false );
 
 				if ( !SidecarsAnyway )

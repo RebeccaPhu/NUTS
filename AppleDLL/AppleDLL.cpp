@@ -251,6 +251,132 @@ bool TranslateISOContent( FOPData *fop )
 	return false;
 }
 
+bool TranslateZIPContent( FOPData *fop )
+{
+	if ( fop->Direction == FOP_PostRead )
+	{
+		FileSystem *pFS = (FileSystem *) fop->pFS;
+
+		for ( int i=0; i<pFS->pDirectory->Files.size(); i++ )
+		{
+			NativeFile *pFile = &pFS->pDirectory->Files[ i ];
+
+			if ( pFile->FSFileType == FT_NULL )
+			{
+				// Go looking for a sidecar
+				BYTEString SidecarFilename;
+				BYTEString sidecarF = BYTEString( pFile->Filename.size() + 2 );
+
+				sidecarF[ 0 ] = (BYTE) '.';
+				sidecarF[ 1 ] = (BYTE) '_';
+
+				memcpy( &sidecarF[ 2 ], (BYTE *) pFile->Filename, pFile->Filename.length() );
+
+				SidecarFilename = BYTEString( (BYTE *) sidecarF, sidecarF.length() );
+
+				// Now see if such a thing exists
+				for ( int j=0; j<pFS->pDirectory->Files.size(); j++ )
+				{
+					if ( i == j ) { continue; }
+
+					NativeFile *pSidecarFile = &pFS->pDirectory->Files[ j ];
+
+					if ( !rstricmp( pSidecarFile->Filename, SidecarFilename ) )
+					{
+						continue;
+					}
+
+					CTempFile obj;
+
+					pFS->ReadFile( j, obj );
+
+					BYTE Data[ 16 ];
+
+					obj.Seek( 0 );
+					obj.Read( Data, 4 );
+
+					if ( BEDWORD( Data ) != 0x00051607 )
+					{
+						return false;
+					}
+
+					obj.Read( Data, 4 );
+
+					if ( BEDWORD( Data ) != 0x00020000 )
+					{
+						return false;
+					}
+
+					obj.Read( Data, 16 );
+
+					// Skip the Home FS. It seems it's not reliably set anyway.
+
+					WORD forks;
+					DWORD Offset1 = 0;
+					DWORD Offset2 = 0;
+					DWORD Length1 = 0;
+					DWORD Length2 = 0;
+
+					obj.Read( Data, 2 );
+
+					forks = BEWORD( Data );
+
+					for ( WORD i=0; i<forks; i++ )
+					{
+						DWORD Type;
+						DWORD Offset;
+						DWORD Length;
+
+						obj.Read( Data, 4 ); Type   = BEDWORD( Data );
+						obj.Read( Data, 4 ); Offset = BEDWORD( Data );
+						obj.Read( Data, 4 ); Length = BEDWORD( Data );
+
+						if ( Type == 0x00000009 )
+						{
+							Offset1 = Offset;
+							Length1 = Length;
+						}
+
+						if ( Type == 0x00000002 )
+						{
+							Offset2 = Offset;
+							Length2 = Length;
+						}
+					}
+		
+					if ( Offset2 != 0 )
+					{
+						CTempFile ResourceFork;
+
+						BYTE Buffer[ 0x200 ];
+
+						DWORD BytesToGo = Length2;
+
+						Length2 = min( Length2, ( obj.Ext() - Offset2 ) );
+		
+						obj.Seek( Offset2 );
+						ResourceFork.Seek( 0 );
+
+						while ( BytesToGo > 0 )
+						{
+							obj.Read( Buffer, min( BytesToGo, 0x200 ) );
+							ResourceFork.Write( Buffer, min( BytesToGo, 0x200 ) );
+
+							BytesToGo -= min( BytesToGo, 0x200 );
+						}
+
+						ExtractIcon( pFile, ResourceFork, pFS->pDirectory );
+					}
+
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 UINT APPL_ICON;
 UINT DOC_ICON;
 UINT BLANK_ICON;
@@ -466,6 +592,15 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			if ( fop->DataType == FOP_DATATYPE_CDISO )
 			{
 				bool r= TranslateISOContent( fop );
+
+				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
+
+				return NUTS_PLUGIN_SUCCESS;
+			}
+
+			if ( fop->DataType == FOP_DATATYPE_ZIPATTR )
+			{
+				bool r= TranslateZIPContent( fop );
 
 				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
 
