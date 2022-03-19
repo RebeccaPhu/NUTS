@@ -69,13 +69,13 @@ int ZIPDirectory::ReadDirectory(void)
 			{
 				NativeFile file;
 
-				file.EncodingID = ENCODING_ASCII;
-				file.fileID     = FileID;
-				file.FSFileType = FT_ZIP;
-				file.Icon       = FT_Directory;
-				file.Type       = FT_Directory;
-				file.Flags      = FF_Directory;
-				file.Length     = 0;
+				file.EncodingID  = ENCODING_ASCII;
+				file.fileID      = FileID;
+				file.FSFileTypeX = FT_ZIP;
+				file.Icon        = FT_Directory;
+				file.Type        = FT_Directory;
+				file.Flags       = FF_Directory;
+				file.Length      = 0;
 
 				file.Filename = BYTEString( pDir );
 
@@ -137,14 +137,14 @@ int ZIPDirectory::ReadDirectory(void)
 
 			NativeFile file;
 
-			file.EncodingID = ENCODING_ASCII;
-			file.fileID     = FileID;
-			file.Flags      = 0;
-			file.FSFileType = FT_ZIP;
+			file.EncodingID  = ENCODING_ASCII;
+			file.fileID      = FileID;
+			file.Flags       = 0;
+			file.FSFileTypeX = FT_ZIP;
 
-			file.Icon       = FT_Arbitrary;
-			file.Length     = zs.size;
-			file.Type       = FT_Arbitrary;
+			file.Icon        = FT_Arbitrary;
+			file.Length      = zs.size;
+			file.Type        = FT_Arbitrary;
 
 			file.HasResolvedIcon= false;
 
@@ -211,6 +211,17 @@ int ZIPDirectory::ReadDirectory(void)
 	zip_error_fini( &ze );
 	zip_source_close( z );
 	zip_source_free( z );
+
+	FOPData fop;
+
+	fop.DataType  = FOP_DATATYPE_ZIPATTR;
+	fop.Direction = FOP_PostRead;
+	fop.pFile     = nullptr;
+	fop.pFS       = srcFS;				
+	fop.pXAttr    = nullptr;
+	fop.lXAttr    = 0;
+
+	ProcessFOP( &fop );
 
 	return 0;
 }

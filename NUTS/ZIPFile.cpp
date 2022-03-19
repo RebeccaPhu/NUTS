@@ -241,6 +241,9 @@ int ZIPFile::WriteFile(NativeFile *pFile, CTempFile &store)
 
 	store.Seek( 0 );
 
+	// Forces a memory dump
+	store.Keep();
+
 	/* libzip wants a source made from the data. Well alrighty then. */
 	ZIPFromTemp *zft = new ZIPFromTemp( store );
 
@@ -283,6 +286,8 @@ int ZIPFile::WriteFile(NativeFile *pFile, CTempFile &store)
 	zip_close( za );
 
 	delete zft;
+
+	store.Unkeep();
 
 	return pDirectory->ReadDirectory();
 }

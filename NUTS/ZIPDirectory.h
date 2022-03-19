@@ -39,6 +39,7 @@ public:
 	}
 
 	FOPTranslateFunction ProcessFOP;
+	FOPLoadFSFunction    LoadFOPFS;
 
 	void *srcFS;
 	bool CloneWars;

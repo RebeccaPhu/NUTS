@@ -39,7 +39,9 @@ public:
 
 		CloneWars = false;
 
-		pZDir->CloneWars = CloneWars;
+		pZDir->CloneWars  = CloneWars;
+		pZDir->ProcessFOP = ProcessFOP;
+		pZDir->LoadFOPFS  = LoadFOPFS;
 	}
 
 	ZIPFile( const ZIPFile &source ) : FileSystem( source.pSource )
@@ -63,7 +65,12 @@ public:
 
 		CloneWars = true;
 
-		pZDir->CloneWars = CloneWars;
+		ProcessFOP = source.ProcessFOP;
+		LoadFOPFS  = source.LoadFOPFS;
+
+		pZDir->CloneWars  = CloneWars;
+		pZDir->ProcessFOP = ProcessFOP;
+		pZDir->LoadFOPFS  = LoadFOPFS;
 	}
 
 	~ZIPFile( void )
