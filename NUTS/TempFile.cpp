@@ -219,6 +219,8 @@ void CTempFile::SetExt( QWORD NewPtr )
 	{
 		pMemory = (BYTE *) realloc( pMemory, NewPtr );
 
+		MemorySize = NewPtr;
+
 		return;
 	}
 
@@ -284,6 +286,11 @@ void CTempFile::Keep( void )
 	DumpMemory();
 
 	bKeep = true;
+}
+
+void CTempFile::Unkeep( void )
+{
+	bKeep = false;
 }
 
 void CTempFile::KeepAs( std::wstring Filename )
