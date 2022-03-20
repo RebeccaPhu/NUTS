@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 
-#include "../NUTS/Defs.h"
 #include "SinclairDefs.h"
 #include "TAPDirectory.h"
 #include "../NUTS/libfuncs.h"

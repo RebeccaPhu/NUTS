@@ -1,7 +1,10 @@
 #pragma once
 
+#include "stdafx.h"
+
+#include "NUTSXLAT.h"
+
 #include "TempFile.h"
-#include "Defs.h"
 
 class TEXTTranslator
 {

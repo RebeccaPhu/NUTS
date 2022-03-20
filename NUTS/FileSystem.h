@@ -1,7 +1,20 @@
 #pragma once
+
+#include "stdafx.h"
+
+#include "NUTSTypes.h"
+#include "NativeFile.h"
+#include "NUTSLC.h"
+#include "ResolvedIcons.h"
+#include "NUTSAction.h"
+#include "NUTSFSTypes.h"
+#include "NUTSAttrs.h"
+#include "NUTSMessages.h"
+#include "TapeDefs.h"
+#include "NUTSConstants.h"
+
 #include "DataSource.h"
 #include "Directory.h"
-#include "Defs.h"
 #include "libfuncs.h"
 #include "TempFile.h"
 #include "NUTSError.h"

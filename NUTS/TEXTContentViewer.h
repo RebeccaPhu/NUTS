@@ -5,7 +5,6 @@
 #include "EncodingTextArea.h"
 #include "EncodingStatusBar.h"
 #include "IconButton.h"
-#include "Defs.h"
 
 #include <map>
 

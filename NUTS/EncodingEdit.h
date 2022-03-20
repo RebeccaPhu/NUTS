@@ -1,7 +1,8 @@
 #pragma once
 
 #include "stdafx.h"
-#include "Defs.h"
+
+#include "NUTSTypes.h"
 
 #ifndef FONTBITMAP_PLUGIN
 #include "CharMap.h"

@@ -3,8 +3,6 @@
 
 #include <time.h>
 
-#include "Defs.h"
-
 class NestedImageSource :
 	public ImageDataSource
 {

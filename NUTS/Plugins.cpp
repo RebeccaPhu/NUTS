@@ -18,6 +18,7 @@
 #include <string>
 #include <algorithm>
 
+#include "NUTSAPI.h"
 
 extern DataSourceCollector *pCollector;
 extern HWND hSplashWnd;

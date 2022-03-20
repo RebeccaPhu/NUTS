@@ -7,6 +7,7 @@
 #include "Preference.h"
 #include "FileDialogs.h"
 #include "resource.h"
+#include "NUTSMacros.h"
 
 #include <process.h>
 

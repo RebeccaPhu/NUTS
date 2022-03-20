@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 
 #include "CPMDirectory.h"
-#include "Defs.h"
 #include "libfuncs.h"
 
 void ImportCPMDirectoryEntry( NativeFile *pFile, BYTE *pEntry )

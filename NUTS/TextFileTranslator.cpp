@@ -2,6 +2,7 @@
 #include "TextFileTranslator.h"
 #include "libfuncs.h"
 
+#include "NUTSMessages.h"
 
 TextFileTranslator::TextFileTranslator(void)
 {

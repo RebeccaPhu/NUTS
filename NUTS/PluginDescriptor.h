@@ -6,15 +6,8 @@
 #include <string>
 #include <list>
 
-typedef std::wstring FSIdentifier;
-typedef std::wstring FTIdentifier;
-typedef std::wstring FontIdentifer;
-typedef std::wstring EncodingIdentifier;
-typedef std::wstring TXIdentifier;
-typedef std::wstring PluginIdentifier;
-typedef std::wstring ProviderIdentifier;
+#include "NUTSTypes.h"
 
-typedef unsigned long long QWORD;
 
 typedef enum _PluginCommandID {
 	PC_SetPluginConnectors,

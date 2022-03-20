@@ -7,6 +7,7 @@
 #include "IconRatio.h"
 #include "NUTSError.h"
 #include "libfuncs.h"
+#include "NUTSMacros.h"
 
 #include <commctrl.h>
 #include <commdlg.h>

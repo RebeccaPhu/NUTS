@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Defs.h"
-
 #include <map>
 
 typedef enum _TapeKeyID

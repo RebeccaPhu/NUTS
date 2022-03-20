@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Defs.h"
 #include "Plugins.h"
 
 #include <vector>

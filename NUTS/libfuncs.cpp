@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "Defs.h"
-
 int	runningFileID	= 1;
 
 WCHAR *UString(char *pAString) {

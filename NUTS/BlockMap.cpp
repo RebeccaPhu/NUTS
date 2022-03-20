@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "BlockMap.h"
-#include "Defs.h"
+#include "NUTSFSTypes.h"
+#include "NUTSConstants.h"
 
 #define BlockWidth  12
 #define BlockHeight 12

@@ -11,6 +11,10 @@
 
 #include "AcornDLL.h"
 
+#include "../NUTS/NUTSTypes.h"
+
+#include <string>
+
 #include "Defs.h"
 
 #include "ADFSFileSystem.h"
@@ -23,7 +27,6 @@
 #include "SpriteTranslator.h"
 #include "BBCBASICTranslator.h"
 #include "ARMadeusTranslator.h"
-#include "../NUTS/Defs.h"
 #include "RISCOSIcons.h"
 #include "../NUTS/IDE8Source.h"
 #include "../NUTS/OffsetDataSource.h"

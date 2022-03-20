@@ -1,10 +1,14 @@
 #pragma once
 
+#include "stdafx.h"
+
 #include <vector>
 #include <map>
 #include <utility>
+
+#include "NUTSTypes.h"
+#include "NUTSXLAT.h"
 #include "TempFile.h"
-#include "Defs.h"
 
 class SCREENTranslator
 {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../NUTS/SCREENTranslator.h"
-#include "../NUTS/Defs.h"
 
 class SpriteTranslator : SCREENTranslator
 {

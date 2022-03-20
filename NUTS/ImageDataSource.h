@@ -1,4 +1,10 @@
 #pragma once
+
+#include "stdafx.h"
+
+#include "NUTSTypes.h"
+#include "NUTSFlags.h"
+
 #include "datasource.h"
 #include "libfuncs.h"
 

@@ -1,6 +1,9 @@
 #pragma once
 
-#include "Defs.h"
+#include "TapeDefs.h"
+#include "NUTSMacros.h"
+#include "NUTSMessages.h"
+
 #include <vector>
 #include <map>
 

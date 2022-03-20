@@ -2,6 +2,7 @@
 #include "EncodingEdit.h"
 #include "FontBitmap.h"
 #include "libfuncs.h"
+#include "NUTSMacros.h"
 
 #include "resource.h"
 
@@ -11,6 +12,7 @@
 
 #ifndef FONTBITMAP_PLUGIN
 #include "EncodingClipboard.h"
+#include "NUTSMessages.h"
 #else
 extern HINSTANCE hInstance;
 #endif
@@ -441,6 +443,7 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 		
 		return 0;
 
+#ifndef FONTBITMAP_PLUGIN
 	case WM_CHARMAPCHAR:
 		{
 			WORD ascii = LOWORD( wParam );
@@ -450,6 +453,7 @@ LRESULT EncodingEdit::WindowProc( UINT uMsg, WPARAM wParam, LPARAM lParam )
 			Invalidate();
 		}
 		break;
+#endif
 
 	case WM_KEYUP:
 		{

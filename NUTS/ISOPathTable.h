@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Defs.h"
 #include "DataSource.h"
 
 typedef struct _ISOPathTableEntry

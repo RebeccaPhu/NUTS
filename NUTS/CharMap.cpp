@@ -2,7 +2,7 @@
 #include "CharMap.h"
 #include "FontBitmap.h"
 #include "Plugins.h"
-#include "Defs.h"
+#include "NUTSMacros.h"
 
 #include "resource.h"
 

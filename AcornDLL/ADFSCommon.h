@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../NUTS/Defs.h"
 #include "../NUTS/TempFile.h"
 #include "../NUTS/Directory.h"
 #include "../NUTS/DataSource.h"

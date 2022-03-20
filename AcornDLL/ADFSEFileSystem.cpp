@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+
 #include "ADFSEFileSystem.h"
 #include "RISCOSIcons.h"
 #include "../nuts/libfuncs.h"
@@ -7,6 +8,7 @@
 #include "Sprite.h"
 #include "../NUTS/OffsetDataSource.h"
 #include "BBCFunctions.h"
+#include "../NUTS/NUTSConstants.h"
 
 #include "AcornDLL.h"
 #include "resource.h"

@@ -6,13 +6,22 @@
 #include "PluginDescriptor.h"
 #include "FileSystem.h"
 #include "DataSource.h"
+#include "RootHooks.h"
 #include <vector>
 #include <map>
 #include <string>
 
 #include "SCREENTranslator.h"
 
-#define FONTID_PC437 L"Font_PC437"
+typedef struct _FormatMenu {
+	std::wstring FS;
+	FSIdentifier ID;
+} FormatMenu;
+
+typedef struct _FSMenu {
+	std::wstring Provider;
+	std::vector<FormatMenu> FS;
+} FSMenu;
 
 typedef int (*fnNUTSPluginFunction)(PluginCommand *);
 

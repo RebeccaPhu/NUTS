@@ -2,7 +2,6 @@
 
 #include "stdafx.h"
 
-#include "Defs.h"
 #include "AUDIOTranslator.h"
 #include <map>
 

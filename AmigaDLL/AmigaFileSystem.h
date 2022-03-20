@@ -2,7 +2,6 @@
 
 #include "AmigaDirectory.h"
 #include "../NUTS/FileSystem.h"
-#include "../NUTS/Defs.h"
 #include "Defs.h"
 
 class AmigaFileSystem :

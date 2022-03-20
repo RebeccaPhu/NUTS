@@ -7,7 +7,7 @@
 #include "FontBitmap.h"
 #include "DropSite.h"
 #include "SidePanel.h"
-#include "Defs.h"
+#include "NUTSUI.h"
 
 #include <vector>
 

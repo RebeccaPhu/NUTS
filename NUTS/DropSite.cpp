@@ -2,6 +2,7 @@
 #include "DropSite.h"
 
 #include "libfuncs.h"
+#include "NUTSMessages.h"
 
 #include <ShlObj.h>
 #include <vector>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../NUTS/Tempfile.h"
-#include "../NUTS/Defs.h"
+#include "../NUTS/NUTSXLAT.h"
 
 class Sprite
 {

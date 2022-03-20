@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+
 #include "TempFile.h"
 
 
@@ -124,7 +125,7 @@ void CTempFile::Write( void *Buffer, DWORD Length )
 		{
 			if ( ( Ptr + Length ) > MemorySize )
 			{
-				MemorySize = Ptr+Length;
+				MemorySize = (DWORD) Ptr+Length;
 
 				pMemory = (BYTE *) realloc( pMemory, MemorySize );
 			}
@@ -173,7 +174,7 @@ void CTempFile::Read( void *Buffer, DWORD Length )
 
 		if ( ( CpyLen + Ptr ) > MemorySize )
 		{
-			CpyLen = MemorySize - Ptr;
+			CpyLen = (DWORD) MemorySize - (DWORD) Ptr;
 		}
 
 		if ( Ptr < MemorySize )
@@ -219,7 +220,7 @@ void CTempFile::SetExt( QWORD NewPtr )
 	{
 		pMemory = (BYTE *) realloc( pMemory, NewPtr );
 
-		MemorySize = NewPtr;
+		MemorySize = (DWORD) NewPtr;
 
 		return;
 	}

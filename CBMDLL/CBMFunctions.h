@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../NUTS/Defs.h"
+#include "../NUTS/NativeFile.h"
 #include "BAM.h"
 
 extern const BYTE spt[41];

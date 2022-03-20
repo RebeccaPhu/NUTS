@@ -1,9 +1,10 @@
 #include "StdAfx.h"
 #include "PaletteWindow.h"
-#include "Defs.h"
 #include "FontBitmap.h"
 #include "FileDialogs.h"
 #include "Plugins.h"
+#include "NUTSMacros.h"
+#include "NUTSMessages.h"
 
 #include "resource.h"
 

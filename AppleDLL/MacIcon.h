@@ -1,7 +1,6 @@
 #ifndef MACICON_H
 #define MACICON_H
 
-#include "../NUTS/Defs.h"
 #include "../NUTS/TempFile.h"
 #include "../NUTS/Directory.h"
 

@@ -2,6 +2,7 @@
 #include "EncodingTextArea.h"
 #include "FontBitmap.h"
 #include "Plugins.h"
+#include "NUTSMacros.h"
 
 #include "resource.h"
 

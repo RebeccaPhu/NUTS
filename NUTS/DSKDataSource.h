@@ -4,6 +4,8 @@
 #include <vector>
 #include <map>
 
+#include "NUTSFlags.h"
+
 typedef struct _DSK_DiskInfo
 {
 	BYTE Tracks;

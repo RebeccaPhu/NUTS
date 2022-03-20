@@ -3,6 +3,8 @@
 #include "FontBitmap.h"
 #include "libfuncs.h"
 
+#include "NUTSMacros.h"
+
 bool EncodingStatusBar::_HasWindowClass = false;
 
 std::map<HWND, EncodingStatusBar *> EncodingStatusBar::StatusBars;

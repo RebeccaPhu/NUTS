@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "RawDataSource.h"
 #include "NUTSError.h"
-#include "Defs.h"
 
 #include <assert.h>
 

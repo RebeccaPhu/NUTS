@@ -15,8 +15,6 @@
 #include "IconRatio.h"
 #include "Plugins.h"
 
-#include "Defs.h"
-
 #include <PrSht.h>
 #include <CommCtrl.h>
 #include <time.h>

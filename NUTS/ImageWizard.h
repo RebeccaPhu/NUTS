@@ -1,5 +1,5 @@
 #pragma once
 
-#include "Defs.h"
+#include "AppAction.h"
 
 int ImageWiz_Handler( AppAction Action );

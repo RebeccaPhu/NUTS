@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Nuts/Defs.h"
+#include "../NUTS/NativeFile.h"
 
 #include <map>
 

@@ -37,9 +37,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="Header Files\Plugin Headers">
-      <UniqueIdentifier>{2d9903ec-679e-4186-a555-71fcb545fe19}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\UI\Elements">
       <UniqueIdentifier>{6b8e243a-e364-4c4e-b72d-df19e0f66dff}</UniqueIdentifier>
     </Filter>
@@ -72,6 +69,9 @@
     </Filter>
     <Filter Include="Source Files\File Systems\ISO9660">
       <UniqueIdentifier>{ec4cba89-c656-476a-979f-443038d9402d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\General Headers">
+      <UniqueIdentifier>{db44b835-2acd-4fbc-8f3e-67c4235c8843}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -362,9 +362,6 @@
     <ClInclude Include="BitmapCache.h">
       <Filter>Header Files\Functions</Filter>
     </ClInclude>
-    <ClInclude Include="Defs.h">
-      <Filter>Header Files\Functions</Filter>
-    </ClInclude>
     <ClInclude Include="libfuncs.h">
       <Filter>Header Files\Functions</Filter>
     </ClInclude>
@@ -388,9 +385,6 @@
     </ClInclude>
     <ClInclude Include="ImageDataSource.h">
       <Filter>Header Files\Data Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="PluginDescriptor.h">
-      <Filter>Header Files\Plugin Headers</Filter>
     </ClInclude>
     <ClInclude Include="TempFile.h">
       <Filter>Header Files</Filter>
@@ -578,9 +572,6 @@
     <ClInclude Include="RawDevices.h">
       <Filter>Header Files\File Systems</Filter>
     </ClInclude>
-    <ClInclude Include="FOP.h">
-      <Filter>Header Files\Functions</Filter>
-    </ClInclude>
     <ClInclude Include="ISO9660Directory.h">
       <Filter>Header Files\File Systems\ISO9660</Filter>
     </ClInclude>
@@ -604,6 +595,66 @@
     </ClInclude>
     <ClInclude Include="ISOSectorTypes.h">
       <Filter>Header Files\File Systems\ISO9660</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSTypes.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="FOP.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginDescriptor.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NativeFile.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSAPI.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSFlags.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSIDM.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSMessages.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSConstants.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSAttrs.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSMacros.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="DiskShape.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSFSTypes.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="RootHooks.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSXLAT.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSUI.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ResolvedIcons.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="TapeDefs.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSLC.h">
+      <Filter>Header Files\General Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="NUTSAction.h">
+      <Filter>Header Files\General Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

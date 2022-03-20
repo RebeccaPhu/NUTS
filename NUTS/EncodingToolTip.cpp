@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "EncodingToolTip.h"
 #include "FontBitmap.h"
+#include "NUTSMacros.h"
 
 #include <WindowsX.h>
 

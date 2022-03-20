@@ -1,7 +1,10 @@
 #pragma once
 
+#include "stdafx.h"
+
+#include <vector>
+
 #include "../NUTS/TempFile.h"
-#include "../NUTS/Defs.h"
 
 class InfoIcon
 {

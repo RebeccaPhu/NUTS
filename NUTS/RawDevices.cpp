@@ -7,7 +7,6 @@
 #include <Setupapi.h>
 #include <WinIoCtl.h>
 
-#include "Defs.h"
 #include "libfuncs.h"
 
 #pragma comment( lib, "setupapi.lib" )

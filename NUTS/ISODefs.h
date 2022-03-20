@@ -1,7 +1,11 @@
 #ifndef ISODEFS_H
 #define ISODEFS_H
 
-#include "Defs.h"
+#include "stdafx.h"
+
+#include <vector>
+
+#include "NUTSTypes.h"
 
 typedef struct _ISOVolDesc
 {

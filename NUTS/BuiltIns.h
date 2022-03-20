@@ -6,7 +6,7 @@
 #include "PluginDescriptor.h"
 #include "FileSystem.h"
 #include "DataSource.h"
-#include "Defs.h"
+#include "Plugins.h"
 
 typedef struct _BuiltInTranslator
 {

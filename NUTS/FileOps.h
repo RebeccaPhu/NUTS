@@ -1,7 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
-#include "Defs.h"
+#include "AppAction.h"
 
 int	FileOP_Handler(AppAction &Action);
 

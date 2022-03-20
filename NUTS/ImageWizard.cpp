@@ -9,8 +9,6 @@
 
 #include "libfuncs.h"
 
-#include "Defs.h"
-
 #include <PrSht.h>
 #include <process.h>
 #include <commctrl.h>

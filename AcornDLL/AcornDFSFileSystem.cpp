@@ -3,6 +3,7 @@
 #include "AcornDFSFileSystem.h"
 #include "../NUTS/TempFile.h"
 #include "../NUTS/Preference.h"
+#include "../NUTS/NUTSConstants.h"
 
 #include "resource.h"
 

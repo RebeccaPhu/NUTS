@@ -1,12 +1,12 @@
 #pragma once
 
-#include "defs.h"
+#include "NUTSTypes.h"
+#include "NativeFile.h"
 
 WCHAR *UString(char *pAString);
 char *AString(WCHAR *pUString);
 char *reverseSlashes(char *ins);
 int getFileID();
-int QueueAction(AppAction &Action);
 bool IsRawFS(WCHAR *path);
 int PhysicalDrive(char *path);
 int Percent(int stage, int stages, int step, int steps, bool allow100);

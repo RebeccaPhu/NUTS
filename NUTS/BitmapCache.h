@@ -4,7 +4,7 @@
 
 #include <map>
 
-#include "Defs.h"
+#include "NativeFile.h"
 
 using namespace std;
 

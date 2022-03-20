@@ -12,6 +12,7 @@
 #include "AUDIOContentViewer.h"
 #include "Preference.h"
 #include "BuiltIns.h"
+#include "NUTSIDM.h"
 
 #include <CommCtrl.h>
 

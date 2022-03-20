@@ -5,8 +5,6 @@
 #include "CPMBlockMap.h"
 #include "CPMDirectory.h"
 
-#include "Defs.h"
-
 class CPMFileSystem :
 	public FileSystem
 {

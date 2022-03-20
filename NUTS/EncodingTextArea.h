@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Defs.h"
-
 #include <vector>
+#include <map>
+
+#include "NUTSTypes.h"
 
 typedef struct _LineDef
 {

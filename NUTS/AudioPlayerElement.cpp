@@ -5,6 +5,7 @@
 #include "Plugins.h"
 #include "FontBitmap.h"
 #include "libfuncs.h"
+#include "NUTSMacros.h"
 
 #include <WindowsX.h>
 

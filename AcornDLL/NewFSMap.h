@@ -1,5 +1,10 @@
 #pragma once
 
+#include "stdafx.h"
+
+#include <map>
+
+#include "../NUTS/NUTSTypes.h"
 #include "TranslatedSector.h"
 #include "../NUTS/DataSource.h"
 #include "Defs.h"

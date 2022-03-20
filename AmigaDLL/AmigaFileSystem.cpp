@@ -1,7 +1,6 @@
 #include "StdAfx.h"
 #include "AmigaFileSystem.h"
 #include "InfoIcon.h"
-#include "../NUTS/Defs.h"
 #include "../NUTS/PluginDescriptor.h"
 
 FSHint AmigaFileSystem::Offer( BYTE *Extension )

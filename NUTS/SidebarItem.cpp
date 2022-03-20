@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "SidebarItem.h"
+#include "NUTSMacros.h"
 
 #include "resource.h"
 

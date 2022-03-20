@@ -5,8 +5,6 @@
 #include "AudioPlayerElement.h"
 #include "DXAudio.h"
 
-#include "Defs.h"
-
 class AUDIOContentViewer : DXAudioCallback
 {
 public:

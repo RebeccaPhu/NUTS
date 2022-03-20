@@ -1,5 +1,9 @@
 #pragma once
 
+#include "stdafx.h"
+
+#include "NUTSUI.h"
+
 #include "FileViewer.h"
 #include "FormatWizard.h"
 

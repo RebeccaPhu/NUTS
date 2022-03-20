@@ -1,6 +1,5 @@
 #include "StdAfx.h"
 #include "FloppyDataSource.h"
-#include "Defs.h"
 
 #include <assert.h>
 

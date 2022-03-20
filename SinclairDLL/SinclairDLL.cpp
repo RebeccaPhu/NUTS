@@ -5,7 +5,6 @@
 #include "SinclairDLL.h"
 
 #include "SinclairDefs.h"
-#include "../NUTS/Defs.h"
 #include "resource.h"
 
 #include "TAPFileSystem.h"

@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "SpectrumBASICTranslator.h"
 #include "../NUTS/libfuncs.h"
+#include "../NUTS/NUTSMessages.h"
 #include "SinclairDefs.h"
 
 SpectrumBASICTranslator::SpectrumBASICTranslator(void)

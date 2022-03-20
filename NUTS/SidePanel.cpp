@@ -3,6 +3,9 @@
 
 #include "BitmapCache.h"
 
+#include "NUTSIDM.h"
+#include "NUTSMacros.h"
+
 #include "resource.h"
 
 std::map<HWND, SidePanel *> SidePanel::panels;

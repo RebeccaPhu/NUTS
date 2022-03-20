@@ -1,7 +1,6 @@
 #pragma once
 
 #include "PaletteWindow.h"
-#include "Defs.h"
 #include "resource.h"
 #include "TempFile.h"
 #include "SCREENTranslator.h"

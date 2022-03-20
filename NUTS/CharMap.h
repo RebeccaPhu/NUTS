@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 
-#include "Defs.h"
+#include "NUTSTypes.h"
 
 class CharMap
 {

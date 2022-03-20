@@ -13,9 +13,9 @@
 
 #include "resource.h"
 
-#include "../NUTS/Defs.h"
 #include "../NUTS/Preference.h"
 #include "../NUTS/NUTSError.h"
+#include "../NUTS/RootHooks.h"
 
 #include <ShlObj.h>
 

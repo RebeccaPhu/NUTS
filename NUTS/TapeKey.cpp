@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 #include "TapeKey.h"
 #include "libfuncs.h"
+#include "NUTSMacros.h"
+#include "NUTSMessages.h"
 
 #include "resource.h"
 

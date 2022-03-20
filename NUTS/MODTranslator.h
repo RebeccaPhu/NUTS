@@ -1,7 +1,6 @@
 #pragma once
 
 #include "audiotranslator.h"
-#include "Defs.h"
 
 #include <mikmod.h>
 

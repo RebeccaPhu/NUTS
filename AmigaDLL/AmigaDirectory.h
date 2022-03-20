@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../NUTS/Directory.h"
-#include "../NUTS/Defs.h"
 
 class AmigaDirectory :
 	public Directory

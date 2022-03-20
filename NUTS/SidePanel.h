@@ -1,9 +1,9 @@
 #pragma once
 
 #include "SidebarItem.h"
-#include "Defs.h"
 
 #include <map>
+#include <vector>
 
 typedef enum _SidePanelFags
 {

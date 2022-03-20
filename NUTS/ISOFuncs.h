@@ -1,9 +1,9 @@
 #ifndef ISOFUNCS_H
 #define ISOFUNCS_H
 
-#include "Defs.h"
 #include "ISODefs.h"
 #include "DataSource.h"
+#include "NativeFile.h"
 
 void ISOStrTerm( BYTE *p, WORD l );
 void ISOStrStore( BYTE *p, BYTE *s, WORD ml );

@@ -3,6 +3,8 @@
 #include "HEXDumpTranslator.h"
 #include "libfuncs.h"
 
+#include "NUTSMessages.h"
+
 HEXDumpTranslator::HEXDumpTranslator(void)
 {
 }

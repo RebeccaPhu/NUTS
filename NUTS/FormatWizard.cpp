@@ -1,6 +1,5 @@
 #include "stdafx.h"
 
-#include "Defs.h"
 #include "NUTS.h"
 #include "FileSystem.h"
 #include "AppAction.h"

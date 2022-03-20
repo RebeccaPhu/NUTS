@@ -1,6 +1,8 @@
 #include "StdAfx.h"
 #include "RISCOSIcons.h"
 
+#include <map>
+
 std::map<DWORD, HBITMAP>     RISCOSIcons::Bitmaps;
 std::map<DWORD, DWORD>       RISCOSIcons::TypeMap;
 std::map<DWORD, FileType>    RISCOSIcons::IntTypeMap;

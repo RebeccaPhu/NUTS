@@ -1,8 +1,10 @@
 #pragma once
 
+#include "stdafx.h"
+
 #include <string>
 
-#include "Defs.h"
+#include "NUTSTypes.h"
 
 #define MAX_MEMORY_SIZE 4*1048576
 

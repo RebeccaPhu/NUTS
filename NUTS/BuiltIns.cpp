@@ -10,7 +10,8 @@
 #include "ISORawSectorSource.h"
 #include "ZIPFile.h"
 
-#include "Defs.h"
+#include "NUTSFSTypes.h"
+#include "Plugins.h"
 
 const ProviderIdentifier ISO_PROVIDER   = L"ISO_CDROM_Provider";
 const ProviderIdentifier ZIP_PROVIDER   = L"ZIP_FILE_Provider";

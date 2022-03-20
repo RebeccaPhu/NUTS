@@ -4,6 +4,7 @@
 #include "SinclairDefs.h"
 #include "../NUTS/Preference.h"
 #include "../NUTS/libfuncs.h"
+#include "../NUTS/NUTSFlags.h"
 
 void DOS3Directory::ExtraReadDirectory( NativeFile *pFile )
 {

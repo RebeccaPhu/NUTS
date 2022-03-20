@@ -2,7 +2,7 @@
 #include "IconButton.h"
 #include "libfuncs.h"
 
-#include "Defs.h"
+#include "NUTSMacros.h"
 
 // If you've been following the git history, you'll notice I copy and paste
 // this pattern a lot. I probably should just make a CWindow class or something.

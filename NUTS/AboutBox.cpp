@@ -1,11 +1,11 @@
 #include "stdafx.h"
 
 #include "AboutBox.h"
-#include "Defs.h"
 #include "resource.h"
 
 #include "PluginDescriptor.h"
 #include "Plugins.h"
+#include "NUTSMacros.h"
 
 #include <commctrl.h>
 #include <Richedit.h>

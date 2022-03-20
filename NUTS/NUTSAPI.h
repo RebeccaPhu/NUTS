@@ -1,0 +1,6 @@
+#ifndef NUTSAPI_H
+#define NUTSAPI_H
+
+#define NUTS_PREFERRED_API_VERSION 0x00000001
+
+#endif

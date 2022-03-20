@@ -2,7 +2,6 @@
 
 #include "ZIPDirectory.h"
 #include "NUTSError.h"
-#include "Defs.h"
 #include "Plugins.h"
 #include "ExtensionRegistry.h"
 

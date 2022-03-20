@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../NUTS/Defs.h"
 #include "../NUTS/DataSource.h"
 #include "TranslatedSector.h"
+
+#include "../NUTS/NativeFile.h"
 
 class ADFSDirectoryCommon : public TranslatedSector
 {

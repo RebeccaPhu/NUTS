@@ -3,7 +3,12 @@
 #include <string>
 #include <map>
 
-#include "Defs.h"
+#include "NativeFile.h"
+
+typedef struct _ExtDef {
+	FileType Type;
+	FileType Icon;
+} ExtDef;
 
 class ExtensionRegistry
 {

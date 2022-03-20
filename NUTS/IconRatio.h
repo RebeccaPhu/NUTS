@@ -1,5 +1,5 @@
 #pragma once
 
-#include "Defs.h"
+#include "ResolvedIcons.h"
 
 AspectRatio ScreenCompensatedIconRatio( AspectRatio Icon, AspectRatio Screen, WORD MaxWidth, WORD MaxHeight );

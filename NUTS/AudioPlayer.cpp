@@ -5,6 +5,11 @@
 #include "TapeKey.h"
 #include "resource.h"
 
+#include "NUTSMacros.h"
+#include "NUTSMessages.h"
+#include "NUTSFlags.h"
+#include "TapeDefs.h"
+
 #include <math.h>
 #include <CommCtrl.h>
 

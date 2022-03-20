@@ -2,7 +2,6 @@
 
 #include "EncodingEdit.h"
 #include "FontBitmap.h"
-#include "Defs.h"
 
 #include <vector>
 #include <map>

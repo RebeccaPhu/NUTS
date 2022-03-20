@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
-#include "Defs.h"
+
+#include "AppAction.h"
 
 int	Format_Handler(AppAction &Action);

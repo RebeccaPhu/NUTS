@@ -10,6 +10,9 @@
 #define TZXCONFIG_API __declspec(dllimport)
 #endif
 
+#include <vector>
+
+#include "../NUTS/NativeFile.h"
 #include "../NUTS/TempFile.h"
 
 extern HINSTANCE hInstance;

@@ -2,7 +2,9 @@
 
 #define DS_SUCCESS 0x00000000
 
-#include "Defs.h"
+#include "NUTSTypes.h"
+#include "DiskShape.h"
+#include "BYTEString.h"
 
 #include <vector>
 

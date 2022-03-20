@@ -2,6 +2,7 @@
 
 #include "AMSDOSDirectory.h"
 #include "../NUTS/Preference.h"
+#include "../NUTS/NUTSFlags.h"
 #include "Defs.h"
 #include "../NUTS/libfuncs.h"
 

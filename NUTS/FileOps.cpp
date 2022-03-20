@@ -2,10 +2,13 @@
 #include "AppAction.h"
 #include "FileOps.h"
 #include "FontBitmap.h"
-#include "Defs.h"
+#include "NativeFile.h"
 #include "BitmapCache.h"
 #include "Preference.h"
 #include "Plugins.h"
+#include "NUTSMacros.h"
+#include "NUTSMessages.h"
+#include "NUTSAction.h"
 
 #include <CommCtrl.h>
 #include <WindowsX.h>

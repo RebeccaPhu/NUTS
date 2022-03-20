@@ -280,6 +280,7 @@
     <ClInclude Include="CPMBlockMap.h" />
     <ClInclude Include="CPMDirectory.h" />
     <ClInclude Include="DataSourceCollector.h" />
+    <ClInclude Include="DiskShape.h" />
     <ClInclude Include="DropSite.h" />
     <ClInclude Include="DSKDataSource.h" />
     <ClInclude Include="DXAudio.h" />
@@ -310,7 +311,23 @@
     <ClInclude Include="MemorySource.h" />
     <ClInclude Include="MikModNUTSRawDrv.h" />
     <ClInclude Include="MODTranslator.h" />
+    <ClInclude Include="NativeFile.h" />
+    <ClInclude Include="NUTSAction.h" />
+    <ClInclude Include="NUTSAPI.h" />
+    <ClInclude Include="NUTSAttrs.h" />
+    <ClInclude Include="NUTSConstants.h" />
+    <ClInclude Include="NUTSFlags.h" />
+    <ClInclude Include="NUTSFSTypes.h" />
+    <ClInclude Include="NUTSIDM.h" />
+    <ClInclude Include="NUTSLC.h" />
+    <ClInclude Include="NUTSMacros.h" />
+    <ClInclude Include="NUTSMessages.h" />
+    <ClInclude Include="NUTSTypes.h" />
+    <ClInclude Include="NUTSUI.h" />
+    <ClInclude Include="NUTSXLAT.h" />
     <ClInclude Include="RawDevices.h" />
+    <ClInclude Include="ResolvedIcons.h" />
+    <ClInclude Include="RootHooks.h" />
     <ClInclude Include="SidebarItem.h" />
     <ClInclude Include="SidePanel.h" />
     <ClInclude Include="SourceFunctions.h" />
@@ -327,6 +344,7 @@
     <ClInclude Include="SCREENTranslator.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="TapeBrowser.h" />
+    <ClInclude Include="TapeDefs.h" />
     <ClInclude Include="TapeKey.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Directory.h" />
@@ -343,7 +361,6 @@
     <ClInclude Include="WindowsDirectory.h" />
     <ClInclude Include="WindowsFileSystem.h" />
     <ClInclude Include="BitmapCache.h" />
-    <ClInclude Include="Defs.h" />
     <ClInclude Include="libfuncs.h" />
     <ClInclude Include="TEXTContentViewer.h" />
     <ClInclude Include="FileViewer.h" />

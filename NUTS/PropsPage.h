@@ -1,5 +1,5 @@
 #pragma once
 
-#include "Defs.h"
+#include "AppAction.h"
 
 int PropsPage_Handler( AppAction Action );

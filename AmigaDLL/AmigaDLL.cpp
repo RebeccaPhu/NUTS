@@ -8,7 +8,6 @@
 #include "DMS.h"
 #include "ILBMTranslator.h"
 #include "../NUTS/PluginDescriptor.h"
-#include "../NUTS/Defs.h"
 #include "../NUTS/DataSource.h"
 #include "../NUTS/NUTSError.h"
 #include "../NUTS/NestedImageSource.h"

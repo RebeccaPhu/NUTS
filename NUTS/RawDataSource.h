@@ -5,6 +5,8 @@
 #include <winioctl.h>
 #include <string>
 
+#include "NUTSFlags.h"
+
 class RawDataSource :
 	public DataSource
 {

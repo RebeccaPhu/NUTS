@@ -1,7 +1,11 @@
 #pragma once
-#include "DataSource.h"
-#include "Defs.h"
 #include <vector>
+
+#include "NUTSTypes.h"
+#include "DataSource.h"
+#include "ResolvedIcons.h"
+#include "NativeFile.h"
+
 
 using namespace std;
 

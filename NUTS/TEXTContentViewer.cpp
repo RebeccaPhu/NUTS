@@ -6,6 +6,7 @@
 #include "FileDialogs.h"
 #include "BuiltIns.h"
 #include "libfuncs.h"
+#include "NUTSMacros.h"
 
 #include <richedit.h>
 #include <CommCtrl.h>

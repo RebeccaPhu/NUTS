@@ -1,7 +1,11 @@
 #pragma once
 
+#include "stdafx.h"
+
+#include "NUTSTypes.h"
+#include "NUTSXLAT.h"
+#include "BYTEString.h"
 #include "TempFile.h"
-#include "Defs.h"
 
 #include <vector>
 

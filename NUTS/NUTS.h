@@ -9,8 +9,6 @@
 #include "RootDirectory.h"
 #include "WindowsFileSystem.h"
 
-#include "defs.h"
-
 #include <commctrl.h>
 
 //extern  CFileViewer	*leftPane;

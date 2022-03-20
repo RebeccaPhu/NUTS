@@ -4,7 +4,7 @@
 #include "TempFile.h"
 #include "TapeKey.h"
 #include "TapeBrowser.h"
-#include "../NUTS/Defs.h"
+#include "TapeDefs.h"
 #include <map>
 
 #define IDM_SAVEAUDIO 42001

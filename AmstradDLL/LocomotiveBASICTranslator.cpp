@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "LocomotiveBASICTranslator.h"
 #include "../NUTS/libfuncs.h"
+#include "../NUTS/NUTSMessages.h"
 #include "Defs.h"
 
 #include <math.h>
