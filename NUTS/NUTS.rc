@@ -210,13 +210,14 @@ BEGIN
     POPUP "&Options"
     BEGIN
         MENUITEM "Resolved &Icons",             ID_OPTIONS_RESOLVEDICONS
-        MENUITEM "Hide Sidecar Files",          IDM_HIDESIDECARS
-        MENUITEM "Confirm File Operations",     IDM_CONFIRM
-        MENUITEM "Respect Sidecar Paths",       IDM_SIDECAR_PATHS
-        MENUITEM "Slow File Enhancement",       IDM_SLOWENHANCE
-        MENUITEM "Merge Directories",           ID_OPTIONS_MERGEDIRECTORIES
-        MENUITEM "Rename Directories",          ID_OPTIONS_RENAMEDIRECTORIES
-        MENUITEM "Metadata AND Sidecars",       ID_OPTIONS_SIDECARSANYWAY
+        MENUITEM "&Hide Sidecar Files",         IDM_HIDESIDECARS
+        MENUITEM "&Confirm File Operations",    IDM_CONFIRM
+        MENUITEM "Respect &Sidecar Paths",      IDM_SIDECAR_PATHS
+        MENUITEM "Slow &File Enhancement",      IDM_SLOWENHANCE
+        MENUITEM "Merge &Directories",          ID_OPTIONS_MERGEDIRECTORIES
+        MENUITEM "&Rename Directories",         ID_OPTIONS_RENAMEDIRECTORIES
+        MENUITEM "&Metadata AND Sidecars",      ID_OPTIONS_SIDECARSANYWAY
+        MENUITEM "&Port Configuration ...",     ID_OPTIONS_PORTCONFIGURATION
     END
     POPUP "&Help"
     BEGIN
@@ -340,6 +341,7 @@ IDI_SMFS                ICON                    "..\\smfontswitch.ico"
 IDI_CHARMAP             ICON                    "..\\charmap.ico"
 IDI_CASSETTE            ICON                    "..\\cassetteplayer.ico"
 IDI_FOLDER              ICON                    "..\\folder.ico"
+IDI_PORT                ICON                    "..\\port.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -369,6 +371,8 @@ IDB_CDIMAGE             BITMAP                  "..\\cdimage.bmp"
 IDB_MEMCARD             BITMAP                  "..\\memorycard.bmp"
 IDB_REPAIR              BITMAP                  "repair.bmp"
 IDB_VDEDITBANNER        BITMAP                  "E:\\NUTS\\vdedit.bmp"
+IDB_PORTCONFIG          BITMAP                  "..\\portconfig.bmp"
+IDB_PORT                BITMAP                  "..\\port.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -768,6 +772,32 @@ BEGIN
     COMBOBOX        IDC_DIRTYPESEL,7,35,180,14,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
+IDD_PORTMANAGER DIALOGEX 0, 0, 319, 178
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "Port Configuration"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,262,156,50,14
+    CONTROL         194,IDC_STATIC,"Static",SS_BITMAP,-3,-1,326,36
+    CONTROL         "",IDC_PORTLIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,4,60,308,90
+    LTEXT           "Specify which plugins will make use of serial and parallel ports present on the system.",IDC_STATIC,4,38,308,17
+    PUSHBUTTON      "&Remove",IDC_REMOVE_PORT,206,156,50,14,WS_DISABLED
+    PUSHBUTTON      "&Add ...",IDC_ADD_PORT,148,156,50,14
+END
+
+IDD_INSERT_PORT DIALOGEX 0, 0, 316, 64
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "Add Port Mapping"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,205,43,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,259,43,50,14
+    LTEXT           "Select a serial (communications) or parallel port to add, and the plugin to use it with:",IDC_STATIC,7,7,302,12
+    COMBOBOX        IDC_PORT_SELECT,7,23,174,15,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_PLUGIN_SELECT,186,23,123,21,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -984,6 +1014,22 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 49
     END
+
+    IDD_PORTMANAGER, DIALOG
+    BEGIN
+        LEFTMARGIN, 4
+        RIGHTMARGIN, 312
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 170
+    END
+
+    IDD_INSERT_PORT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 57
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -1047,7 +1093,7 @@ BEGIN
             VALUE "FileDescription", "Native Universal Transfer System"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "NUTS"
-            VALUE "LegalCopyright", "Copyright (C) 2011-2020 Rebecca Gellman - See License"
+            VALUE "LegalCopyright", "Copyright (C) 2011-2022 Rebecca Gellman - See License"
             VALUE "OriginalFilename", "NUTS.exe"
             VALUE "ProductName", "N.U.T.S. - The Native Universal Transfer System"
             VALUE "ProductVersion", "1.0.0.1"

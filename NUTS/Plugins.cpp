@@ -12,6 +12,7 @@
 #include "ExtensionRegistry.h"
 #include "DataSourceCollector.h"
 #include "DSKDataSource.h"
+#include "PortManager.h"
 
 #include "BuiltIns.h"
 
@@ -99,10 +100,59 @@ void CPlugins::LoadPlugins()
 		FindClose( hFind );
 	}
 
+	PortConfig.ReadConfiguration();
+
+	SetPortConfiguration();
+
 	SetSplash( L"Loaded " + std::to_wstring( (QWORD) Providers.size() ) + L" providers." );
 
 	::PostMessage( hSplashWnd, WM_PAINT, 0, 0 );
 	::PostMessage( hSplashWnd, WM_ENDSPLASH, 0, 0 );
+}
+
+void CPlugins::SetPortConfiguration( void )
+{
+	std::vector<ConfiguredDevicePort> cports = PortConfig.GetConfiguration();
+
+	for ( NUTSProvider_iter iProvider = Providers.begin(); iProvider != Providers.end(); iProvider++ )
+	{
+		PluginCommand PC;
+
+		PC.CommandID = PC_SetPortAssignments;
+
+		for ( int i = 0; i < 8; i++ ) { PC.InParams[ i ].Value = 0; }
+
+		int j = 0;
+
+		for ( std::vector<ConfiguredDevicePort>::iterator iCPort = cports.begin(); iCPort != cports.end(); iCPort++ )
+		{
+			if ( j == 8 ) { break; }
+
+			if ( iCPort->PLID == iProvider->ProviderID )
+			{
+				DWORD PortID = (DWORD ) iCPort->Index;
+
+				if ( iCPort->Type == PortTypeParallel )
+				{
+					PortID |= 0x10000;
+				}
+
+				PC.InParams[ j ].Value = PortID;
+
+				j++;
+			}
+		}
+
+		if ( j > 0 )
+		{
+			NUTSPlugin *plugin = GetPluginByID( iProvider->PluginID );
+
+			if ( plugin != nullptr )
+			{
+				(void) plugin->CommandHandler( &PC );
+			}
+		}
+	}
 }
 
 void CPlugins::LoadPlugin( WCHAR *plugin )
@@ -1280,4 +1330,57 @@ void CPlugins::UnloadPlugins()
 	free( pPC437Font );
 
 	pPC437Font = nullptr;
+}
+
+std::wstring CPlugins::GetProviderNameByID( ProviderIdentifier prid )
+{
+	for ( NUTSProvider_iter iProv = Providers.begin(); iProv != Providers.end(); iProv++ )
+	{
+		if ( iProv->ProviderID == prid )
+		{
+			return iProv->FriendlyName;
+		}
+	}
+
+	return L"";
+}
+
+std::vector<NUTSPortRequirement> CPlugins::GetPortRequirements( void )
+{
+	std::vector<NUTSPortRequirement> reqs;
+
+	for ( Plugin_iter iPlugin = Plugins.begin(); iPlugin != Plugins.end(); iPlugin++ )
+	{
+		PluginCommand PC;
+
+		PC.CommandID = PC_GetPortProviders;
+
+		if ( iPlugin->CommandHandler( &PC ) == NUTS_PLUGIN_SUCCESS )
+		{
+			NUTSPortRequirement req;
+
+			for ( DWORD i=0; i<8; i++ )
+			{
+				if ( PC.OutParams[ i ].pPtr == nullptr )
+				{
+					break;
+				}
+
+				PluginCommand PC2;
+
+				PC2.CommandID = PC_GetPortCounts;
+				PC2.InParams[ 0 ].Value = i;
+
+				if ( iPlugin->CommandHandler( &PC2 ) == NUTS_PLUGIN_SUCCESS )
+				{
+					req.ProviderID = std::wstring( (WCHAR *) PC.OutParams[ i ].pPtr );
+					req.PortCount  = (BYTE ) PC2.OutParams[ 0 ].Value;
+
+					reqs.push_back( req );
+				}
+			}
+		}
+	}
+
+	return reqs;
 }

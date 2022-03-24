@@ -120,6 +120,11 @@
 #define IDD_ISO_BOOTDESC                190
 #define IDD_ISO_NOJOLIET                191
 #define IDD_DIRTYPE                     192
+#define IDD_PORTMANAGER                 193
+#define IDB_PORTCONFIG                  194
+#define IDB_PORT                        195
+#define IDI_PORT                        196
+#define IDD_INSERT_PORT                 197
 #define AFX_IDC_PRINT_DOCNAME           201
 #define AFX_IDC_PRINT_PRINTERNAME       202
 #define AFX_IDC_PRINT_PORTNAME          203
@@ -127,6 +132,7 @@
 #define AFX_IDC_FONTPROP                1000
 #define IDC_LIST1                       1000
 #define IDC_WIZ_PROVIDER                1000
+#define IDC_PORTLIST                    1000
 #define AFX_IDC_FONTNAMES               1001
 #define AFX_IDC_FONTSTYLES              1002
 #define AFX_IDC_FONTSIZES               1003
@@ -244,12 +250,16 @@
 #define AFX_IDC_COLOR_BLUE              1104
 #define IDC_DIRTYPESEL                  1104
 #define AFX_IDC_COLOR_YELLOW            1105
-#define IDC_BUTTON1                     1105
 #define IDC_CHOOSEDIRTYPE               1105
 #define AFX_IDC_COLOR_MAGENTA           1106
+#define IDC_BUTTON1                     1106
+#define IDC_REMOVE_PORT                 1106
 #define AFX_IDC_COLOR_CYAN              1107
+#define IDC_ADD_PORT                    1107
 #define AFX_IDC_COLOR_GRAY              1108
+#define IDC_PORT_SELECT                 1108
 #define AFX_IDC_COLOR_LIGHTGRAY         1109
+#define IDC_PLUGIN_SELECT               1109
 #define AFX_IDC_COLOR_DARKRED           1110
 #define AFX_IDC_COLOR_DARKGREEN         1111
 #define AFX_IDC_COLOR_DARKBLUE          1112
@@ -402,6 +412,7 @@
 #define ID__COPY                        40074
 #define ID_OPTIONS_METADATAANDSIDECARS  40077
 #define ID_OPTIONS_SIDECARSANYWAY       40078
+#define ID_OPTIONS_PORTCONFIGURATION    40079
 #define IDM_VIEW_BBCSCREEN              41001
 #define IDM_VIEW_ZXSSCREEN              41002
 #define IDM_VIEW_BBCBASIC               42001
@@ -804,9 +815,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        190
-#define _APS_NEXT_COMMAND_VALUE         40079
-#define _APS_NEXT_CONTROL_VALUE         1106
+#define _APS_NEXT_RESOURCE_VALUE        198
+#define _APS_NEXT_COMMAND_VALUE         40080
+#define _APS_NEXT_CONTROL_VALUE         1110
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

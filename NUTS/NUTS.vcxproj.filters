@@ -327,6 +327,9 @@
     <ClCompile Include="ISOECC.cpp">
       <Filter>Source Files\File Systems\ISO9660</Filter>
     </ClCompile>
+    <ClCompile Include="PortManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -656,6 +659,9 @@
     <ClInclude Include="NUTSAction.h">
       <Filter>Header Files\General Headers</Filter>
     </ClInclude>
+    <ClInclude Include="PortManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="NUTS.ico">
@@ -897,6 +903,21 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="..\icon2.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\bitmap5.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\portconfig.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\port.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\ico00001.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\port.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

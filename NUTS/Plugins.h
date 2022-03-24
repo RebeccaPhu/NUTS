@@ -101,6 +101,10 @@ public:
 	NUTSPlugin *GetTXPlugin( TXIdentifier TXID );
 	NUTSPlugin *GetPluginByID( PluginIdentifier PLID );
 
+	std::wstring GetProviderNameByID( ProviderIdentifier prid );
+
+	std::vector<NUTSPortRequirement> GetPortRequirements( void );
+
 	std::wstring GetSplash( )
 	{
 		std::wstring t;
@@ -113,6 +117,8 @@ public:
 
 		return t;
 	}
+
+	void SetPortConfiguration( void );
 
 
 private:

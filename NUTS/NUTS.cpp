@@ -21,6 +21,7 @@
 #include "CharMap.h"
 #include "License.h"
 #include "ISOECC.h"
+#include "PortManager.h"
 
 #include <winioctl.h>
 #include <process.h>
@@ -1343,6 +1344,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case IDM_ABOUT:
 			DoAboutBox( hMainWnd );
+
+			break;
+
+		case ID_OPTIONS_PORTCONFIGURATION:
+			PortConfig.ConfigurePorts();
+
+			FSPlugins.SetPortConfiguration();
+
+			// Refresh any file viewers on the root so that configuration takes effect
+			if ( leftPane->FS->FSID == FS_Root )
+			{
+				DoAction( ActionDoRefresh, leftPane, &leftFS, &leftTitles, lParam );
+			}
+
+			if ( rightPane->FS->FSID == FS_Root )
+			{
+				DoAction( ActionDoRefresh, rightPane, &leftFS, &leftTitles, lParam );
+			}
 
 			break;
 

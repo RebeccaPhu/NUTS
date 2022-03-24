@@ -45,6 +45,8 @@ DWORD dwDiff( DWORD a, DWORD b );
 
 HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstance );
 
+std::vector<std::wstring> StringSplit( std::wstring haystack, std::wstring needle );
+
 class AutoBuffer
 {
 public:

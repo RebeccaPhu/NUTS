@@ -39,6 +39,9 @@ typedef enum _PluginCommandID {
 	PC_GetIconLicensing,
 	PC_GetPluginCredits,
 	PC_GetFOPDirectoryTypes,
+	PC_GetPortProviders,
+	PC_GetPortCounts,
+	PC_SetPortAssignments,
 } PluginCommandID;
 
 typedef union _PluginCommandParameter {
@@ -55,6 +58,12 @@ typedef struct _PluginCommand {
 #define NUTS_PLUGIN_SUCCESS      0
 #define NUTS_PLUGIN_UNRECOGNISED 1
 #define NUTS_PLUGIN_ERROR        0xFFFF
+
+typedef struct _NUTSPortRequirement
+{
+	ProviderIdentifier ProviderID;
+	BYTE               PortCount;
+} NUTSPortRequirement;
 
 typedef struct _NUTSProvider {
 	std::wstring FriendlyName;

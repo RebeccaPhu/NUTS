@@ -506,3 +506,40 @@ HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstan
    
 	return hwndTip;
 }
+
+std::vector<std::wstring> StringSplit( std::wstring haystack, std::wstring needle )
+{
+	std::vector<std::wstring> strs;
+
+	std::wstring blk;
+
+	while ( haystack.length() > 0 )
+	{
+		size_t p = haystack.find( needle );
+
+		if ( p == std::wstring::npos )
+		{
+			strs.push_back( haystack );
+
+			break;
+		}
+		else if ( p == haystack.length() - needle.length() )
+		{
+			strs.push_back( haystack.substr( 0, p ) );
+
+			break;
+		}
+		else if ( p == 0 )
+		{
+			haystack = haystack.substr( needle.length() );
+		}
+		else
+		{
+			strs.push_back( haystack.substr( 0, p ) );
+
+			haystack = haystack.substr( p + needle.length() );
+		}
+	}
+
+	return strs;
+}
