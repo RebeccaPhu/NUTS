@@ -174,7 +174,7 @@ int MakeASCII( NativeFile *pFile )
 /* This does the reverse of the above; converts ASCII filenames to PETSCII */
 void IncomingASCII( NativeFile *pFile )
 {
-	for ( WORD n=0; n<256; n++ )
+	for ( WORD n=0; n<pFile->Filename.length(); n++ )
 	{
 		if ( pFile->Filename[ n ] != 0 )
 		{

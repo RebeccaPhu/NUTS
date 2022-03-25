@@ -10,37 +10,45 @@
 
 int	IECATAFileSystem::ReadFile(DWORD FileID, CTempFile &store)
 {
-	unsigned char LinkTable[512];
-	unsigned char SectorBuf[512];
+	BYTE LinkTable[512];
+	BYTE SectorBuf[512];
 
 	NativeFile *pFile = &pDirectory->Files[ FileID ];
 
-	pSource->ReadSectorLBA( pFile->Attributes[ 0 ], LinkTable, 512);
+	if ( pSource->ReadSectorLBA( pFile->Attributes[ 0 ], LinkTable, 512 ) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	DWORD RemainingLength = (DWORD) pFile->Length;
 	DWORD SectorPtr       = 0;
 
-	DWORD *pBlocks= (DWORD *) LinkTable;
+	DWORD *pBlocks = (DWORD *) LinkTable;
 
-	long  DataToRead      = 0;
+	DWORD DataToRead = 0;
 
-	while (RemainingLength) {
-		if (SectorPtr == 127) {
+	while ( RemainingLength )
+	{
+		if ( SectorPtr == 127 )
+		{
 			//	Not a data sector, another link table.
-			long	NextPtr	= pBlocks[127];
+			DWORD NextPtr = pBlocks[127];
 
-			pSource->ReadSectorLBA(NextPtr, LinkTable, 512);
+			if ( pSource->ReadSectorLBA( NextPtr, LinkTable, 512 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
-			SectorPtr	= 0;
+			SectorPtr = 0;
 		} else {
-			long	Sector	= pBlocks[SectorPtr++];
+			DWORD Sector = pBlocks[ SectorPtr++ ];
 
-			if (RemainingLength > 512)
-				DataToRead		= 512;
-			else
-				DataToRead		= RemainingLength;
+			DataToRead = min( 512, RemainingLength );
 
-			pSource->ReadSectorLBA(Sector, SectorBuf, 512);
+			if ( pSource->ReadSectorLBA( Sector, SectorBuf, 512 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			store.Write( SectorBuf, DataToRead );
 
@@ -100,6 +108,12 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 	DWORD LinkTable[128];
 	BYTE  Data[512];
 
+	if ( SectorLink == 0 )
+	{
+		// Didn't get a link table sector
+		return -1;
+	}
+
 	NativeFile outfile = *pFile;
 
 	store.Seek( 0 );
@@ -109,48 +123,69 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 	while (DataRemaining) {
 		DataToWrite = min( 512, DataRemaining) ; 
 
-		int	Sector	= ((IECATADirectory *) pDirectory)->GetFreeBlock();
+		DWORD Sector = pIECDirectory->GetFreeBlock();
 
-		if (LinkPtr == 127) {
-			int NewLink	= ((IECATADirectory *) pDirectory)->GetFreeBlock();
+		if ( Sector == 0 )
+		{
+			// None free! Eep!
+			return -1;
+		}
 
-			LinkTable[127]	= NewLink;
+		if ( LinkPtr == 127 )
+		{
+			// Filled up this link table sector. Need a new one.
+			DWORD NewLink = pIECDirectory->GetFreeBlock();
 
-			pSource->WriteSectorLBA(SectorLink, (BYTE *) LinkTable, 512);
+			if ( NewLink == 0 )
+			{
+				return -1;
+			}
 
-			SectorLink	= NewLink;
+			LinkTable[127] = NewLink;
 
-			LinkPtr		= 0;
+			if ( pSource->WriteSectorLBA( SectorLink, (BYTE *) LinkTable, 512 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
-			memset(LinkTable, 0, 512);
+			SectorLink = NewLink;
+			LinkPtr	   = 0;
+
+			memset( LinkTable, 0, 512 );
 		}
 
 		store.Read( &Data, DataToWrite );
 
-		LinkTable[LinkPtr]	= Sector;
+		LinkTable[ LinkPtr ] = Sector;
 
-		pSource->WriteSectorLBA(Sector, Data, 512);
+		if ( pSource->WriteSectorLBA( Sector, Data, 512 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		LinkPtr++;
 
-		DataRemaining	-= DataToWrite;
-		DataPtr			+= DataToWrite;
+		DataRemaining -= DataToWrite;
+		DataPtr       += DataToWrite;
 	}
 
-	pSource->WriteSectorLBA(SectorLink, (BYTE *) LinkTable, 512);
+	if ( pSource->WriteSectorLBA(SectorLink, (BYTE *) LinkTable, 512 ) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	//	Step 2.	Create an entry in the Files list, and write the directory back.
 	if ( pFile->FSFileType == FT_CBM_TAPE )
 	{
+		outfile.AttrLocked = 0xFFFFFFFF;
 		outfile.AttrClosed = 0xFFFFFFFF;
-		outfile.AttrLocked = 0x00000000;
 		outfile.AttrType   = pFile->Attributes[ 3 ];
 	}
 	else if ( pFile->FSFileType != FT_C64 )
 	{
 		/* Foreign file. Make this a PRG. */
+		outfile.AttrLocked = 0xFFFFFFFF;
 		outfile.AttrClosed = 0xFFFFFFFF;
-		outfile.AttrLocked = 0;
 		outfile.AttrType   = 2; // PRG
 
 		/* Check the extension if it has one, it might be a recognised type */
@@ -173,30 +208,41 @@ int	IECATAFileSystem::WriteFile( NativeFile *pFile, CTempFile &store )
 
 	pDirectory->Files.push_back(outfile);
 
-	pDirectory->WriteDirectory();
-	pDirectory->ReadDirectory();
+	if ( pDirectory->WriteDirectory() != NUTS_SUCCESS )
+	{
+		return -1;
+	}
 
-	return 0;
+	return pDirectory->ReadDirectory();
 }
 
 int IECATAFileSystem::DeleteFile( DWORD FileID )
 {
 	std::vector<NativeFile>::iterator iFile = pDirectory->Files.begin() + FileID;
 
-	ReleaseBlocks( &*iFile );
+	if ( ReleaseBlocks( &*iFile ) != NUTS_SUCCESS )
+	{
+		return -1;
+	}
 
 	iFile = pDirectory->Files.erase( iFile );
 
-	pDirectory->WriteDirectory();
+	if ( pDirectory->WriteDirectory() != NUTS_SUCCESS )
+	{
+		return -1;
+	}
 
-	return FILEOP_SUCCESS;
+	return pDirectory->ReadDirectory();
 }
 
 int	IECATAFileSystem::ReleaseBlocks( NativeFile *pFile )
 {
 	unsigned char LinkTable[512];
 
-	pSource->ReadSectorLBA( pFile->Attributes[ 0 ], LinkTable, 512);
+	if ( pSource->ReadSectorLBA( pFile->Attributes[ 0 ], LinkTable, 512 ) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	DWORD RemainingLength = (DWORD) pFile->Length;
 	DWORD SectorPtr       = 0;
@@ -208,39 +254,45 @@ int	IECATAFileSystem::ReleaseBlocks( NativeFile *pFile )
 
 	ReturnBlocks.push_back( pFile->Attributes[ 0 ] );
 
-	while ( RemainingLength > 0U ) {
-		if (SectorPtr == 127) {
+	while ( RemainingLength > 0U )
+	{
+		if ( SectorPtr == 127 )
+		{
 			//	Not a data sector, another link table.
-			DWORD NextPtr = pBlocks[127];
+			DWORD NextPtr = pBlocks[ 127 ];
 
-			pSource->ReadSectorLBA(NextPtr, LinkTable, 512);
+			if ( pSource->ReadSectorLBA( NextPtr, LinkTable, 512 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			ReturnBlocks.push_back( NextPtr );
 
-			SectorPtr	= 0;
+			SectorPtr = 0;
 		} else {
-			DWORD Sector = pBlocks[SectorPtr++];
+			DWORD Sector = pBlocks[ SectorPtr++ ];
 
-			if (RemainingLength > 512)
-				DataToRead		= 512;
-			else
-				DataToRead		= RemainingLength;
+			DataToRead = min( 512, RemainingLength );
 
 			ReturnBlocks.push_back( Sector );
 
-			RemainingLength	-= DataToRead;
+			RemainingLength -= DataToRead;
 		}
 	}
 
-	pIECDirectory->ReleaseBlock( &ReturnBlocks );
+	if ( pIECDirectory->ReleaseBlock( &ReturnBlocks ) != NUTS_SUCCESS )
+	{
+		return -1;
+	}
 
 	return 0;
 }
 
-BYTE *IECATAFileSystem::DescribeFile(DWORD FileIndex) {
+BYTE *IECATAFileSystem::DescribeFile( DWORD FileIndex )
+{
 	static BYTE status[128];
 
-	if ((FileIndex < 0) || ((unsigned) FileIndex > pDirectory->Files.size()))
+	if ( ( FileIndex < 0 ) || ( FileIndex > pDirectory->Files.size() ) )
 	{
 		status[0] = 0;
 
@@ -249,9 +301,12 @@ BYTE *IECATAFileSystem::DescribeFile(DWORD FileIndex) {
 
 	NativeFile *pFile = &pDirectory->Files[FileIndex];
 
-	if ( pDirectory->Files[ FileIndex ].Flags & FF_Directory ) {
+	if ( pDirectory->Files[ FileIndex ].Flags & FF_Directory )
+	{
 		rsprintf( status, "DIRECTORY" );
-	} else {
+	}
+	else
+	{
 		rsprintf( status, "%s%s%s %d BYTES, %s, %s",
 			(pFile->AttrClosed)?"":"*",
 			(pFile->Flags & FF_Extension)?(char *) pFile->Extension:"",
@@ -301,12 +356,11 @@ BYTE *IECATAFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 
 BYTE *IECATAFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 {
-	// TODO: Generate this properly
 	static BYTE title[512];
 	
 	if ( pFile == nullptr )
 	{
-		sprintf_s( (char *) title, 512, "IECATA::$" );
+		rsprintf( title, "IECATA::$" );
 	}
 	else
 	{
@@ -325,9 +379,12 @@ BYTE *IECATAFileSystem::GetTitleString( NativeFile *pFile, DWORD Flags )
 	return title;
 }
 
-int IECATAFileSystem::ChangeDirectory(NativeFile *pFile) {
+int IECATAFileSystem::ChangeDirectory(NativeFile *pFile)
+{
 	if ( !pFile->Flags && FF_Directory )
+	{
 		return -1;
+	}
 
 	DWORD NewDirSector = pFile->Attributes[ 0 ];
 
@@ -342,9 +399,12 @@ int IECATAFileSystem::ChangeDirectory(NativeFile *pFile) {
 	return 0;
 }
 
-int	IECATAFileSystem::Parent() {
+int	IECATAFileSystem::Parent()
+{
 	if ( ParentLinks[ DirSector ] == 0)
+	{
 		return -1;
+	}
 
 	DirSector = ParentLinks[ DirSector ];
 
@@ -355,37 +415,41 @@ int	IECATAFileSystem::Parent() {
 	return 0;
 }
 
-int	IECATAFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
+int	IECATAFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags )
+{
 	return -1;
 }
 
-bool IECATAFileSystem::IsRoot() {
+bool IECATAFileSystem::IsRoot()
+{
 	if ( ParentLinks[ DirSector ] == 0 )
+	{
 		return true;
+	}
 
 	return false;
 }
 
 
-int IECATAFileSystem::Format_PreCheck(int FormatType, HWND hWnd) {
+int IECATAFileSystem::Format_PreCheck(int FormatType, HWND hWnd)
+{
 	//	No further options to check.
 
 	return 0;
 }
 
-int IECATAFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
+int IECATAFileSystem::Format_Process( DWORD FT, HWND hWnd )
+{
 	ResetEvent( hCancelFormat );
 
 	static WCHAR ProgressText[512];
 
-	DWORD	NumSectors	= (DWORD) ( pSource->PhysicalDiskSize / (__int64) 512 );
+	DWORD NumSectors = ( DWORD( pSource->PhysicalDiskSize ) + 511 ) / 512;
 
-	if (pSource->PhysicalDiskSize % 512)
-		NumSectors++;
+	DWORD steps	= (NumSectors / 512) + 2;
 
-	DWORD	steps	= (NumSectors / 512) + 2;
+	BYTE blank[512];
 
-	unsigned char blank[512];
 	int Stages = 2;
 
 	if ( FT & FTF_Blank ) {
@@ -397,7 +461,10 @@ int IECATAFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 		int	s = 0;
 
 		for ( DWORD i=0; i<NumSectors; i++) {
-			pSource->WriteSectorLBA( s, blank, 512 );
+			if ( pSource->WriteSectorLBA( s, blank, 512 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			if ((i / 512) != s) {
 				s = i / 512;
@@ -424,7 +491,10 @@ int IECATAFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 	* (DWORD *) &blank[0]	= 2;
 	sprintf_s((char *) &blank[4], 16, "adfs 1.0");
 
-	pSource->WriteSectorLBA(0, blank, 512);
+	if ( pSource->WriteSectorLBA(0, blank, 512) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	//	Now the blank directory. Since it is the root, we can just fill it with zeroes to indicate no entries.
 	wsprintf( ProgressText, L"Writing Root Directory");
@@ -457,7 +527,10 @@ int IECATAFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 			if ((Sect < NumSectors) && (FBC < FBL_Sectors)) {
 				FBL[127]	= FBS + 1;
 
-				pSource->WriteSectorLBA(FBS, blank, 512);
+				if ( pSource->WriteSectorLBA( FBS, blank, 512 ) != DS_SUCCESS )
+				{
+					return -1;
+				}
 
 				FBP	= 0;
 
@@ -481,7 +554,10 @@ int IECATAFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 		}
 
 		if ((Sect >= NumSectors) || (FBC >= FBL_Sectors)) {
-			pSource->WriteSectorLBA(FBS, blank, 512);
+			if ( pSource->WriteSectorLBA( FBS, blank, 512 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
 
 			break;
 		}
@@ -505,9 +581,6 @@ int IECATAFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 
 FSHint IECATAFileSystem::Offer( BYTE *Extension )
 {
-	//	D64s have a somewhat "optimized" layout that doesn't give away any reliable markers that the file
-	//	is indeed a D64. So we'll just have to check the extension and see what happens.
-
 	FSHint hint;
 
 	hint.Confidence = 0;
@@ -515,7 +588,10 @@ FSHint IECATAFileSystem::Offer( BYTE *Extension )
 
 	unsigned char SectorBuf[512];
 
-	pSource->ReadSectorLBA(0, SectorBuf, 512);
+	if ( pSource->ReadSectorLBA(0, SectorBuf, 512) != DS_SUCCESS )
+	{
+		return hint;
+	}
 
 	if (strncmp((char *) &SectorBuf[4], (char *) "adfs 1.0", 8) == 0)	//	For some reason, IECATA identifies itself as "adfs 1.0"
 	{
@@ -543,7 +619,10 @@ int IECATAFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 	if ( BlockRatio < 1.0 ) { BlockRatio = 1.0 ; }
 	
 	/* Get FBL pointer from SuperBlock */
-	pSource->ReadSectorLBA( 0, Sector, 512 );
+	if ( pSource->ReadSectorLBA( 0, Sector, 512 ) != DS_SUCCESS )
+	{
+		return -1;
+	}
 
 	DWORD FBLPtr = * (DWORD *) &Sector[ 0 ];
 	DWORD Blocks = 0;
@@ -570,7 +649,10 @@ int IECATAFileSystem::CalculateSpaceUsage( HWND hSpaceWnd, HWND hBlockWnd )
 			pBlockMap[ BlkNum ] = BlockUsed;
 		}
 
-		pSource->ReadSectorLBA( FBLPtr, Sector, 512 );
+		if ( pSource->ReadSectorLBA( FBLPtr, Sector, 512 ) != DS_SUCCESS )
+		{
+			return -1;
+		}
 
 		for ( int b=0; b<127; b++ )
 		{

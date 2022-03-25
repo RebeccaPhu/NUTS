@@ -151,7 +151,7 @@ int BAM::WriteBAM( void )
 	{
 		for ( BYTE b = 0; b < 4; b++ )
 		{
-			Buffer[ o + b ] = BAMData[ Track ][ b ];
+			Buffer[ o + b ] = BYTE( BAMData[ Track ][ b ] );
 		}
 
 		Track++;

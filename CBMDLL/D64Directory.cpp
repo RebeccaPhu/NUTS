@@ -193,7 +193,7 @@ int	D64Directory::WriteDirectory(void) {
 
 			SwapChars( &fp[ 0x05 ], 16 );
 
-			WORD Sectors = pFile->Length / 254;
+			WORD Sectors = WORD( pFile->Length ) / 254;
 
 			if ( pFile->Length % 254 ) { Sectors++; }
 

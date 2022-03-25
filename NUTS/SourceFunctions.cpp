@@ -20,9 +20,9 @@ int ReplaceSourceContent( DataSource *pSource, CTempFile &FileObj )
 			BytesRead = 131072;
 		}
 
-		FileObj.Read( Buffer, BytesRead );
+		FileObj.Read( Buffer, (DWORD) BytesRead );
 
-		pSource->WriteRaw( SourceOffset, BytesRead, Buffer );
+		pSource->WriteRaw( SourceOffset, (DWORD) BytesRead, Buffer );
 
 		BytesToGo    -= BytesRead;
 		SourceOffset += BytesRead;
@@ -53,8 +53,8 @@ int CopyContent( CTempFile &srcObj, CTempFile &destObj )
 			BytesRead = 131072;
 		}
 
-		srcObj.Read(   Buffer, BytesRead );
-		destObj.Write( Buffer, BytesRead );
+		srcObj.Read(   Buffer, (DWORD) BytesRead );
+		destObj.Write( Buffer, (DWORD) BytesRead );
 
 		BytesToGo    -= BytesRead;
 		SourceOffset += BytesRead;
@@ -84,7 +84,7 @@ int SourceToTemp( DataSource *pSource, CTempFile &destObj )
 			return -1;
 		}
 
-		destObj.Write( Buffer, BytesRead );
+		destObj.Write( Buffer, (DWORD) BytesRead );
 
 		BytesToGo    -= BytesRead;
 		SourceOffset += BytesRead;

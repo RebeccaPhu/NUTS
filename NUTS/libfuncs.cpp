@@ -435,16 +435,16 @@ WORD BEWORD( BYTE *p )
 
 void WBEDWORD( BYTE *p, DWORD v )
 {
-	p[ 0 ] = ( ( v & 0xFF000000 ) >> 24 );
-	p[ 1 ] = ( ( v & 0xFF0000 ) >> 16 );
-	p[ 2 ] = ( ( v & 0xFF00 ) >> 8 );
-	p[ 3 ] = v & 0xFF;
+	p[ 0 ] = BYTE( ( ( v & 0xFF000000 ) >> 24 ) );
+	p[ 1 ] = BYTE( ( ( v & 0xFF0000 ) >> 16 ) );
+	p[ 2 ] = BYTE( ( ( v & 0xFF00 ) >> 8 ) );
+	p[ 3 ] = BYTE( v & 0xFF );
 }
 
 void WBEWORD( BYTE *p, DWORD v )
 {
-	p[ 0 ] = ( ( v & 0xFF00 ) >> 8 );
-	p[ 1 ] = v & 0xFF;
+	p[ 0 ] = BYTE( ( ( v & 0xFF00 ) >> 8 ) );
+	p[ 1 ] = BYTE( v & 0xFF );
 }
 
 DWORD LEDWORD( BYTE *p )
@@ -459,16 +459,16 @@ WORD LEWORD( BYTE *p )
 
 void WLEDWORD( BYTE *p, DWORD v )
 {
-	p[ 3 ] = ( ( v & 0xFF000000 ) >> 24 );
-	p[ 2 ] = ( ( v & 0xFF0000 ) >> 16 );
-	p[ 1 ] = ( ( v & 0xFF00 ) >> 8 );
-	p[ 0 ] = v & 0xFF;
+	p[ 3 ] = BYTE( ( ( v & 0xFF000000 ) >> 24 ) );
+	p[ 2 ] = BYTE( ( ( v & 0xFF0000 ) >> 16 ) );
+	p[ 1 ] = BYTE( ( ( v & 0xFF00 ) >> 8 ) );
+	p[ 0 ] = BYTE( v & 0xFF );
 }
 
 void WLEWORD( BYTE *p, DWORD v )
 {
-	p[ 1 ] = ( ( v & 0xFF00 ) >> 8 );
-	p[ 0 ] = v & 0xFF;
+	p[ 1 ] = BYTE( ( ( v & 0xFF00 ) >> 8 ) );
+	p[ 0 ] = BYTE( v & 0xFF );
 }
 
 HWND CreateToolTip( HWND hWnd, HWND hContainer, PTSTR pszText, HINSTANCE hInstance )

@@ -21,11 +21,11 @@ public:
 	~IECATADirectory(void) {
 	}
 
-	int	ReadDirectory(void);
-	int	WriteDirectory(void);
+	int   ReadDirectory(void);
+	int   WriteDirectory(void);
 
-	int  GetFreeBlock();
-	void ReleaseBlock( std::vector<DWORD> *pBlocks );
+	DWORD GetFreeBlock();
+	int   ReleaseBlock( std::vector<DWORD> *pBlocks );
 
 	void SetDirSector( DWORD Sector )
 	{
@@ -33,7 +33,7 @@ public:
 	}
 
 private:
-	std::vector<int>	DirectorySectorChain;
+	std::vector<DWORD> DirectorySectorChain;
 
 	DWORD DirSector;
 };

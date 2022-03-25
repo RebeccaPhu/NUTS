@@ -342,7 +342,7 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 	/* Container header */
 	ZeroMemory( blk, 32 );
 
-	WORD NumFiles = pDirectory->Files.size();
+	WORD NumFiles = (WORD) pDirectory->Files.size();
 
 	if ( Reason == T64_REGEN_DELETE ) { NumFiles--; }
 	if ( Reason == T64_REGEN_WRITE  ) { NumFiles++; }
@@ -404,7 +404,7 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 			pThisFile = &pDirectory->Files[ FileID ];
 		}
 
-		DWORD RealLen   = oldFile.Ext() - 2;
+		DWORD RealLen   = (DWORD) oldFile.Ext() - 2;
 		DWORD BytesToGo = RealLen;
 
 		out.Seek( DataOffset );
@@ -435,12 +435,12 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 		else
 		{
 			blk[ 0 ] = 1;
-			blk[ 1 ] = pThisFile->Attributes[ 3 ] | 0x80;
+			blk[ 1 ] = BYTE( pThisFile->Attributes[ 3 ] ) | 0x80;
 		}
 
-		* (WORD *)  &blk[ 2 ] = pThisFile->Attributes[ 2 ];
-		* (WORD *)  &blk[ 4 ] = ( pThisFile->Attributes[ 2 ] + RealLen ) - 1;
-		* (DWORD *) &blk[ 8 ] = DataOffset;
+		WLEWORD(  &blk[ 2 ], (WORD) pThisFile->Attributes[ 2 ] );
+		WLEWORD(  &blk[ 4 ], (WORD) ( pThisFile->Attributes[ 2 ] + RealLen ) - 1 );
+		WLEDWORD( &blk[ 8 ], DataOffset );
 
 		rstrncpy( &blk[ 0x10 ], pThisFile->Filename, 16 );
 
@@ -463,20 +463,20 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 
 		pStore->Read( adx, 2 );
 
-		DWORD BytesToGo = pStore->Ext();
+		DWORD BytesToGo = (DWORD) pStore->Ext();
 
 		if ( pIncoming->FSFileType == FT_C64 )
 		{
 			/* Can't import FRZ, have to set it later */
 			blk[ 0 ] = 1;
-			blk[ 1 ] = pIncoming->Attributes[ 1 ] | 0x80;
+			blk[ 1 ] = BYTE( pIncoming->Attributes[ 1 ] ) | 0x80;
 
 			blk[ 2 ] = adx[ 0 ];
 			blk[ 3 ] = adx[ 1 ];
 
 			WORD StartAdx = * (WORD *) adx;
 
-			* (WORD *) &blk[ 4 ] = ( StartAdx + BytesToGo ) - 1;
+			WLEWORD( &blk[ 4 ], DWORD( StartAdx + BytesToGo ) - 1 );
 
 			BytesToGo -= 2;
 		}
@@ -489,7 +489,7 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 			}
 			else
 			{
-				blk[ 1 ] = pIncoming->Attributes[ 3 ];
+				blk[ 1 ] = (BYTE) pIncoming->Attributes[ 3 ];
 				blk[ 0 ] = 1;
 			}
 
@@ -511,7 +511,7 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 
 				WORD StartAdx = * (WORD *) adx;
 
-				* (WORD *) &blk[ 4 ] = ( StartAdx + BytesToGo ) - 1;
+				WLEWORD( &blk[ 4 ], DWORD( StartAdx + BytesToGo ) - 1 );
 			}
 			else
 			{
@@ -520,8 +520,8 @@ int T64FileSystem::RegenerateSource( DWORD id1, DWORD id2, NativeFile *pIncoming
 				pStore->Seek( 0 );
 
 				/* Fake this, let the user change the address later if needed */
-				* (WORD *) &blk[ 2 ] = 0x0801;
-				* (WORD *) &blk[ 4 ] = ( 0x0801 + BytesToGo ) - 1;
+				WLEWORD( &blk[ 2 ], 0x0801 );
+				WLEWORD( &blk[ 4 ], ( 0x0801 + BytesToGo ) - 1 );
 			}
 
 		}
@@ -715,7 +715,7 @@ int T64FileSystem::MakeAudio( std::vector<NativeFile> &Selection, TapeIndex &ind
 
 				TapeChecksum = 0;
 
-				DWORD DataToGo = data.Ext();
+				DWORD DataToGo = (DWORD) data.Ext();
 
 				while ( DataToGo > 0 )
 				{

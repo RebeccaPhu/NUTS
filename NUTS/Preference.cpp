@@ -93,7 +93,7 @@ Preference& Preference::operator=(const std::wstring &v )
 {
 	HKEY hRoot = GetRegistryKey();
 
-	RegSetValueEx( hRoot, KeyName.c_str(), NULL, REG_SZ, (BYTE *) v.c_str(), v.length() * sizeof( WCHAR ) );
+	RegSetValueEx( hRoot, KeyName.c_str(), NULL, REG_SZ, (BYTE *) v.c_str(), DWORD( size_t( v.length() * sizeof( WCHAR ) ) ) );
 
 	return *this;
 }

@@ -220,7 +220,7 @@ int PerformRootCommand( HWND hWnd, DWORD CmdIndex )
 	bi.lParam         = NULL;
 	bi.iImage         = 0;
 
-	ITEMIDLIST *pPIDL = SHBrowseForFolder( &bi );
+	PIDLIST_ABSOLUTE  pPIDL = SHBrowseForFolder( &bi );
 
 	if ( pPIDL != NULL )
 	{
@@ -306,7 +306,7 @@ WCHAR *DescribeChar( BYTE Char, DWORD FontID )
 		}
 	}
 
-	wcscpy( desc, cd.c_str() );
+	wcscpy_s( desc, 256, cd.c_str() );
 
 	return desc;
 }

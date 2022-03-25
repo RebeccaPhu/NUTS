@@ -142,10 +142,10 @@ int OpenCBM_ReadBlock( BYTE Drive, TSLink TS, BYTE *BlockData )
 	}
 
 	/* This is pretty much copied from OpenCBM */
-	char cmd[48];
+	BYTE cmd[48];
 	int rv = 1;
 
-	sprintf( cmd, "U1:2 0 %d %d", TS.Track, TS.Sector );
+	rsprintf( cmd, "U1:2 0 %d %d", TS.Track, TS.Sector );
 
 	if ( opencbm_exec_command( cbm_fd, Drive, cmd, 0) == 0)
 	{
@@ -184,7 +184,7 @@ int OpenCBM_WriteBlock( BYTE Drive, TSLink TS, BYTE *BlockData )
 		OpenCBM_OpenDrive( Drive );
 	}
 
-    char cmd[48];
+    BYTE cmd[48];
     int  rv = 1;
 
     if( opencbm_exec_command( cbm_fd, Drive, "B-P2 0", 0 ) == 0 )
@@ -197,7 +197,7 @@ int OpenCBM_WriteBlock( BYTE Drive, TSLink TS, BYTE *BlockData )
 
             if ( rv == 0 )
             {
-				sprintf( cmd, "U2:2 0 %d %d", TS.Track, TS.Sector );
+				rsprintf( cmd, "U2:2 0 %d %d", TS.Track, TS.Sector );
 
                 opencbm_exec_command( cbm_fd, Drive, cmd, 0 );
 
@@ -231,9 +231,9 @@ int OpenCBM_OpenDrive( DWORD Drive )
 
 	char buf[ 255 ];
 
-	opencbm_open( cbm_fd, Drive, 2, "#", 1 );
+	opencbm_open( cbm_fd, (BYTE) Drive, 2, "#", 1 );
 
-	int rv = opencbm_device_status( cbm_fd, Drive, buf, sizeof(buf) );
+	int rv = opencbm_device_status( cbm_fd, (BYTE) Drive, buf, sizeof(buf) );
 
 	if ( rv != 0 )
 	{
@@ -256,7 +256,7 @@ void OpenCBM_CloseDrive( DWORD Drive )
 
 	if ( DriveOpen[ Drive ] == 0 )
 	{
-		opencbm_close( cbm_fd, Drive, 2 );
+		opencbm_close( cbm_fd, (BYTE) Drive, 2 );
 
 		opencbm_reset( cbm_fd );
 	}

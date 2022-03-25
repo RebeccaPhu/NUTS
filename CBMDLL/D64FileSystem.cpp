@@ -114,7 +114,7 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	}
 
 	/* Enough disk space? */
-	DWORD RequiredSectors = file.Length / 254; // 2 bytes of link.
+	DWORD RequiredSectors = DWORD( file.Length ) / 254; // 2 bytes of link.
 
 	if ( file.Length % 254 ) { RequiredSectors++; }
 
@@ -128,7 +128,7 @@ int	D64FileSystem::WriteFile(NativeFile *pFile, CTempFile &store)
 	}
 
 	/* Write the file. */
-	DWORD BytesToGo = file.Length;
+	DWORD BytesToGo = (DWORD) file.Length;
 	BYTE  Buffer[ 256 ];
 	TSLink Loc = pBAM->GetFreeTS();
 
@@ -218,8 +218,10 @@ BYTE *D64FileSystem::GetStatusString( int FileIndex, int SelectedItems ) {
 	else 
 	{
 		rsprintf(
-			status, "%s.%s - %d BYTES, %s, %s",
+			status, "%s.%s%s%s - %d BYTES, %s, %s",
 			(BYTE *) pDirectory->Files[FileIndex].Filename,
+			(pDirectory->Files[FileIndex].Attributes[ 2 ])?"":">",
+			(pDirectory->Files[FileIndex].Attributes[ 3 ])?"":"*",
 			(BYTE *) pDirectory->Files[FileIndex].Extension,
 			(DWORD) pDirectory->Files[FileIndex].Length,
 			( pDirectory->Files[FileIndex].Attributes[ 2 ] )?"LOCKED":"NOT LOCKED",
@@ -464,9 +466,9 @@ int D64FileSystem::ReplaceFile(NativeFile *pFile, CTempFile &store)
 		if ( FilenameCmp( &*iFile, &file ) )
 		{
 			/* Got it */
-			DWORD BytesToGo = store.Ext();
+			DWORD BytesToGo = (DWORD) store.Ext();
 
-			DWORD CurrentSectors = iFile->Length / 254;
+			DWORD CurrentSectors = DWORD( iFile->Length ) / 254;
 
 			if ( iFile->Length % 254 ) { CurrentSectors++; }
 
@@ -702,7 +704,7 @@ int D64FileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, 0, (LPARAM) InitMsg );
 
-	DWORD Sectors = pSource->PhysicalDiskSize / (DWORD) 256;
+	DWORD Sectors = DWORD( pSource->PhysicalDiskSize / (QWORD) 256 );
 
 	BYTE Buffer[ 256 ];
 
@@ -745,7 +747,7 @@ int D64FileSystem::Format_Process( DWORD FT, HWND hWnd )
 	{
 		for ( DWORD S=0; S < spt[ T ]; S++ )
 		{
-			pBAM->ReleaseSector( T, S );
+			pBAM->ReleaseSector( (BYTE) T, (BYTE) S );
 		}
 	}
 
@@ -863,7 +865,7 @@ int D64FileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 		}
 	}
 
-	DWORD MaxSteps = pDirectory->Files.size() + 1;
+	DWORD MaxSteps = (DWORD) pDirectory->Files.size() + 1;
 
 	pBAM->OccupySector( 18, 0 );
 
