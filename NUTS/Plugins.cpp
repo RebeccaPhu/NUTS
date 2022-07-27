@@ -598,17 +598,6 @@ FileSystem *CPlugins::LoadFS( FSIdentifier FSID, DataSource *pSource )
 
 					pCloneSource = pAuxSource;
 				}
-				else
-				{
-					/* Need a DSK? */
-					if ( iter->Flags & FSF_Uses_DSK )
-					{
-						/* Need a DSK, so create a source and wrap it around */
-						pAuxSource = new DSKDataSource( pSource );
-
-						pCloneSource = pAuxSource;
-					}
-				}
 
 				pFS = nullptr;
 				

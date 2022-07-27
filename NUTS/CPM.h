@@ -16,7 +16,7 @@ public:
 
 		pDirectory = (Directory *) pDir;
 
-		Flags = FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Uses_DSK | FSF_Uses_Extensions;
+		Flags = FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Uses_Extensions;
 		FSID  = cpmdpb.FSID;
 		dpb   = cpmdpb;
 

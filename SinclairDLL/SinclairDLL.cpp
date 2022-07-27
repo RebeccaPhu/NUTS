@@ -53,7 +53,7 @@ FSDescriptor SinclairFS[] = {
 	{
 		/* .FriendlyName = */ L"ZX Spectrum +3DOS",
 		/* .PUID         = */ FSID_DOS3,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity | FSF_Uses_DSK,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Image | FSF_Creates_Image | FSF_UseSectors | FSF_SupportFreeSpace | FSF_SupportBlocks | FSF_Size | FSF_Capacity,
 		0, 0,
 		(BYTE *) "DSK"
 	},

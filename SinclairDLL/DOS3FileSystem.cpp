@@ -35,7 +35,7 @@ DOS3FileSystem::DOS3FileSystem(DataSource *pDataSource) : CPMFileSystem( pDataSo
 	Flags =
 		FSF_Creates_Image | FSF_Formats_Image |
 		FSF_SupportBlocks | FSF_SupportFreeSpace | FSF_Capacity |
-		FSF_FixedSize | FSF_UseSectors | FSF_Uses_DSK | FSF_No_Quick_Format | FSF_Uses_Extensions;
+		FSF_FixedSize | FSF_UseSectors | FSF_No_Quick_Format | FSF_Uses_Extensions;
 }
 
 bool DOS3FileSystem::IncludeHeader( BYTE *pHeader )
