@@ -230,8 +230,8 @@ AMSTRADDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 			cmd->OutParams[ 0 ].pPtr = (void *) pCPCF;
 			cmd->OutParams[ 1 ].pPtr = (void *) pCPCFontName;
 			cmd->OutParams[ 2 ].pPtr = (void *) AMSTRAD_FONT.c_str();
-			cmd->OutParams[ 2 ].pPtr = (void *) ENCODING_CPC.c_str();
-			cmd->OutParams[ 3 ].pPtr = nullptr;
+			cmd->OutParams[ 3 ].pPtr = (void *) ENCODING_CPC.c_str();
+			cmd->OutParams[ 4 ].pPtr = nullptr;
 
 			return NUTS_PLUGIN_SUCCESS;
 		}
