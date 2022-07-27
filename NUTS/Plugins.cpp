@@ -293,6 +293,33 @@ void CPlugins::LoadFOPDirectoryTypes( NUTSPlugin *plugin )
 	}
 }
 
+void CPlugins::LoadWrappers( NUTSPlugin *plugin )
+{
+	PluginCommand cmd;
+
+	cmd.CommandID = PC_GetWrapperCount;
+
+	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+	{
+		int wrappers = (int) cmd.OutParams[ 0 ].Value;
+
+		for ( int i=0; i<wrappers; i++ )
+		{
+			cmd.CommandID = PC_GetWrapperDescriptor;
+			cmd.InParams[ 0 ].Value = (DWORD) i;
+
+			if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+			{
+				WrapperDescriptor *pDesc = (WrapperDescriptor *) cmd.OutParams[ 0 ].pPtr;
+
+				Wrappers.push_back( * pDesc );
+				
+				WrapperPluginMap[ pDesc->Identifier ] = plugin->PluginID;
+			}
+		}
+	}
+}
+
 void CPlugins::GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid, ProviderIdentifier PVID, PluginIdentifier PLID )
 {
 	PluginCommand cmd;
@@ -1383,4 +1410,44 @@ std::vector<NUTSPortRequirement> CPlugins::GetPortRequirements( void )
 	}
 
 	return reqs;
+}
+
+WrapperList CPlugins::GetWrappers()
+{
+	WrapperList wrappers = NUTSBuiltIns.GetWrappers();
+
+	for ( Wrapper_iter iWrapper = Wrappers.begin(); iWrapper != Wrappers.end(); iWrapper++ )
+	{
+		wrappers.push_back( *iWrapper );
+	}
+
+	return wrappers;
+}
+
+DataSource *CPlugins::LoadWrapper( WrapperIdentifier wrapper, DataSource *pSource )
+{
+	DataSource *pWrapper = NUTSBuiltIns.GetWrapper( wrapper, pSource );
+
+	if ( pWrapper == nullptr )
+	{
+		if ( WrapperPluginMap.find( wrapper ) != WrapperPluginMap.end() )
+		{
+			PluginIdentifier plugin = WrapperPluginMap[ wrapper ];
+
+			NUTSPlugin *pPlugin = GetPluginByID( plugin );
+
+			PluginCommand cmd;
+
+			cmd.CommandID = PC_LoadWrapper;
+			cmd.InParams[ 0 ].pPtr = (void *) wrapper.c_str();
+			cmd.InParams[ 1 ].pPtr = (void *) pSource;
+
+			if ( pPlugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+			{
+				pWrapper = (DataSource *) cmd.OutParams[ 0 ].pPtr;
+			}
+		}
+	}
+
+	return pWrapper;
 }

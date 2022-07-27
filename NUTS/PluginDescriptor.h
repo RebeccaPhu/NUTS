@@ -42,6 +42,9 @@ typedef enum _PluginCommandID {
 	PC_GetPortProviders,
 	PC_GetPortCounts,
 	PC_SetPortAssignments,
+	PC_GetWrapperCount,
+	PC_GetWrapperDescriptor,
+	PC_LoadWrapper,
 } PluginCommandID;
 
 typedef union _PluginCommandParameter {
@@ -101,5 +104,11 @@ typedef struct _FOPDirectoryType
 	std::wstring FriendlyName;
 	std::wstring Identifier;
 } FOPDirectoryType;
+
+typedef struct _WrapperDescriptor
+{
+	std::wstring FriendlyName;
+	WrapperIdentifier Identifier;
+} WrapperDescriptor;
 
 #endif

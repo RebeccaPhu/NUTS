@@ -13,6 +13,7 @@ typedef std::wstring TXIdentifier;
 typedef std::wstring PluginIdentifier;
 typedef std::wstring ProviderIdentifier;
 typedef std::wstring FontIdentifier;
+typedef std::wstring WrapperIdentifier;
 
 typedef unsigned long long QWORD;
 

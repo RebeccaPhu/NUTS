@@ -41,6 +41,10 @@ public:
 
 	std::wstring ProviderName( ProviderIdentifier PRID );
 	std::wstring FSName( FSIdentifier FSID );
+
+	WrapperList GetWrappers();
+
+	DataSource *GetWrapper( WrapperIdentifier wrapper, DataSource *pSource );
 };
 
 extern BuiltIns NUTSBuiltIns;

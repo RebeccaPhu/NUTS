@@ -36,6 +36,8 @@ typedef std::vector<NUTSProvider> NUTSProviderList;
 typedef std::vector<NUTSProvider>::iterator NUTSProvider_iter;
 typedef std::vector<FSDescriptor> FSDescriptorList;
 typedef std::vector<FSDescriptor>::iterator FSDescriptor_iter;
+typedef std::vector<WrapperDescriptor> WrapperList;
+typedef std::vector<WrapperDescriptor>::iterator Wrapper_iter;
 typedef std::map<FontIdentifier, BYTE *> NUTSFontList;
 typedef std::map<FontIdentifier, BYTE *>::iterator FontList_iter;
 typedef std::map<FontIdentifier, std::wstring> NUTSFontNames;
@@ -45,6 +47,7 @@ typedef std::map<FontIdentifier, PluginIdentifier> PluginFontMap_iter;
 typedef std::map< FSIdentifier, std::vector< QWORD > > FSImageOffsets;
 typedef std::map<ProviderIdentifier, std::vector<FSIdentifier>> ProviderFSMap;
 typedef std::map<PluginIdentifier, std::vector<FSIdentifier>> PluginFSMap;
+typedef std::map<WrapperIdentifier, PluginIdentifier> WrapperMap;
 
 typedef std::vector<NUTSPlugin> PluginList;
 typedef std::vector<NUTSPlugin>::iterator Plugin_iter;
@@ -72,6 +75,7 @@ public:
 	std::wstring FSName( FSIdentifier FSID );
 	std::vector<FSMenu> GetFSMenu();
 	void *LoadTranslator( TXIdentifier TUID );
+	DataSource *LoadWrapper( WrapperIdentifier wrapper, DataSource *pSource );
 
 	NUTSProviderList  GetProviders( void );
 	FSDescriptorList  GetFilesystems( ProviderIdentifier ProviderID );
@@ -118,6 +122,8 @@ public:
 		return t;
 	}
 
+	WrapperList GetWrappers();
+
 	void SetPortConfiguration( void );
 
 
@@ -135,6 +141,8 @@ private:
 	RootHookList      RootHooks;
 	RootCommandSet    RootCommands;
 	FOPDirectoryTypes DirectoryTypes;
+	WrapperList       Wrappers;
+	WrapperMap        WrapperPluginMap;
 
 	std::map<EncodingIdentifier, std::vector<FontIdentifier>> EncodingFontMap;
 	std::map<EncodingIdentifier, BYTE> EncodingFontSelectors[2];
@@ -149,6 +157,7 @@ private:
 	void LoadRootHooks( NUTSPlugin *plugin );
 	void LoadRootCommands( NUTSPlugin *plugin );
 	void LoadFOPDirectoryTypes( NUTSPlugin *plugin );
+	void LoadWrappers( NUTSPlugin *plugin );
 
 	void *pPC437Font;
 

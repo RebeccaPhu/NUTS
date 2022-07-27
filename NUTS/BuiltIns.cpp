@@ -9,6 +9,7 @@
 #include "ISO9660FileSystem.h"
 #include "ISORawSectorSource.h"
 #include "ZIPFile.h"
+#include "DSKDataSource.h"
 
 #include "NUTSFSTypes.h"
 #include "Plugins.h"
@@ -16,6 +17,7 @@
 const ProviderIdentifier ISO_PROVIDER   = L"ISO_CDROM_Provider";
 const ProviderIdentifier ZIP_PROVIDER   = L"ZIP_FILE_Provider";
 const PluginIdentifier   BUILTIN_PLUGIN = L"NUTS_BuiltIn";
+const WrapperIdentifier  CPCEMU_DSK     = L"CPCEMU_DSK_Wrapper";
 
 BuiltIns::BuiltIns(void)
 {
@@ -341,6 +343,30 @@ BuiltInMenuList BuiltIns::GetBuiltInMenuList()
 	fsmenu.push_back( menu );
 
 	return fsmenu;
+}
+
+WrapperList BuiltIns::GetWrappers()
+{
+	WrapperList wrappers;
+
+	WrapperDescriptor dsk;
+
+	dsk.FriendlyName = L"CPCEMU DSK Format";
+	dsk.Identifier   = CPCEMU_DSK;
+
+	wrappers.push_back( dsk );
+
+	return wrappers;
+}
+
+DataSource *BuiltIns::GetWrapper( WrapperIdentifier wrapper, DataSource *pSource )
+{
+	if ( wrapper == CPCEMU_DSK )
+	{
+		return new DSKDataSource( pSource );
+	}
+
+	return nullptr;
 }
 
 BuiltIns NUTSBuiltIns;
