@@ -1041,6 +1041,11 @@ void ADFSFileSystem::SetShape(void)
 	{
 		pFSMap->MediaShape   = MediaShape;
 		pFSMap->FloppyFormat = FloppyFormat;
+
+		if ( FSID == FSID_ADFS_D )
+		{
+			pFSMap->UseDFormat = true;
+		}
 	}
 }
 
@@ -1218,7 +1223,22 @@ FSToolList ADFSFileSystem::GetToolsList( void )
 
 int ADFSFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
 {
-	// Nothing extra to do
+	// Don't allow this FS to format a source that requires LLF if
+	// we are a HD format - this is not something NUTS can do.
+	if ( pSource->Flags & DS_AlwaysLLF )
+	{
+		if (
+			( FSID == FSID_ADFS_H ) ||
+			( FSID == FSID_ADFS_H8 ) ||
+			( FSID == FSID_ADFS_HO ) ||
+			( FSID == FSID_ADFS_HN ) ||
+			( FSID == FSID_ADFS_HP )
+			)
+		{
+			return NUTSError( 0xA01, L"Low-Level Formatting is not supported with hard drive formats." );
+		}
+	}
+
 	return 0;
 }
 
@@ -1231,6 +1251,106 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	static WCHAR * const DoneMsg  = L"Complete";
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, 0, (LPARAM) InitMsg );
+
+	if ( FT & FTF_LLF )
+	{
+		DiskShape shape;
+
+		shape.Heads           = 1;
+		shape.LowestSector    = 0;
+		shape.Sectors         = 16;
+		shape.SectorSize      = 0x100;
+		shape.TrackInterleave = 0;
+		shape.Tracks          = 80;
+
+		// Some perturbations here - Note HD types cannot LLF!
+		if ( FSID == FSID_ADFS_S )
+		{
+			shape.Tracks = 40;
+		}
+
+		if ( ( FSID == FSID_ADFS_L ) || ( FSID == FSID_ADFS_L2 ) )
+		{
+			shape.Heads = 2;
+		}
+
+		if ( FSID == FSID_ADFS_D ) 
+		{
+			shape.Heads      = 2;
+			shape.Sectors    = 5;
+			shape.SectorSize = 0x400;
+		}
+
+		pSource->StartFormat( shape );
+
+		/* Low-level format */
+		for ( BYTE h=0; h<shape.Heads; h++ )
+		{
+			for ( BYTE t=0; t<shape.Tracks; t++ )
+			{
+				pSource->SeekTrack( t );
+
+				TrackDefinition tr;
+
+				tr.Density = DoubleDensity;
+				tr.GAP1.Repeats = 80;
+				tr.GAP1.Value   = 0x4E;
+
+				for ( BYTE s=0; s<shape.Sectors; s++ )
+				{
+					if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+					{
+						return 0;
+					}
+
+					SectorDefinition sd;
+
+					sd.GAP2PLL.Repeats = 12;
+					sd.GAP2PLL.Value   = 0x00;
+
+					sd.GAP2SYNC.Repeats = 3;
+					sd.GAP2SYNC.Value   = 0xA1;
+
+					sd.IAM      = 0xFE;
+					sd.Track    = t;
+					sd.Side     = h;
+					sd.SectorLength = 0x01; // 256 Bytes
+					sd.IDCRC    = 0xFF;
+					sd.SectorID = s;
+
+					if ( FSID == FSID_ADFS_D ) { sd.SectorLength = 0x04; }
+
+					sd.GAP3.Repeats = 22;
+					sd.GAP3.Value   = 0x4E;
+
+					sd.GAP3PLL.Repeats = 12;
+					sd.GAP3PLL.Value   = 0;
+			
+					sd.GAP3SYNC.Repeats = 3;
+					sd.GAP3SYNC.Value   = 0xA1;
+
+					sd.DAM = 0xFB;
+
+					memset( sd.Data, 0xE5, 1024 );
+
+					sd.GAP4.Repeats     = 40;
+					sd.GAP4.Value       = 0x4E;
+
+					tr.Sectors.push_back( sd );
+
+					std::wstring FormatMsg = L"Formatting track " + std::to_wstring( (QWORD) t ) + L" sector " + std::to_wstring( (QWORD) s );
+
+					SendMessage( hWnd, WM_FORMATPROGRESS, Percent( t, 80, s, 9, false ), (LPARAM) FormatMsg.c_str() );
+				}
+		
+				tr.GAP5 = 0x4E;
+
+				pSource->WriteTrack( tr );
+			}
+		}
+
+		pSource->EndFormat();
+	}
 
 	DWORD Sectors = pSource->PhysicalDiskSize / 256;
 
@@ -1262,6 +1382,10 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	if( pFSMap == nullptr )
 	{
 		pFSMap = new OldFSMap( pSource );
+
+		if ( FSID == FSID_ADFS_D ) { pFSMap->UseDFormat = true; }
+
+		pFSMap->FloppyFormat = FloppyFormat;
 	}
 
 	pFSMap->Spaces.clear();

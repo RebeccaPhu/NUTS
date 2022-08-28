@@ -71,6 +71,13 @@ public:
 
 		pDirectory = (Directory *) pADFSDirectory;
 
+		pFSMap->FloppyFormat = source.FloppyFormat;
+
+		if ( FSID == FSID_ADFS_D )
+		{
+			pFSMap->UseDFormat =  true;
+		}
+
 		pFSMap->ReadFSMap();
 
 		pADFSDirectory->DirSector    = source.pADFSDirectory->DirSector;

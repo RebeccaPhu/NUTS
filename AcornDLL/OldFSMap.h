@@ -40,6 +40,7 @@ protected:
 	int		BootOption;
 	unsigned short	DiscIdentifier;
 	int		NextEntry;
+
 	bool    FloppyFormat;
 	bool	UseDFormat;
 
