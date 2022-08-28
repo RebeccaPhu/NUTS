@@ -63,7 +63,9 @@ public:
 
 		ReadDiskData();
 
-		Flags = DS_SupportsTruncate;
+		Flags = DS_SupportsTruncate | DS_SupportsLLF | DS_AlwaysLLF;
+
+		Feedback = L"CPCEMU DSK Image";
 	}
 
 	~DSKDataSource(void)
@@ -86,6 +88,23 @@ public:
 	SectorIDSet GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted );
 
 	void StartFormat( DiskShape &shape );
+
+	bool Valid()
+	{
+		if ( pSource->Flags & DS_RawDevice )
+		{
+			/* DSK not supported on raw devices, e.g. CF cards, floppy drives... */
+			return false;
+		}
+
+		if ( !ValidDisk )
+		{
+			/* Not valid if the DSK file doesn't look like a DSK file */
+			return false;
+		}
+
+		return true;
+	}
 
 	void EndFormat( void )
 	{

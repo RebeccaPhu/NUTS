@@ -72,7 +72,7 @@ void DSKDataSource::ReadDiskData( void )
 
 	BYTE Buffer[ 256 ];
 
-	PhysicalDiskSize = 0;
+	PhysicalDiskSize = pSource->PhysicalDiskSize;
 
 	pSource->ReadRaw( 0, 256, Buffer );
 
@@ -89,6 +89,9 @@ void DSKDataSource::ReadDiskData( void )
 			Extended = true;
 		}
 	}
+
+	/* Reset this, and get it properly from the DSK blocks */
+	PhysicalDiskSize = 0;
 
 	/* Read the disk information block */
 	DiskData.DiskInfo.Tracks    = Buffer[ 0x30 ];
