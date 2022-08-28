@@ -41,7 +41,7 @@ FSDescriptor AppleFS[] = {
 	},
 	{
 		/* .FriendlyName = */ L"Macintosh MFS Hard Disk",
-		/* .PUID         = */ FSID_MFS,
+		/* .PUID         = */ FSID_MFS_HD,
 		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
 		512, 0,
 		(BYTE *) "IMG"
