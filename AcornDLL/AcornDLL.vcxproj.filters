@@ -123,6 +123,9 @@
     <ClCompile Include="ARMadeusTranslator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EmuHdrSource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AcornDFSDirectory.h">
@@ -204,6 +207,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ARMadeusTranslator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EmuHdrSource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

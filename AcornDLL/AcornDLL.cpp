@@ -30,6 +30,7 @@
 #include "RISCOSIcons.h"
 #include "../NUTS/IDE8Source.h"
 #include "../NUTS/OffsetDataSource.h"
+#include "EmuHdrSource.h"
 #include "ADFSDirectoryCommon.h"
 #include "../NUTS/NUTSError.h"
 #include "IconResolve.h"
@@ -980,22 +981,6 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_ERROR;
 		
-	case PC_GetOffsetLists:
-		{
-			cmd->OutParams[ 0 ].Value = 0;
-
-			FSIdentifier fsid = FSIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr );
-
-			// Some emulators add a 512 byte header to their hard disk images.
-			if ( ( fsid == FSID_ADFS_HO ) || ( fsid == FSID_ADFS_HN ) || ( fsid == FSID_ADFS_HP ) )
-			{
-				cmd->OutParams[ 0 ].Value = 2;
-				cmd->OutParams[ 1 ].Value = 0;
-				cmd->OutParams[ 2 ].Value = 0x200;
-			}
-		}
-		return NUTS_PLUGIN_SUCCESS;
-
 	case PC_ReportFileSystems:
 		if ( cmd->InParams[ 0 ].Value == 0 )
 		{
@@ -1309,6 +1294,41 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		}
 
 		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetWrapperCount:
+		{
+			cmd->OutParams[ 0 ].Value = 1U;
+		}
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_GetWrapperDescriptor:
+		{
+			static WrapperDescriptor desc;
+
+			desc.FriendlyName = L"Risc OS HD Emulation Header";
+			desc.Identifier   = WID_EMUHDR;
+
+			cmd->OutParams[ 0 ].pPtr = &desc;
+		}
+		return NUTS_PLUGIN_SUCCESS;
+
+	case PC_LoadWrapper:
+		{
+			WrapperIdentifier WID = (WrapperIdentifier) (WCHAR *) cmd->InParams[ 0 ].pPtr;
+			DataSource *pSource   = (DataSource *) cmd->InParams[ 1 ].pPtr;
+
+			DataSource *pWrap = nullptr;
+
+			if ( ( WID == WID_EMUHDR ) && ( pSource != nullptr ) )
+			{
+				pWrap = new EmuHdrSource( pSource );
+			}
+
+			cmd->OutParams[ 0 ].pPtr = pWrap;
+			
+		}
+		return NUTS_PLUGIN_SUCCESS;
+
 	}
 
 	return NUTS_PLUGIN_UNRECOGNISED;

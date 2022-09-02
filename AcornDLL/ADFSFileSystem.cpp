@@ -1354,26 +1354,57 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	DWORD Sectors = pSource->PhysicalDiskSize / 256;
 
+	// OK, but let's work it out properly.
+	DWORD ExpectedSectors = 0;
+
+	if ( FSID == FSID_ADFS_S  ) { ExpectedSectors = 40U  * 16U; }
+	if ( FSID == FSID_ADFS_M  ) { ExpectedSectors = 80U  * 16U; }
+	if ( FSID == FSID_ADFS_L  ) { ExpectedSectors = 160U * 16U; }
+	if ( FSID == FSID_ADFS_L2 ) { ExpectedSectors = 160U * 16U; }
+	if ( FSID == FSID_ADFS_D  ) { ExpectedSectors = 160U * 5U;  }
+
+	if ( ExpectedSectors != 0U ) { Sectors = min( Sectors, ExpectedSectors ); }
+
+	// There's something to do here. ADFS Old Map can't handle >512Mb, so cap the sector count.
+	if ( FSID == FSID_ADFS_D )
+	{
+		Sectors = min( 0x80000, Sectors ); // 1K sectors
+	}
+	else
+	{
+		Sectors = min( 0x200000, Sectors ); // 256 byte sectors
+	}
+
 	/* This will hold two sectors later, for setting up the disc name for D format discs */
 	BYTE SectorBuf[ 1024 ];
 
+	// Blank the first 16 sectors so that the auto detector doesn't get confused.
+	DWORD BlankSectors = 16U;
+
+	if ( FSID == FSID_ADFS_D ) { BlankSectors = 5U; }
+
 	if ( FT & FTF_Blank )
 	{
-		ZeroMemory( SectorBuf, 256 );
+		BlankSectors = Sectors;
+	}
 
-		for ( DWORD Sector=0; Sector < Sectors; Sector++ )
+	ZeroMemory( SectorBuf, 256 );
+
+	for ( DWORD Sector=0; Sector < BlankSectors; Sector++ )
+	{
+		if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
 		{
-			if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
-			{
-				return 0;
-			}
+			return 0;
+		}
 
-			if ( WriteTranslatedSector( Sector, SectorBuf, DSectorSize, pSource ) != DS_SUCCESS )
-			{
-				return -1;
-			}
+		if ( WriteTranslatedSector( Sector, SectorBuf, DSectorSize, pSource ) != DS_SUCCESS )
+		{
+			return -1;
+		}
 
-			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 0, 3, Sector, Sectors, false ), (LPARAM) EraseMsg );
+		if ( ( Sector % 100 ) == 0 )
+		{
+			PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 0, 3, Sector, BlankSectors, false ), (LPARAM) EraseMsg );
 		}
 	}
 

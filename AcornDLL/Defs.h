@@ -58,6 +58,8 @@
 #define FSID_ADFS_HP   L"RiscOS_HD+"
 #define FSID_SPRITE    L"RiscOS_SpritFile"
 
+#define WID_EMUHDR     L"RiscOSEmuHdr"
+
 typedef struct _FreeSpace {
 	long	StartSector;
 	long	Length;

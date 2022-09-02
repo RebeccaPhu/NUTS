@@ -68,14 +68,6 @@ FSHint ADFSEFileSystem::Offer( BYTE *Extension )
 
 	BYTE CheckByte;
 
-	if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP ) ) 
-	{
-		AlternateOffsets.clear();
-
-		/* Also try with a 512-byte offset, as used by some emulators */
-		AlternateOffsets.push_back( 0x200 );
-	}
-
 	if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_EP ) )
 	{
 		pSource->ReadSectorCHS( 0, 0, 0, SectorBuf );

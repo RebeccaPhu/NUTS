@@ -183,6 +183,7 @@
     <ClCompile Include="ARMadeusTranslator.cpp" />
     <ClCompile Include="BBCBASICTranslator.cpp" />
     <ClCompile Include="BBCFunctions.cpp" />
+    <ClCompile Include="EmuHdrSource.cpp" />
     <ClCompile Include="IconResolve.cpp" />
     <ClCompile Include="TranslatedSector.cpp" />
     <ClCompile Include="dllmain.cpp">
@@ -228,6 +229,7 @@
     <ClInclude Include="ARMadeusTranslator.h" />
     <ClInclude Include="BBCBASICTranslator.h" />
     <ClInclude Include="BBCFunctions.h" />
+    <ClInclude Include="EmuHdrSource.h" />
     <ClInclude Include="IconResolve.h" />
     <ClInclude Include="TranslatedSector.h" />
     <ClInclude Include="Defs.h" />
