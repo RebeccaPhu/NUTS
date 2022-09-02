@@ -70,6 +70,8 @@ public:
 	virtual void EndFormat( void ) { };
 	virtual int  CleanupFormat() { return 0; }
 
+	virtual bool Valid() { return true; }
+
 	__int64	PhysicalDiskSize;
 
 	int RefCount;

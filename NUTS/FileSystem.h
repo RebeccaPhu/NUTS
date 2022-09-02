@@ -42,8 +42,6 @@ class FileSystem
 {
 public:
 	FileSystem(DataSource *pDataSource) {
-		AlternateOffsets.clear();
-
 		TopicIcon = FT_MiscImage;
 
 		pSource	= pDataSource;
@@ -591,6 +589,13 @@ public:
 		FileOpsAction = AA_NONE;
 	}
 
+	virtual std::vector<WrapperIdentifier> RecommendWrappers()
+	{
+		static std::vector<WrapperIdentifier> none;
+
+		return none;
+	}
+
 	FSIdentifier FSID;
 	DWORD EnterIndex;
 	bool  IsRaw;
@@ -604,8 +609,6 @@ public:
 
 	HWND hMainWindow;
 	HWND hPaneWindow;
-
-	std::deque<DWORD> AlternateOffsets;
 
 	BYTEString PreferredArbitraryExtension;
 

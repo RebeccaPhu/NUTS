@@ -109,6 +109,16 @@ public:
 		return pDirectory->ReadDirectory();
 	}
 
+	virtual std::vector<WrapperIdentifier> RecommendWrappers()
+	{
+		static std::vector<WrapperIdentifier> dsk;
+
+		dsk.clear();
+		dsk.push_back( L"CPCEMU_DSK_Wrapper" ); 
+
+		return dsk;
+	}
+
 	virtual bool GetCPMHeader( NativeFile *pFile, BYTE *pHeader )   { return true; }
 	virtual int  ParseCPMHeader( NativeFile *pFile, BYTE *pHeader ) { return -1; }
 	virtual bool IncludeHeader( BYTE *pHeader ) { return true; }

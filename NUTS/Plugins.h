@@ -44,7 +44,6 @@ typedef std::map<FontIdentifier, std::wstring> NUTSFontNames;
 typedef std::map<FontIdentifier, std::wstring>::iterator FontName_iter;
 typedef std::map<FontIdentifier, PluginIdentifier> PluginFontMap;
 typedef std::map<FontIdentifier, PluginIdentifier> PluginFontMap_iter;
-typedef std::map< FSIdentifier, std::vector< QWORD > > FSImageOffsets;
 typedef std::map<ProviderIdentifier, std::vector<FSIdentifier>> ProviderFSMap;
 typedef std::map<PluginIdentifier, std::vector<FSIdentifier>> PluginFSMap;
 typedef std::map<WrapperIdentifier, PluginIdentifier> WrapperMap;
@@ -71,6 +70,7 @@ public:
 	FSHints FindFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *FindAndLoadFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *LoadFS( FSIdentifier FSID, DataSource *pSource );
+	FileSystem *LoadFSWithWrappers( FSIdentifier FSID, DataSource *pSource );
 	std::wstring ProviderName( ProviderIdentifier PRID );
 	std::wstring FSName( FSIdentifier FSID );
 	std::vector<FSMenu> GetFSMenu();
@@ -123,6 +123,7 @@ public:
 	}
 
 	WrapperList GetWrappers();
+	std::wstring GetWrapperName( WrapperIdentifier wrapper );
 
 	void SetPortConfiguration( void );
 
@@ -135,7 +136,6 @@ private:
 	NUTSFontList      FontList;
 	NUTSFontNames     FontNames;
 	PluginFontMap     FontMap;
-	FSImageOffsets    ImageOffsets;
 	PluginList        Plugins;
 	TranslatorList    Translators;
 	RootHookList      RootHooks;

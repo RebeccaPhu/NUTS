@@ -15,7 +15,6 @@ typedef enum _PluginCommandID {
 	PC_GetProviderDescriptor,
 	PC_ReportFileSystems,
 	PC_DescribeFileSystem,
-	PC_GetOffsetLists,
 	PC_CreateFileSystem,
 	PC_ReportImageExtensions,
 	PC_GetImageExtension,

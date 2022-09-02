@@ -34,6 +34,7 @@ typedef unsigned long long QWORD;
 #define TX_Null        L"NULL_Translator"
 #define Provider_Null  L"NULL_Provider"
 #define FONTID_PC437   L"Font_PC437"
+#define WID_Null       L"NULL_Wrapper"
 
 #define TUID_TEXT      L"Text_Translator"
 #define TUID_MOD_MUSIC L"MOD_Music_Translator"

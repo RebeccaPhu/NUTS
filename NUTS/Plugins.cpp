@@ -268,6 +268,7 @@ void CPlugins::LoadPlugin( WCHAR *plugin )
 		LoadRootHooks( &plugin );
 		LoadRootCommands( &plugin );
 		LoadFOPDirectoryTypes( &plugin );
+		LoadWrappers( &plugin );
 	}
 }
 
@@ -350,28 +351,6 @@ void CPlugins::GetFileSystemDetails( NUTSPlugin *plugin, BYTE pid, BYTE fsid, Pr
 	}
 
 	PluginFS[ PLID ].push_back( fs.FSID );
-
-	cmd.CommandID = PC_GetOffsetLists;
-	cmd.InParams[ 0 ].pPtr = (void *) fs.FSID.c_str();
-
-	if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
-	{
-		BYTE oc = (BYTE) cmd.OutParams[ 0 ].Value;
-		
-		if ( oc > 0 )
-		{
-			std::vector<QWORD> ol;
-
-			for ( BYTE o=0; o<oc; o++ )
-			{
-				DWORD ofs = cmd.OutParams[ 1 + o ].Value;
-
-				ol.push_back( ofs );
-			}
-
-			ImageOffsets[ fs.FSID ] = ol;
-		}
-	}
 }
 
 NUTSProviderList CPlugins::GetProviders( void )
@@ -514,11 +493,44 @@ FSHints CPlugins::FindFS( DataSource *pSource, NativeFile *pFile )
 
 FileSystem *CPlugins::FindAndLoadFS( DataSource *pSource, NativeFile *pFile )
 {
+	WrapperList wrappers = GetWrappers();
+
 	FSHints hints = FindFS( pSource, pFile );
+
+	for ( FSHints::iterator iHint = hints.begin(); iHint != hints.end(); iHint++ )
+	{
+		iHint->WrapperID = WID_Null;
+	}
+
+	for ( WrapperList::iterator iWrapper = wrappers.begin(); iWrapper != wrappers.end(); iWrapper++ )
+	{
+		DataSource *pWrappedSource = LoadWrapper( iWrapper->Identifier, pSource );
+
+		if ( !pWrappedSource->Valid() )
+		{
+			DS_RELEASE( pWrappedSource );
+
+			continue;
+		}
+
+		FSHints WrapperHints = FindFS( pWrappedSource, pFile );
+
+		for ( FSHints::iterator iHint = WrapperHints.begin(); iHint != WrapperHints.end(); iHint++ )
+		{
+			FSHint hint = *iHint;
+
+			hint.WrapperID = iWrapper->Identifier;
+
+			hints.push_back( hint );
+		}
+
+		DS_RELEASE( pWrappedSource );
+	}
 
 	WORD Confidence = 0;
 
-	FSIdentifier FSID = FS_Null;
+	FSIdentifier FSID           = FS_Null;
+	WrapperIdentifier WrapperID = WID_Null;
 	
 	FileSystem *newFS = nullptr;
 
@@ -528,12 +540,110 @@ FileSystem *CPlugins::FindAndLoadFS( DataSource *pSource, NativeFile *pFile )
 		{
 			Confidence = iHint->Confidence;
 			FSID       = iHint->FSID;
+			WrapperID  = iHint->WrapperID;
 		}
 	}
 
 	if ( FSID != FS_Null )
 	{
-		newFS = LoadFS( FSID, pSource );
+		if ( WrapperID != WID_Null )
+		{
+			DataSource *pWrappedSource = LoadWrapper( WrapperID, pSource );
+
+			if ( pWrappedSource != nullptr )
+			{
+				newFS = LoadFS( FSID, pWrappedSource );
+			}
+
+			DS_RELEASE( pWrappedSource );
+		}
+		else
+		{
+			newFS = LoadFS( FSID, pSource );
+		}
+	}
+
+	return newFS;
+}
+
+FileSystem *CPlugins::LoadFSWithWrappers( FSIdentifier FSID, DataSource *pSource )
+{
+	FileSystem *newFS = nullptr;
+
+	WrapperList wrappers = GetWrappers();
+
+	FileSystem *pLoadFS = LoadFS( FSID, pSource );
+
+	if ( pLoadFS == nullptr )
+	{
+		return nullptr;
+	}
+
+	FSHints hints;
+	
+	hints.push_back( pLoadFS->Offer( nullptr ) );
+
+	for ( FSHints::iterator iHint = hints.begin(); iHint != hints.end(); iHint++ )
+	{
+		iHint->WrapperID = WID_Null;
+	}
+
+	delete pLoadFS;
+
+	for ( WrapperList::iterator iWrapper = wrappers.begin(); iWrapper != wrappers.end(); iWrapper++ )
+	{
+		DataSource *pWrappedSource = LoadWrapper( iWrapper->Identifier, pSource );
+
+		if ( !pWrappedSource->Valid() )
+		{
+			DS_RELEASE( pWrappedSource );
+
+			continue;
+		}
+
+		pLoadFS = LoadFS( FSID, pWrappedSource );
+
+		FSHint hint = pLoadFS->Offer( nullptr );
+
+		hint.WrapperID = iWrapper->Identifier;
+
+		hints.push_back( hint );
+
+		DS_RELEASE( pWrappedSource );
+	}
+
+	WORD Confidence = 0;
+
+	FSIdentifier FSID           = FS_Null;
+	WrapperIdentifier WrapperID = WID_Null;
+	
+	for ( FSHints::iterator iHint = hints.begin(); iHint != hints.end(); iHint++ )
+	{
+		if ( iHint->Confidence > Confidence )
+		{
+			Confidence = iHint->Confidence;
+			FSID       = iHint->FSID;
+			WrapperID  = iHint->WrapperID;
+		}
+	}
+
+	if ( FSID != FS_Null )
+	{
+		if ( WrapperID != WID_Null )
+		{
+			DataSource *pWrappedSource = LoadWrapper( WrapperID, pSource );
+
+			if ( pWrappedSource != nullptr )
+			{
+				newFS = LoadFS( FSID, pWrappedSource );
+			}
+
+			DS_RELEASE( pWrappedSource );
+		}
+		else
+		{
+			newFS = LoadFS( FSID, pSource );
+		}
 	}
 
 	return newFS;
@@ -565,106 +675,41 @@ FileSystem *CPlugins::LoadFS( FSIdentifier FSID, DataSource *pSource )
 	{
 		if ( iter->FSID == FSID )
 		{
-			std::vector<QWORD> Offsets;
-
-			if ( ImageOffsets.find( FSID ) != ImageOffsets.end() )
-			{
-				Offsets = ImageOffsets[ FSID ];
-			}
-			else
-			{
-				Offsets.push_back( 0 );
-			}
-
-			/* Try all available offsets */
-			int Attempts = 0;
-
-			FSHint hint, rhint;
-
-			hint.Confidence = 0;
-
-			FileSystem *fav = nullptr;
 			FileSystem *pFS = nullptr;
 
-			std::vector<QWORD>::iterator iOffset = Offsets.begin();
+			NUTSPlugin *plugin = GetPlugin( FSID );
 
-			while ( iOffset != Offsets.end() )
+			if ( plugin != nullptr )
 			{
-				QWORD Offset = *iOffset;
+				PluginCommand cmd;
 
-				if ( Offset != 0 )
-				{
-					pAuxSource = new OffsetDataSource( (DWORD) Offset, pSource );
-
-					pCloneSource = pAuxSource;
-				}
-
-				pFS = nullptr;
+				cmd.CommandID = PC_CreateFileSystem;
+				cmd.InParams[ 0 ].pPtr = (void * ) FSID.c_str();
+				cmd.InParams[ 2 ].pPtr = (void *) pCloneSource;
 				
-				NUTSPlugin *plugin = GetPlugin( FSID );
-
-				if ( plugin != nullptr )
+				if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 				{
-					PluginCommand cmd;
+					pFS = (FileSystem *) cmd.OutParams[ 0 ].pPtr;
 
-					cmd.CommandID = PC_CreateFileSystem;
-					cmd.InParams[ 0 ].pPtr = (void * ) FSID.c_str();
-					cmd.InParams[ 2 ].pPtr = (void *) pCloneSource;
-				
-					if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
-					{
-						pFS = (FileSystem *) cmd.OutParams[ 0 ].pPtr;
-
-						OutputDebugStringA( "Created " );
-						OutputDebugString( FSName( FSID ).c_str() );
-						OutputDebugStringA( "\r\n" );
-					}
+					OutputDebugStringA( "Created " );
+					OutputDebugString( FSName( FSID ).c_str() );
+					OutputDebugStringA( "\r\n" );
 				}
-
-				if ( pFS == nullptr )
-				{
-					break;
-				}
-
-				pFS->FSID = FSID;
-
-				if ( pAuxSource != nullptr )
-				{
-					DS_RELEASE( pAuxSource );
-				}
-
-				rhint = pFS->Offer( nullptr );
-
-				if ( rhint.Confidence >= hint.Confidence )
-				{
-					if ( fav != nullptr )
-					{
-						delete fav;
-					}
-
-					fav = pFS;
-
-					hint.Confidence = rhint.Confidence;
-				}
-				else
-				{
-					delete pFS;
-				}
-
-				iOffset++;
 			}
 
-			pFS = fav;
-
-			if ( pFS != nullptr )
+			if ( pFS == nullptr )
 			{
-				pFS->ProcessFOP = _ProcessFOPData;
-				pFS->LoadFOPFS  = _LoadFOPFS;
+				break;
+			}
 
-				if ( pSource->Flags & DS_ReadOnly )
-				{
-					pFS->Flags |= FSF_ReadOnly;
-				}
+			pFS->FSID = FSID;
+
+			pFS->ProcessFOP = _ProcessFOPData;
+			pFS->LoadFOPFS  = _LoadFOPFS;
+
+			if ( pSource->Flags & DS_ReadOnly )
+			{
+				pFS->Flags |= FSF_ReadOnly;
 			}
 
 			return pFS;
@@ -1330,7 +1375,6 @@ void CPlugins::UnloadPlugins()
 	FontList.clear();
 	FontNames.clear();
 	FontMap.clear();
-	ImageOffsets.clear();
 	Plugins.clear();
 	Plugins.shrink_to_fit();
 	Translators.clear();
@@ -1411,6 +1455,23 @@ WrapperList CPlugins::GetWrappers()
 	}
 
 	return wrappers;
+}
+
+std::wstring CPlugins::GetWrapperName( WrapperIdentifier wrapper )
+{
+	std::wstring name = L"";
+
+	WrapperList wrappers = GetWrappers();
+
+	for ( Wrapper_iter iWrapper = wrappers.begin(); iWrapper != wrappers.end(); iWrapper++ )
+	{
+		if ( iWrapper->Identifier == wrapper )
+		{
+			name = iWrapper->FriendlyName;
+		}
+	}
+
+	return name;
 }
 
 DataSource *CPlugins::LoadWrapper( WrapperIdentifier wrapper, DataSource *pSource )

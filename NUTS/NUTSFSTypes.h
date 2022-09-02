@@ -62,6 +62,7 @@ typedef FSToolList::iterator FSToolIterator;
 typedef struct _FSHint {
 	FSIdentifier FSID;
 	WORD  Confidence;
+	WrapperIdentifier WrapperID;
 } FSHint;
 
 typedef std::vector<FSHint> FSHints;

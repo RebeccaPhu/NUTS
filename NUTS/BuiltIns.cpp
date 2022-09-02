@@ -166,7 +166,7 @@ FSHints BuiltIns::GetOffers( DataSource *pSource, NativeFile *pFile )
 	FSHints hints;
 
 	{ // ZIP files
-		FSHint hint = { FSID_ZIP, 0 };
+		FSHint hint = { FSID_ZIP, 0, WID_Null };
 
 		BYTE Buf[ 4 ];
 
