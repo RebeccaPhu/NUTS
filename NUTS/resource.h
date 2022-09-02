@@ -125,14 +125,22 @@
 #define IDB_PORT                        195
 #define IDI_PORT                        196
 #define IDD_INSERT_PORT                 197
+#define IDD_FWIZ_DIALOG2                198
+#define IDD_FWIZ_DIALOG1                199
+#define IDD_FWIZ_DIALOG3                200
 #define AFX_IDC_PRINT_DOCNAME           201
+#define IDD_FWIZ_DIALOG4                201
 #define AFX_IDC_PRINT_PRINTERNAME       202
+#define IDD_FWIZ_DIALOG5                202
 #define AFX_IDC_PRINT_PORTNAME          203
+#define IDD_FWIZ_DIALOG6                203
 #define AFX_IDC_PRINT_PAGENUM           204
+#define IDD_FWIZ_DIALOG7                204
 #define AFX_IDC_FONTPROP                1000
 #define IDC_LIST1                       1000
 #define IDC_WIZ_PROVIDER                1000
 #define IDC_PORTLIST                    1000
+#define IDC_WRAPPERS                    1000
 #define AFX_IDC_FONTNAMES               1001
 #define AFX_IDC_FONTSTYLES              1002
 #define AFX_IDC_FONTSIZES               1003
@@ -147,6 +155,7 @@
 #define IDC_TAB1                        1005
 #define IDC_ABOUTTABS                   1005
 #define IDC_VD_TABS                     1005
+#define IDC_FORMATWHICH                 1005
 #define AFX_IDC_SAMPLEBOX               1006
 #define IDC_FILE_YES                    1006
 #define IDC_FILE_NO                     1007
@@ -175,6 +184,8 @@
 #define IDC_WIZ_FORMAT                  1030
 #define IDC_SIZE_BYTES                  1030
 #define IDC_SIZE_HUMAN                  1031
+#define IDC_FSTYPE2                     1032
+#define IDC_WRAPPER                     1032
 #define IDC_SIZE_ORDINAL                1033
 #define IDC_IMAGE_SIZE                  1034
 #define IDC_FILENAME_FRAME              1035
@@ -185,6 +196,7 @@
 #define IDC_WIZ_SUCCESS                 1040
 #define IDC_FSPROMPT                    1041
 #define IDC_FSRESET                     1042
+#define IDC_WRAPPERPROMPT               1042
 #define IDC_TOOL_DESC                   1043
 #define IDC_TOOL_OPERATION              1044
 #define IDC_TOOL_ICON                   1045
@@ -252,7 +264,6 @@
 #define AFX_IDC_COLOR_YELLOW            1105
 #define IDC_CHOOSEDIRTYPE               1105
 #define AFX_IDC_COLOR_MAGENTA           1106
-#define IDC_BUTTON1                     1106
 #define IDC_REMOVE_PORT                 1106
 #define AFX_IDC_COLOR_CYAN              1107
 #define IDC_ADD_PORT                    1107
@@ -261,13 +272,22 @@
 #define AFX_IDC_COLOR_LIGHTGRAY         1109
 #define IDC_PLUGIN_SELECT               1109
 #define AFX_IDC_COLOR_DARKRED           1110
+#define IDC_NO_WRAPPER                  1110
 #define AFX_IDC_COLOR_DARKGREEN         1111
+#define IDC_SOME_WRAPPER                1111
 #define AFX_IDC_COLOR_DARKBLUE          1112
+#define IDC_FORMATWHAT                  1112
 #define AFX_IDC_COLOR_LIGHTBROWN        1113
+#define IDC_FORMATWRAPPER               1113
 #define AFX_IDC_COLOR_DARKMAGENTA       1114
+#define IDC_FORMATWHATTEXT              1114
 #define AFX_IDC_COLOR_DARKCYAN          1115
+#define IDC_FORMATWRAPPERTEXT           1115
 #define AFX_IDC_COLORPROP               1116
+#define IDC_FORMATWHICHTEXT             1116
 #define AFX_IDC_SYSTEMCOLORS            1117
+#define IDC_FWIZ_MESSAGE                1117
+#define IDC_FWIZ_SUCCESS                1118
 #define AFX_IDC_PROPNAME                1201
 #define AFX_IDC_PICTURE                 1202
 #define AFX_IDC_BROWSE                  1203
@@ -817,7 +837,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        198
 #define _APS_NEXT_COMMAND_VALUE         40080
-#define _APS_NEXT_CONTROL_VALUE         1110
+#define _APS_NEXT_CONTROL_VALUE         1119
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

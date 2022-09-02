@@ -200,8 +200,8 @@ void DrawLayout()
 	
 	DrawEdge( hDC, &rect, EDGE_ETCHED, BF_BOTTOM );
 
-	rect.top = 144;
-	rect.bottom = 144;
+	rect.top = 152;
+	rect.bottom = 152;
 	
 	DrawEdge( hDC, &rect, EDGE_ETCHED, BF_BOTTOM );
 
@@ -381,7 +381,12 @@ void ConfigureSpaceProps( HWND hwndDlg )
 		{
 			if ( pTargetFS->pSource->Feedback != L"" )
 			{
-				name += L" (" + pTargetFS->pSource->Feedback + L")";
+
+				std::wstring &wrapper = pTargetFS->pSource->Feedback;
+
+				::SendMessage( GetDlgItem( hwndDlg, IDC_WRAPPER ), WM_SETTEXT, 0, (LPARAM) wrapper.c_str() );
+				::ShowWindow( GetDlgItem( hwndDlg, IDC_WRAPPERPROMPT ), SW_SHOW );
+				::ShowWindow( GetDlgItem( hwndDlg, IDC_WRAPPER ), SW_SHOW );
 			}
 		}
 

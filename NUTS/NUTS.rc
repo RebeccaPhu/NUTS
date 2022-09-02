@@ -423,26 +423,28 @@ END
 // Dialog
 //
 
-IDD_SPACE_DIALOG DIALOGEX 0, 0, 199, 230
+IDD_SPACE_DIALOG DIALOGEX 0, 0, 222, 230
 STYLE DS_SETFONT | DS_3DLOOK | DS_FIXEDSYS | WS_CHILD | WS_BORDER | WS_SYSMENU
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     LTEXT           "Used space:",IDC_USED,26,102,41,11
     LTEXT           "Capacity:",IDC_CAPACITY,26,146,38,11
     LTEXT           "Free space:",IDC_FREE,26,116,38,13
-    LTEXT           "Type:",IDC_STATIC,7,53,23,10
-    LTEXT           "File system:",IDC_FSPROMPT,7,67,44,12
+    LTEXT           "Type:",IDC_STATIC,7,50,23,10
+    LTEXT           "File system:",IDC_FSPROMPT,7,64,44,9
     LTEXT           "102,400 bytes",IDC_USED_BYTES,67,102,97,10
     LTEXT           "552,960 bytes",IDC_FREE_BYTES,67,116,96,11
     LTEXT           "655,360 bytes",IDC_CAPACITY_BYTES,75,146,83,12
     RTEXT           "100 KB",IDC_USED_HUMAN,167,102,23,10
     RTEXT           "540 KB",IDC_FREE_HUMAN,165,116,25,10
     RTEXT           "640 KB",IDC_CAPACITY_HUMAN,165,146,25,11
-    LTEXT           "Disk Image",IDC_FILETYPE,49,53,143,8
-    LTEXT           "Unknown File System",IDC_FSTYPE,49,67,143,12
+    LTEXT           "Disk Image",IDC_FILETYPE,48,50,173,8
+    LTEXT           "Unknown File System",IDC_FSTYPE,48,64,167,9
     LTEXT           "File Size:",IDC_FILESIZE,26,159,38,11
     LTEXT           "655,360 bytes",IDC_SIZE_BYTES,75,159,83,12
     RTEXT           "640 KB",IDC_SIZE_HUMAN,165,159,25,11
+    LTEXT           "Wrapper:",IDC_WRAPPERPROMPT,7,78,44,9,NOT WS_VISIBLE
+    LTEXT           "Unknown Wrapper",IDC_WRAPPER,48,78,167,9,NOT WS_VISIBLE
 END
 
 IDD_BLOCKS_DIALOG DIALOGEX 0, 0, 202, 243
@@ -798,6 +800,93 @@ BEGIN
     COMBOBOX        IDC_PLUGIN_SELECT,186,23,123,21,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
+IDD_FWIZ_DIALOG2 DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Format Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Format Provider",IDC_STATIC,6,39,142,95
+    GROUPBOX        "Format",IDC_STATIC,163,39,142,95
+    LTEXT           "Select the image format provider and container format from the list below. Note that not all formats may be available for formatting the selected image or device.",IDC_STATIC,10,9,293,26
+    LISTBOX         IDC_WIZ_PROVIDER,11,49,132,80,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_WIZ_FORMAT,168,49,132,80,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_FWIZ_DIALOG1 DIALOGEX 0, 0, 317, 193
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Format Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Welcome to the Format Wizard",IDC_WIZ_WELCOME,115,15,194,27
+    LTEXT           "This wizard will guide you through the process of formatting an existing file or device to match a particular file system.",IDC_STATIC,115,45,202,100
+    LTEXT           "Press Next to begin.",IDC_STATIC,115,100,120,20
+END
+
+IDD_FWIZ_DIALOG3 DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Format Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "If desired, select the wrapper to use for the specified format. Generally, devices should not use a wrapper, but image files might. If you are uncertain, leave the recommended option unchanged.",-1,10,9,293,26
+    CONTROL         "Do not use a wrapper",IDC_NO_WRAPPER,"Button",BS_AUTORADIOBUTTON,8,44,299,15
+    CONTROL         "Use the following wrapper:",IDC_SOME_WRAPPER,"Button",BS_AUTORADIOBUTTON,8,60,302,12
+    LISTBOX         IDC_WRAPPERS,8,73,297,66,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_FWIZ_DIALOG4 DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Format Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Specify the operations to be carried out in the format process.",IDC_STATIC,10,9,293,12
+    CONTROL         "&Low Level Format (Recommended for devices)",IDC_LLF,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,22,286,15
+    CONTROL         "&Initialise (Recommended)",IDC_FINITIALISE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,84,141,15
+    CONTROL         "&Truncate",IDC_TRUNCATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,115,141,15
+    CONTROL         "&Blank Sectors",IDC_BLANKSECTS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,53,141,15
+    LTEXT           "Create low level structures on the physical media.",IDC_STATIC,18,35,282,10
+    LTEXT           "Write blank data to each available sector. This will make formatting time considerably longer.",IDC_STATIC,18,66,282,17
+    LTEXT           "Create the file system structures in the image or device.",IDC_STATIC,18,97,282,10
+    LTEXT           "Truncate the image file to only occupied areas (not appicable to devices).",IDC_STATIC,19,128,282,10
+END
+
+IDD_FWIZ_DIALOG5 DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Format Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "The following actions will be carried out:",IDC_STATIC,10,9,293,12
+    LTEXT           "Selected File System:",IDC_FORMATWHAT,10,30,297,14
+    LTEXT           "Selected Wrapper:",IDC_FORMATWRAPPER,10,53,297,14
+    LTEXT           "Actions to perform:",IDC_FORMATWHICH,10,76,297,14
+    LTEXT           "Filing Cabinet of Doom",IDC_FORMATWHATTEXT,17,41,290,11
+    LTEXT           "Snickers Wrapper",IDC_FORMATWRAPPERTEXT,17,65,290,11
+    LTEXT           "Static",IDC_FORMATWHICHTEXT,17,87,290,41
+    LTEXT           "Note: The selected file system may offer additional options when format starts.",IDC_STATIC,10,131,297,11
+END
+
+IDD_FWIZ_DIALOG6 DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Please wait while the source is formatte. If the source is large, this process may take a while.",IDC_STATIC,8,11,293,23
+    LTEXT           "Operation:",IDC_STATIC,11,96,40,9
+    CONTROL         "",IDC_CREATE_PROGRESS,"msctls_progress32",WS_BORDER,10,112,297,19
+    LTEXT           "Creating image....",IDC_CREATE_OP,52,96,227,10
+    RTEXT           "0%",IDC_CREATE_PERCENT,285,96,22,11
+END
+
+IDD_FWIZ_DIALOG7 DIALOGEX 0, 0, 317, 193
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Image created successfully",IDC_FWIZ_SUCCESS,115,15,202,20
+    LTEXT           "The wizard has successfully created the request container image, and created a default file system within it. If the container is dynamically sized then the resulting file may be empty (0 bytes long).",IDC_FWIZ_MESSAGE,115,45,202,38
+    LTEXT           "Press Finish to exit the wizard.",-1,115,100,120,20
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -810,9 +899,9 @@ BEGIN
     IDD_SPACE_DIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 192
+        RIGHTMARGIN, 215
         TOPMARGIN, 7
-        BOTTOMMARGIN, 223
+        BOTTOMMARGIN, 222
     END
 
     IDD_BLOCKS_DIALOG, DIALOG
@@ -1029,6 +1118,42 @@ BEGIN
         RIGHTMARGIN, 309
         TOPMARGIN, 7
         BOTTOMMARGIN, 57
+    END
+
+    IDD_FWIZ_DIALOG2, DIALOG
+    BEGIN
+    END
+
+    IDD_FWIZ_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_FWIZ_DIALOG3, DIALOG
+    BEGIN
+    END
+
+    IDD_FWIZ_DIALOG4, DIALOG
+    BEGIN
+    END
+
+    IDD_FWIZ_DIALOG5, DIALOG
+    BEGIN
+    END
+
+    IDD_FWIZ_DIALOG6, DIALOG
+    BEGIN
+    END
+
+    IDD_FWIZ_DIALOG7, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
     END
 END
 #endif    // APSTUDIO_INVOKED
