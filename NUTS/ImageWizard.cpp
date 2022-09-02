@@ -38,7 +38,7 @@ HANDLE hCreateThread = NULL;
 
 static DWORD dwthreadid;
 
-INT_PTR CALLBACK Wiz1WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+static INT_PTR CALLBACK Wiz1WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch ( uMsg )
 	{
 		case WM_INITDIALOG:
@@ -77,7 +77,7 @@ INT_PTR CALLBACK Wiz1WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 	return FALSE;
 }
 
-INT_PTR CALLBACK Wiz2WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+static INT_PTR CALLBACK Wiz2WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch ( uMsg )
 	{
 		case WM_NOTIFY:
@@ -187,7 +187,7 @@ INT_PTR CALLBACK Wiz2WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 	return FALSE;
 }
 
-INT_PTR CALLBACK Wiz3WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+static INT_PTR CALLBACK Wiz3WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch ( uMsg )
 	{
 		case WM_INITDIALOG:
@@ -543,7 +543,7 @@ INT_PTR CALLBACK Wiz5WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 	return FALSE;
 }
 
-int CALLBACK WizPageProc( HWND hwndDlg, UINT uMsg, LPARAM lParam )
+static int CALLBACK WizPageProc( HWND hwndDlg, UINT uMsg, LPARAM lParam )
 {
 	hWizard = hwndDlg;
 

@@ -824,7 +824,7 @@ unsigned int DoEnterAs( FSAction *pVars )
 
 	if ( pVars->FSID != FS_Null )
 	{
-		FileSystem	*newFS = FSPlugins.LoadFS( pVars->FSID, pSource );
+		FileSystem	*newFS = FSPlugins.LoadFSWithWrappers( pVars->FSID, pSource );
 
 		DS_RELEASE( pSource );
 
