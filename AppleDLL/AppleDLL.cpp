@@ -113,6 +113,13 @@ bool TranslateISOContent( FOPData *fop )
 
 			BYTE DLen = fop->pXAttr[ s + 2 ];
 
+			if ( DLen == 0U )
+			{
+				// Eh?
+
+				break;
+			}
+
 			if (  ( fop->pXAttr[ s ] == 'B' ) && ( fop->pXAttr[ s + 1 ] == 'A' ) )
 			{
 				// The BA block is malformed. DLen is unreliable.
