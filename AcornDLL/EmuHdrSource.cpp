@@ -3,6 +3,7 @@
 
 EmuHdrSource::EmuHdrSource( DataSource *pSource ) : OffsetDataSource( 0x200, pSource )
 {
+	Feedback = L"RISC OS Emulation Header";
 }
 
 

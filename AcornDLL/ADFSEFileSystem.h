@@ -141,6 +141,23 @@ public:
 		return CloneFS;
 	}
 
+	std::vector<WrapperIdentifier> RecommendWrappers()
+	{
+		static std::vector<WrapperIdentifier> dsk;
+
+		dsk.clear();
+
+		if ( ! (pSource->Flags & DS_RawDevice) )
+		{
+			if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP )  || ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_H ) )
+			{
+				dsk.push_back( WID_EMUHDR ); 
+			}
+		}
+
+		return dsk;
+	}
+
 private:
 	TargetedFileFragments FindSpace( DWORD Length, bool ForDir );
 

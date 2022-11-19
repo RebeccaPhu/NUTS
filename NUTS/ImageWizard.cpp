@@ -22,6 +22,8 @@ NUTSProviderList Providers;
 FormatList   Formats;
 FormatDesc   ChosenFS;
 
+static WrapperIdentifier ChosenWrapper = WID_Null;
+
 EncodingIdentifier Encoding;
 
 std::vector<FormatDesc> FSList;
@@ -30,7 +32,8 @@ EncodingEdit *pFilename = nullptr;
 EncodingEdit *pExtn     = nullptr;
 FileSystem   *pContain  = nullptr;
 
-bool FormatSet = false;
+bool FormatSet  = false;
+bool WrapperSet = false;
 
 HWND   hProgressWnd  = NULL;
 HWND   hSizeWnd      = NULL;
@@ -180,6 +183,153 @@ static INT_PTR CALLBACK Wiz2WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 				}
 
 				return FALSE;
+			}
+			break;
+	}
+
+	return FALSE;
+}
+
+static INT_PTR CALLBACK WizWindowProcWrapper(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch ( uMsg )
+	{
+		case WM_NOTIFY:
+			{
+				NMHDR *pNM = (NMHDR *) lParam;
+
+				if ( pNM->code ==  PSN_SETACTIVE )
+				{
+					FormatSet = true;
+
+					::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, (LPARAM) PSWIZB_BACK | PSWIZB_NEXT );
+
+					WrapperList list = FSPlugins.GetWrappers();
+
+					DataSource *pSource = new ImageDataSource( L"" );
+
+					FileSystem *pFS = FSPlugins.LoadFS( ChosenFS.FSID, pSource );
+
+					DS_RELEASE( pSource );
+
+					std::vector<WrapperIdentifier> recs = pFS->RecommendWrappers();
+
+					delete pFS;
+
+					::SendMessage( GetDlgItem( hwndDlg, IDC_WRAPPERS ), LB_RESETCONTENT, NULL, NULL );
+
+					if ( recs.size() == 0U )
+					{
+						CheckRadioButton( hwndDlg, IDC_NO_WRAPPER, IDC_SOME_WRAPPER, IDC_NO_WRAPPER );
+
+						SetWindowText( GetDlgItem( hwndDlg, IDC_NO_WRAPPER ), L"No wrapper (recommended)" );
+					}
+					else
+					{
+						CheckRadioButton( hwndDlg, IDC_NO_WRAPPER, IDC_SOME_WRAPPER, IDC_SOME_WRAPPER );
+
+						SetWindowText( GetDlgItem( hwndDlg, IDC_NO_WRAPPER ), L"No wrapper" );
+					}
+
+					int i = 0;
+					int s = -1;
+					int c = -1;
+
+					for ( WrapperList::iterator iWrapper = list.begin(); iWrapper != list.end(); iWrapper++ )
+					{
+						std::wstring WrapperName = iWrapper->FriendlyName;
+
+						for ( std::vector<WrapperIdentifier>::iterator iRec = recs.begin(); iRec != recs.end(); iRec++ )
+						{
+							if ( *iRec == iWrapper->Identifier )
+							{
+								WrapperName += L" (Recommended)";
+
+								s = i;
+							}
+						}
+
+						if ( ( iWrapper->FriendlyName == ChosenWrapper ) && (WrapperSet) )
+						{
+							c = i;
+						}
+
+						::SendMessage( GetDlgItem( hwndDlg, IDC_WRAPPERS ), LB_ADDSTRING, NULL, (LPARAM) WrapperName.c_str() );
+
+						i++;
+					}
+
+					if ( c != -1 )
+					{
+						::SendMessage( GetDlgItem( hwndDlg, IDC_WRAPPERS ), LB_SETCURSEL, c, NULL );
+
+						::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, (LPARAM) PSWIZB_BACK | PSWIZB_NEXT );
+
+						CheckRadioButton( hwndDlg, IDC_NO_WRAPPER, IDC_SOME_WRAPPER, IDC_SOME_WRAPPER );
+					}
+					else if ( s != -1 )
+					{
+						::SendMessage( GetDlgItem( hwndDlg, IDC_WRAPPERS ), LB_SETCURSEL, s, NULL );
+
+						::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, (LPARAM) PSWIZB_BACK | PSWIZB_NEXT );
+					}
+				}
+
+				if ( pNM->code == PSN_QUERYCANCEL )
+				{
+//					ConcludeTitle   = L"Format Wizard Cancelled";
+//					ConcludeMessage = L"The wizard was cancelled before the process could start. No changes have been made to the data source.";
+
+					SetWindowLongPtr( hwndDlg, DWLP_MSGRESULT, (LONG_PTR) TRUE );
+
+					::PostMessage( hWizard, PSM_SETCURSEL, (WPARAM) 6, (LPARAM) NULL );
+
+					return TRUE;
+				}
+			}
+			break;
+
+		case WM_COMMAND:
+			{
+				switch ( LOWORD( wParam ) )
+				{
+				case IDC_WRAPPERS:
+					{
+						if ( HIWORD( wParam ) == LBN_SELCHANGE )
+						{
+							WORD Index = (WORD) ::SendMessage( GetDlgItem( hwndDlg, IDC_WIZ_PROVIDER ), LB_GETCURSEL, 0, 0 );
+
+							if ( Index != 0xFFFF )
+							{
+								WrapperList Wrappers = FSPlugins.GetWrappers();
+							
+								ChosenWrapper = Wrappers[ Index ].Identifier;
+							
+								CheckRadioButton( hwndDlg, IDC_NO_WRAPPER, IDC_SOME_WRAPPER, IDC_SOME_WRAPPER );
+
+								::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, (LPARAM) PSWIZB_BACK | PSWIZB_NEXT );
+							}
+						}
+					}
+					break;
+
+				case IDC_NO_WRAPPER:
+					::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, (LPARAM) PSWIZB_BACK | PSWIZB_NEXT );
+				case IDC_SOME_WRAPPER:
+					{
+						if ( HIWORD( wParam ) == BN_CLICKED )
+						{
+							::SendMessage( GetDlgItem( hwndDlg, IDC_WRAPPERS ), LB_SETCURSEL, (WPARAM) -1, 0 );
+
+							ChosenWrapper = WID_Null;
+						}
+						
+						if ( LOWORD( wParam ) == IDC_SOME_WRAPPER )
+						{
+							::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, (LPARAM) PSWIZB_BACK );
+						}
+					}
+					break;
+				}
 			}
 			break;
 	}
@@ -401,6 +551,16 @@ unsigned int __stdcall CreationThread(void *param)
 
 	if ( pSource != nullptr )
 	{
+		// Add a wrapper if needed
+		if ( ChosenWrapper != WID_Null )
+		{
+			DataSource *pWrapper = FSPlugins.LoadWrapper( ChosenWrapper, pSource );
+
+			DS_RELEASE( pSource );
+
+			pSource = pWrapper;
+		}
+
 		FileSystem *FS = (FileSystem *) FSPlugins.LoadFS( ChosenFS.FSID, pSource );
 
 		DS_RELEASE( pSource );
@@ -475,7 +635,7 @@ unsigned int __stdcall CreationThread(void *param)
 	/* This is here purely to make the "and I'm spent" moment visible to the user */
 	Sleep( 2000 );
 
-	::SendMessage( hWizard, PSM_SETCURSEL, (WPARAM) 4, (LPARAM) NULL );
+	::SendMessage( hWizard, PSM_SETCURSEL, (WPARAM) 5, (LPARAM) NULL );
 
 	return Result;
 }
@@ -560,7 +720,7 @@ int ImageWiz_Handler( AppAction Action )
 
 	Encoding = *pEncoding;
 
-	PROPSHEETPAGE psp[ 5 ];
+	PROPSHEETPAGE psp[ 6 ];
 
 	PROPSHEETHEADER psh;
 
@@ -589,36 +749,48 @@ int ImageWiz_Handler( AppAction Action )
 	psp[2].dwSize      = sizeof(PROPSHEETPAGE);
 	psp[2].dwFlags     = PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE | PSP_DEFAULT;
 	psp[2].hInstance   = hInst;
-	psp[2].pszTemplate = MAKEINTRESOURCE(IDD_WIZ_DIALOG3);
+	psp[2].pszTemplate = MAKEINTRESOURCE(IDD_FWIZ_DIALOG3);
 	psp[2].pszIcon     = 0;
-	psp[2].pfnDlgProc  = Wiz3WindowProc;
+	psp[2].pfnDlgProc  = WizWindowProcWrapper;
 	psp[2].lParam      = 0;
 	psp[2].pfnCallback = NULL;
-	psp[2].pszTitle    = L"New Image Wizard";
-	psp[2].pszHeaderTitle = L"Specify size and filename";
-	psp[2].pszHeaderSubTitle = L"Specify the size of the image and the filename for the container file."; 
+	psp[2].pszTitle    = L"Format Wizard";
+	psp[2].pszHeaderTitle = L"Select Wrapper";
+	psp[2].pszHeaderSubTitle = L"Optionally specific a wrapper to use for the selected format."; 
 
 	psp[3].dwSize      = sizeof(PROPSHEETPAGE);
 	psp[3].dwFlags     = PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE | PSP_DEFAULT;
 	psp[3].hInstance   = hInst;
-	psp[3].pszTemplate = MAKEINTRESOURCE(IDD_WIZ_DIALOG4);
+	psp[3].pszTemplate = MAKEINTRESOURCE(IDD_WIZ_DIALOG3);
 	psp[3].pszIcon     = 0;
-	psp[3].pfnDlgProc  = Wiz4WindowProc;
+	psp[3].pfnDlgProc  = Wiz3WindowProc;
 	psp[3].lParam      = 0;
 	psp[3].pfnCallback = NULL;
 	psp[3].pszTitle    = L"New Image Wizard";
-	psp[3].pszHeaderTitle = L"Creating image";
-	psp[3].pszHeaderSubTitle = L"The specified container image is being created."; 
+	psp[3].pszHeaderTitle = L"Specify size and filename";
+	psp[3].pszHeaderSubTitle = L"Specify the size of the image and the filename for the container file."; 
 
 	psp[4].dwSize      = sizeof(PROPSHEETPAGE);
-	psp[4].dwFlags     = PSP_HIDEHEADER; 
+	psp[4].dwFlags     = PSP_USEHEADERTITLE | PSP_USEHEADERSUBTITLE | PSP_DEFAULT;
 	psp[4].hInstance   = hInst;
-	psp[4].pszTemplate = MAKEINTRESOURCE(IDD_WIZ_DIALOG5);
+	psp[4].pszTemplate = MAKEINTRESOURCE(IDD_WIZ_DIALOG4);
 	psp[4].pszIcon     = 0;
-	psp[4].pfnDlgProc  = Wiz5WindowProc;
+	psp[4].pfnDlgProc  = Wiz4WindowProc;
 	psp[4].lParam      = 0;
 	psp[4].pfnCallback = NULL;
 	psp[4].pszTitle    = L"New Image Wizard";
+	psp[4].pszHeaderTitle = L"Creating image";
+	psp[4].pszHeaderSubTitle = L"The specified container image is being created."; 
+
+	psp[5].dwSize      = sizeof(PROPSHEETPAGE);
+	psp[5].dwFlags     = PSP_HIDEHEADER; 
+	psp[5].hInstance   = hInst;
+	psp[5].pszTemplate = MAKEINTRESOURCE(IDD_WIZ_DIALOG5);
+	psp[5].pszIcon     = 0;
+	psp[5].pfnDlgProc  = Wiz5WindowProc;
+	psp[5].lParam      = 0;
+	psp[5].pfnCallback = NULL;
+	psp[5].pszTitle    = L"New Image Wizard";
 
 	psh.dwSize         = sizeof(PROPSHEETHEADER);
 	psh.dwFlags        = PSH_WATERMARK | PSH_PROPSHEETPAGE | PSH_USECALLBACK | PSH_WIZARD97 | PSH_HEADER;
@@ -626,7 +798,7 @@ int ImageWiz_Handler( AppAction Action )
 	psh.hInstance      = hInst;
 	psh.pszbmWatermark = MAKEINTRESOURCE( IDB_WIZ_MARK );
 	psh.pszCaption     = (LPWSTR) L"New Image Wizard";
-	psh.nPages         = 5;
+	psh.nPages         = 6;
 	psh.nStartPage     = 0;
 	psh.ppsp           = (LPCPROPSHEETPAGE) &psp;
 	psh.pfnCallback    = WizPageProc;

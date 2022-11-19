@@ -172,6 +172,23 @@ public:
 		return CloneFS;
 	}
 
+	std::vector<WrapperIdentifier> RecommendWrappers()
+	{
+		static std::vector<WrapperIdentifier> dsk;
+
+		dsk.clear();
+
+		if ( ! (pSource->Flags & DS_RawDevice) )
+		{
+			if ( ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_H ) )  // H8 is for 8-bit IDE raw devices only.
+			{
+				dsk.push_back( WID_EMUHDR ); 
+			}
+		}
+
+		return dsk;
+	}
+
 private:
 	ADFSDirectory *pADFSDirectory;
 

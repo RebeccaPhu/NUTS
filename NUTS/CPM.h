@@ -114,7 +114,11 @@ public:
 		static std::vector<WrapperIdentifier> dsk;
 
 		dsk.clear();
-		dsk.push_back( L"CPCEMU_DSK_Wrapper" ); 
+
+		if ( ! (pSource->Flags & DS_RawDevice) )
+		{
+			dsk.push_back( L"CPCEMU_DSK_Wrapper" ); 
+		}
 
 		return dsk;
 	}
