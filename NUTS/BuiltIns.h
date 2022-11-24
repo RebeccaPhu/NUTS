@@ -32,7 +32,7 @@ public:
 	void *LoadTranslator( TXIdentifier TUID );
 
 	BuiltInProviderList GetBuiltInProviders();
-	FormatList          GetBuiltinFormatList( ProviderIdentifier PUID );
+	FormatList          GetBuiltinFormatList( ProviderIdentifier PUID, bool ExcludeUnimageable = false );
 	BuiltInMenuList     GetBuiltInMenuList();
 
 	FSHints GetOffers( DataSource *pSource, NativeFile *pFile );

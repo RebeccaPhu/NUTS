@@ -420,7 +420,7 @@ INT_PTR CALLBACK ImagingWizChooseFS(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
 							{
 								FSList.clear();
 
-								Formats = FSPlugins.GetFormats( Providers[ Index ].ProviderID );
+								Formats = FSPlugins.GetFormats( Providers[ Index ].ProviderID, true );
 
 								for ( FormatDesc_iter iFormat = Formats.begin(); iFormat != Formats.end(); iFormat++ )
 								{
@@ -1065,6 +1065,11 @@ INT_PTR CALLBACK ImagingWizExecute(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 			if ( pNM->code ==  PSN_SETACTIVE )
 			{
+				::SendMessage( hWizard, PSM_SETWIZBUTTONS, 0, 0 );
+
+				SendMessage(GetDlgItem(hwndDlg, IDC_IMAGING_PROGRESS), PBM_SETRANGE32, 0, 100);
+				SendMessage(GetDlgItem(hwndDlg, IDC_IMAGING_PROGRESS), PBM_SETPOS, 0, 0);
+
 				IsImaging    = false;
 				IsFormatting = false;
 

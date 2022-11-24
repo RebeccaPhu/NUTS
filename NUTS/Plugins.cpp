@@ -380,11 +380,11 @@ FSDescriptorList CPlugins::GetFilesystems( ProviderIdentifier ProviderID )
 	return l;
 }
 
-FormatList CPlugins::GetFormats( ProviderIdentifier ProviderID )
+FormatList CPlugins::GetFormats( ProviderIdentifier ProviderID, bool ExcludeUnimageable )
 {
 	FormatList Formats;
 
-	Formats = NUTSBuiltIns.GetBuiltinFormatList( ProviderID );
+	Formats = NUTSBuiltIns.GetBuiltinFormatList( ProviderID, ExcludeUnimageable );
 
 	if ( Formats.size() > 0 )
 	{
@@ -411,7 +411,17 @@ FormatList CPlugins::GetFormats( ProviderIdentifier ProviderID )
 
 				Format.PreferredExtension = iFS->FavouredExtension;
 
-				Formats.push_back( Format );
+				if ( ExcludeUnimageable )
+				{
+					if ( iFS->Flags & FSF_Imaging )
+					{
+						Formats.push_back( Format );
+					}
+				}
+				else
+				{
+					Formats.push_back( Format );
+				}
 			}
 		}
 	}

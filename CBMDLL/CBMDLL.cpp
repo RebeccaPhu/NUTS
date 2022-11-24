@@ -47,21 +47,21 @@ FSDescriptor CBMFS[] = {
 	{
 		/* .FriendlyName = */ L"D64 Commodore Disk Image",
 		/* .PUID         = */ FSID_D64,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Imaging,
 		256, 1700,
 		(BYTE *) "D64"
 	},
 	{
 		/* .FriendlyName = */ L"T64 Commodore Tape Image",
 		/* .PUID         = */ FSID_T64,
-		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_DynamicSize | FSF_Reorderable | FSF_Prohibit_Nesting,
+		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_DynamicSize | FSF_Reorderable | FSF_Prohibit_Nesting | FSF_Imaging,
 		0, 0,
 		(BYTE *) "T64"
 	},
 	{
 		/* .FriendlyName = */ L"IEC-ATA Hard Disk",
 		/* .PUID         = */ FSID_IECATA,
-		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Formats_Raw | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors,
+		/* .Flags        = */ FSF_Creates_Image | FSF_Formats_Image | FSF_Formats_Raw | FSF_Supports_Dirs | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_UseSectors | FSF_Imaging,
 		512, 0,
 		(BYTE *) "IMG"
 	}

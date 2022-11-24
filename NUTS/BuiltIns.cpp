@@ -100,7 +100,7 @@ BuiltInProviderList BuiltIns::GetBuiltInProviders()
 	return pvl;
 }
 
-FormatList BuiltIns::GetBuiltinFormatList( ProviderIdentifier PUID )
+FormatList BuiltIns::GetBuiltinFormatList( ProviderIdentifier PUID, bool ExcludeUnimageable )
 {
 	FormatList Formats;
 
@@ -122,6 +122,11 @@ FormatList BuiltIns::GetBuiltinFormatList( ProviderIdentifier PUID )
 
 	if ( PUID == ZIP_PROVIDER )
 	{
+		if ( ExcludeUnimageable )
+		{
+			return Formats;
+		}
+
 		FormatDesc Format;
 
 		Format.Flags  = ZIPFlags;

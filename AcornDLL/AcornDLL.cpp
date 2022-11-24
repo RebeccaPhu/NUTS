@@ -73,14 +73,14 @@ FSDescriptor BBCMicroFS[] = {
 	{
 		/* .FriendlyName = */ L"Acorn DFS (40T)",
 		/* .PUID         = */ FSID_DFS_40,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_FixedSize | FSF_Imaging,
 		256, 256U * 10U * 40U,
 		(BYTE *) "SSD"
 	},
 	{
 		/* .FriendlyName = */ L"Acorn DFS (80T)",
 		/* .PUID         = */ FSID_DFS_80,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_FixedSize | FSF_Imaging,
 		256, 256U * 10U * 80U,
 		(BYTE *) "SSD"
 	},
@@ -94,35 +94,35 @@ FSDescriptor BBCMicroFS[] = {
 	{
 		/* .FriendlyName = */ L"Acorn ADFS 160K 40T SS (S)",
 		/* .PUID         = */ FSID_ADFS_S,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		256, 256U * 16U * 40U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS 320K 80T SS (M)",
 		/* .PUID         = */ FSID_ADFS_M,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		256, 256U * 16U * 80U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS 640K 80T DS (L)",
 		/* .PUID         = */ FSID_ADFS_L,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		256, 256U * 16U * 160U,
 		(BYTE *) "ADL"
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (Old Map)",
 		/* .PUID         = */ FSID_ADFS_H,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors | FSF_Imaging,
 		256, 0,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"Acorn ADFS Hard Disk (8 Bit IDE)",
 		/* .PUID         = */ FSID_ADFS_H8,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors | FSF_Imaging,
 		256, 0,
 		(BYTE *) "ADF"
 	}
@@ -134,70 +134,70 @@ FSDescriptor RISCOSFS[] = {
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 640K (L)",
 		/* .PUID         = */ FSID_ADFS_L2,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		1024, 1024U * 5U * 160U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 800K (D)",
 		/* .PUID         = */ FSID_ADFS_D,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		1024, 1024U * 5U * 160U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 800K (E)",
 		/* .PUID         = */ FSID_ADFS_E,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		1024, 1024U * 5U * 160U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 800K (E+)",
 		/* .PUID         = */ FSID_ADFS_EP,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		1024, 1024U * 5U * 160U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (F)",
 		/* .PUID         = */ FSID_ADFS_F,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		1024, 1024U * 10U * 160U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 1.6M (F+)",
 		/* .PUID         = */ FSID_ADFS_FP,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		1024, 1024U * 10U * 160U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS 3.2M (G)",
 		/* .PUID         = */ FSID_ADFS_G,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_FixedSize | FSF_Imaging,
 		1024, 1024U * 20U * 160U,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (Old Map)",
 		/* .PUID         = */ FSID_ADFS_HO,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors | FSF_Imaging,
 		256, 0,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (New Map)",
 		/* .PUID         = */ FSID_ADFS_HN,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors | FSF_Imaging,
 		256, 0,
 		(BYTE *) "ADF"
 	},
 	{
 		/* .FriendlyName = */ L"RISC OS ADFS Hard Disk (Long Names)",
 		/* .PUID         = */ FSID_ADFS_HP,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors | FSF_Imaging,
 		256, 0,
 		(BYTE *) "ADF"
 	},

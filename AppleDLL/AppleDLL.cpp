@@ -35,14 +35,14 @@ FSDescriptor AppleFS[] = {
 	{
 		/* .FriendlyName = */ L"Macintosh MFS 400K",
 		/* .PUID         = */ FSID_MFS,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_FixedSize | FSF_UseSectors,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_FixedSize | FSF_UseSectors | FSF_Imaging,
 		512, 80 * 10 * 512,
 		(BYTE *) "IMG"
 	},
 	{
 		/* .FriendlyName = */ L"Macintosh MFS Hard Disk",
 		/* .PUID         = */ FSID_MFS_HD,
-		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_Supports_Dirs | FSF_ArbitrarySize | FSF_UseSectors | FSF_Imaging,
 		512, 0,
 		(BYTE *) "IMG"
 	},

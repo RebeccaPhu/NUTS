@@ -80,7 +80,7 @@ public:
 
 	NUTSProviderList  GetProviders( void );
 	FSDescriptorList  GetFilesystems( ProviderIdentifier ProviderID );
-	FormatList        GetFormats( ProviderIdentifier ProviderID );
+	FormatList        GetFormats( ProviderIdentifier ProviderID, bool ExcludeUnimageable = false );
 	TranslatorList    GetTranslators( ProviderIdentifier PVID, DWORD Type );
 	RootHookList      GetRootHooks();
 	RootCommandSet    GetRootCommands();
