@@ -429,6 +429,26 @@ FormatList CPlugins::GetFormats( ProviderIdentifier ProviderID, bool ExcludeUnim
 	return Formats;
 }
 
+FSDescriptor CPlugins::GetFSDesc( FSIdentifier FSID )
+{
+	FSDescriptor fs;
+
+	fs.FSID  = FSID_NONE;
+	fs.Flags = 0;
+
+	FSDescriptor_iter iFS;
+
+	for ( iFS = FSDescriptors.begin(); iFS != FSDescriptors.end(); iFS++ )
+	{
+		if ( iFS->FSID == FSID )
+		{
+			return *iFS;
+		}
+	}
+
+	return fs;
+}
+
 TranslatorList CPlugins::GetTranslators( ProviderIdentifier PVID, DWORD Type )
 {
 	TranslatorList Xlators;

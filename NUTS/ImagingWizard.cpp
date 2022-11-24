@@ -284,8 +284,21 @@ INT_PTR CALLBACK ImagingWizAutoDetect(HWND hwndDlg, UINT uMsg, WPARAM wParam, LP
 				{
 					if ( GotItRight )
 					{
-						// Yay!
-						::PostMessage( hWizard, PSM_SETCURSEL, (WPARAM) 4, (LPARAM) NULL );
+						// Yay! - but wait.
+						FSDescriptor fs = FSPlugins.GetFSDesc( pDetectFS->FSID );
+
+						if ( ( fs.Flags & FSF_Imaging ) == 0 )
+						{
+							// Ah. perhaps not then.
+							MessageBox( hwndDlg, L"The File System detected is not imageable.\r\n\r\nYou may manually select an imageable file system instead.",
+								L"NUTS Imaging Wizard", MB_ICONSTOP | MB_OK );
+
+							::PostMessage( hWizard, PSM_SETCURSEL, (WPARAM) 3, (LPARAM) NULL );
+						}
+						else
+						{
+							::PostMessage( hWizard, PSM_SETCURSEL, (WPARAM) 4, (LPARAM) NULL );
+						}
 					}
 					else
 					{

@@ -78,6 +78,7 @@ public:
 	void *LoadTranslator( TXIdentifier TUID );
 	DataSource *LoadWrapper( WrapperIdentifier wrapper, DataSource *pSource );
 
+	FSDescriptor      GetFSDesc( FSIdentifier FSID );
 	NUTSProviderList  GetProviders( void );
 	FSDescriptorList  GetFilesystems( ProviderIdentifier ProviderID );
 	FormatList        GetFormats( ProviderIdentifier ProviderID, bool ExcludeUnimageable = false );
