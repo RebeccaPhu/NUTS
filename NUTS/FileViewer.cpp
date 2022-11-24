@@ -547,6 +547,24 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 
 					break;
 
+				case IDM_IMAGING:
+					{
+						if ( GetSelectionCount() != 1 ) { break; }
+
+						AppAction Action;
+
+						Action.Action    = AA_IMAGING;
+						Action.FS        = FS;
+						Action.hWnd      = hWnd;
+						Action.Selection = GetSelection();
+						Action.Pane	     = this;
+						Action.pData     = NULL;
+
+						QueueAction( Action );
+					}
+
+					break;
+
 				case IDM_PROPERTIES:
 					{
 						AppAction Action;
@@ -2960,13 +2978,19 @@ void CFileViewer::DoContextMenu( void )
 		{
 			EnableMenuItem( hSubMenu, IDM_FORMAT,  MF_BYCOMMAND | MF_DISABLED );
 		}
+
+		if ( ! ( TheseFiles[ GetSelectedIndex() ].Flags & FF_Imaging ) )
+		{
+			EnableMenuItem( hSubMenu, IDM_IMAGING,  MF_BYCOMMAND | MF_DISABLED );
+		}
 	}
 
 	if ( ( Selected == 0 ) || ( Selected > 1 ) )
 	{
-		EnableMenuItem( hSubMenu, IDM_FORMAT,  MF_BYCOMMAND | MF_DISABLED );
-		EnableMenuItem( hSubMenu, IDM_ENTER,   MF_BYCOMMAND | MF_DISABLED );
-		EnableMenuItem( hSubMenu, IDM_ENTERAS, MF_BYCOMMAND | MF_DISABLED );
+		EnableMenuItem( hSubMenu, IDM_FORMAT,   MF_BYCOMMAND | MF_DISABLED );
+		EnableMenuItem( hSubMenu, IDM_ENTER,    MF_BYCOMMAND | MF_DISABLED );
+		EnableMenuItem( hSubMenu, IDM_ENTERAS,  MF_BYCOMMAND | MF_DISABLED );
+		EnableMenuItem( hSubMenu, IDM_IMAGING,  MF_BYCOMMAND | MF_DISABLED );
 	}
 
 	if ( Displaying == DisplayLargeIcons ) { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_CHECKED ); } else { CheckMenuItem( hSubMenu, IDM_LARGEICONS, MF_BYCOMMAND | MF_UNCHECKED ); }

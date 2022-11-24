@@ -73,6 +73,7 @@ public:
 	FileSystem *LoadFSWithWrappers( FSIdentifier FSID, DataSource *pSource );
 	std::wstring ProviderName( ProviderIdentifier PRID );
 	std::wstring FSName( FSIdentifier FSID );
+	std::wstring FSExt( FSIdentifier FSID );
 	std::vector<FSMenu> GetFSMenu();
 	void *LoadTranslator( TXIdentifier TUID );
 	DataSource *LoadWrapper( WrapperIdentifier wrapper, DataSource *pSource );

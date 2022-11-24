@@ -69,6 +69,10 @@ int	WindowsDirectory::ReadDirectory(void) {
 			file.Flags |= FF_Directory;
 			file.Icon   = FT_Directory;
 		}
+		else
+		{
+			file.Flags |= FF_Imaging;
+		}
 
 		size_t dp = Filename.find_last_of( L"." ) ;
 

@@ -86,13 +86,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions);PBS_MARQUEE 8</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);libmikmod32.lib</AdditionalDependencies>
@@ -106,6 +107,9 @@
     <PostBuildEvent>
       <Command>copy /y $(SolutionDir)\..\mikmod\libmikmod64.dll $(OutDir)\libmikmod.dll</Command>
     </PostBuildEvent>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -116,6 +120,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib;wbemuuid.lib;comsuppw.lib;libmikmod64.lib</AdditionalDependencies>
@@ -128,17 +133,21 @@
     <PostBuildEvent>
       <Command>copy /y $(SolutionDir)\..\mikmod\libmikmod64.dll $(OutDir)\libmikmod.dll</Command>
     </PostBuildEvent>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);PBS_MARQUEE 8</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -151,17 +160,21 @@
     <PreBuildEvent>
       <Command>echo $(SolutionDir)</Command>
     </PreBuildEvent>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions);PBS_MARQUEE 8</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -173,6 +186,9 @@
     <PreBuildEvent>
       <Command>echo $(SolutionDir)</Command>
     </PreBuildEvent>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\TZXConfig\TZXHardware.cpp" />
@@ -206,6 +222,7 @@
     <ClCompile Include="IconButton.cpp" />
     <ClCompile Include="IconRatio.cpp" />
     <ClCompile Include="ImageWizard.cpp" />
+    <ClCompile Include="ImagingWizard.cpp" />
     <ClCompile Include="ISO9660Directory.cpp" />
     <ClCompile Include="ISO9660FileSystem.cpp" />
     <ClCompile Include="ISOECC.cpp" />
@@ -300,6 +317,7 @@
     <ClInclude Include="HEXDumpTranslator.h" />
     <ClInclude Include="IconButton.h" />
     <ClInclude Include="IconRatio.h" />
+    <ClInclude Include="ImagingWizard.h" />
     <ClInclude Include="ISO9660Directory.h" />
     <ClInclude Include="ISO9660FileSystem.h" />
     <ClInclude Include="ISODefs.h" />

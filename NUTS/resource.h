@@ -136,6 +136,15 @@
 #define IDD_FWIZ_DIALOG6                203
 #define AFX_IDC_PRINT_PAGENUM           204
 #define IDD_FWIZ_DIALOG7                204
+#define IDD_IMAGING_WIZ_BEGIN           205
+#define IDD_IMAGING_WIZ_RESULT          206
+#define IDD_IMAGING_WIZ_SCANFS          207
+#define IDD_IMAGING_WIZ_SELECTFS        208
+#define IDD_IMAGING_WIZ_AUTODETECT      209
+#define IDD_IMAGING_WIZ_TARGET          210
+#define IDD_IMAGING_WIZ_WRAPPER         211
+#define IDD_IMAGING_WIZ_SUMMARY         212
+#define IDD_IMAGING_WIZ_PROGRESS        213
 #define AFX_IDC_FONTPROP                1000
 #define IDC_LIST1                       1000
 #define IDC_WIZ_PROVIDER                1000
@@ -184,7 +193,6 @@
 #define IDC_WIZ_FORMAT                  1030
 #define IDC_SIZE_BYTES                  1030
 #define IDC_SIZE_HUMAN                  1031
-#define IDC_FSTYPE2                     1032
 #define IDC_WRAPPER                     1032
 #define IDC_SIZE_ORDINAL                1033
 #define IDC_IMAGE_SIZE                  1034
@@ -288,6 +296,27 @@
 #define AFX_IDC_SYSTEMCOLORS            1117
 #define IDC_FWIZ_MESSAGE                1117
 #define IDC_FWIZ_SUCCESS                1118
+#define IDC_IMAGING_WIZ_AUTO            1119
+#define IDC_IMAGING_WIZ_MANUAL          1120
+#define IDC_IMAGING_WIZ_AUTODETECT      1121
+#define IDC_IMAGING_WIZ_DETECTED        1122
+#define IDC_IMAGING_WIZ_FSCORRECT       1123
+#define IDC_RADIO2                      1124
+#define IDC_IMAGING_WIZ_WRONG           1124
+#define IDC_IMAGING_WIZ_CORRECT_PROMPT  1125
+#define IDC_WIZ_RW_FRAME                1126
+#define IDC_IMAGING_WIZ_CHOOSE_FILE     1127
+#define IDC_IMAGING_WIZ_FILENAME        1128
+#define IDC_IMAGING_WIZ_WRITEIMAGE      1129
+#define IDC_IMAGING_WIZ_READIMAGE       1130
+#define IDC_IMAGING_WIZ_WHATFS          1131
+#define IDC_IMAGING_WIZ_WHAT_WRAPPER    1132
+#define IDC_IMAGING_WIZ_WHATACTIONS     1133
+#define IDC_IMAGING_WIZ_RESULT_TITLE    1134
+#define IDC_IMAGING_WIZ_RESULT_DESC     1135
+#define IDC_IMAGING_OP                  1136
+#define IDC_IMAGING_PERCENT             1137
+#define IDC_IMAGING_PROGRESS            1138
 #define AFX_IDC_PROPNAME                1201
 #define AFX_IDC_PICTURE                 1202
 #define AFX_IDC_BROWSE                  1203
@@ -433,6 +462,9 @@
 #define ID_OPTIONS_METADATAANDSIDECARS  40077
 #define ID_OPTIONS_SIDECARSANYWAY       40078
 #define ID_OPTIONS_PORTCONFIGURATION    40079
+#define ID__IMAGING                     40080
+#define IDM_IMAGING                     40081
+#define ID__IMAGING40082                40082
 #define IDM_VIEW_BBCSCREEN              41001
 #define IDM_VIEW_ZXSSCREEN              41002
 #define IDM_VIEW_BBCBASIC               42001
@@ -836,8 +868,8 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        198
-#define _APS_NEXT_COMMAND_VALUE         40080
-#define _APS_NEXT_CONTROL_VALUE         1119
+#define _APS_NEXT_COMMAND_VALUE         40083
+#define _APS_NEXT_CONTROL_VALUE         1139
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

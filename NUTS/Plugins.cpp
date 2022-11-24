@@ -878,6 +878,32 @@ std::wstring CPlugins::FSName( FSIdentifier FSID )
 	return name;
 }
 
+std::wstring CPlugins::FSExt( FSIdentifier FSID )
+{
+	std::wstring BuiltInFSExt = NUTSBuiltIns.FSExt( FSID );
+
+	if ( BuiltInFSExt != L"" )
+	{
+		return BuiltInFSExt;
+	}
+
+	std::wstring ext = L"Img";
+
+	FSDescriptor_iter fi;
+
+	for ( fi = FSDescriptors.begin(); fi != FSDescriptors.end(); fi++ )
+	{
+		if ( fi->FSID == FSID )
+		{
+			ext = UString( fi->FavouredExtension );
+
+			return ext;
+		}
+	}
+
+	return ext;
+}
+
 std::wstring CPlugins::FontName( FontIdentifier ReqFontID )
 {
 	static WCHAR *PC437Name = L"PC437";

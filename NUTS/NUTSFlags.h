@@ -25,7 +25,7 @@ typedef enum _FSFlags {
 	FSF_Reorderable      = 0x00004000, /* Files in the filesystem are orderable, and order is (probably) important. Allow the user to re-order files */
 	FSF_Exports_Sidecars = 0x00008000, /* When exporting files to Windows FSes, the filesystem can export a sidecar file. Also, import/from. */
 	FSF_Prohibit_Nesting = 0x00010000, /* The Filesystem cannot allow another filesystem image inside of it. Chiefly used for special FSes like Root and AcornDSD. */
-	/*                     0x00020000, /* Obsolete. Formerly FSF_USES_DSK: The filesystem is represented in image form using the CPCEMU DSK format */
+	FSF_Imaging          = 0x00020000, /* The Filesystem can participate in the Imaging wizard */
 	FSF_No_Quick_Format  = 0x00040000, /* When formatting the filesystem do not offer the quick-format option */
 	FSF_Uses_Extensions  = 0x00080000, /* Files have extensions */
 	FSF_Fake_Extensions  = 0x00100000, /* File extensions are provided visually by the originating system, but they are not changeable by the user */

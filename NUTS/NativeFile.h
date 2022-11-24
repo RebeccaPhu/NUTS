@@ -48,6 +48,7 @@ typedef enum _FileFlags {
 	FF_NotRenameable    = 0x00000008, /* FS item cannot be renamed */
 	FF_Audio            = 0x00000010, /* FS item contains renderable audio */
 	FF_AvoidSidecar     = 0x00000020, /* Target FS has stored aux data separately, so a normally required sidecar is now not required */
+	FF_Imaging          = 0x00000040, /* FS item is suitable for use with the imaging wizard */
 	FF_Pseudo           = 0x40000000, /* FS item is a pseudo item (e.g. Drive in AcornDSD) */
 } FileFlags;
 

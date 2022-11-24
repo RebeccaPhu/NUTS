@@ -59,6 +59,7 @@ public:
 		hCancelFormat = CreateEvent( NULL, TRUE, FALSE, NULL );
 		hCancelFree   = CreateEvent( NULL, TRUE, FALSE, NULL );
 		hToolEvent    = CreateEvent( NULL, TRUE, FALSE, NULL );
+		hImageEvent   = CreateEvent( NULL, TRUE, FALSE, NULL );
 
 		Flags      = 0;
 
@@ -77,6 +78,7 @@ public:
 		CloseHandle( hCancelFormat );
 		CloseHandle( hCancelFree );
 		CloseHandle( hToolEvent );
+		CloseHandle( hImageEvent );
 
 		free( pBlockMap );
 
@@ -596,6 +598,18 @@ public:
 		return none;
 	}
 
+	virtual int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget )
+	{
+		return 0;
+	}
+
+	virtual int StopImaging( void )
+	{
+		SetEvent( hImageEvent );
+
+		return 0;
+	}
+
 	FSIdentifier FSID;
 	DWORD EnterIndex;
 	bool  IsRaw;
@@ -619,6 +633,7 @@ protected:
 	HANDLE hCancelFormat;
 	HANDLE hCancelFree;
 	HANDLE hToolEvent;
+	HANDLE hImageEvent;
 
 	BYTE *pBlockMap;
 

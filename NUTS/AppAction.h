@@ -5,7 +5,6 @@
 #include "NUTSUI.h"
 
 #include "FileViewer.h"
-#include "FormatWizard.h"
 
 #include <deque>
 

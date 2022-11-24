@@ -77,6 +77,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "New &Folder\tCtrl+N",         IDM_NEWFOLDER
         MENUITEM "&New Image Here ...",         IDM_NEWIMAGE
+        MENUITEM "Ima&ging ...",                IDM_IMAGING
         MENUITEM SEPARATOR
         POPUP "Display As"
         BEGIN
@@ -96,6 +97,7 @@ BEGIN
         MENUITEM "&Enter\tEnter",               IDM_ENTER
         MENUITEM "&Format ...\tCtrl+F",         IDM_FORMAT
         MENUITEM "&Properties\tCtrl+R",         IDM_PROPERTIES
+        MENUITEM "Ima&ging ...",                IDM_IMAGING
         MENUITEM SEPARATOR
         POPUP "Display As"
         BEGIN
@@ -584,7 +586,7 @@ IDD_LICENSE DIALOGEX 0, 0, 383, 254
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_LICENSE,"RichEdit20W",ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | ES_NUMBER | WS_BORDER | WS_VSCROLL | WS_TABSTOP,7,7,369,240
+    CONTROL         "",IDC_LICENSE,"RichEdit20W",WS_BORDER | WS_VSCROLL | WS_TABSTOP | 0x2844,7,7,369,240
 END
 
 IDD_WIZ_FORMAT DIALOGEX 0, 0, 318, 154
@@ -616,7 +618,7 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,415,238,50,14
     CONTROL         "I accept the terms of this simple license agreement, and understand my responsibilities and the disclaimers.",IDC_LICACCEPT,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,225,458,10
-    CONTROL         "",IDC_LICTEXT2,"RichEdit20W",ES_MULTILINE | ES_AUTOHSCROLL | WS_BORDER | WS_VSCROLL | WS_TABSTOP,7,7,458,213
+    CONTROL         "",IDC_LICTEXT2,"RichEdit20W",WS_BORDER | WS_VSCROLL | WS_TABSTOP | 0x84,7,7,458,213
 END
 
 IDD_HOWPROPS DIALOGEX 0, 0, 359, 94
@@ -887,6 +889,121 @@ BEGIN
     LTEXT           "Press Finish to exit the wizard.",-1,115,100,120,20
 END
 
+IDD_IMAGING_WIZ_BEGIN DIALOGEX 0, 0, 317, 193
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Imaging Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Welcome to the Imaging Wizard",IDC_WIZ_WELCOME,115,15,202,20
+    LTEXT           "This wizard will guide you through the process of reading or writing an image file to or from an imageable device or file.",IDC_STATIC,115,45,202,100
+    LTEXT           "Press Next to begin.",IDC_STATIC,115,100,120,20
+END
+
+IDD_IMAGING_WIZ_RESULT DIALOGEX 0, 0, 317, 193
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Imaging Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Imaging Wizard Result",IDC_IMAGING_WIZ_RESULT_TITLE,115,15,202,20
+    LTEXT           "The wizard has done something, good or bad",IDC_IMAGING_WIZ_RESULT_DESC,115,45,202,38
+    LTEXT           "Press Finish to exit the wizard.",IDC_STATIC,115,100,120,20
+END
+
+IDD_IMAGING_WIZ_SCANFS DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "In order to read or write an image, NUTS need to know the file system of the selected object.",IDC_STATIC,11,9,293,19
+    GROUPBOX        "How do you want to specify the file system?",IDC_FILENAME_FRAME,47,75,211,44
+    LTEXT           "You can either have NUTS try to automatically detect the format, or select it from a list. If the autodetection gives the wrong answer, you can still select the right file system from a list.",IDC_STATIC,11,31,285,27
+    CONTROL         "Automatically detect the file system (recommended)",IDC_IMAGING_WIZ_AUTO,
+                    "Button",BS_AUTORADIOBUTTON,54,88,200,11
+    CONTROL         "Manually select the file system from a list",IDC_IMAGING_WIZ_MANUAL,
+                    "Button",BS_AUTORADIOBUTTON,54,102,201,10
+END
+
+IDD_IMAGING_WIZ_SELECTFS DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Format Provider",IDC_STATIC,6,39,142,95
+    GROUPBOX        "Format",IDC_STATIC,163,39,142,95
+    LTEXT           "Select the image format provider and container format that has been used for the object that will be used for imaging.",IDC_STATIC,10,9,293,26
+    LISTBOX         IDC_WIZ_PROVIDER,11,49,132,80,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_WIZ_FORMAT,168,49,132,80,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_IMAGING_WIZ_AUTODETECT DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "NUTS has detected the file system in the selected object as follows:",IDC_STATIC,8,11,293,23
+    CONTROL         "",IDC_IMAGING_WIZ_AUTODETECT,"msctls_progress32",WS_BORDER,10,50,289,19
+    GROUPBOX        "Detect file system",IDC_STATIC,6,38,298,37
+    LTEXT           "Some Kind of File System Here",IDC_IMAGING_WIZ_DETECTED,12,55,285,12,NOT WS_VISIBLE
+    GROUPBOX        "Is this file system correct?",IDC_IMAGING_WIZ_CORRECT_PROMPT,6,85,295,43,NOT WS_VISIBLE
+    CONTROL         "Yes, this is the correct file system",IDC_IMAGING_WIZ_FSCORRECT,
+                    "Button",BS_AUTORADIOBUTTON | NOT WS_VISIBLE,12,98,199,10
+    CONTROL         "No, let me select it manually from a list",IDC_IMAGING_WIZ_WRONG,
+                    "Button",BS_AUTORADIOBUTTON | NOT WS_VISIBLE,12,111,202,11
+END
+
+IDD_IMAGING_WIZ_TARGET DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Imaging Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Select the file to use as the source for a write operation, or the target for a read operation. If reading an image, you can specify the wrapper on the next screen.",IDC_STATIC,11,73,293,19
+    GROUPBOX        "Container File Name",IDC_FILENAME_FRAME,11,95,265,29
+    GROUPBOX        "Read or write the image?",IDC_WIZ_RW_FRAME,12,23,264,42
+    LTEXT           "Select whether to read to the image file, or write the image file to the imageable object.",IDC_STATIC,11,9,293,13
+    LTEXT           "No File Selected",IDC_IMAGING_WIZ_FILENAME,17,105,199,14,0,WS_EX_STATICEDGE
+    PUSHBUTTON      "Select ...",IDC_IMAGING_WIZ_CHOOSE_FILE,223,105,48,14
+    CONTROL         "Write the selected image file to the imageable object",IDC_IMAGING_WIZ_WRITEIMAGE,
+                    "Button",BS_AUTORADIOBUTTON,17,35,240,12
+    CONTROL         "Read the imageable object into the seleted image file",IDC_IMAGING_WIZ_READIMAGE,
+                    "Button",BS_AUTORADIOBUTTON,17,49,237,12
+END
+
+IDD_IMAGING_WIZ_WRAPPER DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Imaging Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "If desired, select the wrapper to use for the specified format. Generally, devices should not use a wrapper, but image files might. If you are uncertain, leave the recommended option unchanged.",-1,10,9,293,26
+    CONTROL         "Do not use a wrapper",IDC_NO_WRAPPER,"Button",BS_AUTORADIOBUTTON,8,44,299,15
+    CONTROL         "Use the following wrapper:",IDC_SOME_WRAPPER,"Button",BS_AUTORADIOBUTTON,8,60,302,12
+    LISTBOX         IDC_WRAPPERS,8,73,297,66,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_IMAGING_WIZ_SUMMARY DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Imaging Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "The following actions will be carried out:",-1,10,9,293,12
+    LTEXT           "Selected File System:",IDC_FORMATWHAT,10,30,297,14
+    LTEXT           "Selected Wrapper:",IDC_FORMATWRAPPER,10,53,297,14
+    LTEXT           "Actions to perform:",IDC_FORMATWHICH,10,76,297,14
+    LTEXT           "Filing Cabinet of Doom",IDC_IMAGING_WIZ_WHATFS,17,41,290,11
+    LTEXT           "Snickers Wrapper",IDC_IMAGING_WIZ_WHAT_WRAPPER,17,65,290,11
+    LTEXT           "Static",IDC_IMAGING_WIZ_WHATACTIONS,17,87,290,41
+END
+
+IDD_IMAGING_WIZ_PROGRESS DIALOGEX 0, 0, 317, 143
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image Wizard"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Please wait while the imagingh process is undertaken. If the data source is large, this process may take a while.",-1,8,11,293,23
+    CONTROL         "",IDC_IMAGING_PROGRESS,"msctls_progress32",WS_BORDER,10,112,297,19
+    LTEXT           "Creating image....",IDC_IMAGING_OP,10,96,269,10
+    RTEXT           "0%",IDC_IMAGING_PERCENT,285,96,22,11
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1154,6 +1271,51 @@ BEGIN
         RIGHTMARGIN, 309
         TOPMARGIN, 7
         BOTTOMMARGIN, 175
+    END
+
+    IDD_IMAGING_WIZ_BEGIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_IMAGING_WIZ_RESULT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 309
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 175
+    END
+
+    IDD_IMAGING_WIZ_SCANFS, DIALOG
+    BEGIN
+    END
+
+    IDD_IMAGING_WIZ_SELECTFS, DIALOG
+    BEGIN
+    END
+
+    IDD_IMAGING_WIZ_AUTODETECT, DIALOG
+    BEGIN
+    END
+
+    IDD_IMAGING_WIZ_TARGET, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 139
+    END
+
+    IDD_IMAGING_WIZ_WRAPPER, DIALOG
+    BEGIN
+    END
+
+    IDD_IMAGING_WIZ_SUMMARY, DIALOG
+    BEGIN
+    END
+
+    IDD_IMAGING_WIZ_PROGRESS, DIALOG
+    BEGIN
     END
 END
 #endif    // APSTUDIO_INVOKED

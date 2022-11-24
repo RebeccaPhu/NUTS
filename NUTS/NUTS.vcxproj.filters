@@ -330,6 +330,9 @@
     <ClCompile Include="PortManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ImagingWizard.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -661,6 +664,9 @@
     </ClInclude>
     <ClInclude Include="PortManager.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImagingWizard.h">
+      <Filter>Header Files\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

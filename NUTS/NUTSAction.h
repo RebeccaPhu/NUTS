@@ -12,6 +12,7 @@ typedef enum _ActionID {
 	AA_SET_FSPROPS = 7,
 	AA_INSTALL     = 8,
 	AA_DELETE_FS   = 9,
+	AA_IMAGING     = 10,
 } ActionID;
 
 #endif

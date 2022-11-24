@@ -4,6 +4,7 @@
 #include "FileOps.h"
 #include "PropsPage.h"
 #include "ImageWizard.h"
+#include "ImagingWizard.h"
 #include "AppAction.h"
 
 std::deque<AppAction> AppActions; // Actions to perform.
@@ -72,6 +73,11 @@ unsigned int __stdcall ActionThread(void *param) {
 
 				case AA_DELETE_FS:
 					delete Action.FS;
+
+					break;
+
+				case AA_IMAGING:
+					ImagingWiz_Handler( Action );
 
 					break;
 

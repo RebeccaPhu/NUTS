@@ -41,6 +41,7 @@ public:
 
 	std::wstring ProviderName( ProviderIdentifier PRID );
 	std::wstring FSName( FSIdentifier FSID );
+	std::wstring FSExt( FSIdentifier FSID );
 
 	WrapperList GetWrappers();
 

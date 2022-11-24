@@ -411,7 +411,7 @@ static INT_PTR CALLBACK Wiz3WindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 							}
 						}
 
-						if ( ( iWrapper->FriendlyName == ChosenWrapper ) && (WrapperSet) )
+						if ( ( iWrapper->Identifier == ChosenWrapper ) && (WrapperSet) )
 						{
 							c = i;
 						}

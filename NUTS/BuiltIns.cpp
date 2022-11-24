@@ -310,6 +310,24 @@ std::wstring BuiltIns::FSName( FSIdentifier FSID )
 	return L"";
 }
 
+std::wstring BuiltIns::FSExt( FSIdentifier FSID )
+{
+	if( FSID == FSID_ZIP )
+	{
+		return L"ZIP";
+	}
+	else if ( FSID == FSID_ISO9660 )
+	{
+		return L"ISO";
+	}
+	else if ( FSID == FSID_ISOHS )
+	{
+		return L"ISO";
+	}
+
+	return L"";
+}
+
 BuiltInMenuList BuiltIns::GetBuiltInMenuList()
 {
 	BuiltInMenuList fsmenu;

@@ -77,7 +77,7 @@ int	RootDirectory::ReadDirectory(void) {
 
 		if (DType == DRIVE_REMOVABLE)
 		{
-			if ( file.Filename[ 0 ] >= 'B' ) 
+			if ( file.Filename[ 0 ] > 'B' ) 
 			{
 				file.Icon = FT_MemCard;
 			}
@@ -108,6 +108,8 @@ int	RootDirectory::ReadDirectory(void) {
 			file.Attributes[ 2 ] = ROOT_OBJECT_RAW_DEVICE;
 
 			file.Attributes[ 1 ] = PhysicalDrive( (char *) file.Filename );
+
+			file.Flags |= FF_Imaging;
 		}
 
 		// Now we need to see if this is a raw device. Windows will recognise CDROM0 as being
@@ -158,7 +160,7 @@ int	RootDirectory::ReadDirectory(void) {
 		file.Filename = BYTEString( (BYTE*) AString( (WCHAR *) FriendlyPath.c_str() ), FriendlyPath.length() );
 
 		file.fileID     = FileID++;
-		file.Flags      = FF_NotRenameable;
+		file.Flags      = FF_NotRenameable | FF_Imaging;
 		file.FSFileType = FT_ROOT;
 		file.EncodingID = ENCODING_ASCII;
 		file.Icon       = FT_HardDisc;
