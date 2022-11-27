@@ -60,6 +60,19 @@ QWORD DataSource::ResolveSector( DWORD Head, DWORD Track, DWORD Sector )
 {
 	QWORD RawOffset = 0;
 
+	DWORD RealSector = Sector;
+
+	/* If TrackInterleave isn't 0, then the RealSector shifts */
+	if ( MediaShape.TrackInterleave != 0U )
+	{
+		// Note - this vastly assumes that we're dealing with an image. A datasource for real device should:
+		// a) Not process an interleave on reads/writes
+		// b) Only process and inteleave on formats
+		// The formatting API dictates that sector order is decided by the FileSystem anyway, so this should
+		// never be an issue on real hardware.
+		RealSector = ( Sector + ( Track * MediaShape.TrackInterleave ) ) % MediaShape.Sectors;
+	}
+
 	if ( !ComplexDiskShape )
 	{
 		/* Perform a simple resolution */
@@ -72,14 +85,14 @@ QWORD DataSource::ResolveSector( DWORD Head, DWORD Track, DWORD Sector )
 
 			RawOffset += TrackSize * Head;
 
-			RawOffset += MediaShape.SectorSize * Sector;
+			RawOffset += MediaShape.SectorSize * RealSector;
 		}
 		else
 		{
 			/* Track 0, Head 1 follows Track N, head 0 */
 			RawOffset = ( MediaShape.Tracks * TrackSize ) * Head;
 
-			RawOffset += ( Track * TrackSize ) + ( Sector * MediaShape.SectorSize );
+			RawOffset += ( Track * TrackSize ) + ( RealSector * MediaShape.SectorSize );
 		}
 	}
 	else
