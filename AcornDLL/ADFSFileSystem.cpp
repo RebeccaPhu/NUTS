@@ -986,6 +986,7 @@ void ADFSFileSystem::SetShape(void)
 
 		shape.Heads            = 2;
 		shape.InterleavedHeads = false;
+		shape.TrackInterleave  = 0;
 		shape.Sectors          = 16;
 		shape.SectorSize       = 256;
 		shape.Tracks           = 80;
@@ -1256,12 +1257,13 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	{
 		DiskShape shape;
 
-		shape.Heads           = 1;
-		shape.LowestSector    = 0;
-		shape.Sectors         = 16;
-		shape.SectorSize      = 0x100;
-		shape.TrackInterleave = 0;
-		shape.Tracks          = 80;
+		shape.Heads            = 1;
+		shape.LowestSector     = 0;
+		shape.Sectors          = 16;
+		shape.SectorSize       = 0x100;
+		shape.TrackInterleave  = 0;
+		shape.Tracks           = 80;
+		shape.InterleavedHeads = false;
 
 		// Some perturbations here - Note HD types cannot LLF!
 		if ( FSID == FSID_ADFS_S )
@@ -1281,6 +1283,7 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 			shape.SectorSize = 0x400;
 		}
 
+		pSource->SetDiskShape( shape );
 		pSource->StartFormat( shape );
 
 		/* Low-level format */
@@ -1659,8 +1662,8 @@ int ADFSFileSystem::RunTool( BYTE ToolNum, HWND ProgressWnd )
 		::SendMessage( ProgressWnd, WM_FSTOOL_CURRENTOP, 0, (LPARAM) L"Finished" );
 		::SendMessage( ProgressWnd, WM_FSTOOL_PROGRESS, Percent( 3, 3, 1, 1, true), 0 );
 
-		Log += "Fixed " + std::to_string( (QWORD) FixedDirSigs ) + " directory signatures\n";
-		Log += "Fixed " + std::to_string( (QWORD) FixedDirSigs ) + " parent directory links\n";
+		Log += "Fixed " + std::to_string( (QWORD) FixedDirSigs     ) + " directory signatures\n";
+		Log += "Fixed " + std::to_string( (QWORD) FixedParentLinks ) + " parent directory links\n";
 		Log += "Fixed free space map";
 
 		MessageBoxA( ProgressWnd, Log.c_str(), "NUTS ADFS File System Validation Tool Report", MB_OK );

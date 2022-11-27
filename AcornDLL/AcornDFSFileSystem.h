@@ -126,6 +126,21 @@ public:
 	int RunTool( BYTE ToolNum, HWND ProgressWnd );
 	int Rename( DWORD FileID, BYTE *NewName, BYTE *NewExt  );
 
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
+	{
+		if ( FSID == FSID_DFS_40 )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 1, 40, 10, true, 256, ProgressWnd );
+		}
+
+		if ( FSID == FSID_DFS_80 )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 1, 80, 10, true, 256, ProgressWnd );
+		}
+
+		return NUTSError( 0xC01, L"Imaging not supported" );
+	}
+
 private:
 	AcornDFSDirectory *pDFSDirectory;
 

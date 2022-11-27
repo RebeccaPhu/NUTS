@@ -1579,12 +1579,13 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	{
 		DiskShape shape;
 
-		shape.Heads           = 2;
-		shape.LowestSector    = 0;
-		shape.Sectors         = 5;
-		shape.SectorSize      = 0x400;
-		shape.TrackInterleave = 0;
-		shape.Tracks          = 80;
+		shape.Heads            = 2;
+		shape.LowestSector     = 0;
+		shape.Sectors          = 5;
+		shape.SectorSize       = 0x400;
+		shape.TrackInterleave  = 0;
+		shape.InterleavedHeads = false;
+		shape.Tracks           = 80;
 
 		// Some perturbations here - Note HD types cannot LLF!
 		if ( ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ) )
@@ -1597,6 +1598,7 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 			shape.Sectors = 20;
 		}
 
+		pSource->SetDiskShape( shape );
 		pSource->StartFormat( shape );
 
 		/* Low-level format */
@@ -1809,6 +1811,7 @@ void ADFSEFileSystem::SetShape(void)
 
 		shape.Heads            = 2;
 		shape.InterleavedHeads = false;
+		shape.TrackInterleave  = 0;
 		shape.Sectors          = 5;
 		shape.SectorSize       = 1024;
 		shape.Tracks           = 80;

@@ -158,6 +158,31 @@ public:
 		return dsk;
 	}
 
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
+	{
+		if ( ( FSID == FSID_ADFS_E ) || ( FSID == FSID_ADFS_EP ) )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 2, 80, 5, true, 1024, ProgressWnd );
+		}
+
+		if ( ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ) )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 2, 80, 10, true, 1024, ProgressWnd );
+		}
+
+		if ( FSID == FSID_ADFS_G )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 2, 80, 20, true, 1024, ProgressWnd );
+		}
+
+		if ( ( FSID == FSID_ADFS_HN ) || ( FSID == FSID_ADFS_HP ) )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 0, 0, 0, false, 512, ProgressWnd );
+		}
+
+		return NUTSError( 0xC01, L"Imaging not supported" );
+	}
+
 private:
 	TargetedFileFragments FindSpace( DWORD Length, bool ForDir );
 

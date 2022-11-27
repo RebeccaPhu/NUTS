@@ -189,6 +189,37 @@ public:
 		return dsk;
 	}
 
+
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
+	{
+		if ( FSID == FSID_ADFS_S )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 1, 40, 10, true, 256, ProgressWnd );
+		}
+
+		if ( FSID == FSID_ADFS_M )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 1, 80, 10, true, 256, ProgressWnd );
+		}
+
+		if ( ( FSID == FSID_ADFS_L ) || ( FSID == FSID_ADFS_L2 ) )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 2, 80, 10, true, 256, ProgressWnd );
+		}
+
+		if ( FSID == FSID_ADFS_D )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 2, 80, 5, true, 1024, ProgressWnd );
+		}
+
+		if ( ( FSID == FSID_ADFS_H8 ) || ( FSID == FSID_ADFS_HO ) || ( FSID == FSID_ADFS_H ) )
+		{
+			return _ImagingFunc( pImagingSource, pImagingTarget, 0, 0, 0, false, 256, ProgressWnd );
+		}
+
+		return NUTSError( 0xC01, L"Imaging not supported" );
+	}
+
 private:
 	ADFSDirectory *pADFSDirectory;
 
