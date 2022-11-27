@@ -68,6 +68,11 @@ public:
 
 	std::vector<AttrDesc> GetAttributeDescriptions( NativeFile *pFile = nullptr );
 
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
+	{
+		return _ImagingFunc( pImagingSource, pImagingTarget, 0, 0,10, false, 512, ProgressWnd );
+	}
+
 private:
 	IECATADirectory *pIECDirectory;
 
