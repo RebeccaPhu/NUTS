@@ -999,12 +999,27 @@ unsigned int __stdcall ImagingThread(void *param)
 
 	pDetectFS->Init();
 
-	if ( pDetectFS->Imaging( pDetectFS->pSource, pImageFS->pSource ) != DS_SUCCESS )
+	if ( ReadWriteOp == 1U )
 	{
-		ConcludeTitle   = L"Imaging Failed";
-		ConcludeMessage = L"The imaging operation failed: " + pGlobalError->GlobalString;
+		// Write image to object
+		if ( pDetectFS->Imaging( pImageFS->pSource, pDetectFS->pSource, hDlg ) != DS_SUCCESS )
+		{
+			ConcludeTitle   = L"Imaging Failed";
+			ConcludeMessage = L"The imaging operation failed: " + pGlobalError->GlobalString;
 
-		return 0;
+			return 0;
+		}
+	}
+	else
+	{
+		// Read image from object
+		if ( pDetectFS->Imaging( pDetectFS->pSource, pImageFS->pSource, hDlg ) != DS_SUCCESS )
+		{
+			ConcludeTitle   = L"Imaging Failed";
+			ConcludeMessage = L"The imaging operation failed: " + pGlobalError->GlobalString;
+
+			return 0;
+		}
 	}
 
 	ConcludeTitle   = L"Imaging Successful";
