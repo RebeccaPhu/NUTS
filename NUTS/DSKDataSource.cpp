@@ -392,7 +392,7 @@ int DSKDataSource::WriteTrack( TrackDefinition track )
 		SectorInfoPointer[ 0x00 ] = iSector->Track;
 		SectorInfoPointer[ 0x01 ] = iSector->Side;
 		SectorInfoPointer[ 0x02 ] = iSector->SectorID;
-		SectorInfoPointer[ 0x03 ] = min( iSector->SectorLength, 3 );
+		SectorInfoPointer[ 0x03 ] = min( iSector->SectorLength, 4 );
 		SectorInfoPointer[ 0x04 ] = 0;
 		SectorInfoPointer[ 0x05 ] = 0;
 
