@@ -598,7 +598,7 @@ public:
 		return none;
 	}
 
-	virtual int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget )
+	virtual int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
 	{
 		return 0;
 	}
@@ -640,5 +640,77 @@ protected:
 	std::vector<CTempFile *> Forks;
 
 	ActionID FileOpsAction;
+
+protected:
+	int _ImagingFunc( DataSource *pImagingSource, DataSource *pImagingDest, DWORD Heads, DWORD Tracks, DWORD Sectors, bool UseCHS, DWORD SectorSize, HWND ProgressWnd )
+	{
+		ResetEvent( hImageEvent );
+
+		AutoBuffer ByteBuf( SectorSize );
+
+		if ( UseCHS )
+		{
+			DWORD TotalTracks = Heads * Tracks;
+
+			for ( DWORD head=0; head<Heads; head++ )
+			{
+				for ( DWORD track=0; track<Tracks; track++ )
+				{
+					for ( DWORD sector=0; sector<Sectors; sector++ )
+					{
+						if ( pImagingSource->ReadSectorCHS( head, track, sector, (BYTE *) ByteBuf ) != DS_SUCCESS )
+						{
+							return -1;
+						}
+
+						if ( pImagingDest->WriteSectorCHS( head, track, sector, (BYTE *) ByteBuf ) != DS_SUCCESS )
+						{
+							return -1;
+						}
+
+						if ( WaitForSingleObject( hImageEvent, 0 ) == WAIT_OBJECT_0 )
+						{
+							return 0;
+						}
+					}
+
+					std::wstring status = L"Copying head " + std::to_wstring( (QWORD) head ) + L", track " + std::to_wstring( (QWORD) track ) + L" ...";
+
+					::SendMessage( ProgressWnd, WM_FORMATPROGRESS, (WPARAM) Percent( 0, 1, ( head * Tracks ) + track, TotalTracks, true ), (LPARAM)  status.c_str() );
+				}
+			}
+		}
+		else
+		{
+			DWORD TotalSects = (DWORD) ( pImagingSource->PhysicalDiskSize + ( SectorSize - 1 ) ) / SectorSize;
+
+			for ( DWORD sect = 0; sect < TotalSects; sect++ )
+			{
+				if ( pImagingSource->ReadSectorLBA( sect, (BYTE *) ByteBuf, SectorSize ) != DS_SUCCESS )
+				{
+					return -1;
+				}
+
+				if ( pImagingDest->WriteSectorLBA( sect, (BYTE *) ByteBuf, SectorSize ) != DS_SUCCESS )
+				{
+					return -1;
+				}
+
+				if ( WaitForSingleObject( hImageEvent, 0 ) == WAIT_OBJECT_0 )
+				{
+					return 0;
+				}
+
+				if ( ( sect % 1024 ) == 0 )
+				{
+					std::wstring status = L"Copying sector " + std::to_wstring( (QWORD) sect ) + L" of " + std::to_wstring( (QWORD) TotalSects ) + L" ...";
+
+					::SendMessage( ProgressWnd, WM_FORMATPROGRESS, (WPARAM) Percent( 0, 1, sect, TotalSects, true ), (LPARAM) status.c_str() );
+				}
+			}
+		}
+
+		return NUTS_SUCCESS;
+	}
 };
 
