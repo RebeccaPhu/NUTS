@@ -109,10 +109,10 @@ int AMSDOSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	shape.LowestSector    = 1;
 	shape.Sectors         = 9;
 	shape.SectorSize      = 0x200;
-	shape.TrackInterleave = 0;
 	shape.Tracks          = 40;
 
-	pSource->StartFormat( shape );
+	pSource->SetDiskShape( shape );
+	pSource->StartFormat();
 
 	const BYTE SectorIDs[ 9 ] = { 0x01, 0x06, 0x02, 0x07, 0x03, 0x08, 0x04, 0x09, 0x05 };
 
@@ -121,86 +121,131 @@ int AMSDOSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	DWORD dwSize     = SizeofResource( hInstance, hResource );
 	BYTE  *pSYS      = (BYTE *) LockResource( hMemory );
 
-	/* Low-level format */
-	for ( BYTE t=0; t<40; t++ )
+	if ( FT & FTF_LLF )
 	{
-		pSource->SeekTrack( t );
-
-		TrackDefinition tr;
-
-		tr.Density = DoubleDensity;
-		tr.GAP1.Repeats = 80;
-		tr.GAP1.Value   = 0x4E;
-
-		for ( BYTE s=0; s<9; s++ )
+		/* Low-level format */
+		for ( BYTE t=0; t<40; t++ )
 		{
-			if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+			pSource->SeekTrack( t );
+
+			TrackDefinition tr;
+
+			tr.Density = DoubleDensity;
+			tr.GAP1.Repeats = 80;
+			tr.GAP1.Value   = 0x4E;
+
+			SectorIDSet SecIDs;
+
+			if ( FT & FTF_UseSecIDSrc )
 			{
-				return 0;
-			}
-
-			SectorDefinition sd;
-
-			sd.GAP2PLL.Repeats = 12;
-			sd.GAP2PLL.Value   = 0x00;
-
-			sd.GAP2SYNC.Repeats = 3;
-			sd.GAP2SYNC.Value   = 0xA1;
-
-			sd.IAM      = 0xFE;
-			sd.Track    = t;
-			sd.Side     = 0;
-			sd.SectorLength = 0x02; // 512 Bytes
-			sd.IDCRC    = 0xFF;
-
-			if ( SystemDisk )
-			{
-				sd.SectorID = 0x40 + SectorIDs[ s ];
+				SecIDs = pSource->GetTrackSectorIDs( 0, t, false );
 			}
 			else
 			{
-				sd.SectorID = 0xC0 + SectorIDs[ s ];
-			}
-
-			sd.GAP3.Repeats = 22;
-			sd.GAP3.Value   = 0x4E;
-
-			sd.GAP3PLL.Repeats = 12;
-			sd.GAP3PLL.Value   = 0;
-			
-			sd.GAP3SYNC.Repeats = 3;
-			sd.GAP3SYNC.Value   = 0xA1;
-
-			sd.DAM = 0xFB;
-
-			memset( sd.Data, 0xE5, 512 );
-
-			if ( SystemDisk )
-			{
-				if ( t < 2 )
+				for ( BYTE s=0; s<9; s++ )
 				{
-					DWORD Offset = ( t * 9 * 0x200 ) + ( ( SectorIDs[ s ] - 1 ) * 0x200 );
-
-					memcpy( sd.Data, &pSYS[ Offset ], 0x200 );
+					if ( SystemDisk )
+					{
+						SecIDs.push_back( 0x40 + SectorIDs[ s ] );
+					}
+					else
+					{
+						SecIDs.push_back( 0xC0 + SectorIDs[ s ] );
+					}
 				}
 			}
 
-			sd.GAP4.Repeats     = 40;
-			sd.GAP4.Value       = 0x4E;
+			for ( SectorIDSet::iterator s = SecIDs.begin(); s != SecIDs.end(); s++ )
+			{
+				if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+				{
+					return 0;
+				}
 
-			tr.Sectors.push_back( sd );
+				SectorDefinition sd;
 
-			swprintf_s( FormatMsg, 256, L"Formatting track %d sector %d", t, SectorIDs[ s ] );
+				sd.GAP2PLL.Repeats = 12;
+				sd.GAP2PLL.Value   = 0x00;
 
-			SendMessage( hWnd, WM_FORMATPROGRESS, Percent( t, 80, s, 9, false ), (LPARAM) FormatMsg );
-		}
+				sd.GAP2SYNC.Repeats = 3;
+				sd.GAP2SYNC.Value   = 0xA1;
+
+				sd.IAM      = 0xFE;
+				sd.Track    = t;
+				sd.Side     = 0;
+				sd.SectorLength = 0x02; // 512 Bytes
+				sd.IDCRC    = 0xFF;
+				sd.SectorID = *s;
+
+				sd.GAP3.Repeats = 22;
+				sd.GAP3.Value   = 0x4E;
+
+				sd.GAP3PLL.Repeats = 12;
+				sd.GAP3PLL.Value   = 0;
+			
+				sd.GAP3SYNC.Repeats = 3;
+				sd.GAP3SYNC.Value   = 0xA1;
+
+				sd.DAM = 0xFB;
+
+				memset( sd.Data, 0xE5, 512 );
+
+				if ( SystemDisk )
+				{
+					if ( t < 2 )
+					{
+						DWORD Offset = ( t * 9 * 0x200 ) + ( *s * 0x200 );
+
+						memcpy( sd.Data, &pSYS[ Offset ], 0x200 );
+					}
+				}
+
+				sd.GAP4.Repeats     = 40;
+				sd.GAP4.Value       = 0x4E;
+
+				tr.Sectors.push_back( sd );
+			}
+
+			swprintf_s( FormatMsg, 256, L"Formatting track %d", t );
+
+			SendMessage( hWnd, WM_FORMATPROGRESS, Percent( t, 80, 0, 2, false ), (LPARAM) FormatMsg );		
 		
-		tr.GAP5 = 0x4E;
+			tr.GAP5 = 0x4E;
 
-		pSource->WriteTrack( tr );
+			pSource->WriteTrack( tr );
+		}
+
+		pSource->EndFormat();
 	}
 
-	pSource->EndFormat();
+	if ( ( FT & FTF_Initialise ) || ( FT & FTF_Blank ) )
+	{
+		BYTE Data[ 256 ];
+
+		memset( Data, 0xE5, 256 );
+
+		for ( BYTE t=0; t<40; t++ )
+		{
+			SectorIDSet secs = pSource->GetTrackSectorIDs( 0, 1, false );
+
+			for ( SectorIDSet::iterator s = secs.begin(); s != secs.end(); s++ )
+			{
+				if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+				{
+					return 0;
+				}
+
+				if ( pSource->WriteSectorCHS( 0, t, *s, Data ) != DS_SUCCESS )
+				{
+					return -1;
+				}
+			}
+
+			swprintf_s( FormatMsg, 256, L"Blanking track %d", t );
+
+			SendMessage( hWnd, WM_FORMATPROGRESS, Percent( t, 80, 1, 2, false ), (LPARAM) FormatMsg );
+		}
+	}
 
 	SendMessage( hWnd, WM_FORMATPROGRESS, 100, (LPARAM) pDone );
 
@@ -342,4 +387,48 @@ int AMSDOSFileSystem::EnhanceFileData( NativeFile *pFile )
 	pDir->ExtraReadDirectory( pFile );
 
 	return 0;
+}
+
+int AMSDOSFileSystem::Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
+{
+	WCHAR FormatMsg[ 256 ];
+
+	BYTE Data[ 256 ];
+
+	DiskShape shape;
+
+	shape.Heads           = 1;
+	shape.LowestSector    = 1;
+	shape.Sectors         = 9;
+	shape.SectorSize      = 0x200;
+	shape.Tracks          = 40;
+
+	pSource->SetDiskShape( shape );
+
+	for ( BYTE t=0; t<40; t++ )
+	{
+		SectorIDSet secs = pImagingSource->GetTrackSectorIDs( 0, 1, false );
+
+		for ( SectorIDSet::iterator s = secs.begin(); s != secs.end(); s++ )
+		{
+			if ( WaitForSingleObject( hImageEvent, 0 ) == WAIT_OBJECT_0 )
+			{
+				return 0;
+			}
+
+			if ( pImagingSource->ReadSectorCHS( 0, t, *s, Data ) != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			if ( pImagingTarget->WriteSectorCHS( 0, t, *s, Data ) != DS_SUCCESS )
+			{
+				return -1;
+			}
+		}
+
+		swprintf_s( FormatMsg, 256, L"Blanking track %d", t );
+
+		SendMessage( ProgressWnd, WM_FORMATPROGRESS, Percent( t, 80, 1, 2, false ), (LPARAM) FormatMsg );
+	}
 }

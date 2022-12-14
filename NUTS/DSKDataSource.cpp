@@ -70,6 +70,8 @@ void DSKDataSource::ReadDiskData( void )
 	ValidDisk = true;
 	Extended  = false;
 
+	DiskData.Tracks.clear();
+
 	BYTE Buffer[ 256 ];
 
 	PhysicalDiskSize = pSource->PhysicalDiskSize;
@@ -159,6 +161,8 @@ void DSKDataSource::ReadDiskData( void )
 			}
 
 			ti.ImageOffset = 0x100 + Offset;
+
+			_ASSERT( DiskData.Tracks.find( DSKID ) == DiskData.Tracks.end() );
 
 			DiskData.Tracks[ DSKID ] = ti;
 
@@ -300,14 +304,51 @@ DWORD DSKDataSource::OffsetForOffset( DWORD Offset )
 	return 0;
 }
 
-void DSKDataSource::StartFormat( DiskShape &shape )
+void DSKDataSource::StartFormat()
 {
 	BYTE DSKHeader[ 256 ];
 
 	ZeroMemory( DSKHeader, 256 );
 
+	WORD SectorSize = MediaShape.SectorSize;
+	WORD Tracks     = MediaShape.Tracks;
+	WORD Sectors    = MediaShape.Sectors;
+	WORD Heads      = MediaShape.Heads;
+
+	if ( ComplexDiskShape )
+	{
+		Tracks = ComplexMediaShape.TrackDefs.size();
+
+		SectorSize = 0;
+		Sectors    = 0;
+		Heads      = 0;
+
+		for ( std::vector<DS_TrackDef>::iterator iTrack = ComplexMediaShape.TrackDefs.begin(); iTrack != ComplexMediaShape.TrackDefs.end(); iTrack++ )
+		{
+			if ( iTrack->SectorSizes.size() > Sectors )
+			{
+				Sectors = iTrack->SectorSizes.size();
+			}
+
+			for ( std::vector<WORD>::iterator iSector = iTrack->SectorSizes.begin(); iSector != iTrack->SectorSizes.end(); iSector++ )
+			{
+				if ( *iSector = SectorSize )
+				{
+					SectorSize = *iSector;
+				}
+
+				if ( iTrack->HeadID > Heads )
+				{
+					Heads = iTrack->HeadID;
+				}
+			}
+		}
+
+		Heads++;
+	}
+
 	/* A sector size of 0 implies an extended format (sector size determined at each track) */
-	if ( shape.SectorSize == 0 )
+	if ( SectorSize == 0 )
 	{
 		rsprintf( &DSKHeader[ 0x00 ], "EXTENDED CPC DSK File\r\nDisk-Info\r\n" );
 
@@ -322,12 +363,12 @@ void DSKDataSource::StartFormat( DiskShape &shape )
 
 	rsprintf( &DSKHeader[ 0x22 ], "NUTS" );
 
-	DSKHeader[ 0x30 ] = shape.Tracks;
-	DSKHeader[ 0x31 ] = shape.Heads;
+	DSKHeader[ 0x30 ] = Tracks;
+	DSKHeader[ 0x31 ] = Heads;
 
 	if ( !Extended )
 	{
-		* (WORD *) &DSKHeader[ 0x32 ] = ( shape.Sectors * shape.SectorSize ) + 0x100;
+		* (WORD *) &DSKHeader[ 0x32 ] = ( Sectors * SectorSize ) + 0x100;
 	}
 	else
 	{
@@ -336,6 +377,7 @@ void DSKDataSource::StartFormat( DiskShape &shape )
 
 	FormatPointer    = 0x100;
 	TrackDataPointer = 0x34;
+	FormatTrackSize  = Sectors * SectorSize; // Biggest track imagineable
 
 	pSource->WriteRaw( 0, 256, DSKHeader );
 }
@@ -374,20 +416,17 @@ int DSKDataSource::WriteTrack( TrackDefinition track )
 
 	BYTE Sector[ 256 ];
 
-	DWORD TrackLength = 0;
-
 	std::vector<SectorDefinition>::iterator iSector;
 
-	WORD LengthTable[ 4 ] = { 0x80, 0x100, 0x200, 0x400 };
+	WORD LengthTable[ 5 ] = { 0x80, 0x100, 0x200, 0x300, 0x400 };
 
 	for ( iSector = track.Sectors.begin(); iSector != track.Sectors.end(); iSector++ )
 	{
-		WORD SectorSize = LengthTable[ min( iSector->SectorLength, 3 ) ];
+		WORD SectorSize = LengthTable[ min( iSector->SectorLength, 4 ) ];
 
 		pSource->WriteRaw( FormatPointer, SectorSize, iSector->Data );
 
 		FormatPointer += SectorSize;
-		TrackLength   += SectorSize;
 
 		SectorInfoPointer[ 0x00 ] = iSector->Track;
 		SectorInfoPointer[ 0x01 ] = iSector->Side;
@@ -418,17 +457,19 @@ int DSKDataSource::WriteTrack( TrackDefinition track )
 	{
 		pSource->ReadRaw( 0, 256, Sector );
 
-		* (WORD *) &Sector[ TrackDataPointer ] = TrackLength + 0x100;
+		* (WORD *) &Sector[ TrackDataPointer ] = FormatTrackSize + 0x100;
 
 		TrackDataPointer += 2;
 
 		pSource->WriteRaw( 0, 256, Sector );
 	}
 
+	FormatPointer = TrackInfoPointer + FormatTrackSize + 0x100;
+
 	return 0;
 }
 
-static bool SectorSorter( WORD &a, WORD &b )
+static bool SectorSorter( BYTE &a, BYTE &b )
 {
 	return a < b;
 }
@@ -474,14 +515,7 @@ int DSKDataSource::ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *p
 
 				if ( iSector->second.SectorID == Sector )
 				{
-					if ( !ComplexDiskShape )
-					{
-						return pSource->ReadRaw( offset, MediaShape.SectorSize, pSectorBuf );
-					}
-					else
-					{
-						return pSource->ReadRaw( offset, ComplexMediaShape.SectorSize, pSectorBuf );
-					}
+					return pSource->ReadRaw( offset, ResolveSectorSize( Head, Track, Sector ), pSectorBuf );
 				}
 			}
 		}
@@ -505,14 +539,7 @@ int DSKDataSource::WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *
 
 				if ( iSector->second.SectorID == Sector )
 				{
-					if ( !ComplexDiskShape )
-					{
-						return pSource->WriteRaw( offset, MediaShape.SectorSize, pSectorBuf );
-					}
-					else
-					{
-						return pSource->WriteRaw( offset, ComplexMediaShape.SectorSize, pSectorBuf );
-					}
+					return pSource->WriteRaw( offset, ResolveSectorSize( Head, Track, Sector ), pSectorBuf );
 				}
 			}
 		}

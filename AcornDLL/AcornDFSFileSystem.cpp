@@ -616,6 +616,85 @@ int AcornDFSFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 		MaxTracks = 80;
 	}
 
+	if ( FT & FTF_LLF )
+	{
+		DiskShape shape;
+
+		shape.Heads            = 1;
+		shape.LowestSector     = 0;
+		shape.Sectors          = 10;
+		shape.SectorSize       = 0x100;
+		shape.Tracks           = MaxTracks;
+		shape.InterleavedHeads = false;
+
+		pSource->SetDiskShape( shape );
+
+		pSource->StartFormat();
+
+		/* Low-level format */
+		for ( BYTE t=0; t<shape.Tracks; t++ )
+		{
+			pSource->SeekTrack( t );
+
+			TrackDefinition tr;
+
+			tr.Density = SingleDensity;
+			tr.GAP1.Repeats = 40;
+			tr.GAP1.Value   = 0xFF;
+
+			for ( BYTE s=0; s<10; s++ )
+			{
+				if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
+				{
+					return 0;
+				}
+
+				SectorDefinition sd;
+
+				sd.GAP2PLL.Repeats = 6;
+				sd.GAP2PLL.Value   = 0x00;
+
+				sd.GAP2SYNC.Repeats = 0;
+				sd.GAP2SYNC.Value   = 0xA1;
+
+				sd.IAM      = 0xFE;
+				sd.Track    = t;
+				sd.Side     = 0;
+				sd.SectorLength = 0x01; // 256 Bytes
+				sd.IDCRC    = 0xFF;
+				sd.SectorID = s;
+
+				sd.GAP3.Repeats = 11;
+				sd.GAP3.Value   = 0xFF;
+
+				sd.GAP3PLL.Repeats = 6;
+				sd.GAP3PLL.Value   = 0;
+			
+				sd.GAP3SYNC.Repeats = 0;
+				sd.GAP3SYNC.Value   = 0xA1;
+
+				sd.DAM = 0xFB;
+
+				memset( sd.Data, 0xE5, 256 );
+
+				sd.GAP4.Repeats     = 10;
+				sd.GAP4.Value       = 0xFF;
+
+				tr.Sectors.push_back( sd );
+
+				std::wstring FormatMsg = L"Formatting track " + std::to_wstring( (QWORD) t ) + L" sector " + std::to_wstring( (QWORD) s );
+
+				SendMessage( hWnd, WM_FORMATPROGRESS, Percent( t, 80, s, 9, false ), (LPARAM) FormatMsg.c_str() );
+			}
+		
+			tr.GAP5 = 0xFF;
+
+			pSource->WriteTrack( tr );
+		}
+
+		pSource->EndFormat();
+	}
+
 	if ( FT & FTF_Blank )
 	{
 		Stages++;
@@ -640,14 +719,17 @@ int AcornDFSFileSystem::Format_Process( DWORD FT, HWND hWnd ) {
 		}
 	}
 
-	pDFSDirectory->RealFiles.clear();
-	pDFSDirectory->NumSectors = MaxTracks * 10;
-	pDFSDirectory->MasterSeq  = 0;
-	pDFSDirectory->Option     = 0;
+	if ( FT & FTF_Initialise )
+	{
+		pDFSDirectory->RealFiles.clear();
+		pDFSDirectory->NumSectors = MaxTracks * 10;
+		pDFSDirectory->MasterSeq  = 0;
+		pDFSDirectory->Option     = 0;
 
-	memset( pDFSDirectory->DiscTitle, 0x20, 12 );
+		memset( pDFSDirectory->DiscTitle, 0x20, 12 );
 
-	pDirectory->WriteDirectory();
+		pDirectory->WriteDirectory();
+	}
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, 100, 0);
 

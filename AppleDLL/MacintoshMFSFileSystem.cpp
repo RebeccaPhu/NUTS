@@ -38,17 +38,50 @@ MacintoshMFSFileSystem::~MacintoshMFSFileSystem(void)
 
 void MacintoshMFSFileSystem::SetShape()
 {
-	DiskShape shape;
+	// :'D this used to use a basic disk shape, until I finally found the document describing it and...
+	// HAHAHAHAHAHAHAHA
 
-	shape.Heads            = 1;
-	shape.InterleavedHeads = false;
-	shape.LowestSector     = 0;
-	shape.Sectors          = 10;
-	shape.SectorSize       = 512;
-	shape.TrackInterleave  = 0;
-	shape.Tracks           = 80;
+	// (I found it here if you want it: https://mirrors.apple2.org.za/Apple%20II%20Documentation%20Project/Peripherals/Disk%20Drives/Apple%203.5%20Drive/Manuals/Apple%20400k%20Floppy%20Disk%20Drive%20-%206990285A.pdf )
 
-	pSource->SetDiskShape( shape );
+	DS_ComplexShape shape;
+
+	shape.Head1 = 0;
+	shape.Heads = 1;
+	shape.Interleave = 6; // ish.
+	shape.Track1 = 0;
+	shape.Tracks = 79;
+	
+	// Tracks per sector
+	BYTE SPT[80] = {
+		12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, // Tracks  0 - 15
+		11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, // Tracks 16 - 31
+		10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, // Tracks 32 - 47
+		 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9, // Tracks 48 - 63
+		 8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8  // Tracks 64 - 79
+	};
+
+	BYTE CSPT = 0;
+
+	for ( BYTE t=0; t<80; t++ )
+	{
+		if ( CSPT != SPT[ t ] )
+		{
+			CSPT = SPT[ t ];
+		}
+
+		DS_TrackDef track;
+
+		track.TrackID = t;
+
+		for ( BYTE s=0; s<SPT[t]; s++ )
+		{
+			track.SectorSizes.push_back( 512 );
+		}
+
+		shape.TrackDefs.push_back( track );
+	}
+
+	pSource->SetComplexDiskShape( shape );
 }
 
 void MacintoshMFSFileSystem::ReadVolumeRecord()
@@ -1608,6 +1641,70 @@ int MacintoshMFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, 0, (LPARAM) EraseMsg );
 
+	if ( ( FT & FTF_LLF ) && ( FSID == FSID_MFS ) )
+	{
+		// Well... if a DataSource ever exists that accepts Apple_GCR....
+
+		// Tracks per sector
+		BYTE SPT[80] = {
+			12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, // Tracks  0 - 15
+			11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, // Tracks 16 - 31
+			10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, // Tracks 32 - 47
+			 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9, // Tracks 48 - 63
+			 8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8  // Tracks 64 - 79
+		};
+
+		// Interleave per speed group
+		BYTE SG[5][12] = {
+			{ 0, 6, 1, 7, 2, 8, 3, 9, 4, 10, 5, 11 },
+			{ 0, 6, 1, 7, 2, 8, 3, 9, 4, 10, 5,  0 },
+			{ 0, 5, 1, 6, 2, 7, 3, 8, 4,  9, 0,  0 },
+			{ 0, 5, 1, 6, 2, 7, 3, 8, 4,  0, 0,  0 },
+			{ 0, 4, 1, 5, 2, 6, 3, 7, 0,  9, 0,  0 }
+		};
+
+		pSource->StartFormat();
+
+		BYTE CSPT = 0;
+		BYTE CSG  = 0;
+
+		for ( BYTE t=0; t<80; t++ )
+		{
+			if ( CSPT != SPT[ t ] )
+			{
+				CSPT = SPT[ t ];
+
+				CSG++;
+			}
+
+			TrackDefinition track;
+
+			// Most of TrackDefinition is for FM/MFM.
+			track.Density = Apple_GCR;
+
+			for ( BYTE s=0; s<SPT[ t ]; s++ )
+			{
+				SectorDefinition sector;
+
+				// Again, most of SectorDefinition is FM/MFM.
+				ZeroMemory( (void *) &sector.TagData, sizeof( sector.TagData ) );
+
+				sector.SectorID     = SG[ CSG - 1 ][ s ];
+				sector.SectorLength = 0x02; // 512 Bytes
+				sector.Side         = 0;
+				sector.Track        = t;
+
+				ZeroMemory( (void *) &sector.Data, 512 );
+
+				track.Sectors.push_back( sector );
+			}
+
+			pSource->WriteTrack( track );
+		}
+
+		pSource->EndFormat();
+	}
+
 	BYTE SectorBuf[ 512 ];
 
 	if ( FT & FTF_Blank )
@@ -1770,4 +1867,82 @@ int MacintoshMFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 1, 1, true ), (LPARAM) DoneMsg );
 
 	return 0;
+}
+
+int MacintoshMFSFileSystem::Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
+{
+	ResetEvent( hImageEvent );
+
+	SetShape();
+
+	AutoBuffer ByteBuf( 512 );
+
+	if ( FSID == FSID_MFS )
+	{
+		// Sectors Per Track
+		BYTE SPT[80] = {
+			12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, // Tracks  0 - 15
+			11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, // Tracks 16 - 31
+			10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, // Tracks 32 - 47
+			 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9, // Tracks 48 - 63
+			 8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8  // Tracks 64 - 79
+		};
+
+		for ( DWORD track=0; track<80; track++ )
+		{
+			for ( DWORD sector=0; sector < SPT[ track ]; sector++ )
+			{
+				if ( pImagingSource->ReadSectorCHS( 0, track, sector, (BYTE *) ByteBuf ) != DS_SUCCESS )
+				{
+					return -1;
+				}
+
+				if ( pImagingTarget->WriteSectorCHS( 0, track, sector, (BYTE *) ByteBuf ) != DS_SUCCESS )
+				{
+					return -1;
+				}
+
+				if ( WaitForSingleObject( hImageEvent, 0 ) == WAIT_OBJECT_0 )
+				{
+					return 0;
+				}
+			}
+
+			std::wstring status = L"Copying track " + std::to_wstring( (QWORD) track ) + L" ...";
+
+			::SendMessage( ProgressWnd, WM_FORMATPROGRESS, (WPARAM) Percent( 0, 1, track, 80, true ), (LPARAM)  status.c_str() );
+		}
+	}
+		
+	if ( FSID == FSID_MFS_HD )
+	{
+		DWORD TotalSects = (DWORD) ( pImagingSource->PhysicalDiskSize + ( 511 ) ) / 512;
+
+		for ( DWORD sect = 0; sect < TotalSects; sect++ )
+		{
+			if ( pImagingSource->ReadSectorLBA( sect, (BYTE *) ByteBuf, 512 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			if ( pImagingTarget->WriteSectorLBA( sect, (BYTE *) ByteBuf, 512 ) != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			if ( WaitForSingleObject( hImageEvent, 0 ) == WAIT_OBJECT_0 )
+			{
+				return 0;
+			}
+
+			if ( ( sect % 1024 ) == 0 )
+			{
+				std::wstring status = L"Copying sector " + std::to_wstring( (QWORD) sect ) + L" of " + std::to_wstring( (QWORD) TotalSects ) + L" ...";
+
+				::SendMessage( ProgressWnd, WM_FORMATPROGRESS, (WPARAM) Percent( 0, 1, sect, TotalSects, true ), (LPARAM) status.c_str() );
+			}
+		}
+	}
+
+	return NUTS_SUCCESS;
 }

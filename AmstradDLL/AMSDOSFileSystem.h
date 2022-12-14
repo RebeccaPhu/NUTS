@@ -29,5 +29,7 @@ public:
 	int EnhanceFileData( NativeFile *pFile );
 
 	bool GetCPMHeader( NativeFile *pFile, BYTE *pHeader );
+
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd );
 };
 

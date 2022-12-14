@@ -159,19 +159,19 @@ BYTE *CPMFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 
 		if ( rstrnicmp( pFile->Extension, (BYTE *) "BAS", 3 ) )
 		{
-			rsprintf( Status, "%s.%s, BASIC File, %d bytes", (BYTE *) pFile->Filename, pFile->Extension, pFile->Length );
+			rsprintf( Status, "%s.%s, BASIC File, %d bytes", (BYTE *) pFile->Filename, (BYTE *) pFile->Extension, pFile->Length );
 		}
 		else if ( rstrnicmp( pFile->Extension, (BYTE *) "BIN", 3 ) )
 		{
-			rsprintf( Status, "%s.%s, Binary File, %d bytes", (BYTE *) pFile->Filename, pFile->Extension, pFile->Length );
+			rsprintf( Status, "%s.%s, Binary File, %d bytes", (BYTE *) pFile->Filename, (BYTE *) pFile->Extension, pFile->Length );
 		}
 		else if ( rstrnicmp(pFile->Extension, (BYTE *) "TXT", 3 ) )
 		{
-			rsprintf( Status, "%s.%s, Text File, %d bytes", (BYTE *) pFile->Filename, pFile->Extension, pFile->Length );
+			rsprintf( Status, "%s.%s, Text File, %d bytes", (BYTE *) pFile->Filename, (BYTE *) pFile->Extension, pFile->Length );
 		}
 		else
 		{
-			rsprintf( Status, "%s.%s, File, %d bytes", (BYTE *) pFile->Filename, pFile->Extension, pFile->Length );
+			rsprintf( Status, "%s.%s, File, %d bytes", (BYTE *) pFile->Filename, (BYTE *) pFile->Extension, pFile->Length );
 		}
 	}
 

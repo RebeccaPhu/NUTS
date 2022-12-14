@@ -99,10 +99,7 @@ public:
 		return r;
 	}
 
-	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
-	{
-		return _ImagingFunc( pImagingSource, pImagingTarget, 1, 80, 10, true, 512, ProgressWnd );
-	}
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd );
 
 public:
 	static INT_PTR CALLBACK FinderWindowProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);

@@ -10,30 +10,12 @@
 #include <vector>
 
 #if 1
-#define DS_RETAIN( x )  BYTE err[256]; rsprintf( err, "DS %016X Retain  %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( (char *) err ); x->Retain()
+#define DS_RETAIN( x ) BYTE err[256]; rsprintf( err, "DS %016X Retain  %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( (char *) err ); x->Retain()
 #define DS_RELEASE( x ) BYTE err[256]; rsprintf( err, "DS %016X Release %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( (char *) err ); x->Release()
 #else
 #define DS_RETAIN( x )  x->Retain();
 #define DS_RELEASE( x ) x->Release();
 #endif
-
-typedef struct _DS_TrackDef {
-	DWORD Sectors;
-	DWORD Sector1;
-} DS_TrackDef;
-
-typedef struct _DS_ComplexShape {
-	DWORD Heads;
-	DWORD Head1;
-	DWORD Tracks;
-	DWORD Track1;
-	DWORD SectorSize;
-	bool  Interleave;
-
-	std::vector< DS_TrackDef > TrackDefs;
-} DS_ComplexShape;
-
-typedef std::vector<WORD> SectorIDSet;
 
 typedef struct _DSWriteHint
 {
@@ -56,7 +38,7 @@ public:
 	virtual int WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf );
 
 	virtual int SetDiskShape( DiskShape shape );
-	virtual int DataSource::SetComplexDiskShape( DS_ComplexShape shape );
+	virtual int SetComplexDiskShape( DS_ComplexShape shape );
 
 	virtual int Truncate( QWORD Length ) = 0;
 
@@ -64,7 +46,7 @@ public:
 	virtual SectorIDSet GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted );
 
 	virtual int  PrepareFormat() { return 0; }
-	virtual void StartFormat( DiskShape &shape ) { };
+	virtual void StartFormat( ) { };
 	virtual int  SeekTrack( WORD Track ) { return 0; }
 	virtual int  WriteTrack( TrackDefinition track ) { return 0; }
 	virtual void EndFormat( void ) { };
@@ -105,6 +87,7 @@ public:
 
 protected:
 	virtual QWORD ResolveSector( DWORD Head, DWORD Track, DWORD Sector );
+	virtual DWORD ResolveSectorSize( DWORD Head, DWORD Track, DWORD Sector );
 
 	DiskShape MediaShape;
 

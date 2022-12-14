@@ -27,5 +27,7 @@ public:
 	int EnhanceFileData( NativeFile *pFile );
 
 	void CPMPreWriteCheck( NativeFile *pFile );
+
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd );
 };
 

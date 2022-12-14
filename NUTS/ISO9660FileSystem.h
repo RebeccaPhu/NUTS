@@ -56,6 +56,12 @@ public:
 		return pFS;
 	}
 
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
+	{
+		// Strictly speaking this isn't quite right...
+		return _ImagingFunc( pImagingSource, pImagingTarget, 0, 0, 0, false, 2048, ProgressWnd );
+	}
+
 private:
 	void ReadVolumeDescriptors( void );
 	void WriteVolumeDescriptor( ISOVolDesc &VolDesc, DWORD Sector, FSIdentifier FSID, bool Joliet );

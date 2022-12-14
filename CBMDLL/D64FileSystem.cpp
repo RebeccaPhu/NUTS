@@ -708,6 +708,46 @@ int D64FileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	BYTE Buffer[ 256 ];
 
+	if ( FT & FTF_LLF )
+	{
+		// Well... if a DataSource ever exists that accepts CBM_GCR....
+
+		pSource->StartFormat();
+
+		BYTE CSPT = 0;
+		for ( BYTE t=1; t<=40; t++ )
+		{
+			if ( CSPT != spt[ t ] )
+			{
+				CSPT = spt[ t ];
+			}
+
+			TrackDefinition track;
+
+			// Most of TrackDefinition is for FM/MFM.
+			track.Density = CBM_GCR;
+
+			for ( BYTE s=0; s<spt[ t ]; s++ )
+			{
+				SectorDefinition sector;
+
+				// Again, most of SectorDefinition is FM/MFM.
+				sector.SectorID     = s;
+				sector.SectorLength = 0x01; // 256 Bytes
+				sector.Side         = 0;
+				sector.Track        = t;
+
+				ZeroMemory( (void *) &sector.Data, 256 );
+
+				track.Sectors.push_back( sector );
+			}
+
+			pSource->WriteTrack( track );
+		}
+
+		pSource->EndFormat();
+	}
+
 	if ( FT & FTF_Blank )
 	{
 		ZeroMemory( Buffer, 256 );
@@ -911,4 +951,40 @@ WCHAR *D64FileSystem::Identify( DWORD FileID )
 	const WCHAR *ftypes[6] = { L"Deleted File Entry", L"Sequential Access File", L"Program", L"User File", L"Relative Access File", L"State Snapshot" };
 
 	return (WCHAR *) ftypes[ pFile->Attributes[ 1 ] ];
+}
+
+int D64FileSystem::Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
+{
+	ResetEvent( hImageEvent );
+
+	SetShape();
+
+	AutoBuffer ByteBuf( 256 );
+
+	for ( DWORD track=1; track<=40; track++ )
+	{
+		for ( DWORD sector=0; sector < spt[ track ]; sector++ )
+		{
+			if ( pImagingSource->ReadSectorCHS( 0, track, sector, (BYTE *) ByteBuf ) != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			if ( pImagingTarget->WriteSectorCHS( 0, track, sector, (BYTE *) ByteBuf ) != DS_SUCCESS )
+			{
+				return -1;
+			}
+
+			if ( WaitForSingleObject( hImageEvent, 0 ) == WAIT_OBJECT_0 )
+			{
+				return 0;
+			}
+		}
+
+		std::wstring status = L"Copying track " + std::to_wstring( (QWORD) track ) + L" ...";
+
+		::SendMessage( ProgressWnd, WM_FORMATPROGRESS, (WPARAM) Percent( 0, 1, track, 80, true ), (LPARAM)  status.c_str() );
+	}
+
+	return NUTS_SUCCESS;
 }

@@ -3,6 +3,8 @@
 #include "d64directory.h"
 #include "BAM.h"
 
+extern const BYTE spt[41];
+
 class D64FileSystem :
 	public FileSystem
 {
@@ -19,35 +21,7 @@ public:
 
 		IsOpenCBM = false;
 
-		DS_ComplexShape Shape;
-
-		Shape.Head1 = 0;
-		Shape.Heads = 1;
-		Shape.Interleave = false;
-		Shape.SectorSize = 256;
-		Shape.Track1     = 1;
-
-		const BYTE spt[41] = {
-			0,    // Track 0 doesn't exist (it's used as a "no more" marker)
-			21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,   // Tracks 1  - 17
-			19, 19, 19, 19, 19, 19, 19,                                           // Tracks 18 - 24
-			18, 18, 18, 18, 18, 18,                                               // Tracks 25 - 30
-			17, 17, 17, 17, 17, /* 40-track disks from here */ 17, 17, 17, 17, 17 // Tracks 30 - 40
-		};
-
-		for ( DWORD Track = 1; Track <= 40; Track++ )
-		{
-			DS_TrackDef trk;
-
-			trk.Sector1 = 0;
-			trk.Sectors = spt[ Track ];
-
-			Shape.TrackDefs.push_back( trk );
-		}
-
-		Shape.Tracks = 35; // Only for D64!
-
-		pDataSource->SetComplexDiskShape( Shape );
+		SetShape();
 
 		PreferredArbitraryExtension = (BYTE *) "PRG";
 	}
@@ -94,6 +68,38 @@ public:
 
 	FSToolList GetToolsList( void );
 	int RunTool( BYTE ToolNum, HWND ProgressWnd );
+
+	void SetShape( void )
+	{
+		DS_ComplexShape Shape;
+
+		Shape.Head1 = 0;
+		Shape.Heads = 1;
+		Shape.Interleave = false;
+		Shape.Track1     = 1;
+
+		for ( DWORD Track = 1; Track <= 40; Track++ )
+		{
+			DS_TrackDef trk;
+
+			trk.TrackID = Track;
+			trk.HeadID  = 0;
+			trk.Sector1 = 0;
+
+			for ( DWORD Sector = 0; Sector < spt[ Track ]; Sector ++ )
+			{
+				trk.SectorSizes.push_back( 256 );
+			}
+
+			Shape.TrackDefs.push_back( trk );
+		}
+
+		Shape.Tracks = 35; // Only for D64!
+
+		pSource->SetComplexDiskShape( Shape );
+	}
+
+	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd );
 
 public:
 	D64Directory *pDir;

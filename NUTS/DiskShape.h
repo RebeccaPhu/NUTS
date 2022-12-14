@@ -12,7 +12,6 @@ typedef struct _DiskShape {
 	DWORD Tracks;
 	WORD  Sectors;
 	WORD  Heads;
-	WORD  TrackInterleave;
 	WORD  LowestSector;
 	WORD  SectorSize;
 	bool  InterleavedHeads;
@@ -40,13 +39,17 @@ typedef struct _SectorDefinition {
 	BYTE         Data[1024];
 	BYTE         DATACRC;
 	TrackSection GAP4;
+	BYTE         TagData[ 32 ];
 } SectorDefinition;
 
 typedef enum _DiskDensity {
-	SingleDensity = 1,
-	DoubleDensity = 2,
-	QuadDesnity   = 3,
-	OctalDensity  = 4,
+	SingleDensity  = 1,
+	DoubleDensity  = 2,
+	QuadDesnity    = 3,
+	OctalDensity   = 4,
+	CBM_GCR        = 5,
+	Apple_GCR      = 6,
+	UnknownDensity = 0xFF
 } DiskDensity;
 
 typedef struct _TrackDefinition {
@@ -58,5 +61,24 @@ typedef struct _TrackDefinition {
 
 	BYTE         GAP5;
 } TrackDefinition;
+
+typedef struct _DS_TrackDef {
+	WORD  HeadID;
+	DWORD TrackID;
+	WORD  Sector1;
+	std::vector< WORD > SectorSizes;
+} DS_TrackDef;
+
+typedef struct _DS_ComplexShape {
+	DWORD Heads;
+	DWORD Head1;
+	DWORD Tracks;
+	DWORD Track1;
+	bool  Interleave;
+
+	std::vector< DS_TrackDef > TrackDefs;
+} DS_ComplexShape;
+
+typedef std::vector<BYTE> SectorIDSet;
 
 #endif

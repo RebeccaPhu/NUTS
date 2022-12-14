@@ -986,7 +986,6 @@ void ADFSFileSystem::SetShape(void)
 
 		shape.Heads            = 2;
 		shape.InterleavedHeads = false;
-		shape.TrackInterleave  = 0;
 		shape.Sectors          = 16;
 		shape.SectorSize       = 256;
 		shape.Tracks           = 80;
@@ -1253,6 +1252,10 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, 0, (LPARAM) InitMsg );
 
+	FloppyFormat = false;
+
+	SetShape();
+
 	if ( FT & FTF_LLF )
 	{
 		DiskShape shape;
@@ -1261,7 +1264,6 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		shape.LowestSector     = 0;
 		shape.Sectors          = 16;
 		shape.SectorSize       = 0x100;
-		shape.TrackInterleave  = 0;
 		shape.Tracks           = 80;
 		shape.InterleavedHeads = false;
 
@@ -1284,7 +1286,7 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		}
 
 		pSource->SetDiskShape( shape );
-		pSource->StartFormat( shape );
+		pSource->StartFormat();
 
 		/* Low-level format */
 		for ( BYTE h=0; h<shape.Heads; h++ )
@@ -1413,93 +1415,96 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 1, 3, 0, 1, false ), (LPARAM) MapMsg );
 
-	if( pFSMap == nullptr )
+	if ( FT & FTF_Initialise )
 	{
-		pFSMap = new OldFSMap( pSource );
-
-		if ( FSID == FSID_ADFS_D ) { pFSMap->UseDFormat = true; }
-
-		pFSMap->FloppyFormat = FloppyFormat;
-	}
-
-	pFSMap->Spaces.clear();
-
-	FreeSpace space;
-
-	space.StartSector =  ( FSID == FSID_ADFS_D ) ?0x04 : 0x02; // D starts at sector 4, S/M/L at sector 2
-	space.StartSector += ( FSID == FSID_ADFS_D ) ?0x08 : 0x05; // D is 8 sectors long, S/M/L is 5 sectors
-	space.Length      =  Sectors - space.StartSector;
-
-	pFSMap->Spaces.push_back(space);
-
-	pFSMap->NextEntry      = 1;
-	pFSMap->DiscIdentifier = 0;
-	pFSMap->BootOption     = 0;
-	pFSMap->TotalSectors   = Sectors;
-
-	if ( pFSMap->WriteFSMap() != DS_SUCCESS )
-	{
-		return -1;
-	}
-
-	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 3, 0, 1, false ), (LPARAM) RootMsg );
-
-	if ( pDirectory == nullptr )
-	{
-		pADFSDirectory = new ADFSDirectory( pSource );
-		pDirectory     = (Directory *) pADFSDirectory;
-	}
-		
-	pADFSDirectory->DirSector    = ( FSID == FSID_ADFS_D ) ? 0x4 : 0x02;
-	pADFSDirectory->ParentSector = pADFSDirectory->DirSector;
-	pADFSDirectory->MasterSeq    = 0;
-
-	time_t t = time(NULL);
-	struct tm *pT = localtime( &t );
-
-	static const char * const days[8] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-
-	BYTE Title[ 20 ];
-
-	rsprintf( Title, "%02d_%02d_%s", pT->tm_hour, pT->tm_min, days[ pT->tm_wday ] );
-
-	rstrncpy( (BYTE *) pADFSDirectory->DirTitle,  Title, 19 );
-	rstrncpy( (BYTE *) pADFSDirectory->DirString, (BYTE *) "$", 10 );
-
-	if ( FSID == FSID_ADFS_D )
-	{
-		pADFSDirectory->SetDFormat();
-	}
-
-	pDirectory->Files.clear();
-	
-	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
-	{
-		return -1;
-	}
-
-	if ( FSID == FSID_ADFS_D )
-	{
-		/* Fixup disc name */
-		if ( ReadTranslatedSector( 0, SectorBuf, 1024, pSource ) != DS_SUCCESS ) { return -1; }
-
-		BYTE NewDiscName[ 10 ];
-
-		BBCStringCopy( NewDiscName, Title, 10 );
-
-		for (BYTE i=0; i<9; i++ )
+		if( pFSMap == nullptr )
 		{
-			if ( i & 1 )
-			{
-				SectorBuf[ 0x1f6+ (i >> 1 )] = NewDiscName[ i ];
-			}
-			else
-			{
-				SectorBuf[ 0x0f7 + (i>> 1) ] = NewDiscName[ i ];
-			}
+			pFSMap = new OldFSMap( pSource );
+
+			if ( FSID == FSID_ADFS_D ) { pFSMap->UseDFormat = true; }
+
+			pFSMap->FloppyFormat = FloppyFormat;
 		}
 
-		if ( WriteTranslatedSector( 0, SectorBuf, 1024, pSource ) != DS_SUCCESS ) { return -1; }
+		pFSMap->Spaces.clear();
+
+		FreeSpace space;
+
+		space.StartSector =  ( FSID == FSID_ADFS_D ) ?0x04 : 0x02; // D starts at sector 4, S/M/L at sector 2
+		space.StartSector += ( FSID == FSID_ADFS_D ) ?0x08 : 0x05; // D is 8 sectors long, S/M/L is 5 sectors
+		space.Length      =  Sectors - space.StartSector;
+
+		pFSMap->Spaces.push_back(space);
+
+		pFSMap->NextEntry      = 1;
+		pFSMap->DiscIdentifier = 0;
+		pFSMap->BootOption     = 0;
+		pFSMap->TotalSectors   = Sectors;
+
+		if ( pFSMap->WriteFSMap() != DS_SUCCESS )
+		{
+			return -1;
+		}
+
+		PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 3, 0, 1, false ), (LPARAM) RootMsg );
+
+		if ( pDirectory == nullptr )
+		{
+			pADFSDirectory = new ADFSDirectory( pSource );
+			pDirectory     = (Directory *) pADFSDirectory;
+		}
+		
+		pADFSDirectory->DirSector    = ( FSID == FSID_ADFS_D ) ? 0x4 : 0x02;
+		pADFSDirectory->ParentSector = pADFSDirectory->DirSector;
+		pADFSDirectory->MasterSeq    = 0;
+
+		time_t t = time(NULL);
+		struct tm *pT = localtime( &t );
+
+		static const char * const days[8] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+
+		BYTE Title[ 20 ];
+
+		rsprintf( Title, "%02d_%02d_%s", pT->tm_hour, pT->tm_min, days[ pT->tm_wday ] );
+
+		rstrncpy( (BYTE *) pADFSDirectory->DirTitle,  Title, 19 );
+		rstrncpy( (BYTE *) pADFSDirectory->DirString, (BYTE *) "$", 10 );
+
+		if ( FSID == FSID_ADFS_D )
+		{
+			pADFSDirectory->SetDFormat();
+		}
+
+		pDirectory->Files.clear();
+	
+		if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+		{
+			return -1;
+		}
+
+		if ( FSID == FSID_ADFS_D )
+		{
+			/* Fixup disc name */
+			if ( ReadTranslatedSector( 0, SectorBuf, 1024, pSource ) != DS_SUCCESS ) { return -1; }
+
+			BYTE NewDiscName[ 10 ];
+
+			BBCStringCopy( NewDiscName, Title, 10 );
+
+			for (BYTE i=0; i<9; i++ )
+			{
+				if ( i & 1 )
+				{
+					SectorBuf[ 0x1f6+ (i >> 1 )] = NewDiscName[ i ];
+				}
+				else
+				{
+					SectorBuf[ 0x0f7 + (i>> 1) ] = NewDiscName[ i ];
+				}
+			}
+
+			if ( WriteTranslatedSector( 0, SectorBuf, 1024, pSource ) != DS_SUCCESS ) { return -1; }
+		}
 	}
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 1, 1, true ), (LPARAM) DoneMsg );

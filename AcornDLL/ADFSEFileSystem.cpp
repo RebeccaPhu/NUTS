@@ -1575,6 +1575,8 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, 0, (LPARAM) InitMsg );
 
+	SetShape();
+
 	if ( FT & FTF_LLF )
 	{
 		DiskShape shape;
@@ -1583,7 +1585,6 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		shape.LowestSector     = 0;
 		shape.Sectors          = 5;
 		shape.SectorSize       = 0x400;
-		shape.TrackInterleave  = 0;
 		shape.InterleavedHeads = false;
 		shape.Tracks           = 80;
 
@@ -1599,7 +1600,7 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		}
 
 		pSource->SetDiskShape( shape );
-		pSource->StartFormat( shape );
+		pSource->StartFormat();
 
 		/* Low-level format */
 		for ( BYTE h=0; h<shape.Heads; h++ )
@@ -1637,8 +1638,6 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 					sd.SectorLength = 0x01; // 256 Bytes
 					sd.IDCRC    = 0xFF;
 					sd.SectorID = s;
-
-					if ( FSID == FSID_ADFS_D ) { sd.SectorLength = 0x04; }
 
 					sd.GAP3.Repeats = 22;
 					sd.GAP3.Value   = 0x4E;
@@ -1708,55 +1707,58 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 2, 3, 0, 1, false ), (LPARAM) MapMsg );
 
-	pFSMap->ConfigureDisk( FSID );
-
-	if ( pDirectory == nullptr )
+	if ( FT & FTF_Initialise )
 	{
-		pEDirectory = new ADFSEDirectory( pSource );
-		pDirectory  = (Directory *) pEDirectory;
+		pFSMap->ConfigureDisk( FSID );
 
-		pEDirectory->pMap = pFSMap;
-	}
+		if ( pDirectory == nullptr )
+		{
+			pEDirectory = new ADFSEDirectory( pSource );
+			pDirectory  = (Directory *) pEDirectory;
+
+			pEDirectory->pMap = pFSMap;
+		}
 		
-	if ( ( FSID == FSID_ADFS_E ) || ( FSID==FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID==FSID_ADFS_FP ) || ( FSID==FSID_ADFS_G ) )
-	{
-		time_t t = time(NULL);
-		struct tm *pT = localtime( &t );
+		if ( ( FSID == FSID_ADFS_E ) || ( FSID==FSID_ADFS_F ) || ( FSID == FSID_ADFS_EP ) || ( FSID==FSID_ADFS_FP ) || ( FSID==FSID_ADFS_G ) )
+		{
+			time_t t = time(NULL);
+			struct tm *pT = localtime( &t );
 
-		static const char * const days[8] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+			static const char * const days[8] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
 
-		BYTE Title[ 20 ];
+			BYTE Title[ 20 ];
 
-		rsprintf( Title, "%02d_%02d_%s", pT->tm_hour, pT->tm_min, days[ pT->tm_wday ] );
+			rsprintf( Title, "%02d_%02d_%s", pT->tm_hour, pT->tm_min, days[ pT->tm_wday ] );
 
-		rstrncpy( pEDirectory->DirTitle, (BYTE *) "$",   19 );
-		rstrncpy( pFSMap->DiscName,               Title, 10 );
-	}
-	else
-	{
-		rstrncpy( pEDirectory->DirTitle, (BYTE *) "$",         19 );
-		rstrncpy( pFSMap->DiscName,      (BYTE *) "HardDisc4", 10 );
-	}
+			rstrncpy( pEDirectory->DirTitle, (BYTE *) "$",   19 );
+			rstrncpy( pFSMap->DiscName,               Title, 10 );
+		}
+		else
+		{
+			rstrncpy( pEDirectory->DirTitle, (BYTE *) "$",         19 );
+			rstrncpy( pFSMap->DiscName,      (BYTE *) "HardDisc4", 10 );
+		}
 
-	if ( pFSMap->WriteFSMap() != DS_SUCCESS )
-	{
-		return -1;
-	}
+		if ( pFSMap->WriteFSMap() != DS_SUCCESS )
+		{
+			return -1;
+		}
 
-	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 0, 1, false ), (LPARAM) RootMsg );
+		PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 0, 1, false ), (LPARAM) RootMsg );
 
-	pEDirectory->DirSector    = pFSMap->RootLoc;
-	pEDirectory->ParentSector = pEDirectory->DirSector;
-	pEDirectory->MasterSeq    = 0;
-	pEDirectory->BigDirName   = rstrndup( (BYTE *) "$", 4 );
+		pEDirectory->DirSector    = pFSMap->RootLoc;
+		pEDirectory->ParentSector = pEDirectory->DirSector;
+		pEDirectory->MasterSeq    = 0;
+		pEDirectory->BigDirName   = rstrndup( (BYTE *) "$", 4 );
 
-	rstrncpy( (BYTE *) pEDirectory->DirName, (BYTE *) "$", 10 );
+		rstrncpy( (BYTE *) pEDirectory->DirName, (BYTE *) "$", 10 );
 
-	pDirectory->Files.clear();
+		pDirectory->Files.clear();
 	
-	if ( pDirectory->WriteDirectory() != DS_SUCCESS )
-	{
-		return -1;
+		if ( pDirectory->WriteDirectory() != DS_SUCCESS )
+		{
+			return -1;
+		}
 	}
 
 	PostMessage( hWnd, WM_FORMATPROGRESS, Percent( 3, 3, 1, 1, true ), (LPARAM) DoneMsg );
@@ -1811,7 +1813,6 @@ void ADFSEFileSystem::SetShape(void)
 
 		shape.Heads            = 2;
 		shape.InterleavedHeads = false;
-		shape.TrackInterleave  = 0;
 		shape.Sectors          = 5;
 		shape.SectorSize       = 1024;
 		shape.Tracks           = 80;

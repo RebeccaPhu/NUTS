@@ -40,7 +40,7 @@ int DataSource::ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSec
 	}
 	else
 	{
-		return ReadRaw( ResolveSector( Head, Track, Sector ), MediaShape.SectorSize, pSectorBuf );
+		return ReadRaw( ResolveSector( Head, Track, Sector ), ResolveSectorSize( Head, Track, Sector ), pSectorBuf );
 	}
 }
 
@@ -52,26 +52,39 @@ int DataSource::WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSe
 	}
 	else
 	{
-		return WriteRaw( ResolveSector( Head, Track, Sector ), MediaShape.SectorSize, pSectorBuf );
+		return WriteRaw( ResolveSector( Head, Track, Sector ), ResolveSectorSize( Head, Track, Sector ), pSectorBuf );
 	}
+}
+
+DWORD DataSource::ResolveSectorSize( DWORD Head, DWORD Track, DWORD Sector )
+{
+	if ( !ComplexDiskShape )
+	{
+		return MediaShape.SectorSize;
+	}
+
+	for ( std::vector< DS_TrackDef >::iterator i = ComplexMediaShape.TrackDefs.begin(); i != ComplexMediaShape.TrackDefs.end(); i++ )
+	{
+		if ( ( i->TrackID == Track ) && ( i->HeadID == Head ) )
+		{
+			DWORD SectorCount = 0;
+
+			for ( std::vector< WORD >::iterator is = i->SectorSizes.begin(); is != i->SectorSizes.end(); is++ )
+			{
+				if ( SectorCount++ == Sector )
+				{
+					return *is;
+				}
+			}
+		}
+	}
+
+	return 0xFFFFFFFF;
 }
 
 QWORD DataSource::ResolveSector( DWORD Head, DWORD Track, DWORD Sector )
 {
 	QWORD RawOffset = 0;
-
-	DWORD RealSector = Sector;
-
-	/* If TrackInterleave isn't 0, then the RealSector shifts */
-	if ( MediaShape.TrackInterleave != 0U )
-	{
-		// Note - this vastly assumes that we're dealing with an image. A datasource for real device should:
-		// a) Not process an interleave on reads/writes
-		// b) Only process and inteleave on formats
-		// The formatting API dictates that sector order is decided by the FileSystem anyway, so this should
-		// never be an issue on real hardware.
-		RealSector = ( Sector + ( Track * MediaShape.TrackInterleave ) ) % MediaShape.Sectors;
-	}
 
 	if ( !ComplexDiskShape )
 	{
@@ -85,73 +98,63 @@ QWORD DataSource::ResolveSector( DWORD Head, DWORD Track, DWORD Sector )
 
 			RawOffset += TrackSize * Head;
 
-			RawOffset += MediaShape.SectorSize * RealSector;
+			RawOffset += MediaShape.SectorSize * Sector;
 		}
 		else
 		{
 			/* Track 0, Head 1 follows Track N, head 0 */
 			RawOffset = ( MediaShape.Tracks * TrackSize ) * Head;
 
-			RawOffset += ( Track * TrackSize ) + ( RealSector * MediaShape.SectorSize );
+			RawOffset += ( Track * TrackSize ) + ( Sector * MediaShape.SectorSize );
 		}
 	}
 	else
 	{
-		/* Work through the offsets */
-		if ( !ComplexMediaShape.Interleave )
-		{
-			DWORD ThisHead  = ComplexMediaShape.Head1;
+		DWORD ThisHead  = ComplexMediaShape.Head1;
 
-			while ( ThisHead <= Head )
-			{
-				DWORD ThisTrack = ComplexMediaShape.Track1;
-
-				for ( std::vector< DS_TrackDef >::iterator i = ComplexMediaShape.TrackDefs.begin(); i != ComplexMediaShape.TrackDefs.end(); i++ )
-				{
-					if ( ( ThisTrack != Track ) || ( ThisHead != Head ) )
-					{
-						RawOffset += i->Sectors * ComplexMediaShape.SectorSize;
-					}
-					else
-					{
-						RawOffset += ( Sector - i->Sector1 ) * ComplexMediaShape.SectorSize;
-
-						break;
-					}
-
-					ThisTrack++;
-				}
-
-				ThisHead++;
-			}
-		}
-		else
+		while ( ThisHead <= Head )
 		{
 			DWORD ThisTrack = ComplexMediaShape.Track1;
-				
+
 			for ( std::vector< DS_TrackDef >::iterator i = ComplexMediaShape.TrackDefs.begin(); i != ComplexMediaShape.TrackDefs.end(); i++ )
 			{
-				for ( DWORD ThisHead = ComplexMediaShape.Head1; ThisHead < ( ComplexMediaShape.Head1 + ComplexMediaShape.Heads ); ThisHead++ )
+				if ( ( ThisTrack != Track ) || ( ThisHead != Head ) )
 				{
-					if ( ( ThisTrack != Track ) || ( ThisHead != Head ) )
-					{
-						RawOffset += i->Sectors * ComplexMediaShape.SectorSize;
-					}
-					else
-					{
-						RawOffset += ( Sector - i->Sector1 ) * ComplexMediaShape.SectorSize;
+					DWORD SectorSizeTotal = 0;
 
-						break;
+					for ( std::vector< WORD >::iterator is = i->SectorSizes.begin(); is != i->SectorSizes.end(); is++ )
+					{
+						SectorSizeTotal += *is;
 					}
+
+					RawOffset += SectorSizeTotal;
 				}
-
-				if ( ThisTrack == Track )
+				else
 				{
+					DWORD SectorSizeTotal = 0;
+					WORD  SectorCount     = i->Sector1;
+
+					for ( std::vector< WORD >::iterator is = i->SectorSizes.begin(); is != i->SectorSizes.end(); is++ )
+					{
+						if ( SectorCount++ != Sector )
+						{
+							SectorSizeTotal += *is;
+						}
+						else
+						{
+							break;
+						}
+					}
+
+					RawOffset += SectorSizeTotal;
+
 					break;
 				}
 
 				ThisTrack++;
 			}
+
+			ThisHead++;
 		}
 	}
 
@@ -177,12 +180,10 @@ int DataSource::SetComplexDiskShape( DS_ComplexShape shape )
 
 	ComplexDiskShape = true;
 
-	MediaShape.SectorSize = (WORD) ComplexMediaShape.SectorSize;
-
 	return 0;
 }
 
-static bool SectorSorter( WORD &a, WORD &b )
+static bool SectorSorter( BYTE &a, BYTE &b )
 {
 	return a < b;
 }
@@ -200,16 +201,17 @@ SectorIDSet DataSource::GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted )
 		if ( ComplexDiskShape )
 		{
 			DWORD tid = ComplexMediaShape.Track1;
+			DWORD hid = ComplexMediaShape.Head1;
 
 			for ( std::vector< DS_TrackDef >::iterator i = ComplexMediaShape.TrackDefs.begin(); i != ComplexMediaShape.TrackDefs.end(); i++ )
 			{
-				if ( tid == Track )
+				if ( ( tid == Track ) && ( hid == Head ) )
 				{
-					DWORD sid;
+					WORD SectorID = i->Sector1;
 
-					for ( sid = i->Sector1; sid<(i->Sector1 + i->Sectors); sid++ )
+					for ( std::vector< WORD >::iterator is = i->SectorSizes.begin(); is != i->SectorSizes.end(); i++ )
 					{
-						set.push_back( (WORD) sid );
+						set.push_back( (WORD) SectorID++ );
 					}
 				}
 

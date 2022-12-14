@@ -25,7 +25,8 @@ typedef enum _FormatFlags {
 	FTF_LLF          = 0x00000001,
 	FTF_Blank        = 0x00000002,
 	FTF_Initialise   = 0x00000004,
-	FTF_Truncate     = 0x00000008
+	FTF_Truncate     = 0x00000008,
+	FTF_UseSecIDSrc  = 0x00000010
 } FormatType;
 
 typedef struct _FSSpace {

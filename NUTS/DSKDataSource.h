@@ -87,7 +87,7 @@ public:
 
 	SectorIDSet GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted );
 
-	void StartFormat( DiskShape &shape );
+	void StartFormat();
 
 	bool Valid()
 	{
@@ -136,5 +136,6 @@ private:
 
 	DWORD FormatPointer;
 	DWORD TrackDataPointer;
+	DWORD FormatTrackSize;
 };
 

@@ -352,6 +352,7 @@ public:
 	Directory	*pDirectory;
 
 	DataSource	*pSource;
+	DataSource  *pSecIDSource;
 
 	//	Formatting functions where available:
 
@@ -658,6 +659,11 @@ protected:
 				{
 					for ( DWORD sector=0; sector<Sectors; sector++ )
 					{
+						if ( WaitForSingleObject( hImageEvent, 0 ) == WAIT_OBJECT_0 )
+						{
+							return 0;
+						}
+
 						if ( pImagingSource->ReadSectorCHS( head, track, sector, (BYTE *) ByteBuf ) != DS_SUCCESS )
 						{
 							return -1;
@@ -666,11 +672,6 @@ protected:
 						if ( pImagingDest->WriteSectorCHS( head, track, sector, (BYTE *) ByteBuf ) != DS_SUCCESS )
 						{
 							return -1;
-						}
-
-						if ( WaitForSingleObject( hImageEvent, 0 ) == WAIT_OBJECT_0 )
-						{
-							return 0;
 						}
 					}
 

@@ -192,6 +192,8 @@ public:
 
 	int Imaging( DataSource *pImagingSource, DataSource *pImagingTarget, HWND ProgressWnd )
 	{
+		SetShape();
+
 		if ( FSID == FSID_ADFS_S )
 		{
 			return _ImagingFunc( pImagingSource, pImagingTarget, 1, 40, 10, true, 256, ProgressWnd );

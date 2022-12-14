@@ -887,6 +887,31 @@ INT_PTR CALLBACK ImagingWizSummary(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 					return TRUE;
 				}
+
+				if ( pNM->code == PSN_WIZNEXT )
+				{
+					if ( ReadWriteOp == 1U )
+					{
+						if ( MessageBox( hwndDlg,
+							L"This will completely erase the selected imaging object. This operation cannot be undone in any way whatsoever.\r\n\r\n"
+							L"Are you sure you want to proceed with writing the image file to the imaging object?",
+							L"NUTS Imaging Wizard", MB_ICONWARNING | MB_YESNO ) == IDNO )
+						{
+							return WizCancel( hwndDlg );
+						}
+					}
+
+					if ( ReadWriteOp == 2U )
+					{
+						if ( MessageBox( hwndDlg,
+							L"This will completely erase the chosen image file. This operation cannot be undone in any way whatsoever.\r\n\r\n"
+							L"Are you sure you want to proceed with reading the imaging object to the image file?",
+							L"NUTS Imaging Wizard", MB_ICONWARNING | MB_YESNO ) == IDNO )
+						{
+							return WizCancel( hwndDlg );
+						}
+					}
+				}
 			}
 			break;
 	}
@@ -968,7 +993,9 @@ unsigned int __stdcall ImagingThread(void *param)
 
 		// Note that we explicitly exclude the initialise flag here. We don't want an
 		// actual file system on the target image, we just want it formatically initialised.
-		DWORD Flags = FTF_Blank | FTF_LLF;
+		DWORD Flags = FTF_Blank | FTF_LLF | FTF_UseSecIDSrc;
+
+		pImageFS->pSecIDSource = pDetectFS->pSource;
 
 		if ( pImageFS->pSource->Flags & DS_SupportsTruncate )
 		{
@@ -987,7 +1014,29 @@ unsigned int __stdcall ImagingThread(void *param)
 	}
 	else
 	{
-		pImageFS->Init();
+		// Write object from image. We need to format it.
+		IsFormatting = true;
+
+		// Note that we explicitly exclude the initialise flag here. We don't want an
+		// actual file system on the target image, we just want it formatically initialised.
+		DWORD Flags = FTF_Blank | FTF_LLF | FTF_UseSecIDSrc;
+
+		pDetectFS->pSecIDSource = pImageFS->pSource;
+
+		if ( pImageFS->pSource->Flags & DS_SupportsTruncate )
+		{
+			Flags |= FTF_Truncate;
+		}
+
+		if ( pImageFS->Format_Process( Flags, hDlg ) != DS_SUCCESS )
+		{
+			ConcludeTitle   = L"Imaging Failed";
+			ConcludeMessage = L"The imaging operation failed while formatting the imaging object file: " + pGlobalError->GlobalString;
+
+			return 0;
+		}
+
+		IsFormatting = false;
 	}
 
 	if ( WaitForSingleObject( hImagingStop, 0 ) == WAIT_OBJECT_0 )
@@ -996,8 +1045,6 @@ unsigned int __stdcall ImagingThread(void *param)
 	}
 
 	IsImaging = true;
-
-	pDetectFS->Init();
 
 	if ( ReadWriteOp == 1U )
 	{
