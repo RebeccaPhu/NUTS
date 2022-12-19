@@ -32,8 +32,15 @@ public:
 	}
 
 	virtual int Init(void) {
-		pBAM->ReadBAM();
-		pDirectory->ReadDirectory();
+		if ( pBAM->ReadBAM() != NUTS_SUCCESS )
+		{
+			return -1;
+		}
+
+		if ( pDirectory->ReadDirectory() != NUTS_SUCCESS )
+		{
+			return -1;
+		}
 
 		return 0;
 	}

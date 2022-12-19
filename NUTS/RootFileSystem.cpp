@@ -99,6 +99,27 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 	BYTE DPath[64];
 
+	if ( pDirectory->Files[ FileID ].Attributes[ 1 ] = ROOT_OBJECT_HOOK )
+	{
+		RootHook hook = pRootDirectory->HookPairs[ FileID ];
+
+		for ( RootHookInvocations::iterator iInvoke = hook.Invocations.begin(); iInvoke != hook.Invocations.end(); iInvoke++ )
+		{
+			if ( ! ( iInvoke->Flags & RHF_CreatesDataSource ) )
+			{
+				continue;
+			}
+
+			DataSource *pSource = new MemorySource( iInvoke->HookData, 32 );
+
+			// TODO: Load data source from plugin
+
+			DS_RELEASE( pSource );
+
+			return pSource;
+		}
+	}
+
 	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == ROOT_OBJECT_RAW_DEVICE )
 	{
 		rsprintf( DPath, "\\\\.\\PhysicalDrive%d", pDirectory->Files[ FileID ].Attributes[ 1 ] );
@@ -170,7 +191,7 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )
 {
-	if ( pDirectory->Files[ FileID ].Icon == FT_Directory )
+	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == ROOT_OBJECT_SPECIAL_FOLDER )
 	{
 		WindowsFileSystem *pWFS = nullptr;
 
@@ -186,24 +207,25 @@ FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )
 		return pWFS;
 	}
 
-	if ( pDirectory->Files[ FileID ].Icon == FT_Arbitrary )
+	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == ROOT_OBJECT_HOOK )
 	{
 		RootHook hook = pRootDirectory->HookPairs[ FileID ];
 
-		DataSource *pSource = new MemorySource( hook.HookData, 32 );
+		for ( RootHookInvocations::iterator iInvoke = hook.Invocations.begin(); iInvoke != hook.Invocations.end(); iInvoke++ )
+		{
+			if ( ! ( iInvoke->Flags & RHF_CreatesFileSystem ) )
+			{
+				continue;
+			}
 
-		FileSystem *newFS = FSPlugins.LoadFS( hook.HookFSID, pSource );
+			DataSource *pSource = new MemorySource( iInvoke->HookData, 32 );
 
-		newFS->EnterIndex       = 0xFFFFFFFF;
-		newFS->pParentFS        = this;
-		newFS->UseResolvedIcons = UseResolvedIcons;
-		newFS->hMainWindow      = hMainWindow;
-		newFS->hPaneWindow      = hPaneWindow;
-		newFS->IsRaw            = false;
+			FileSystem *newFS = FSPlugins.LoadFS( iInvoke->HookFSID, pSource );
 
-		DS_RELEASE( pSource );
+			DS_RELEASE( pSource );
 
-		return newFS;
+			return newFS;
+		}
 	}
 
 	bool IsRaw = IsRawFS( UString( (char *) pDirectory->Files[ FileID ].Filename ) );
@@ -213,12 +235,7 @@ FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )
 
 		FileSystem	*newFS	= new WindowsFileSystem( UString( (char *) pDirectory->Files[ FileID ].Filename ) );
 
-		newFS->EnterIndex       = 0xFFFFFFFF;
-		newFS->pParentFS        = this;
-		newFS->UseResolvedIcons = UseResolvedIcons;
-		newFS->hMainWindow      = hMainWindow;
-		newFS->hPaneWindow      = hPaneWindow;
-		newFS->IsRaw            = false;
+		newFS->IsRaw = false;
 
 		return newFS;
 	}

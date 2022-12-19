@@ -72,6 +72,8 @@ void LoadOpenCBM()
 		return;
 	}
 
+	OpenCBMLoaded = true;
+
 	if ( ( opencbm_exec_command   = (opencbm_plugin_exec_command_t *)   GetProcAddress( hCBM, "cbm_exec_command" ) )   == NULL ) { FreeLibrary( hCBM ); OpenCBMLoaded = false; }
 	if ( ( opencbm_identify       = (opencbm_plugin_identify_t *)       GetProcAddress( hCBM, "cbm_identify" ) )       == NULL ) { FreeLibrary( hCBM ); OpenCBMLoaded = false; }
 	if ( ( opencbm_driver_open_ex = (opencbm_plugin_driver_open_ex_t *) GetProcAddress( hCBM, "cbm_driver_open_ex" ) ) == NULL ) { FreeLibrary( hCBM ); OpenCBMLoaded = false; }
@@ -87,7 +89,10 @@ void LoadOpenCBM()
 	if ( ( opencbm_device_status  = (opencbm_plugin_device_status_t *)  GetProcAddress( hCBM, "cbm_device_status" ) )  == NULL ) { FreeLibrary( hCBM ); OpenCBMLoaded = false; }
 	if ( ( opencbm_reset          = (opencbm_plugin_reset_t *)          GetProcAddress( hCBM, "cbm_reset" ) )          == NULL ) { FreeLibrary( hCBM ); OpenCBMLoaded = false; }
 
-	OpenCBMLoaded = true;
+	if ( !OpenCBMLoaded )
+	{
+		return;
+	}
 
 	CBMDeviceBits = 0;
 
@@ -143,7 +148,7 @@ int OpenCBM_ReadBlock( BYTE Drive, TSLink TS, BYTE *BlockData )
 
 	/* This is pretty much copied from OpenCBM */
 	BYTE cmd[48];
-	int rv = 1;
+	int rv = -1;
 
 	rsprintf( cmd, "U1:2 0 %d %d", TS.Track, TS.Sector );
 
@@ -157,7 +162,7 @@ int OpenCBM_ReadBlock( BYTE Drive, TSLink TS, BYTE *BlockData )
 			{
 				if ( opencbm_talk( cbm_fd, Drive, 2 ) == 0 )
 				{
-					rv = opencbm_raw_read( cbm_fd, BlockData, 256 ) != 256;
+					rv = opencbm_raw_read( cbm_fd, BlockData, 256 );
 
 					opencbm_untalk( cbm_fd );
 				}
@@ -165,11 +170,11 @@ int OpenCBM_ReadBlock( BYTE Drive, TSLink TS, BYTE *BlockData )
 		}
 	}
 
-	if ( rv != 0 )
+	if ( rv != 256 )
 	{
-		opencbm_reset( cbm_fd );
+//		opencbm_reset( cbm_fd );
 
-		return NUTSError( 0x98, L"OpenCBM Error" );
+//		return NUTSError( 0x98, L"OpenCBM Error" );
 	}
 
     return 0;
@@ -229,6 +234,11 @@ int OpenCBM_OpenDrive( DWORD Drive )
 		return 0;
 	}
 
+	if ( cbm_fd == NULL )
+	{
+//		return NUTSError( 0x9A, L"OpenCBM unusable" );
+	}
+
 	char buf[ 255 ];
 
 	opencbm_open( cbm_fd, (BYTE) Drive, 2, "#", 1 );
@@ -256,8 +266,11 @@ void OpenCBM_CloseDrive( DWORD Drive )
 
 	if ( DriveOpen[ Drive ] == 0 )
 	{
-		opencbm_close( cbm_fd, (BYTE) Drive, 2 );
+//		if (cbm_fd != NULL )
+		{
+			opencbm_close( cbm_fd, (BYTE) Drive, 2 );
 
-		opencbm_reset( cbm_fd );
+			opencbm_reset( cbm_fd );
+		}
 	}
 }

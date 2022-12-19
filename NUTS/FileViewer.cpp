@@ -13,6 +13,7 @@
 #include "Preference.h"
 #include "BuiltIns.h"
 #include "NUTSIDM.h"
+#include "MemorySource.h"
 
 #include <CommCtrl.h>
 
@@ -407,6 +408,13 @@ LRESULT	CFileViewer::WndProc(HWND hSourceWnd, UINT message, WPARAM wParam, LPARA
 			if ( ( LOWORD(wParam) >= AUD_MENU_BASE ) && ( LOWORD(wParam) <= AUD_MENU_END ) )
 			{
 				DoContentViewer( MenuXlatorMap[ LOWORD( wParam ) ] );
+			}
+
+			if ( ( LOWORD(wParam) >= ROOT_HOOK_BASE ) && ( LOWORD(wParam) <= ROOT_HOOK_END ) )
+			{
+				InvokedHook = LOWORD( wParam ) - ROOT_HOOK_BASE;
+				
+				::PostMessage(ParentWnd, WM_ROOTINVOKE, (WPARAM) hWnd, 0 );
 			}
 
 			switch ( LOWORD(wParam) ) {
@@ -3089,11 +3097,123 @@ void CFileViewer::DoContextMenu( void )
 		AppendMenu( hSubMenu, MF_STRING, IDM_PLAY_AUDIO, L"Play/Save &Tape Audio" );
 	}
 
+	if ( ( FS->FSID == FS_Root ) && ( c == 1U ) )
+	{
+		// Augment the menu if this is a root hook. This is hacky as fsck.
+		if ( TheseFiles[ GetSelectedIndex() ].Attributes[ 2 ] == ROOT_OBJECT_HOOK_EXT )
+		{
+			RootHookList hooks = FSPlugins.GetRootHooks();
+
+			RootHookIterator iHook;
+
+			DWORD HookNum = 0;
+
+			for ( iHook = hooks.begin(); iHook != hooks.end(); iHook++ )
+			{
+				if ( HookNum == TheseFiles[ GetSelectedIndex() ].Attributes[ 3 ] )
+				{
+					// This hook in particular
+					bool HaveSep = false;
+
+					DWORD InvokeNum = 0;
+
+					for ( RootHookInvocations::iterator iInvoke = iHook->Invocations.begin(); iInvoke != iHook->Invocations.end(); iInvoke++ )
+					{
+						if ( !HaveSep )
+						{
+							AppendMenu( hSubMenu, MF_SEPARATOR, 0, 0 );
+
+							HaveSep = true;
+						}
+
+						AppendMenu( hSubMenu, MF_STRING, ROOT_HOOK_BASE + InvokeNum, iInvoke->FriendlyName.c_str() );
+
+						InvokeNum++;
+					}
+				}
+
+				HookNum++;
+			}
+		}
+	}
+
 	DoLocalCommandMenu( hPopup );
 
 	TrackPopupMenu(hSubMenu, 0, rect.left + mouseX, rect.top + mouseY, 0, hWnd, NULL);
 
 	DestroyMenu(hPopup);
+}
+
+FileSystem *CFileViewer::DoRootHook()
+{
+	SetSearching( true );
+
+	DWORD c= GetSelectionCount();
+
+	DWORD Invoker = InvokedHook;
+
+	if ( ( FS->FSID == FS_Root ) && ( c == 1U ) )
+	{
+		// Augment the menu if this is a root hook. This is hacky as fsck.
+		if ( TheseFiles[ GetSelectedIndex() ].Attributes[ 2 ] == ROOT_OBJECT_HOOK_EXT )
+		{
+			RootHookList hooks = FSPlugins.GetRootHooks();
+
+			RootHookIterator iHook;
+
+			DWORD HookNum = 0;
+
+			for ( iHook = hooks.begin(); iHook != hooks.end(); iHook++ )
+			{
+				if ( HookNum == TheseFiles[ GetSelectedIndex() ].Attributes[ 3 ] )
+				{
+					// This hook in particular
+					DWORD InvokeNum = 0;
+
+					for ( RootHookInvocations::iterator iInvoke = iHook->Invocations.begin(); iInvoke != iHook->Invocations.end(); iInvoke++ )
+					{
+						if ( InvokeNum == Invoker )
+						{
+							DataSource *pSource = new MemorySource( iInvoke->HookData, 32 );
+
+							FileSystem *pNewFS = nullptr;
+
+							if ( iInvoke->Flags & RHF_CreatesFileSystem )
+							{
+								pNewFS = FSPlugins.LoadFS( iInvoke->HookFSID, pSource );
+
+								DS_RELEASE( pSource );
+							}
+
+							if ( iInvoke->Flags & RHF_CreatesDataSource )
+							{
+								DataSource *pDataSource = FSPlugins.LoadHookDataSource( iInvoke->HookFSID, pSource );
+
+								{ DS_RELEASE( pSource ); }
+
+								if ( pDataSource != nullptr )
+								{
+									pNewFS = FSPlugins.FindAndLoadFS( pDataSource );
+
+									DS_RELEASE( pDataSource );
+								}
+							}
+
+							SetSearching( false );
+
+							return pNewFS;
+						}
+
+						InvokeNum++;
+					}
+				}
+
+				HookNum++;
+			}
+		}
+	}
+
+	SetSearching( false );
 }
 
 void CFileViewer::DoStatusBar( void )

@@ -986,6 +986,44 @@ unsigned int __stdcall FSActionThread(void *param)
 			action.pane->SetDirType();
 			break;
 
+		case ActionHookInvoke:
+			{
+				FileSystem *pNewFS = action.pane->DoRootHook();
+
+				if ( pNewFS != nullptr )
+				{
+					pNewFS->EnterIndex       = 0xFFFFFFFF;
+					pNewFS->pParentFS        = action.pane->FS;
+					pNewFS->UseResolvedIcons = Preference( L"UseResolvedIcons", false );
+					pNewFS->HideSidecars     = Preference( L"HideSidecars",     false );
+
+					if ( pNewFS->Init() != NUTS_SUCCESS )
+					{
+						NUTSError::Report( L"Initialise File System", hMainWnd );
+
+						delete pNewFS;
+					}
+					else
+					{
+						pNewFS->hMainWindow = hMainWnd;
+						pNewFS->hPaneWindow = action.pane->hWnd;
+
+						action.pStack->push_back( pNewFS );
+
+						action.pane->FS	      = pNewFS;
+						action.pane->FS->FSID = pNewFS->FSID;
+
+						action.pane->SelectionStack.push_back( -1 );
+					}
+				}
+				else
+				{
+					(void) MessageBox( action.pane->hWnd, L"Root hook failed to present anything meaningful.", L"NUTS", MB_ICONERROR | MB_OK );
+				}
+			}
+
+			break;
+
 		default:
 			break;
 		}
@@ -1718,6 +1756,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (wParam == (WPARAM) rightPane->hWnd)
 		{
 			DoAction( ActionDoNewDir, rightPane, &rightFS, &rightTitles, 0 );
+		}
+
+		return DefWindowProc(hWnd, message, wParam, lParam);
+
+	case WM_ROOTINVOKE:
+		if (wParam == (WPARAM) leftPane->hWnd)
+		{
+			DoAction( ActionHookInvoke, leftPane, &leftFS, &leftTitles, 0 );
+		} 
+		else if (wParam == (WPARAM) rightPane->hWnd)
+		{
+			DoAction( ActionHookInvoke, rightPane, &rightFS, &rightTitles, 0 );
 		}
 
 		return DefWindowProc(hWnd, message, wParam, lParam);

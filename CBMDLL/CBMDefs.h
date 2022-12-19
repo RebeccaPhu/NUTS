@@ -5,6 +5,8 @@
 #define FSID_IECATA  L"IECATA_HardDisk"
 #define FSID_OPENCBM L"OpenCBM_RootHook"
 
+#define FSID_OPENCBM_BROWSE L"OpenCBM_RootHook_Browse"
+
 extern const FTIdentifier FT_C64;
 extern const FTIdentifier FT_CBM_TAPE;
 

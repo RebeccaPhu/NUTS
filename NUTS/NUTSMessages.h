@@ -44,5 +44,6 @@
 #define WM_OPENCHARMAP      (WM_APP + 40)
 #define WM_ENDSPLASH        (WM_APP + 41)
 #define WM_SETDIRTYPE       (WM_APP + 42)
+#define WM_ROOTINVOKE       (WM_APP + 43)
 
 #endif

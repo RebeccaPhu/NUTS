@@ -15,4 +15,17 @@ typedef enum _ActionID {
 	AA_IMAGING     = 10,
 } ActionID;
 
+typedef enum _ActionType
+{
+	ActionDoEnter   = 1,
+	ActionDoEnterAs = 2,
+	ActionDoBack    = 3,
+	ActionDoRoot    = 4,
+	ActionDoRefresh = 5,
+	ActionDoRename  = 6,
+	ActionDoNewDir  = 7,
+	ActionDoDirType = 8,
+	ActionHookInvoke= 9,
+} ActionType;
+
 #endif

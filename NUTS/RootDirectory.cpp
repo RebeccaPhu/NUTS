@@ -229,12 +229,15 @@ int	RootDirectory::ReadDirectory(void) {
 
 	RootHookIterator iHook;
 
+	DWORD HookNum = 0;
+
 	for ( iHook = hooks.begin(); iHook != hooks.end(); iHook++ )
 	{
 		NativeFile file;
 
 		file.Attributes[ 0 ] = fIndex;
 		file.Attributes[ 2 ] = ROOT_OBJECT_HOOK;
+		file.Attributes[ 3 ] = HookNum;
 		file.EncodingID      = ENCODING_ASCII;
 		file.fileID          = FileID;
 		file.Flags           = FF_NotRenameable | FF_Pseudo;
@@ -253,6 +256,8 @@ int	RootDirectory::ReadDirectory(void) {
 		Files.push_back( file );
 
 		FileID++;
+
+		HookNum++;
 	}
 
 	return 0;

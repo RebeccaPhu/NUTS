@@ -25,18 +25,6 @@ extern  HWND hStatusWnd;
 #define EXTRA_MENU_BASE     43900
 #define EXTRA_MENU_END      ( EXTRA_MENU_BASE + 199 )
 
-typedef enum _ActionType
-{
-	ActionDoEnter   = 1,
-	ActionDoEnterAs = 2,
-	ActionDoBack    = 3,
-	ActionDoRoot    = 4,
-	ActionDoRefresh = 5,
-	ActionDoRename  = 6,
-	ActionDoNewDir  = 7,
-	ActionDoDirType = 8,
-} ActionType;
-
 typedef struct _FSAction
 {
 	ActionType                  Type;
@@ -47,7 +35,6 @@ typedef struct _FSAction
 	FileSystem                  *FS;
 	FSIdentifier                FSID;
 } FSAction;
-
 
 /* Action Thread */
 void DoAction( ActionType t, CFileViewer *p, std::vector<FileSystem *> *s, std::vector<TitleComponent> *pT, int i, FSIdentifier TargetFSID = FS_Null );

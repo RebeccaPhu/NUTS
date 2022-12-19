@@ -71,6 +71,7 @@ public:
 	FileSystem *FindAndLoadFS( DataSource *pSource, NativeFile *pFile = nullptr );
 	FileSystem *LoadFS( FSIdentifier FSID, DataSource *pSource );
 	FileSystem *LoadFSWithWrappers( FSIdentifier FSID, DataSource *pSource );
+	DataSource *LoadHookDataSource( FSIdentifier FSID, DataSource *pSource );
 	std::wstring ProviderName( ProviderIdentifier PRID );
 	std::wstring FSName( FSIdentifier FSID );
 	std::wstring FSExt( FSIdentifier FSID );

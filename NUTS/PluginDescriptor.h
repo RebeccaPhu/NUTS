@@ -3,6 +3,7 @@
 
 #include "BYTEString.h"
 
+#include <vector>
 #include <string>
 #include <list>
 
@@ -10,40 +11,41 @@
 
 
 typedef enum _PluginCommandID {
-	PC_SetPluginConnectors,
-	PC_ReportProviders,
-	PC_GetProviderDescriptor,
-	PC_ReportFileSystems,
-	PC_DescribeFileSystem,
-	PC_CreateFileSystem,
-	PC_ReportImageExtensions,
-	PC_GetImageExtension,
-	PC_ReportEncodingCount,
-	PC_ReportFonts,
-	PC_GetFontPointer,
-	PC_ReportIconCount,
-	PC_DescribeIcon,
-	PC_ReportFSFileTypeCount,
-	PC_ReportTranslators,
-	PC_DescribeTranslator,
-	PC_CreateTranslator,
-	PC_ReportRootHooks,
-	PC_DescribeRootHook,
-	PC_ReportRootCommands,
-	PC_DescribeRootCommand,
-	PC_PerformRootCommand,
-	PC_TranslateFOPContent,
-	PC_DescribeChar,
-	PC_ReportPluginCreditStats,
-	PC_GetIconLicensing,
-	PC_GetPluginCredits,
-	PC_GetFOPDirectoryTypes,
-	PC_GetPortProviders,
-	PC_GetPortCounts,
-	PC_SetPortAssignments,
-	PC_GetWrapperCount,
-	PC_GetWrapperDescriptor,
-	PC_LoadWrapper,
+	PC_SetPluginConnectors     = 0x00000000,
+	PC_ReportProviders         = 0x00000001,
+	PC_GetProviderDescriptor   = 0x00000002,
+	PC_ReportFileSystems       = 0x00000003,
+	PC_DescribeFileSystem      = 0x00000004,
+	PC_CreateFileSystem        = 0x00000005,
+	PC_CreateHookDataSource    = 0x00000006,
+	PC_ReportImageExtensions   = 0x00000007,
+	PC_GetImageExtension       = 0x00000008,
+	PC_ReportEncodingCount     = 0x00000009,
+	PC_ReportFonts             = 0x0000000A,
+	PC_GetFontPointer          = 0x0000000B,
+	PC_ReportIconCount         = 0x0000000C,
+	PC_DescribeIcon            = 0x0000000D,
+	PC_ReportFSFileTypeCount   = 0x0000000E,
+	PC_ReportTranslators       = 0x0000000F,
+	PC_DescribeTranslator      = 0x00000010,
+	PC_CreateTranslator        = 0x00000011,
+	PC_ReportRootHooks         = 0x00000012,
+	PC_DescribeRootHook        = 0x00000013,
+	PC_ReportRootCommands      = 0x00000014,
+	PC_DescribeRootCommand     = 0x00000015,
+	PC_PerformRootCommand      = 0x00000016,
+	PC_TranslateFOPContent     = 0x00000017,
+	PC_DescribeChar            = 0x00000018,
+	PC_ReportPluginCreditStats = 0x00000019,
+	PC_GetIconLicensing        = 0x0000001A,
+	PC_GetPluginCredits        = 0x0000001B,
+	PC_GetFOPDirectoryTypes    = 0x0000001C,
+	PC_GetPortProviders        = 0x0000001D,
+	PC_GetPortCounts           = 0x0000001E,
+	PC_SetPortAssignments      = 0x0000001F,
+	PC_GetWrapperCount         = 0x00000020,
+	PC_GetWrapperDescriptor    = 0x00000021,
+	PC_LoadWrapper             = 0x00000022,
 } PluginCommandID;
 
 typedef union _PluginCommandParameter {
@@ -89,13 +91,24 @@ typedef struct _DataTranslator {
 	DWORD Flags;
 } DataTranslator;
 
+typedef struct _RootHookInvocation
+{
+	std::wstring FriendlyName;
+	DWORD        Flags;
+	BYTE         HookData[ 32 ];
+	FSIdentifier HookFSID;
+} RootHookInvocation;
+
+typedef std::vector<RootHookInvocation> RootHookInvocations;
+
 typedef struct _RootHook
 {
 	std::wstring FriendlyName;
-	FSIdentifier HookFSID;
 	HBITMAP      HookIcon;
-	BYTE         HookData[ 32 ];
-	DWORD        Flags;
+
+	PluginIdentifier Plugin;
+
+	RootHookInvocations Invocations;
 } RootHook;
 
 typedef struct _FOPDirectoryType

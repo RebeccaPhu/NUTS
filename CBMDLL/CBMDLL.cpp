@@ -145,11 +145,22 @@ void LoadHooks( void )
 			if ( CBMDeviceBits & ( 1 << device ) )
 			{
 				Hooks[ HookID ].FriendlyName  = L"OpenCBM/" + std::to_wstring( (long double) device );
-				Hooks[ HookID ].Flags         = RHF_CreatesFileSystem;
 				Hooks[ HookID ].HookIcon      = LoadBitmap( hInstance, MAKEINTRESOURCE( IDB_OPENCBM ) );
-				Hooks[ HookID ].HookData[ 0 ] = device;
-				Hooks[ HookID ].HookFSID      = FSID_OPENCBM;
 
+				RootHookInvocation Invoker;
+
+				Invoker.FriendlyName  = L"Raw Source"; // Enter As
+				Invoker.Flags         = RHF_CreatesDataSource;
+				Invoker.HookData[ 0 ] = device;
+
+				Hooks[ HookID ].Invocations.push_back( Invoker );
+
+				Invoker.FriendlyName  = L"Raw Disk";
+				Invoker.Flags         = RHF_CreatesFileSystem;
+				Invoker.HookData[ 0 ] = device;
+				Invoker.HookFSID      = FSID_OPENCBM;
+
+				Hooks[ HookID ].Invocations.push_back( Invoker );
 				HookID++;
 
 				NumHooks++;

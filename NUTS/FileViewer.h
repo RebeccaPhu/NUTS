@@ -11,6 +11,8 @@
 
 #include <vector>
 
+#define ROOT_OBJECT_HOOK_EXT 3
+
 typedef enum __DisplayType {
 	DisplayLargeIcons = 0,
 	DisplayDetails    = 1,
@@ -34,6 +36,7 @@ public:
 	void StartDragging();
 	void EndDragging();
 	void SetDragType(int DType);
+	FileSystem *DoRootHook();
 	
 	std::vector<NativeFile> GetSelection( void );
 
@@ -123,6 +126,7 @@ private:
 	DWORD   IconYOffset;
 	DWORD   WindowHeight;
 	DWORD   WindowWidth;
+	DWORD   InvokedHook;
 
 	DropSite *pDropSite;
 
@@ -208,10 +212,12 @@ public:
 #define TXT_MENU_BASE     43600
 #define LC_MENU_BASE      43800
 #define AUD_MENU_BASE     44000
+#define ROOT_HOOK_BASE    44200
 
 #define FILESYS_MENU_END  ( FILESYS_MENU_BASE + 399 )
 #define GFX_MENU_END      ( GFX_MENU_BASE + 199 )
 #define TXT_MENU_END      ( TXT_MENU_BASE + 199 )
 #define LC_MENU_END       ( LC_MENU_BASE + 199 )
 #define AUD_MENU_END      ( AUD_MENU_BASE + 199 )
+#define ROOT_HOOK_END     ( ROOT_HOOK_BASE + 199 )
 

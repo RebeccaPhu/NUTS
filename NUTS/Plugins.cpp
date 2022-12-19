@@ -596,6 +596,41 @@ FileSystem *CPlugins::FindAndLoadFS( DataSource *pSource, NativeFile *pFile )
 	return newFS;
 }
 
+DataSource *CPlugins::LoadHookDataSource( FSIdentifier FSID, DataSource *pSource )
+{
+	RootHookIterator iHook;
+
+	RootHookList hooks = GetRootHooks();
+
+	for ( iHook = hooks.begin(); iHook != hooks.end(); iHook++ )
+	{
+		for ( RootHookInvocations::iterator iInvoke = iHook->Invocations.begin(); iInvoke != iHook->Invocations.end(); iInvoke++ )
+		{
+			if ( iInvoke->HookFSID == FSID )
+			{
+				NUTSPlugin *plugin = GetPluginByID( iHook->Plugin );
+
+				if ( plugin != nullptr )
+				{
+					PluginCommand cmd;
+
+					cmd.CommandID = PC_CreateHookDataSource;
+					
+					cmd.InParams[ 0 ].pPtr = (void *) FSID.c_str();
+					cmd.InParams[ 1 ].pPtr = (void *) pSource;
+
+					if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+					{
+						return (DataSource *) cmd.OutParams[ 0 ].pPtr;
+					}
+				}
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 FileSystem *CPlugins::LoadFSWithWrappers( FSIdentifier FSID, DataSource *pSource )
 {
 	FileSystem *newFS = nullptr;
@@ -747,31 +782,35 @@ FileSystem *CPlugins::LoadFS( FSIdentifier FSID, DataSource *pSource )
 
 		for ( RootHookIterator i = RootHooks.begin(); i != RootHooks.end(); i++ )
 		{
-			if ( i->HookFSID == FSID )
+			for ( RootHookInvocations::iterator iInvoke = i->Invocations.begin(); iInvoke != i->Invocations.end(); iInvoke++ )
 			{
-				NUTSPlugin *p = GetPlugin( i->HookFSID );
-
-				PluginCommand cmd;
-
-				cmd.CommandID = PC_CreateFileSystem;
-				cmd.InParams[ 0 ].pPtr = (void *) FSID.c_str();
-				cmd.InParams[ 2 ].pPtr = (void *) pSource;
-
-				if ( p->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
+				if ( ( iInvoke->HookFSID == FSID ) && ( iInvoke->Flags & RHF_CreatesFileSystem ) )
 				{
-					FileSystem *pFS = (FileSystem *) cmd.OutParams[ 0 ].pPtr;
+					NUTSPlugin *p = GetPluginByID( i->Plugin );
 
-					if ( pFS != nullptr )
+					PluginCommand cmd;
+
+					cmd.CommandID = PC_CreateFileSystem;
+					cmd.InParams[ 0 ].pPtr = (void *) FSID.c_str();
+					cmd.InParams[ 2 ].pPtr = (void *) pSource;
+
+					if ( p->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 					{
-						pFS->ProcessFOP = _ProcessFOPData;
+						FileSystem *pFS = (FileSystem *) cmd.OutParams[ 0 ].pPtr;
 
-						if ( pSource->Flags & DS_ReadOnly )
+						if ( pFS != nullptr )
 						{
-							pFS->Flags |= FSF_ReadOnly;
-						}
-					}
+							pFS->ProcessFOP = _ProcessFOPData;
+							pFS->LoadFOPFS  = _LoadFOPFS;
 
-					return pFS;
+							if ( pSource->Flags & DS_ReadOnly )
+							{
+								pFS->Flags |= FSF_ReadOnly;
+							}
+						}
+
+						return pFS;
+					}
 				}
 			}
 		}
@@ -1131,7 +1170,7 @@ RootCommandSet CPlugins::GetRootCommands()
 
 int CPlugins::PerformRootCommand( HWND hWnd, PluginIdentifier PUID, DWORD CmdIndex )
 {
-	NUTSPlugin *plugin = GetPlugin( PUID );
+	NUTSPlugin *plugin = GetPluginByID( PUID );
 
 	PluginCommand cmd;
 
@@ -1335,7 +1374,11 @@ void CPlugins::LoadRootHooks( NUTSPlugin *plugin )
 
 			if ( plugin->CommandHandler( &cmd ) == NUTS_PLUGIN_SUCCESS )
 			{
-				RootHooks.push_back( * (RootHook *) cmd.OutParams[ 0 ].pPtr );
+				RootHook hook = * (RootHook *) cmd.OutParams[ 0 ].pPtr;
+
+				hook.Plugin = plugin->PluginID;
+
+				RootHooks.push_back( hook );
 			}
 		}
 	}
