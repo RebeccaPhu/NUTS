@@ -679,6 +679,8 @@ unsigned int DoEnter( FSAction *pVars )
 		pNewFS->pParentFS        = pCurrentFS;
 		pNewFS->UseResolvedIcons = UseResolvedIcons;
 		pNewFS->HideSidecars     = HideSidecars;
+		pNewFS->ProcessFOP       = FSPlugins.GetProcessFOP();
+		pNewFS->LoadFOPFS        = FSPlugins.GetFOPLoadFS();
 
 		if ( pNewFS->Init() != NUTS_SUCCESS )
 		{
@@ -717,6 +719,8 @@ unsigned int DoEnter( FSAction *pVars )
 				pNewFS->pParentFS        = pCurrentFS;
 				pNewFS->UseResolvedIcons = UseResolvedIcons;
 				pNewFS->HideSidecars     = HideSidecars;
+				pNewFS->ProcessFOP       = FSPlugins.GetProcessFOP();
+				pNewFS->LoadFOPFS        = FSPlugins.GetFOPLoadFS();
 
 				if ( pNewFS->Init() != NUTS_SUCCESS )
 				{
@@ -835,6 +839,8 @@ unsigned int DoEnterAs( FSAction *pVars )
 			newFS->HideSidecars     = HideSidecars;
 			newFS->hMainWindow      = hMainWnd;
 			newFS->hPaneWindow      = pVars->pane->hWnd;
+			newFS->ProcessFOP       = FSPlugins.GetProcessFOP();
+			newFS->LoadFOPFS        = FSPlugins.GetFOPLoadFS();
 
 			if ( newFS->Init() != NUTS_SUCCESS )
 			{

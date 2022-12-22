@@ -243,6 +243,8 @@
     <ClCompile Include="PropsPage.cpp" />
     <ClCompile Include="RawDataSource.cpp" />
     <ClCompile Include="RawDevices.cpp" />
+    <ClCompile Include="ROMDisk.cpp" />
+    <ClCompile Include="ROMDiskDirectory.cpp" />
     <ClCompile Include="SCREENTranslator.cpp" />
     <ClCompile Include="SidebarItem.cpp" />
     <ClCompile Include="SidePanel.cpp" />
@@ -347,6 +349,8 @@
     <ClInclude Include="PortManager.h" />
     <ClInclude Include="RawDevices.h" />
     <ClInclude Include="ResolvedIcons.h" />
+    <ClInclude Include="ROMDisk.h" />
+    <ClInclude Include="ROMDiskDirectory.h" />
     <ClInclude Include="RootHooks.h" />
     <ClInclude Include="SidebarItem.h" />
     <ClInclude Include="SidePanel.h" />

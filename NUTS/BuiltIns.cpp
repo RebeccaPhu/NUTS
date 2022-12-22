@@ -13,6 +13,7 @@
 
 #include "NUTSFSTypes.h"
 #include "Plugins.h"
+#include "ROMDisk.h"
 
 const ProviderIdentifier ISO_PROVIDER   = L"ISO_CDROM_Provider";
 const ProviderIdentifier ZIP_PROVIDER   = L"ZIP_FILE_Provider";
@@ -310,6 +311,10 @@ std::wstring BuiltIns::FSName( FSIdentifier FSID )
 	else if ( FSID == FSID_ISOHS )
 	{
 		return L"High Sierra CD-ROM";
+	}
+	else if ( FSID == FSID_ROMDisk )
+	{
+		return L"ROM Disk Scratch Pad";
 	}
 
 	return L"";

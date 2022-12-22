@@ -5,6 +5,7 @@
 #include "FloppyDataSource.h"
 #include "MemorySource.h"
 #include "WindowsFileSystem.h"
+#include "ROMDisk.h"
 #include "libfuncs.h"
 #include "RawDevices.h"
 
@@ -38,7 +39,7 @@ BYTE *RootFileSystem::DescribeFile( DWORD FileIndex )
 		}
 		else
 		{
-			rsprintf( status, "Hard Disk: %s", (BYTE *) ReadDeviceProductID( pDirectory->Files[ FileIndex ].Attributes[ 1 ] ) );
+			rsprintf( status, "Hard Disk: %s", (BYTE *) ReadDeviceProductID( (BYTE) pDirectory->Files[ FileIndex ].Attributes[ 1 ] ) );
 		}
 	}
 
@@ -81,7 +82,7 @@ BYTE *RootFileSystem::GetStatusString( int FileIndex, int SelectedItems )
 		}
 		else
 		{
-			rsprintf( status, "Hard Disk: %s", (BYTE *) ReadDeviceProductID( pDirectory->Files[ FileIndex ].Attributes[ 1 ] ) );
+			rsprintf( status, "Hard Disk: %s", (BYTE *) ReadDeviceProductID( (BYTE) pDirectory->Files[ FileIndex ].Attributes[ 1 ] ) );
 		}
 	}
 
@@ -191,6 +192,13 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 FileSystem *RootFileSystem::FileFilesystem( DWORD FileID )
 {
+	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == ROOT_OBJECT_ROMDISK )
+	{
+		FileSystem *pFS = (FileSystem *) new ROMDisk( nullptr );
+
+		return pFS;
+	}
+
 	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == ROOT_OBJECT_SPECIAL_FOLDER )
 	{
 		WindowsFileSystem *pWFS = nullptr;
