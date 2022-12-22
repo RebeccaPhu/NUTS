@@ -2295,16 +2295,26 @@ void CFileViewer::SetDirType( void )
 
 	if ( DialogBoxParam( hInst, MAKEINTRESOURCE( IDD_DIRTYPE ), hWnd, DirTypeDialogProc, NULL ) == IDOK )
 	{
-		FOPData fop;
+		if ( pEditingDir->FSFileType != FT_NULL )
+		{
+			FOPData fop;
 
-		fop.DataType  = NULL;
-		fop.Direction = FOP_SetDirType;
-		fop.lXAttr    = NULL;
-		fop.pFile     = (void *) pEditingDir;
-		fop.pFS       = (void *) NULL;
-		fop.pXAttr    = NULL;
+			fop.DataType  = NULL;
+			fop.Direction = FOP_SetDirType;
+			fop.lXAttr    = NULL;
+			fop.pFile     = (void *) pEditingDir;
+			fop.pFS       = (void *) NULL;
+			fop.pXAttr    = NULL;
 
-		FSPlugins.ProcessFOP( &fop );
+			FSPlugins.ProcessFOP( &fop );
+		}
+		else
+		{
+			pEditingDir->Type = FT_Directory;
+			pEditingDir->Icon = FT_Directory;
+
+			pEditingDir->EncodingID = FS->GetEncoding();
+		}
 
 		FS->DirectoryTypeChanged( pEditingDir->fileID );
 
@@ -2335,6 +2345,7 @@ void CFileViewer::NewDirectory( void )
 	Dir.EncodingID = StaticEncoding;
 	Dir.FSFileType = FT_UNSET;
 	Dir.Flags      = FF_Directory;
+	Dir.Icon       = FT_Directory;
 
 	pEditingDir = &Dir;
 

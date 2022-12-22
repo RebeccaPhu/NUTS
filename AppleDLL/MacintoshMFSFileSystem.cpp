@@ -72,6 +72,8 @@ void MacintoshMFSFileSystem::SetShape()
 		DS_TrackDef track;
 
 		track.TrackID = t;
+		track.HeadID  = 0;
+		track.Sector1 = 0;
 
 		for ( BYTE s=0; s<SPT[t]; s++ )
 		{

@@ -87,6 +87,31 @@ void LoadFonts()
 	}
 }
 
+void TranslateGenericContent( FOPData *fop )
+{
+	if ( fop->Direction == FOP_ReadEntry )
+	{
+		NativeFile *pFile = (NativeFile *) fop->pFile;
+
+		if ( pFile->FSFileType == FILE_MACINTOSH )
+		{
+			if ( (bool) Preference( L"UseResolvedIcons" ) )
+			{
+				if ( pFile->ExtraForks > 0 )
+				{
+					FileSystem *pFS = (FileSystem *) fop->pFS;
+
+					CTempFile obj;
+
+					pFS->ReadFork( pFile->fileID, 0, obj );
+
+					ExtractIcon( pFile, obj, pFS->pDirectory );
+				}
+			}
+		}
+	}
+}
+
 bool TranslateISOContent( FOPData *fop )
 {
 	NativeFile *pFile = (NativeFile *) fop->pFile;
@@ -197,19 +222,6 @@ bool TranslateISOContent( FOPData *fop )
 
 			fop->ReturnData.Identifier = L"Apple Macintosh File";
 
-			if ( (bool) Preference( L"UseResolvedIcons" ) )
-			{
-				if ( pFile->ExtraForks > 0 )
-				{
-					FileSystem *pFS = (FileSystem *) fop->pFS;
-
-					CTempFile obj;
-
-					pFS->ReadFork( pFile->fileID, 0, obj );
-
-					ExtractIcon( pFile, obj, pFS->pDirectory );
-				}
-			}
 
 			return true;
 		}
@@ -595,13 +607,13 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			FOPData *fop = (FOPData *) cmd->InParams[ 0 ].pPtr;
 
+			cmd->OutParams[ 0 ].Value = 0x00000000;
+
 			if ( fop->DataType == FOP_DATATYPE_CDISO )
 			{
 				bool r= TranslateISOContent( fop );
 
 				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
-
-				return NUTS_PLUGIN_SUCCESS;
 			}
 
 			if ( fop->DataType == FOP_DATATYPE_ZIPATTR )
@@ -609,9 +621,11 @@ APPLEDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 				bool r= TranslateZIPContent( fop );
 
 				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
-
-				return NUTS_PLUGIN_SUCCESS;
 			}
+
+			TranslateGenericContent( fop );
+
+			return NUTS_PLUGIN_SUCCESS;
 		}
 		
 		break;

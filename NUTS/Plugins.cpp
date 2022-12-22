@@ -70,6 +70,16 @@ CPlugins::~CPlugins()
 	DeleteCriticalSection( &SplashLock );
 }
 
+FOPTranslateFunction CPlugins::GetProcessFOP()
+{
+	return _ProcessFOPData;
+}
+
+FOPLoadFSFunction CPlugins::GetFOPLoadFS()
+{
+	return _LoadFOPFS;
+}
+
 void CPlugins::LoadPlugins()
 {
 	EncodingFontMap[ ENCODING_ASCII ] = std::vector<FontIdentifier>();

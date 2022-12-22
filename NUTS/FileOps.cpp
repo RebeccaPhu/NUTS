@@ -561,6 +561,12 @@ unsigned int __stdcall FileOpThread(void *param) {
 				if ( IsInstall ) { CFlags |= CDF_INSTALL_OP; }
 
 				NativeFile CopyObject = iStep->Object;
+
+				// Make sure this is a directory. The Install step can't guarantee this, as
+				// the source might be an image object.
+				CopyObject.Flags |= FF_Directory;
+				CopyObject.Type   = FT_Directory;
+				CopyObject.Icon   = FT_Directory;
 				
 				int FileResult = pTargetFS->CreateDirectory( &CopyObject, CFlags );
 

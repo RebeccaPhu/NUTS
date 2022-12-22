@@ -18,6 +18,7 @@ typedef enum _FOPDirection
 
 #define FOP_DATATYPE_ZIPATTR 0x071D071D
 #define FOP_DATATYPE_CDISO   0x0CD00CD0
+#define FOP_DATATYPE_ROMDISK 0x8011D155
 
 typedef struct _FOPReturn
 {

@@ -470,6 +470,76 @@ bool TranslateGenericContent( FOPData *fop )
 		}
 	}
 
+	NativeFile *pFile = (NativeFile *) fop->pFile;
+
+	if ( fop->Direction == FOP_ReadEntry )
+	{
+		if ( pFile->FSFileType == FT_ACORNX )
+		{
+			ResolveAppIcon( (FileSystem *) fop->pFS, (NativeFile *) fop->pFile, true );
+
+			/* Set some return strings */
+			DWORD Type = ( pFile->LoadAddr & 0x000FFF00 ) >> 8;
+
+			std::string FileTypeName = RISCOSIcons::GetNameForType( Type );
+
+			const char *pTypeName = FileTypeName.c_str();
+
+			if ( pFile->Flags & FF_Directory )
+			{
+				rsprintf( fop->ReturnData.StatusString, "%s | [%s%s%s%s] - Directory",
+					(BYTE *) pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-"
+				);
+
+				rsprintf( fop->ReturnData.Descriptor, "[%s%s%s%s] - Directory",
+					(pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-"
+				);
+
+				fop->ReturnData.Identifier = L"Directory";
+			}
+			else
+			{
+				rsprintf( fop->ReturnData.StatusString, "%s | [%s%s%s%s] - %0X bytes - %s/%03X",
+					(BYTE *) pFile->Filename, (pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
+					(DWORD) pFile->Length, (char *) pTypeName, Type
+				);
+
+				rsprintf( fop->ReturnData.Descriptor, "[%s%s%s%s] %08X bytes, %s/%03X",
+					(pFile->Flags & FF_Directory)?"D":"-", (pFile->AttrLocked)?"L":"-", (pFile->AttrRead)?"R":"-", (pFile->AttrWrite)?"W":"-",
+					(DWORD) pFile->Length, pTypeName, Type
+				);
+
+				fop->ReturnData.Identifier = FOPIdentify( pFile->RISCTYPE );
+			}
+
+			if ( pFile->RISCTYPE == 0xFF9 )
+			{
+				fop->ReturnData.ProposedFS = FSID_SPRITE;
+			}
+		}
+	}
+
+	if ( fop->Direction == FOP_SetDirType )
+	{
+		NativeFile *pFile = (NativeFile *) fop->pFile;
+
+		if ( pFile->FSFileType == FT_ACORNX )
+		{
+			pFile->AttrLocked = 0x00000000;
+			pFile->AttrRead   = 0xFFFFFFFF;
+			pFile->AttrWrite  = 0xFFFFFFFF;
+			pFile->AttrExec   = 0x00000000;
+			pFile->TimeStamp  = (DWORD) time( NULL  );
+
+			pFile->Type = FT_Directory;
+			pFile->Icon = RISCOSIcons::GetIconForType( 0xA00 );
+
+			pFile->EncodingID = ENCODING_RISCOS;
+		}
+
+		return true;
+	}
+
 	return false;
 }
 
@@ -511,47 +581,6 @@ bool TranslateISOContent( FOPData *fop )
 			/* Change the type for copying purposes */
 			File->FSFileType = FT_ACORNX;
 			File->EncodingID = ENCODING_RISCOS;
-
-			ResolveAppIcon( (FileSystem *) fop->pFS, (NativeFile *) fop->pFile, true );
-
-			/* Set some return strings */
-			DWORD Type = ( File->LoadAddr & 0x000FFF00 ) >> 8;
-
-			std::string FileTypeName = RISCOSIcons::GetNameForType( Type );
-
-			const char *pTypeName = FileTypeName.c_str();
-
-			if ( File->Flags & FF_Directory )
-			{
-				rsprintf( fop->ReturnData.StatusString, "%s | [%s%s%s%s] - Directory",
-					(BYTE *) File->Filename, (File->Flags & FF_Directory)?"D":"-", (File->AttrLocked)?"L":"-", (File->AttrRead)?"R":"-", (File->AttrWrite)?"W":"-"
-				);
-
-				rsprintf( fop->ReturnData.Descriptor, "[%s%s%s%s] - Directory",
-					(File->Flags & FF_Directory)?"D":"-", (File->AttrLocked)?"L":"-", (File->AttrRead)?"R":"-", (File->AttrWrite)?"W":"-"
-				);
-
-				fop->ReturnData.Identifier = L"Directory";
-			}
-			else
-			{
-				rsprintf( fop->ReturnData.StatusString, "%s | [%s%s%s%s] - %0X bytes - %s/%03X",
-					(BYTE *) File->Filename, (File->Flags & FF_Directory)?"D":"-", (File->AttrLocked)?"L":"-", (File->AttrRead)?"R":"-", (File->AttrWrite)?"W":"-",
-					(DWORD) File->Length, (char *) pTypeName, Type
-				);
-
-				rsprintf( fop->ReturnData.Descriptor, "[%s%s%s%s] %08X bytes, %s/%03X",
-					(File->Flags & FF_Directory)?"D":"-", (File->AttrLocked)?"L":"-", (File->AttrRead)?"R":"-", (File->AttrWrite)?"W":"-",
-					(DWORD) File->Length, pTypeName, Type
-				);
-
-				fop->ReturnData.Identifier = FOPIdentify( File->RISCTYPE );
-			}
-
-			if ( File->RISCTYPE == 0xFF9 )
-			{
-				fop->ReturnData.ProposedFS = FSID_SPRITE;
-			}
 
 			return true;
 		}
@@ -603,11 +632,6 @@ bool TranslateISOContent( FOPData *fop )
 		}
 	}
 
-	if ( TranslateGenericContent( fop ) )
-	{
-		return true;
-	}
-
 	if ( fop->Direction == FOP_AttrChanges )
 	{
 		NativeFile *pFile    = (NativeFile *) fop->pFile;
@@ -635,22 +659,6 @@ bool TranslateISOContent( FOPData *fop )
 			
 			return true;
 		}
-	}
-
-	if ( fop->Direction == FOP_SetDirType )
-	{
-		NativeFile *pFile = (NativeFile *) fop->pFile;
-
-		if ( pFile->FSFileType == FT_ACORNX )
-		{
-			pFile->AttrLocked = 0x00000000;
-			pFile->AttrRead   = 0xFFFFFFFF;
-			pFile->AttrWrite  = 0xFFFFFFFF;
-			pFile->AttrExec   = 0x00000000;
-			pFile->TimeStamp  = (DWORD) time( NULL  );
-		}
-
-		return true;
 	}
 
 	return DidTranslate;
@@ -710,8 +718,6 @@ bool TranslateZIPContent( FOPData *fop )
 					File->FSFileType = FT_ACORNX;
 					File->EncodingID = ENCODING_RISCOS;
 
-					ResolveAppIcon( (FileSystem *) fop->pFS, (NativeFile *) fop->pFile );
-
 					return true;
 				}
 			}
@@ -763,11 +769,6 @@ bool TranslateZIPContent( FOPData *fop )
 				return true;
 			}
 		}
-	}
-
-	if ( TranslateGenericContent( fop ) )
-	{
-		return true;
 	}
 
 	return false;
@@ -1150,23 +1151,27 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			FOPData *fop = (FOPData *) cmd->InParams[ 0 ].pPtr;
 
+			bool r = false;
+
+			cmd->OutParams[ 0 ].Value = 0x00000000;
+
 			if ( fop->DataType == FOP_DATATYPE_ZIPATTR )
 			{
-				bool r = TranslateZIPContent( fop );
+				r = TranslateZIPContent( fop );
 
 				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
-
-				return NUTS_PLUGIN_SUCCESS;
 			}
 
 			if ( fop->DataType == FOP_DATATYPE_CDISO )
 			{
-				bool r= TranslateISOContent( fop );
+				r= TranslateISOContent( fop );
 
 				if ( r ) { cmd->OutParams[ 0 ].Value = 0xFFFFFFFF; } else { cmd->OutParams[ 0 ].Value = 0x00000000; }
-
-				return NUTS_PLUGIN_SUCCESS;
 			}
+
+			(void) TranslateGenericContent( fop );
+
+			return NUTS_PLUGIN_SUCCESS;
 		}
 		
 		break;

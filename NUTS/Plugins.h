@@ -130,6 +130,8 @@ public:
 
 	void SetPortConfiguration( void );
 
+	FOPTranslateFunction GetProcessFOP();
+	FOPLoadFSFunction GetFOPLoadFS();
 
 private:
 	NUTSProviderList  Providers;
