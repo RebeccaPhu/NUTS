@@ -1,0 +1,18 @@
+<p>Because NUTS uses an 'agnostic' model in its design, files become somewhat abstract in how they are handled. NUTS assesses the capabilities of a given file system to determine the features that can be offered.</p>
+
+<h2>Filename Lengths</h2>
+<p>Different file systems have different limits on how long a filename can be. When creating a new image, creating a new directory, or renaming an existing object, NUTS will enforce a length limit on the filename, which will vary between file systems.</p>
+
+<h2>Extensions</h2>
+<p>Some file systems have extensions, and some do not. Others yet still use 'fake' extensions. For example, the Commodore 8-bit file systems use extensions such as PRG and REL, but these are not definable by the user - rather they are displayed as a consequence of the stored file type. NUTS will reproduce these extensions for familiarity, but will not let you change them (usually they can be changed by changing a related file attribute). On file systems that support fully definable extensions, the appropriate dialog boxes will show an additional extension edit box, alongside the filename edit box. If extensions cannot be defined at all, then the extension edit box will not be shown.</p>
+
+<p>Some file systems, such as ISO9660 and High Sierra only allow extensions for files, and not directories. This will be reflected in the 'Create Directory' dialog (See {page:dirs} for more information).</p>
+
+<h2>Forks</h2>
+<p>Some file systems (notably those for the Apple Macintosh systems) employ forks. NUTS supports copying forks, and when copied between file systems that understand each other's types the forks will be respected appropriately. If a file with one or more forks (in addition to the main data fork) is copied to a file system that does not support forks, then the additional forks will be lost. This may not be obvious; you should check that the file has copied in its entirety. Note that some file systems may represent the fork differently. For example, when copying Macintosh files to a Windows volume, a sidecar file is created (in AppleSingle format) to represent the resource fork and the Finder information.</p>
+
+<h2>Filename interpretation</h2>
+<p>Not all file systems speak the same dialect of ASCII (see {page:fonts} for further information on this). When copying files between differing file system types, the receiving file system will verify if the filename is in an encoding it recognises (or plain ASCII). If it is not, then the receiving file system will request that the source file system provide a file name that has been approrpriately translated to plain ASCII (and subsequently do it's own conversion if required). In these scenarios, special characters may be replaced with placeholders (typically the underscore '_' character).</p>
+
+<h2>Pseudo-files</h2>
+<p>Some file systems, particular those that are intermediaries for differnet modes of accessing the media (e.g. the Acorn DFS DSD handler) may present 'pseudo-files' - objects that look like files, but can't be read, renamed, etc. NUTS will prevent attempts to manipulate these files. Typically, you will not be able to write to these file systems either. Some file systems (e.g. {page:tzx}) present blocks as pseudo-files. These won't be directly manipulable, but can be edited via e.g. a block editor.</p>

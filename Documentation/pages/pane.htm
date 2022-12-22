@@ -1,0 +1,24 @@
+<div class="borderimages">
+{figure:>largeicons.png,The Default 'Large Icons' view}
+<p>NUTS has 3 different display modes, accessed from the 'Display As' submenu of the {page:context}. Shown on the right is the default view, 'Large Icons'. In this view, full size icons (approximately 32x32 pixels in size) are shown, with just the filename beneath. If the filename is too long to display comfortably, it may be truncated by an ellipsis (...).</p>
+
+<div style="line-height: 24px; clear:both;">&nbsp;</div>
+
+{figure:<detailsicons.png,The 'Details' view}
+<p style="margin-top:0">When the view is switched to 'Details', NUTS will display the large icon, with the filename to the right. Beneath the filename, will be a brief summary of the file details, as known to the file system handler. Note that not all knowable details may be shown, e.g. a file may contain a screen dump, but the file system handler might not known this.</p>
+
+<div style="line-height: 24px; clear:both;">&nbsp;</div>
+
+{figure:>listicons.png,The 'List' view}
+<p style="margin-top:0">When the view is switched to 'List', NUTS will display a more compact listing, using smaller (approximately 16x16 pixels) icons, and the filename to the right. This view shows more files in the same viewer pane space.</p>
+
+<div style="line-height: 24px; clear:both;">&nbsp;</div>
+</div>
+
+<h2>Resolved Icons</h2>
+<p>NUTS supports a concept called 'resolved icons'. When enabled, it allows file systems to perform a deeper analysis of the file system to find a more suitable icon for a file system object than the basic types. Because this requires interrogating the file system more than necessary to simply read the file list, and doing so on a corrupt or garbage file system may result in unpredictable behaviour, the option is disabled by default. See {page:options} for more information.</p>
+
+<h2>Status Bar and Title Bar</h2>
+<p>The NUTS status bar shows information relevant to the current viewer pane state. If there are no objects selected, it typically shows the number of objects present (individual file systems may show other information). When a single file is selected, the status bar will show information about that file (even if 'Details'mode is selected). If multiple files are selected, the status bar typically shows how many objects are in the selection (individual file systems may show other information).</p>
+
+<p>A separate panel of the status bar shows the font currently being used to render the majority of file system objects. In special cases, a file system may specify that an object should 'override' the file system encoding, and use its own encoding, which may result in the font shown not being used to render the filename and/or details of the file in question. Note that such files will not change font when the 'Change Font' option is used.</p>

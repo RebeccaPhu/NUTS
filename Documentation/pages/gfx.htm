@@ -1,0 +1,43 @@
+{figure:>graphicviewer.png,The Graphic Viewer, with a BBC Micro screen}
+<p>Graphic Translators are components of plugins that can translate data in a file into a bitmap image for display. The plugin provides a bitmap in a standard format, and then the built-in viewer in NUTS displays the image, with options for changing how the data should be interpreted (typically, a screen mode). Many computer systems support flashing colours in hardware. As such, the image is actually translated twice: once for each of the frames of the flashing sequence. The flash duration is a fixed period of half a second.</p>
+
+<p>Graphic Translators are accessed via the 'Graphic' submenu of the 'Translate' submenu of the {page:context,context menu}. Alternatively, some files may be automatically identified as graphic files by a file system handler, and as such 'entering' these files will automatically load them into the appropriate translator.</p>
+
+<p>The toolbar at the top of the Graphic Viewer allows the image to be adjusted as required. The options (from left to right) are as follows:</p>
+
+<h2>Mode Selection</h2>
+<p>This allows you to select a mode of interpretation, which is typically a screen mode. Not all translators support this, in which case the drop down may be disabled. The translator will usually try and work out which mode is most appropriate. However, if there is ambiguity then it may select the wrong mode, in which case you can select the correct mode here.</p>
+
+<h2>Palette Control</h2>
+<p>This allows you to control the palette in two ways. Firstly the 'logical' palette allows you to reassign colours on systems that have a logical palette (such as the BBC Micro). This feature is disabled on systems that do not support logical palettes, or in modes that do not use logical palettes. The 'physical' palette allows you to alter how the colours in use have been presented. This is useful for simulating black &amp; white, amber, and green displays (not available in all cases - particularly high-bit-depth images).</p>
+
+<p>Both logical and physical palettes can be loaded and saved as files for quick redefinition.</p>
+
+<h2>Copy Image</h2>
+<p>This button will copy the image to the clipboard as bitmap data. It can then be pasted into any other application, or as a file into Windows Explorer.</p>
+
+<h2>Save Image</h2>
+<p>This button will save the image as a 32-bit uncompressed Windows Bitmap image.</p>
+
+<h2>Print Image</h2>
+<p>This button will print the image to a single page at full size.</p>
+
+<h2>Effects Menu</h2>
+<p>NUTS supports a limited number of effects which can be applied to the image. If applied, these effects will also be present in any copied, saved or printed images. Note that NUTS is not intended to provide a comprehensive image processing suite, nor are the effects intended to be top quality. They are provided for entertainment purposes more than anything.</p>
+
+<p>The following effects are available:</p>
+
+<ul>
+<li>Antialias - Applies a pixel antialising algorithm. This works well on higher resolution images (more than 300 pixels horizontal); less than this can result is some unusual colour smearing.</li>
+<li>CRT Glow - Applies a slow glow around brighter pixels, simulating the effect of viewing the image on a CRT monitor. More obvious on lower resolution images.</li>
+<li>Scanlines - Doubles the resolution and then blanks every other scanline. Simulates the effect of low vertical resolution monitors. Note that adherence to aspect ratio may mean that the effect does not show up in the viewer, but it will be present in saved, printed or copied iamges.</li>
+<li>Snow - Simulates a TV 'snow' effect. As there are only two frames half a second apart, this effect is not as seamless as real TV snow would be, but it does simualte a badly tuned TV to a certain extent.</li>
+<li>Ghosting - Another simulation of a badly tuned TV, ghosting the image horizontally.</li>
+<li>Rainbowing - Simulates a poor colour encoding signal that results in subtle 'rainbowing' of the image horizontally.</li>
+</ul>
+
+<h2>Offset</h2>
+<p>This value (entered in hexadecimal) allows you to ignore the specified amount of bytes at the beginning of the file. This is useful for viewing files that have other data preceding the screen data.</p>
+
+<h2>Length</h2>
+<p>This value (entered in decimal) allows you to limit how much data is processed, effectively clipping any extraneous data on the end of the image. This is useful for viewing files that have other data following the screen data. It is measured from the starting offset.</p>

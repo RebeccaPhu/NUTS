@@ -1,0 +1,38 @@
+{figure:>mainwindow.png,The main NUTS window, showing both panes at the Root FileSystem}
+<p>NUTS operates like an FTP client, and presents two 'File Viewer' panes that are used to browse the available file systems. Note that no facility is provided for sorting files by name, type, etc. This is because for some filesystems (in particular {page:tapes}) the order of files is important, and altering the presented order would cause problems. The file order is set by the file system handler, and cannot be overriden.</p>
+
+<p>When NUTS is started, the panes are showing the content of the 'Root' FileSystem. This is a special file system that presents objects representing the starting points for browsing the system. Typically this will be the Windows Volumes on your system, but will also include raw access to any hard disk devices, folders representing special 'Library' locations (such as Documents, Pictures, etc), and the ROM Disk. If there are any plugins that have provided 'root hooks' then they will also appear here. At time of writing, the Commodore 8-bit Plugin will provide OpenCBM locations here for each detected 1541-style drive, if a suitable interface (e.g. XU1541) is set up.</p>
+
+<p>It is important to use the 'Raw Device' entries with care. Normally, access to these will be prohibited by Windows unless you are running NUTS as Administrator. It is sometimes necessary to do so to access other devices (e.g. CF memory cards), so always pay attention to what you are selecting before using any destructive feature such as formatting.</p>
+
+<p>If you have any optical drives, they may be listed twice. The first, with the standard Windows volume designator will open the optical drive as a Windows volume, and use Windows' own interpretation of the file system there. The second, with a 'Raw' prefix, will open the device directly (you may need Administrator privilieges to do this) and use NUTS's built-in ISO image handler (if suitable). Note that at time of writing, NUTS does not have a UDF handler, so opening most DVD media using the raw location will not be successful.</p>
+
+<p>The ROMDisk is a 'scratchpad' of sorts, where files of any kind can be stored for manipulation. Because the contents are stored on your local hard disk, they are not lost when restarting NUTS, hence it is a ROMDisk, rather than a RAMDisk. For more information on using the ROMDisk for file manipulation, see {page:romdisk} section.</p>
+
+<div style="clear:both;"></div>
+
+{figure:>contextmenu.png,The context menu from which most<br>operations can be executed}
+<h2 style="margin-top:0;">Navigating NUTS</h2>
+<p>Navigating the file browser panes is done most simply by double-clicking an entry. From the keyboard, the arrow keys, Page Up/Page Down, Home and End can be used to move around, and the Enter key is used to 'enter' a location. The meaning of 'enter' depends on what it is that is selected at the time.</p>
+
+<p>If the item is a folder, then the pane changes to view of the folder's contents. If the item is a file, then NUTS will attempt to determine what it is in order to determine what to do with it. If the containing file system has marked it as an 'image' (disk/tape image, as opposed to a picture), then NUTS will try to determine what file system it is by 'offering' the image to each file system handler in turn. If it has been determined that there is a pretty good match with a known file system, then that file system is loaded, and the pane switches to a view of the image's contents, and the title bar for that pane updates to reflect the path.</p>
+
+<p>If the containing file system has marked the file as being translatable with a specific translator, then the appropriate translator interface is loaded, and the file is passed to the specified translator for rendering, either text, graphics or audio.</p>
+
+<p>Most of the time, NUTS gets this right. Sometimes a file might be corrupt in a way that it's still readable, but not as recognisable. Sometimes, if the file doesn't have an extension that indicates the type (e.g. .IMG) then the plugin's confidence is reduced, reducing the ability of NUTS to make the right decision.</p>
+
+<p>For this reason, you can manually force interpreation by right-clicking to access the context menu. This menu (shown on the right) shows the main operations that can be achieved. Some will be greyed out according to the object type, or the number of objects selected. The 'Enter As' submenu shows all of the file systems that are available, and you can choose which file system to explicitly handle the file. Similarly, the 'Translate' menu shows all of the available translators, which can be used to force a translation of the selected object.</p>
+
+<p>NUTS takes an approach of 'The user is always right'. Unless something you have requested is fundamentally impossible, or the system is unable or unwilling to carry out a necessary step, NUTS will do exactly as you tell it to do, to the best of its ability. In some circumstances, this may result in a lock-up or crash of the application if the data is so incorrect as to be unusable. It is not always possible to detect data that would cause these issues, as such data may also be legitimate.</p>
+
+<p>NOTE: It is possible to open the same file system in both panes at once. Further it is possible to perform file operations in this state, e.g. copy files from one point in the image to the other. It is EXTREMELY INADVISABLE to do this. It is not prohibited because it is difficult to track images open in both panes at once (due to the image nesting ability of NUTS). In some cases, it may be safe to do so, however this should never be assumed; rather you should assume that such operations will be dangerous. To allow for moving contents around, {page:romdisk} is provided.</p>
+
+<p>The following sub-sections cover the basic principles of using NUTS:</p>
+<ul>
+<li>{page:pane} - Information available in the file viewer pane, and the display options avaialble.</li>
+<li>{page:context} - Further information on the context menu.</li>
+<li>{page:root} - Working with the Root File System.</li>
+<li>{page:files} - Files, as NUTS sees them.</li>
+<li>{page:fonts} - Text encodings and how NUTS uses 8x8 fonts to render them.</li>
+<li>{page:fsfiletypes} - How NUTS negotiates files from different systems.</li>
+</ul>

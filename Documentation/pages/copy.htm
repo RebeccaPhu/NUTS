@@ -1,0 +1,22 @@
+<p>A file copy operation occurs between two browser panes, and the object(s) to be copied are those selected in the pane that was active when the {page:context,context menu} was activated, or the 'Copy Files' shortcut was selected on the {page:sidebar,sidebar} (note that there is one shortcut for each pane, and clicking 'Copy Files' will activate the associated pane before the copy starts).</p>
+
+<p>The objects(s) will be read from the source pane, along with any defined {page:files,forks}, and then written to the target pane. During this process, there may be up to two conversion processes. The following describes the internal operations that take place during a file copy:</p>
+
+<ul>
+<li>The primary file content ('data fork' if there are additional forks) is read into a temporary store.</li>
+<li>If there are additional forks, these are read individually, and each is 'written' to the target - the actual data write does not occur yet, but the data is made available to the target file system.</li>
+<li>The target file system is asked to write the primary file content.</li>
+<li>The target will check the encoding of the filename (and extension where defined). If it is not in a recognised {page:fonts,encoding} (or at least ASCII) then the operation is temporarily rejected, indicating an ASCII conversion is required.</li>
+<li>If an ASCII conversion is required, the source file system is requested to convert the filename (and extension where defined) to an ASCII-compatible encoding. In most cases, this will simply be claiming the encoding is ASCII, if the character range used is strictly limited to the ASCII character range (32 - 126). The write operation is then tried again.</li>
+<li>The target file system then uses the filename information from the source to determine if there is a filename clash. File systems where filename clashes are permitted (typically {page:tapes}) will skip this step.</li>
+<li>If there is a filename clash, the target will reject the write again, indicating an object with the same name already exists. NUTS differntiates between object types in this instance:
+<ul>
+<li>If the object being copied is a file, and the clashing object is a directory (or vice-versa) the copy stops here. A file cannot overwrite a directory (or vice-versa), and this clash will have to be resolved manualluy.</li>
+<li>If both objects are directories, the option to merge or rename is available (see {page:dirs})</li>
+<li>If both objects are files, confirmation to overwrite is sought via the {page:fileops,File Operations dialog}. If the copy is confirmed, the clashing object in the target is deleted (without further confirmation), and the write is attempted again.</li>
+</ul></li>
+<li>If there are no other issues, the write proceeds, along with the write of any additional forks.</li>
+<li>{page:sidecars} are taken into account: If the source is exporting sidecars to the target, then they are generated after the file is copied. If the source is importing sidecars from the target, they are generated before the file is written. If the sidecar can be written, but the file copy itself cannot proceed (including for user-originated reasons) then the target may result in containing the sidecar file, but not the actual file to which it references. This will need to be manually corrected.</li>
+<li>Note that any file positively identified as a sidecar that is related to the current copy operation will be skipped as a sperate explicit file copy, in that its information has already been read and used for the main file.</li>
+<li>If there is a fatal error (such as a failure to access the {page:sources}), then the whole operation is abandoned.</li>
+</ul>

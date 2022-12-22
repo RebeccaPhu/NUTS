@@ -1,0 +1,126 @@
+body {
+	padding: 0;
+	margin: 0;
+	background-color: white;
+	font-family: Arial, Helvetica, sans-serif;
+	overflow-x: hidden;
+	overflow-y: hidden;
+}
+
+#topheader {
+	position: absolute;
+	top: 0;
+	width: 100%;
+	padding: 8px;
+	font-size: 28pt;
+	color: black;
+	border-bottom: 1px solid #777777;
+	height: 48px;
+	overflow: hidden;
+}
+
+#sidebar {
+	position: absolute;
+	left: 0;
+	top: 2px;
+	bottom: 28px;
+	width: 200px;
+	padding: 8px;
+	font-size: 12pt;
+	color: #333333;
+	width: 200px;
+	margin: 0;
+	padding:0;
+	border-right: 1px solid #777777;
+	overflow-y: auto;
+}
+
+#pagecontent {
+	position: absolute;
+	left: 201px;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	margin: 0;
+	padding: 0;
+}
+
+#pagetitle {
+	position: absolute;
+	top: 1px;
+	left: 0;
+	right: 0;
+	height: 30px;
+	border-bottom: 1px black solid;
+	color: black;
+	font-size: 20pt;
+	padding: 2px 8px 2px 0px;
+	margin: 0 4px 0 4px;
+	overflow: hidden;
+	background: url('`cssimage:titleacorn.png`') no-repeat right center;
+}
+
+#footer {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	background-color: black;
+	color: white;
+	height: 24px;
+	overflow:hidden;
+	line-height: 24px;
+	padding-left: 4px;
+}
+
+#main {
+	position: absolute;
+	top: 64px;
+	bottom: 24px;
+	left: 0;
+	right: 0;
+	height: calc( 100% - 60px );
+	width: 100%;
+}
+
+#pagecontainer
+{
+	padding: 2px 4px 2px 4px;
+	overflow-y: scroll;
+	position: absolute;
+	top: 38px;
+	bottom: 28px;
+	right: 0;
+	left: 0;
+}
+
+.page-closed
+{
+	display:none;
+}
+
+#topheader .leftimage
+{
+	display: inline-block;
+	vertical-align: top;
+}
+
+#topheader
+{
+	font-family: "Times New Roman", Serif;
+	font-size: 12pt;
+}
+
+.nutstitle
+{
+	font-size: 18pt !important;
+	font-weight: bold;
+}
+
+#manualtitle
+{
+	font-size: 22pt;
+	float:right;
+	line-height: 48px;
+	font-family: sans-serif;
+	padding-right: 16px;
+}

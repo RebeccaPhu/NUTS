@@ -1,0 +1,42 @@
+{figure:>tapeplayer.png,The Tape Player, showing a TZX file playing}
+<p>The Tape Player is used to playback data in tape images as the original audio (or a very close and compatible approximation) that was used to create the tape image.</p>
+
+<p>The tape player is accessed by entering a {page:tapes,tape image} and either selecting the 'Play Audio' shortcut on the {page:sidebar,sidebar}, or by right-clicking (or using the context menu key) on the file browser pane, and selecting 'Play/Save Tape Audio' from the {page:context,context menu}. If no files are selected, then the whole image contents are used, otherwise only the selected components are used.</p>
+
+<p>Note: The tape player is used for playing back tape image contents as the audio equivalents. It is not used for converting audio formats, and the two mechanisms are not interchangeable - i.e. audio translators cannot be used to convert a tape image to audio. For information on translating audio files, see {page:audio}.</p>
+
+<h2>Window Layout</h2>
+
+<p>The Tape Player window is shown on the right, playing a TZX file of 'Dan Dare 2 - Mekon's Revenge', published by Virgin. The window is divided into four quadrants.</p>
+
+<p>The top left quadrant is a visual representation of the cassette represented by the tape image, as it would appear in a real tape deck (with some artistic license). If the tape image contains information about the title and/or publisher of the content, then it will be shown on the cassette face. If this information is not available, then the cassette will show a default text, set by the file system handler that is being used to view the contents of the tape image.</p>
+
+<p>The visualisation includes two reels of tape, that rotate proportional to their position through the 'recording', i.e. at the start the left reel rotates slowly and the right wheel rotates quickly. As the tape nears the end, the two swap speeds. Similarly the simulated tape moves from one reel to the other. Collectively, these give the user an impression of overall progress of the recording.</p>
+
+<p>Below the 'cassette' are the transport 'keys'. These operate identically to those found on a standard tape deck, with a couple of exceptions. The leftmost key will jump the playback immediately to the start; contrast this with the rewind and fast foward keys which move the 'tape' rapidly in the appropriate direction, but do not make a direct jump to any specific location. Additionally, the 'Eject' key (the rightmost), will close the tape player window.</p>
+
+<p>The keys in order are Back to beginning, Rewind, Play, Fast Forward, Stop and Close Window.</p>
+
+<p>The top right quadrant is the 'cue list'. This list is prepared by the file system handler used to process the image's contents, and may have more or less elements than are shown in the file browser (for example, some elements may make no sense to present in the cue list, others may result in multiple cue points being generated for clarity). This list will automatically scroll, as is not a selection list. Each cue point has shows its progress as it plays by means of a highlight progress bar in green, giving an indication of the time until the next cue point.</p>
+
+<p>This quadrant also contains the volume control slider and the command menu (see below).</p>
+
+<p>The bottom right quadrant is used to show currenty relevant information, and will be prepared by the file system handler being used to browse the image. There are three entries here, and the used of each is defined by the file system handler. They will update as the tape image plays. In the image to the right, it is showing that the image is playing back a SpeedLock copy protection block (and is additionally indicating the basic encryption algorithm being used to obfuscate the file).</p>
+
+<h2>Controls</h2>
+
+{figure:>tapebrowser.png,The Tape Browser}
+<p>The main controls are the transport keys in the bottom left quadrant. They react like keys on a real tape deck, showing a 'depressed' state when clicked. The play key remains depressed until another key is used. For keyboard users, the focus is indicated on the tape keys by means of a solid white line at the top of the key.</p>
+
+<p>The command menu is accessed by the small button with the downward-pointing triangle. It offers two options:</p>
+
+<ul>
+<li>Save Tape Audio: Use this to save the prepared audio as an uncompressed WAV file. Note that no cue information is saved alongside.</li>
+<li>Tape Browser: Opens a separate window that can be used to directly jump to a specific point in the 'recording'</li>
+</ul>
+
+<h2>Tape Browser</h2>
+
+<p>The Tape Browser window has a cue list indentical to the main tape player window, but does not show progress bars. Double-clicking an item in the list will cause playback to jump directly to that cue point.</p>
+
+<p>Note that multiple player windows (and thus browser windows) can be on screen at once, and the user should be aware of which browser window is attached to which tape player window.</p>

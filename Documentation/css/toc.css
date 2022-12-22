@@ -1,0 +1,27 @@
+#sidebar
+{
+	font-size: 10pt;
+}
+
+#sidebar a, #pagecontainer a:visited, #pagecontainer a:link, #pagecontainer a:hover
+{
+	text-decoration: none;
+	color: teal;
+	font-weight: bold;
+}
+
+#sidebar a:hover
+{
+	text-decoration: underline !important;
+}
+
+#sidebar ul
+{
+	margin: 0 0 0 8px;
+	padding: 0 0 0 4px;
+}
+
+#sidebarspacer
+{
+	padding: 4px 0 0 8px;
+}

@@ -1,0 +1,19 @@
+<p>NUTS supports the import and export of 'sidecar' files. Many file systems have additional metadata that is not part of the file content itself, but is otherwise vital to the correct functioning of the file in its native environment. For example, the BBC Micro file systems have a Load and Execution address for each file, without which many files will not execute correctly.</p>
+
+<p>In some cases, there are defined standards for preserving this metadata in a Windows environment, by storing it in a 'sidecar' file that can be easily located by suitably written software. In the BBC Micro example, these files have the same filename as the file itself (not including any directory prefix), but with a .INF extension.</p>
+
+<p>NUTS is ware of file systems that can import/export sidecars (such as Acorn DFS) and file systems that accept/provide sidecars (such as the Windows file system). When a file copy operation occurs between a file system that supports import/export of sidecars and a file system that accepts/provides sidecars, the {page:fileops,File Operations System} adds extra steps to transfer the sidecar data appropriately. Note that there may be extra considerations for sidecar files that are specific to each file system handler.</p>
+
+<p>When importing a sidecar from a file system that provides sidecars, the receiving file system is asked what the sidecar file would look like, in terms of its filename. NUTS will then look for such a filename in the same place as the source directory. If such a file is found, it is offered to the receiving file system, which will typically read the sidecar file and store the data for the file write operation which then takes place.</p>
+
+<p>When exporting a sidecar to a file system that accepts sidecars, the source file system is asked to provide a sidecar file into a temporary file, and to specify the file name it should be saved as. The main file is then written to the receiving file system, and if successful, the sidecar file is also written.</p>
+
+<p>When a sidecar is found on the source file system that the receiving file system accepts, NUTS will add the resulting sidecar (declared by the receiving file system) to a 'do not copy' list internally, so that the sidecar itself is not copied to the receiving file sysetm. If you actually want to copy the sidecar file itself, you will need to copy it separately.</p>
+
+<h2>File Systems That Support {page:fop,Foreign Objects}</h2>
+
+<p>An exception to the above process is when copying a file to a file system that accepts sidecars, but can also support foreign objects of a type matching the source file. In this case, the metadata that would be recorded in the sidecar file is recorded differntly, so the sidecar is not required.</p>
+
+<p>A {page:options,Control Option} ('Metadata AND Sidecars') exists to override this behaviour: When enabled, sidecar files will be generated anyway, even if the {page:fop,foreign object} supporting file system has found another way to store the metadata.</p>
+
+<p>Example of file systems that support this behaviour are the {page:zip,ZIP File} handler, and the {page:iso,ISO Image} handler.</p>

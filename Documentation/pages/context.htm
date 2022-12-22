@@ -1,0 +1,68 @@
+<p>The context menu (accessed by right-clicking in the viewer pane, or by presing the context-menu key on your keyboard) is the primary means by which actions are carried out when navigating file systems using NUTS.</p>
+
+{figure:>contextmenu.png,The NUTS Context Menu}
+<p>Some of the functions duplicated on {page:sidebar} for quick access. The following are the functions you can access from the context menu. Note that if no file is selected, the 'Enter As' and 'Translate' options are not available. Some options may be grayed out depending on the files selected, and additional options may be available at the bottom of the menu depending on the file system being browsed.</p>
+
+<h2>Enter</h2>
+<p>This attempts to 'enter' the currently selected object(s). What this actually does is dependent on the file selected and the number of files selected. If a single directory is selected, then the view switches to show the contents of that directory. Similarly, if the object selected is a container image of some sort (e.g. disk image) then a file system handler is located to handle the image, and the viewer switches to the image's contents. If no handler can be found that recognises the file system structure, then an error will be indicated. Note that this can happen if you are trying to navigate a physical device (such as a memory card) that has a file system unrecognised by Windows. In this case, you may need to run NUTS as an Administrator. If the image is corrupt (or has a non-standard extension), it may be that it is simply not automatically recognsied. You can try the 'Enter As' option below.</p>
+
+<p>If multiple objects are selected, they cannot be 'entered' as file systems or directories, and nothing happens as a result (the option is greyed out in the menu).</p>
+
+<p>If the objects are 'translateable', i.e. the filesystem handler has marked that they can be read by a plugin and translated into something useful, then 'entering' them will load the appropriate translator for each object. Any objects that are not translateable in the selection will be ignored.</p>
+
+<h2>Enter As</h2>
+<p>This is the more explicit version of 'Enter'. The submenu for Enter As is a list of providers as obtained from the installed plugins. Each provider is a submenu listing the available filing systems. Selecting this filing system will load that handler directly, and make a 'best effort' at interpreting the file system image. NUTS takes an approach that 'the user is always right', so will interpret the file system as directed, even if the data is garbage. When reading, this is safe; no NUTS file systems will make any changes to the image, however if you try to write to a file system that has been forced this way (e.g. copying a file, renaming, creating a directory, etc), there could be unintended side effects.</p>
+
+<p>NUTS will always try to write back to the file system data that is 'functionally' identical to the state when it read it. This means that the file system should work the same way after the fact as it did before. However, many file systems have fields in their structures that are not vital for NUTS to operate. NUTS will write back valid values here, but on a corrupt (or garbage) image, these may not be the values that were read in. The user should be aware of this when making changes to damaged or otherwise unreadable filesystems.</p>
+
+<p>Lastly, trying to perform operations on damaged or garbage file system images may cause application lockups or at worst total crashes. NUTS will do its best to avoid these situations, however some field values may still be legitimate (if very silly) causing unexpected behaviour.</p>
+
+<p>Bottom line: The User Is Always Right</p>
+
+<h2>Copy</h2>
+<p>Instructs NUTS to copy the select object(s) from the pane where the object was selected to the opposing pane. Directories are recursed automatically, but any container images encountered are copied as files. See the {page:copy} page for more information.</p>
+
+<h2>Rename</h2>
+<p>Allows you to rename the selected object, in accordance with the limitations presented by the file system handler. For more information on how your choices may be limited, see the {page:files} page.</p>
+
+<h2>Install</h2>
+<p>This works like copy, except it can only be used when the selection is a container image (or multiple images). Each image causes a like-named directory on the target pane to be created, and the contents of the image are copied into the created directory. Rules are in place to prevent filename clashes.</p>
+
+<p>This option is useful for installing the contents of multiple floppy disk images to a hard disk image or memory card.</p>
+
+<h2>Delete</h2>
+<p>Instructs NUTS to try and delete the selected objects. See {page:delete} for more information.</p>
+
+<h2>Properties</h2>
+<p>Brings up the file or file system properties, according to selection. If no objects are selected, the properties for the file system being viewed are shown. If the file system is an image (i.e. a file was 'entered' to get here) then the properties of the image file are available. If a single file has been selected, then its properties are shown. If the file is a recognised file system, then the file system properties are also shown. If multiple files are selected, then the file properties are shown, however only properties common to all items in the selection are shown explicitly; others will be blank. Note that you cannot show the file system properties for multiple objects.</p>
+
+<p>If file system properties are shown, then there may be a tools tab offering tools that can be run on the file system as a whole, typically to repair the file system.</p>
+
+<h2>Format ...</h2>
+<p>This starts the Format Wizard to format the selected object to a particular file system (you cannot format multiple objects at once). Note this will attempt to format ANY file system object, including (if selected!) Windows system files. The format wizard shold be used with EXTREME care! See the {page:newfs} page for more information.</p>
+
+<h2>Translate</h2>
+<p>This option allows a file to be explicitly translated as a specific type (rather than using a translator assigned by the file system handler). This option is useful if a file system object contains a recognised data format, but the file attributes are not suggesting the translator as suitable. Typical cases are a screen dump (literal contents of screen memory with no explicitly identifying marks) that has unusual load addresses or data lengths that do not readily identify the file as a screen dump.</p>
+
+<p>The option is a submenu, which divides into Graphics, Text and Audio. Each submenu lists the translators for their category that have been provided by the plugins. As per the 'Enter As' option, The User Is Aways Right, and so a translation attempt will be made even if the file does not conform to expectations. This may cause unusual behaviour, however note that translators never modify content, so it is always safe to use any translator, even if it crashes the main program.</p>
+
+<h2>New Folder</h2>
+<p>Creates a new directory. This option may be greyed out if the file system does not support subdirectories. See {page:dirs} for more information.</p>
+
+<h2>New Image Here...</h2>
+<p>This will start the New Image Wizard, which operates similar to the Format Wizard. In this case, the wizard gives you the options to specify a filename for a new image, as well as the size of the image. Some file system types are restricted in the sizes that can be created, and this will be reflected in the Wizard. See {page:newimage} for more information on the New Image Wizard, and {page:datasource} for more information on nesting images.</p>
+
+<h2>Display As</h2>
+<p>Changes the display options for the file viewer pane. See {page:pane} for more information.</p>
+
+<h2>Refresh</h2>
+<p>Refreshes the contents of the viewer. The viewer pane does not refresh automatically if changes are made outside of NUTS (or even to the same file system in the opposing pane). This option can be used to refresh the pane contents accordingly.</p>
+
+<h2>Select All</h2>
+<p>Selects every object visible in the viewer pane.</p>
+
+<h2>Play/Save Tape Audio</h2>
+<p>This option is only shown when the current view contains objects representable as tape audio (if none are selected; it is available if one or more selected objects are representable as tape audio otherwise). Selecting this option will prepare the selected objects (or every tape audio representable object if none are selected) as audio, and play them in the {page:tapeplayer}.</p>
+
+<h2>File System Specific Menu</h2>
+<p>Some file system handlers may present context menu options that are specific to that file system. In this case, the bottommost item will be a submenu leading to those commands available. Please see the {page:plugins,plugin documentation} for more information.</p>

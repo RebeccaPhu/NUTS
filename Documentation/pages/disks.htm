@@ -1,0 +1,26 @@
+{image:>diskimage.png,Disk Image Icon}
+<p>A disk image is a file that contains a file system typically found on a floppy disk, or less frequently, a hard disk. The icon to the right is the icon for a floppy disk image. Note that the icon is the same regardless of the actual physical size of the media the file system would normally be found on.</p>
+
+<p>Floppy Disk file systems are typically characterised by the following traits:</p>
+
+<ul>
+<li>The file system may support subdirectories.</li>
+<li>The file system may support file extensions.</li>
+<li>The file system may fake file extensions, i.e. the extension is provided by the file system, but it is not directly editable by the user. In these cases, it may be possible to change the extension by changing the properties of an object.</li>
+<li>The file system may only support extensions for files, i.e. extensions on directories is not possible.</li>
+<li>The file system probably does not allow more than one file with the same name (and extension, if supported). You will be prompted to confirm overwriting (or merging/renaming in the case of directories) in the event of a filename clash.</li>
+<li>The file system will typically be of a fixed size (even if the image file itself is not), typically a multiple of a fixed sector size. Note that NUTS will always create new images at the size of the image; NUTS will not created truncated image files.</li>
+<li>The file system will have a directory structure to record the files on it. If it supports subdirectories, then each directory will have its own structure.</li>
+<li>The file system will typically have a means to record which sectors are free and which are in use. If subdirectories are not supported, free sectors may be inferred from sectors occupied by all files in the directory.</li>
+</ul>
+
+<p>Because disk images have a directory to record files, and because access is typically random (rather than sequential), disk images are considered 'non-re-orderable'. That is to say, the order of the files stored is not relevant (though some file systems may record the files in alphabetical or ASCIIbetical order). The 'Move Up' and 'Move Down' {page:sidebar,sidebar} shortcuts will be disabled.</p>
+
+{image:>harddisk.png,Hard Disk Icon}
+<h2>Hard Disk Images</h2>
+<p>Hard Disk image are essentially the same as floppy disk images, only much larger. The icon for a hard disk image is shown to the right. The following traits should be considered in addition to, or instead of, the traits described for floppy disks above:</p>
+
+<ul>
+<li>The file system will typically be a large, arbitrary size. It will still probably be a multiple of sector size.</li>
+<li>It is rare, though not impossible, for a hard disk file system to not support directories.</li>
+</ul>

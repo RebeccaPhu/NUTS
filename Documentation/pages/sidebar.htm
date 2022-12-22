@@ -1,0 +1,40 @@
+{figure:>sidebar.png,The Pane Sidebar}
+<p>The Sidebar in NUTS shows the kind of file system currently being navigated, and also provides some shortcut options to commonly used facilities (includig a couple that are not on the {page:context}). Some of the options may be greyed out due to the objects selected, or the file system type.</p>
+<p>At the top of the sidebar is the 'topic icon', which is subtitled with the file system type. In the image to the right, it shows that we are currently browsing a D64 Commodore Disk Image, and the topic icon shows a disk image icon to re-enforce this.</p>
+<p>Below the topic icon are the shortcuts for various functions:</p>
+
+<h2>Back</h2>
+<p>Goes up one level in the navigation. If you are in the root file system, this will be greyed out. Otherwise, if you are in the root of the current file system, selecting this will take you to the last location you were in the containing file system (if you are in the root of a Windows volume, then this will take you to the root file system). If you are not in the root, then this will take you up a directory. It is greyed out if you are in the root file system.</p>
+
+<h2>Change Font</h2>
+<p>Some file systems have filenames in encodings that can be rendered with more than one font (PETSCII is a good example). This option switches which font is being used to render the filenames. See {page:fonts} for more information.</p>
+
+<h2>New Directory</h2>
+<p>Creates a new directory in the current location. See {page:dirs} for more information. It is greyed out if the file system does not support creating directories.</p>
+
+<h2>New Image</h2>
+<p>This will start the New Image Wizard, which operates similar to the Format Wizard. In this case, the wizard gives you the options to specify a filename for a new image, as well as the size of the image. Some file system types are restricted in the sizes that can be created, and this will be reflected in the Wizard. See {page:newimage} for more information on the New Image Wizard, and {page:datasource} for more information on nesting images. It is greyed out if the file system is not writable, or does not support nested images.</p>
+
+<h2>Top Level</h2>
+<p>This takes you back to the Root file system immediately. It is greyed out if you are already in the Root file system.</p>
+
+<h2>Move Up</h2>
+<p>On re-orderable file systems (namely tape images) this allows you to move a file up in the sequence of files. It is greyed out on file systems that are not re-orderable.</p>
+
+<h2>Move Down</h2>
+<p>On re-orderable file systems (namely tape images) this allows you to move a file down in the sequence of files. It is greyed out on file systems that are not re-orderable.</p>
+
+<h2>Refresh</h2>
+<p>Refreshes the contents of the viewer. The viewer pane does not refresh automatically if changes are made outside of NUTS (or even to the same file system in the opposing pane). This option can be used to refresh the pane contents accordingly.</p>
+
+<h2>Rename</h2>
+<p>Allows you to rename the selected object, in accordance with the limitations presented by the file system handler. For more information on how your choices may be limited, see the {page:files} page.</p>
+
+<h2>Delete</h2>
+<p>Instructs NUTS to try and delete the selected objects. See {page:delete} for more information.</p>
+
+<h2>Copy Files</h2>
+<p>Instructs NUTS to copy the select object(s) from the pane where the object was selected to the opposing pane. Directories are recursed automatically, but any container images encountered are copied as files. See the {page:copy} page for more information.</p>
+
+<h2>Play Audio</h2>
+<p>This option is only shown when the current view contains objects representable as tape audio (if none are selected; it is available if one or more selected objects are representable as tape audio otherwise). Selecting this option will prepare the selected objects (or every tape audio representable object if none are selected) as audio, and play them in the {page:tapeplayer}.</p>

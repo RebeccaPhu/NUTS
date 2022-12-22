@@ -1,0 +1,19 @@
+<p>The Root file system is the top level of NUTS navigation, and is the first thing you see in each pane when you start NUTS. It is a special file system that lists the starting points for browsing, typically showing the recognised Windows Volumes, Raw Devices, and Library foldes on your computer. Also available is the ROMDisk, a scratch space for holding files while manipulating other file systems. Installed plugins may also add their own 'root hooks' - additional icons in the Root file system that allow access to other services and devices. See the {page:plugins,plugin} documentation for more information.</p>
+
+{image:<windowsvolume.png,Windows Volume}
+<p>A Windows Volume is shown with the drive letter as the filename. Browsing a Windows volume uses the Windows File System, i.e. how Windows recognises the filenames on the disk. This will make little difference for hard disks, but for optical drives you may obtain better results by browsing the drive as a raw device, as NUTS will use its own handler to recognises files on the ISO9660 and High Sierra file systems. Optical drives are shown with a CD icon, and removable media with a USB memory stick icon (except floppy drives which are shown with a floppy disk icon). Some removable media may be listed as a Windows volume even though it does not contain a file system recognised by Windows. In this case, NUTS will try to find a suitable file system handler to handle the file system; this may fail if NUTS is not running as an Administrator user, as NUTS requires raw access to the device.</p>
+
+<div style="clear:both;"></div>
+
+{image:<rawdevice.png,Raw Device}
+<p style="margin-top:0">The Raw Device entries represent existing volumes but available as a raw device. Typically this will represent hard disks present on the system. If a hard disk contains a file system that is already recognised by Windows you may need to use its equivalent Raw Device to format it as a non-Windows file system. Note that you may need to run NUTS as an Administrator user to do this. Not all devices will require using the Raw Device to format them - removable devices that are recognised as Windows volumes are usually directly formattable as they do not contain a partition table.</p>
+
+<div style="clear:both;"></div>
+
+{image:<folder.png,Library Folder}
+<p style="margin-top:0">Any Library folders on your system (such as Documents, Pictures, etc) will be directly accessible from the Root File system. Note that 'entering' a Library folder has a non-intuitive effect: doing so will start a Windows File System handler (as per entering a Windows Volume), but pre-navigated to the equivalent folder path. As such, going 'back' from here will usually not return you to the root file system. To do this, use the 'Top Level' shortcut on the {page:sidebar,sidebar}.</p>
+
+<div style="clear:both;"></div>
+
+{image:<romdisk.png,The ROMDisk}
+<p style="margin-top:0">The ROMDisk is a special file system that can contain any file, regardless of the file system it originated from. It operates as a non-voltaile 'scratchpad', where files can be moved in order to re-organise a container image (it is not advisable to open the same image in both panes and perform manipulations this way; the ROMDisk is advised instead). The ROMDisk uses space on your primary Windows Volume, so has as much free space as your primary hard disk. See {page:romdisk} for more information.</p>

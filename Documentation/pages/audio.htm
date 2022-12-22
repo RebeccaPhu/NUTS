@@ -1,0 +1,48 @@
+{figure:>audioplayer.png,The Audio Player}
+<p>Audio Translators can read an audio file in an old format, and translate it such that it can be played in NUTS, and saved to an audio file if required. Note that is different from the {page:tapeplayer}, which converts a tape image from its digital representation back to an audio representation. Audio Translators specifically work on formats designed to produce audio on the original hardware.</p>
+
+<p>The Audio Player window is shown on the right. It is a basic player, and is not intended as a full media player/media library manager. It's purpose is to allow analyzing audio content at a basic level.</p>
+
+<p>The window consists of 3 areas: the information displays at the top, the transport controls, and the cuepoint list.</p>
+
+<h2>Information Display</h2>
+
+<p>The top of the window shows two time displays. The larger is the current position in the audio data, where as the smaller is the total length of the audio data. Both are in mintues and seconds. Between them, is an area that shows the format of the data being played, in a short form. In the image on the right, the player is playing data in the 'ModTracker' MOD format (see below). Underneath this is a volume control, with the louder volume to the right.</p>
+
+<p>Situated between the transport controls and the time scroll bar (see below), is a text display containing the title of the audio, if available.</p>
+
+<h2>Transport Controls</h2>
+
+<p>The transport controls control playback of the audio, with some buttons having a 'latched' state (e.g. the play and pause buttons). In order they are as follows:</p>
+<ul>
+<li>Back one cue point - moves the audio playback to the start of the preceeding cue point (see below).</li>
+<li>Play - start audio playback. If clicked while playing, stops the audio playback.</li>
+<li>Pause - Pauses audio playback. Functionally the same as stopping, but does not reset the play position.</li>
+<li>Stop - Stops the audio playback, resetting the play position to the beginning.</li>
+<li>Forward one cue point - moves the audio playback to the start of the next cue point (see below).</li>
+<li>Eject - closes the window.</li>
+<li>Loop - When enabled the playback will return to the beginning once completed.</li>
+<li>Save - Save the audio as an uncompressed WAV file.</li>
+</ul>
+
+<p>Beneath the transport controls is a horizontal scroll bar that indicates the current playback position. This can be dragged to change the current playback.</p>
+
+<h2>Cue Point List</h2>
+
+<p>For some formats, the cue point list may not be shown. For example, pure waveform translators do not have cue points, so the list is hidden. For those formats that support cue points, the scrollable list below the time bar contains a list of points in the playback explicitly listed by the originating file format. For example, in the view shown to the right, the MOD file defines 'song positions'. Without going into too much details, a MOD file is divided into a library of blocks called 'patterns', with the song specifying one of those patterns at each 'song position'.</p>
+
+<p>Double-clicking a cue point will jump immediately to that point in playback.</p>
+
+<h2>Built-in Translators</h2>
+
+<p>As well as some waveform translators that interpret unusual formats, NUTS includes the MOD file translator which externally makes use of the MikMOD translator. This translator has a number of caveats:</p>
+
+<ul>
+<li>Jumps are not respected. That is to say, if a MOD file contains a jump to a specific song position it will be ignored. However, some MOD files use loops which are not detected by MikMOD correctly. In these cases, NUTS will attempt to detect if the song position hasn't changed in a long period of playback time. If this situation is detected, you have the option of terminating the decode (safest), or proceeding on the understanding that doing so may consume vast system resources and ultimately crash before anything meaningful is generated. This option should be used with caution, and only if you're certain about the nature of the MOD file.</li>
+<li>Multi-Song MODs are treated as one song. This is a continuation of the previous point: it is common for a single MOD file to contain many songs, starting at different song positions, with the last instruction of the preceding song position being a jump back. When NUTS decodes these the result is a one continuous song.</li>
+<li>Some MOD formats may not be supported. MikMOD is very good at supporting a wide range of formats, however some formats are not recognised correctly, even if other programs pick them up correctly. The authors of MikMOD may fix this in a future release.</li>
+</ul>
+
+<h2>Updating MikMOD</h2>
+
+<p>The external MikMOD translator is supplied with NUTS as a compiled binary DLL file for convenience. However, no special modifications have been made, so it should be possible to build the latest version (according to architecture, x86 or amd64) and drop the DLL into the NUTS installation folder.</p>

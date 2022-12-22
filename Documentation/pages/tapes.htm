@@ -1,0 +1,24 @@
+{image:>tapeimage.png,Tape Image Icon}
+<p>A tape image is a file that contains an image of a cassette tape intended for loading into a computer system. Tape images are somewhat subjective, as they do not represent an actual file system as such, but rather a way to store information that allows the audio content of the tape to be reproduced in a way that reproduces the original data stream. As such, some tape images are interpreted, rather than containing an actual file system. When changes are made, the whole tape image is reconstructed according to the rules of how the data is represented. The icon for a tape image file is shown to the right.</p>
+
+<p>Tape file systems are typically characterised by the following traits:</p>
+
+<ul>
+<li>Subdirectories are not supported.</li>
+<li>Extensions are rare, but not impossible.</li>
+<li>Extensions (if they are in use) are most likely faked. If not, they are usually stored as part of the filename (though NUTS will translate this, if extensions ore common to the file system type).</li>
+<li>The file system allows more than one file to have the same file name (see below), so filename clashes do not occur. This is important to consider when transferring files to a tape image that already contains files of the same name.</li>
+<li>The file system is typically of a dynamic size. That is to say, it is created (empty) with the smallest possible file size, and it grows as files are added to it. Sectors do not exist with tape images, so the image could be literally any size.</li>
+<li>The file system will have no directory structure. Files exist as independent data blobs in sequence.</li>
+<li>The file system will have no free space recording whatsoever, as such a concept does not make sense with cassettes.</li>
+</ul>
+
+<p>Because tape images have no directory structure, they are considered 're-orderable'. That is to say, the order of the files is important, and thus NUTS will allow you to change what order the files are stored in, as this will effect the order of playback when converted to audio using the {page:tapeplayer}. The 'Move Up' and 'Move Down' options on the {page:sidebar,sidebar} will be available when exactly one file is selected.</p>
+
+<h2>Subjective Interpretation</h2>
+
+<p>Because tape images are essentially interpreting data to create the illusion of files, it may sometimes occur that the data on the tape does not translate purely to a set of data files. This is particularly the case with tape images containing copy-protection systems.</p>
+
+<p>The Sinclair TAP format defines files in terms of the two blocks that make up a standard ZX Spectrum cassette file (header and data blocks). NUTS will assemble these into a file, and when files are copied in to a TAP file, the structure will be written with appropriate blocks to define the data as a file. Conversely, the {page:tzx,TZX format} sometimes defines files in the same was as TAP, but at other times has control blocks, or raw data blocks that equate to data, but not as a ZX Spectrum file.</p>
+
+<p>On file systems that have these estoric 'subjective' blocks, the additional blocks that can't be represented as conventional files are stil represented as files but in a way that defines them as blocks, rather than real files. These 'block files' can still be copied (though the use in doing so is very questionable), however it is probably more useful to use the file system's built in editors to adjust these blocks.</p>

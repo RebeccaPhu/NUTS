@@ -1,0 +1,11 @@
+<p>Anything that is not a disk image or tape image, but can still be 'entered' is a referred to as a container. Container is an umbrella term that also includes tape and disk images when a generic term is required to refer to all three types.</p>
+
+<p>Containers occur in a number of places in NUTS. They can either appear as regular file systems (i.e. can be written to, have subdirectories, etc) or they may be 'pseudo' file systems, in which attempting to write to them will generate errors.</p>
+
+<p>{page:root} is a pseudo file system, that lists a number of 'containers' referring to different components. When NUTS asks for the file system for the selected item, it creates internally a file system handler appropriate to the selected item (special handling of the root file system means that this process is transparent to teh user).</p>
+
+<p>The handle for BBC Micro Double-Side-Disk (DSD) images is a pseudo file system that offers two 'images': one for each side of the disk. These are then treated as a single-sided-disk when entered.</p>
+
+<p>The Risc OS Sprite File handler is more like a conventional file system, because Sprite files are structure like a file system (they are actually closest in nature to a tape image). As such, you can copy files into them, delete objects, etc. While NUTS will let you format a memory card as a Risc OS sprite file, this is probably not something you want to do.</p>
+
+<p>Containers can be created using the new image wizard, or if it is really necessary (and the file system supports it) you can format an existing medium as a container type.</p>

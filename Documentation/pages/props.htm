@@ -1,0 +1,50 @@
+{figure:>props.png,File Properties window for a DFS disk image}
+<p>The Properties window is a very powerful interface for making changes to a file system or an object (or objects) within it. The tabs available on the properties window will vary depending on the features supported by the file system, and what was selected at the time the properties window was activated (by selecting Properties from the {page:context,content menu}).</p>
+
+<p>If a single object is selected, and that object is a recognised file system (e.g. a disk image), then the 'Free Space and File Size' tab is shown (if free space reporting is not supported, this is just the file size tab).</p>
+
+<p>If a single object is selected and that object is not a recognised file system, then the 'File Size' tab is shown, and it simply shows the size of the file selected.</p>
+
+<p>If no object is selected, then the the result is as if the properties for the file object in the parent file system were being accessed (insofar as the Free Space/File Size tab).</p>
+
+<p>If the properties window is showing file system properties (as described above) and supports reporting block usage, then the 'Block Usage' tab is shown. For all file system properties, the 'File System Attributes' and 'Tools' tabs are shown. These are not shown for basic file properties. The 'File Attributes' tab refers to the container object in the parent file system.</p>
+
+<p>If multiple files are selected, Only the 'File Size' and 'File Attributes' tabs are shown, and the attributes identify values common to all selected objects.</p>
+
+<h2>Free Space and File Size</h2>
+
+<p>The image to the right shows this tab for a file system. If the properties window does not show properties for a file system, then the 'File System', 'Used space', 'Free space', and 'Capacity' fields are hidden, along with the free space pie chart.</p>
+
+<p>The top of the tab shows the icon for the object, along with the filename of the selected file or container object in the parent file system as appropriate. The 'File System' field identifies the name of the file system in the container file, as identified by the handler that is processing it.</p>
+
+<p>The Used and Free space fields identify how much space has been used on the file system, and how much is free. Note that these values are almost certainly rounded up to a multiple of sector sizes, as per the specification of the file system in question. These fields may also be mossing if the file system does not support free space reporting (e.g. {page:tapes}).</p>
+
+<p>The 'Capacity' field (not present if the file system does not support free space reporting) is the suem of Free and Used space, and indicates the data space in the file system, including the file system structure itself. Note that this is not necessarily the same size as the file that contains the file system.</p>
+
+<p>The 'File Size' identifies the size of the selected file (if a single, non-file system object is selected) or the file in the parent object that contains the file system (if file system properties are shown). Note that this is not necessarily the same as the capacity of the file system, as the image may be truncated (or under-used).</p>
+
+<h2>Block Usage</h2>
+
+<p>On file systems that support reporting block usage, this tab shows a basic grid indicator of which blocks are used and which are free. A block may not be used in its entirety, and may represent a larger quantity of space than is the space resolution of the file system (i.e. a single block may be occupied by multiple objects). Some blocks are marked as 'Unmovable' which means they are permanently occupied (or part-occupied) by file system structure that must occupy a fixed location in the file system structure.</p>
+
+<h2>File System Attributes</h2>
+
+<p>Any attributes of the file system itself (e.g. Disk Title) will be editable here. They will be actioned as changed when 'OK' is selected.</p>
+
+<h2>File Attributes</h2>
+
+<p>Characteristics of the selected file or files (or file in the parent container if applicable) will be shown here, and can be edited where appropriate. SOme fields may be disabled, as they are provided for imformation purposes only (e.g. start sector for files on disk images). They may all be disabled if the file system is on a {page:sources,data source} that is read only. Changes will be actioned on selecting 'OK'. Note that this manual does not describe the purposes of individual attributes, either generically or as part of a plugin implementation - it is your responsibility to ensure you understand the changes you are marking (though NUTS will warn of any changes that have the potential to drastically alter how the file is handled). The author takes no responsibility for any loss or damage resulting from negligence, complacency or ignorance.</p>
+
+<h2>Tools</h2>
+
+<p>Some file system handlers may provide diagnostic or repair tools on this tab to perform work on a file system. Each tool will have a brief description of its function, along with a 'Run' button to start the tool's operation. As with changing attributes, you should ensure you know what you are doing before arbitrarily running file system tools, and always have backups. The author takes no responsibility for any loss or damage resulting from negligence, complacency or ignorance.</p>
+
+<h2>Applying Changes</h2>
+
+<p>File System Attribute changes are applied immediately on selecting 'OK'. File attribute changes will be applied via the {page:fileops,File Operations System}, which will ask for confirmation for changes on any attribute considered dangerous. As with {page:delete,deleting files}, this is done on a per-object basis. Selecting 'Yes' or 'No' confirms changes for each file. Selecting 'Yes To All' will confirm the changes for every object encountered, and selecting 'No To All' will effectively abandon the operation.</p>
+
+<p>If the selection contains one or more directories, NUTS will ask if you wish to apply the changes to just the selected objects, or to recurse into the directories.</p>
+
+<p>Note that NUTS will not recurse into container images. That is only the image file itself will be considered for attribute changes, not its contents. This is because almost certainly the attribute changes of the outer container will not apply to the objects in the inner container.</p>
+
+<p>As will all file operations, changes cannot be undone.</p>

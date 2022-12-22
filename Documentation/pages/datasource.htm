@@ -1,0 +1,37 @@
+<p>The distribution of NUTS provides the following data sources:</p>
+<ul>
+<li><h2>Image Data Source</h2>
+<p>This is a data source from which the data comes from a file on a Windows volume. This is the simplest of sources.</p>
+</li>
+
+<li><h2>Raw Data Source</h2>
+<p>This data source uses a raw device, either a hard disk or a memory card.</p>
+</li>
+
+<li><h2>Floppy Data Source</h2>
+<p>This data source uses a floppy disk drive in raw mode. Note that the default Windows driver is not very flexible, and your mileage here may vary. Alternative drivers (such as Omniflop) may offer better results, but it may remain incompatble with some formats. USB Floppy Drives almost certainly won't work.</p>
+</li>
+
+<li><h2>DSK Data Source</h2>
+<p>This is a special data source used with data sources where the data is encapsulated in the CPCEMU DSK format. In order to use e.g. Amstrad CPC formats with real hardware, the AMSDOS file system does not implement the DSK container. So when AMSDOS is used with an image file, a DSK data source is added to the data source chain.</p>
+</li>
+
+<li><h2>IDE8 Data Source</h2>
+<p>This is a data source used with memory cards that uses the lower 8 bits of each 16 bit word of data. It is used with memory cards that are used by 8-bit file systems that do not correctly understand 16-bit interfaces (e.g. the J. G. Harston 8-bit IDE interface for the BBC Micro).</p>
+</li>
+
+<li><h2>Memory Data Source</h2>
+<p>This is a special source used internally only by plugins, as part of the system that allows plugins to add to the {page:root,root file system}. It is not used by any user operations.</p>
+</li>
+
+<li><h2>Offset Data Source</h2>
+<p>Some file systems are known to be implemented in emulators using a container format that adds a header to the file. In these instances, an Offset Data Source is added to the chain to compensate for the header.</p>
+</li>
+
+<li><h2>Nested Image Source</h2>
+<p>This is the most powerfule data source, as it allows an object in a filesystem to be used as a data source. The object is copied out of the file system. When changes are made to this data source, the temporary file representing the object is updated, and the upper file system is called to replace the object with the temporary file, updating the source container. Several nested image sources can be chained together, such that your browsing may in fact be many levels deep in file system nesting.</p>
+</li>
+
+</ul>
+
+<p>Plugins may provide additional data sources for other purposes. In particular, the Commodore 8-bit plugin provides a data source that allows sector access to a disk in a 1541-style drive via the OpenCBM driver and a suitable device, such as the XU1541 USB interface.</p>

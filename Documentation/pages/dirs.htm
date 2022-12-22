@@ -1,0 +1,25 @@
+<p>Directories in NUTS are slightly more than most people are used to, because different file systems have different ideas about what a directory should look like, and how it should be named, along with any attributes they wish to attach along the way.</p>
+
+<h2>Creating Directories</h2>
+
+<p>Directories can be created by selecting the 'New Directory' shortcut on the {page:sidebar,sidebar}, or via the {page:context,context menu}. The resulting dialog will vary depending on the file system in use. Some file systems support extensions, and of those, not all support extension for directories. For example, the Windows File System has extensions for files AND directories, where as the {page:iso,ISO file system} only supports extensions for files.</p>
+
+<p>If the file system allows extensions on a directory name, then a separate edit box will be shown to enter the extension.</p>
+
+<p>If the file system supports {page:fop}, then a separate drop-down menu will be shown to set the directory to be a specific type. 'Type' in this context refers to a directory that has a set of default attributes (metadata) recorded in the file system alongside information that identifies it as being originated from a specific system. For example, selecting a Risc OS directory type in an ISO image will store additional metadata so that it is recognised as having attributes that are readable by Risc OS.</p>
+
+<p>Selecting 'none' for the directory type means that no additional metadata is stored, and the directory defaults to the state that is default for the file system.</p>
+
+<h2>Copying Directories</h2>
+
+<p>During a {page:copy,file copy} operation, if any directories are included in the selection, then they will be recursed as part of the {page:fileops,file operation}. If a directory being copied (created in the receiving file system) clashes with an existing name (after any {page:fonts,encoding} change has taken place), then the behaviour is somewhat different than for a file copy.</p>
+
+<p>Instead of 'Yes' and 'No' options (and their 'to all' counterparts), the buttons on the File Operations dialog are replaced with 'Rename' and 'Merge'. If 'Merge' is selected, then the contents of the directory being copied will be copied into the directory that has clashed, i.e. the existing directory contains a mix of the files that were already there, and the files in the directory being copied.</p>
+
+<p>If however, 'Rename' is selected, then the receiving file system will attempt to modify the name of the incoming directory so that it no longer clashes. Typically, this is done by adding (or replacing) at the end of the filename a set of digits to distinguish the directory.</p>
+
+<p>If 'Merge All' is selected, the 'Merge' strategy is used for all subsequent directory name clashes. Likewise, if 'Rename All' is selected then the 'Rename' strategy is used for all subsequent name clashes instead. Both of these options prevent the question being asked for the remainder of the copy operation (but do not prevent questions being asked for file clashes).</p>
+
+<p>There are two options on the {page:options,Options} menu. 'Merge Directories' is the same as pre-emptively selecting 'Merge All', where as 'Rename Directories' is the same as pre-emptively selecting 'Rename All'. If neither are selected, then NUTS will ask before each clash, unless 'Merge All' or 'Rename All' has been used as described above.</p>
+
+<p>Note that if a directory clashes with a file or vice versa then the situation cannot be resolved sensibly, and the file operation is abandoned.</p>

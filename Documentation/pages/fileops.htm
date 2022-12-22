@@ -1,0 +1,36 @@
+{figure:>fileops.png,The File Operations window, while deleting a file}
+<p>Complex file operations in NUTS are performed via the File Operations system, which recurses (when directories are included in the selection) to complete the requested operation. It is triggered by the Copy, Install, Delete and Set Properties (Properties Window) operations.</p>
+
+<p>The image on the right shows the file operations window, paused to asked if the user would like to proceed with a file delete operation.</p>
+
+<p>There are a number of buttons to control the operation, most of which are disabled at most times. The 'Pause' option is only available while the operation is running, and is disabled while NUTS is waiting for a decision from the user. The 'Cancel' button will terminate the current operation, however it will not undo any steps already carried out.</p>
+
+<p>File Operations are in two parts. Firstly the directory tree (starting with the objects selected in the viewer pane) is scanned to find objects and build a 'step list'. This allows NUTS to know in advance what steps are required, and also give an accurate representation of progress. The second stage actually performed the steps decided upon. If 'Cancel' is used before the second stage is reached, no changes are made. However, once the second stage commences the 'Cancel' button will only stop further progress, not undo any changes made. Typically, changes cannot be undone, so it is important to ensure you are certain of the operation you are requesting.</p>
+
+<p>There are four buttons to the left of the 'Pause' button, that affect your decision when NUTS asks for confirmation. These are also affecte by the 'Confirm File Operations', 'Merge Directories' and 'Rename Directories' {page:options}.</p>
+
+<p>The four buttons will change when copying files and a filename clash is detected while copying a directory. See {page:copy} for more details.</p>
+
+<p>If 'Confirm File Operations' is set, then the following rules apply:</p>
+
+<ul>
+<li>Copying files will always overwrite if a filename clash is detected (do not apply to directories)</li>
+<li>Deleting files will happen without prompting to confirm</li>
+<li>Setting file properties will allways happen without prompting, even for dangerous options.</li>
+<li>Using the Install option will always overwrite on a filename clash (as per file Copy, again does not apply to directories), however when the target directory for the source image is created, it will always be renamed if creating it would cause a filename clash.</li>
+</ul>
+
+<p>Otherwise, the dialog is paused as required, and four options are available. 'Yes' and 'No', confirm or deny permission to proceed respectively, but only in this file object instance. i.e. the next file object that requires confirmation will cause the dialog to be paused again. Selecting 'Yes To All' confirms that this operation should proceed, and any other steps that would ask for confirmation will be treated as if 'Yes' has been selected. Similarly, 'No To All' will deny permission for this request, and automatically respond the same to any further steps that require confirmation. Note that this does not abandon the operation as a whole, mean denies any step that would require confirmation to proceed.</p>
+
+<p>Note that when copying file objects, slightly different rules apply for filename clashes. See {page:dirs} for more information.</p>
+
+<h2>Ancilliary Operations</h2>
+
+<p>Some operations do not require the File Operations system to proceed, because they are much simpler processes (and do not recurse):</p>
+
+<ul>
+<li>Renaming files: Only one object can be renamed at a time.</li>
+<li>{page:dirs,Creating a directory}: Only one directory can be created at a time.</li>
+<li>Creating a new container image: The {page:newimage,New Image Wizard} can only create one file at at ime.</li>
+<li>{page:fileshift}: Only one file may be selected for moving up or down in the list.</li>
+</ul>

@@ -1,0 +1,11 @@
+<p>NUTS operates an 'agnostic' model. The functions of processing files and other data are abstracted from the source of that data. To achieve this, NUTS has (internally) a set of 'Data Source Objects' that provide access to data, and a series of File Systems that use the Data Sources to access the file system structure.</p>
+
+<p>The advantage of this system is two-fold:</p>
+<ul>
+<li>The same file system handler is used regardles of whether the file system exists in an image file, or on a physical device such as a memory card.</li>
+<li>The nesting of images inside other file systems is possible.</li>
+</ul>
+
+<p>The second of these points is particularly powerful: images inside ZIP files, or other images can be navigated and even modified. The changes propagate back up the chain of nested handlers so that everything is up-to-date. There are a couple of drawbacks to this however. Firstly, the deeper you go into nesting images, the slower making changes becomes. This is because each change at the bottom of the chain causes a bigger in change in all the levels above it, as the image that is the source for the next level down has to be replaced. Secondly, it is not always obvious to NUTS that the file system at the bottom of the chain cannot be written to because a data source above it is read only.</p>
+
+<p>The simpler way to understand this is as follows: Yes, you can make changes to a 100MB hard disk image inside a ZIP file, however it will be phenomenally slow to do so, and you may get a better experience by extracting the file, working on the extracted file, then re-compressing it to a ZIP file.</p>

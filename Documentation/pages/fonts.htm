@@ -1,0 +1,29 @@
+<p>Because most of the files and file systems that NUTS deals with come from older computer systems, there is a high probability that the character set in use is non-standard. Most systems use ASCII as a base (though not all), or with a few minor variations, but the characters outside the standard ASCII range (codes 32-126 inclusive) will vary wildly between systems.</p>
+
+<p>Because of this, NUTS uses its own font system for representing text originating from a retro computer system. Text is rendered using an 8x8 font that is appropriate to the encoding specified for the text.</p>
+
+<p>An encoding is a specification of how character codes should be interpreted, and a font is a means to visual represent that encoding. Some encodings have multiple fonts - for example, text in the PETSCII encoding used on Commodore 8-bit systems can be rendered in either PETSCII 1 or PETSCII 2 (also known as 'shifted' and 'unshifted' variants). Note that characters with the same code do not necessarily have the same meaning in different fonts for the same encoding. The encoding specifies an understanding of the usage of codes on a particular system; a font is means that is used on that system to visually show the characters, even if the font may not be appropriate for the situation. This is why there are two PETSCII fonts - the encoding is the same because it comes from a Commodore 8-bit system. A font that is not designated for the PETSCII encoding is not suitable for rendering it, but it is not known which of the two PETSCII fonts were intended to visually represent the text data at the time.</p>
+
+{image:>fontswitch.png,The Font Switch shortcut on the siderbar}
+<p>To resolve this, NUTS provides a 'Font Switch' in various places to alter the font being used to render text. The shortcut for the file viewer pane, as shown on the {page:sidebar,sidebar} is shown to the right. In other locations it may be indicated by just the 'A' icon alone. Clicking this icon will switch to the next font in sequence that is designated to handle the encoding.</p>
+
+<h2 style="clear:both">Encodings during File Copy Operations</h2>
+
+<p>As NUTS allows files to be copied from almost any source to almost any destination, there may times when an encoding translation needs to occur. The receiving file system will examine the encoding of the incoming file, and determine if is an encoding it can handle. If not, then the receiving file system will inform NUTS that it is unwilling to handle the transfer until the encoding is converted to ASCII (all file systems understand ASCII). At this point, the source file system is asked to convert the filename to ASCII, and the operation is retried.</p>
+
+<p>The receiving file system at this point will convert the incoming filename into its own preferred encoding. In many cases there is no loss of filenames in the transfer; or at the very least only some of the more esoteric characters are converted away. In some cases (notably the PETSCII instances), many of the characters may be unrepresentable in ASCII, and are converted to the underscore character ('_'), which may make some filenames harder to read.</p>
+
+<p>Note that filename clash detection is performed after the filename has been deemed to be in a suitable format. As such, you may find that a filename that does not appear to clash is reported as doing so when copied, and vice-versa.</p>
+
+<h2>Edit Boxes &amp; The Character Map</h2>
+
+<p>In many places in NUTS, you can edit text in a way that is consistent with the encoding &amp; font of the system it is related to, for example the Rename dialog. In this case, NUTS makes a best-effort to translate input at the keyboard into characters in the edit box, broadly assuming that the encoding is mostly aligned with ASCII. In the cases where it is not, you may find that the key pressed does not correspond to the character generated.</p>
+
+<p>This is normal, however it may be confusing, and frustrating if you are trying to enter specific characters from an esoteric character set. To alleviate this, you can right-click (or press the menu key) to access the Edit Box's context menu, and select 'Character Map'.</p>
+
+{figure:>charactermap.png,The Character Map}
+<p>The figure on the right shows the Character Map with the default PC437 character set (used for ASCII encodings) selected. Hovering the mouse over each character will reveal additional information about the character (if it is outside the standard ASCII range), and clicking on a character will insert that character at the cursor position of the last selected edit box.</p>
+
+<p>The drop-down list allows you to change the font being shown. When the character map is opened, it defaults to the font currently selected in the Edit Box from which it was opened, which in turn is the currently selected font (by font switch, see above) for the encoding from which the data originated.</p>
+
+<p>Note that in some instances the Character Map may not be available. This is usually when it is used in plugins which prevents the use of the full Edit Box feature set.</p>
