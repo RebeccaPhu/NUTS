@@ -9,7 +9,7 @@ public:
 	~IconButton(void);
 
 public:
-	static LRESULT IconButtonWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK IconButtonWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	static std::map<HWND, IconButton *> _IconButtons;
 	static bool _HasWindowClass;

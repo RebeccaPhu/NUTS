@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?if $(var.Platform)=x64 ?>
+<?define Win64="yes" ?>
+<?define PlatformProgramFilesFolder="ProgramFiles64Folder" ?>
+<?else ?>
+<?define Win64="no" ?>
+<?define PlatformProgramFilesFolder="ProgramFilesFolder" ?>
+<?endif ?>
+
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 	<Product Id="*" Name="NUTS" Language="1033" Version="1.0.0.0" Manufacturer="Rebecca Gellman" UpgradeCode="7a41adcc-313c-4968-97d1-e6218fe48a75">
-		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <?if $(var.Platform)=x64 ?>
+      <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Platform="x64" />
+    <?else ?>
+      <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <?endif ?>
 
 		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes"/>
@@ -19,7 +31,7 @@
 
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
-			<Directory Id="ProgramFilesFolder">
+      <Directory Id="$(var.PlatformProgramFilesFolder)">
 				<Directory Id="INSTALLFOLDER" Name="NUTS" />
 			</Directory>
       <Directory Id="ProgramMenuFolder">
@@ -30,20 +42,31 @@
 
 	<Fragment>
 		<ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-      <Component Id="ProductComponent" Guid="5f1c5532-0e47-481d-aa1c-7f3fce8c5e16">
+      <Component Id="ProductComponent" Guid="5f1c5532-0e47-481d-aa1c-7f3fce8c5e16"  Win64="$(var.Win64)">
         <!-- Main Program EXE -->
         <File Id="MainProgram" Source="$(var.NUTS.TargetPath)" />
-        <File Id="TZXConfig" Source="$(var.TZXConfig.TargetPath)" />
+        <File Id="TZXConfig"   Source="$(var.TZXConfig.TargetPath)" />
         
         <!-- Plugins -->
-        <File Id="AcornPlugin" Source="$(var.AcornDLL.TargetPath)" />
-        <File Id="AmstradPlugin" Source="$(var.AmstradDLL.TargetPath)" />
-        <File Id="AmigaPlugin" Source="$(var.AmigaDLL.TargetPath)" />
+        <File Id="AcornPlugin"     Source="$(var.AcornDLL.TargetPath)" />
+        <File Id="AmigaPlugin"     Source="$(var.AmigaDLL.TargetPath)" />
+        <File Id="AmstradPlugin"   Source="$(var.AmstradDLL.TargetPath)" />
+        <File Id="ApplePlugin"     Source="$(var.AppleDLL.TargetPath)" />
         <File Id="CommodorePlugin" Source="$(var.CBMDLL.TargetPath)" />
-        <File Id="SinclairPlugin" Source="$(var.SinclairDLL.TargetPath)" />
+        <File Id="SinclairPlugin"  Source="$(var.SinclairDLL.TargetPath)" />
         
+        <!-- libmikmod -->
+        <?if $(var.Platform)=x64 ?>
+          <File Id="libmikmod64" Name="libmikmod.dll" Source="$(var.SolutionDir)..\mikmod\libmikmod64.dll" />
+        <?else ?>
+          <File Id="libmikmod32" Name="libmikmod.dll" Source="$(var.SolutionDir)..\mikmod\libmikmod32.dll" />
+        <?endif ?>
+
         <!-- License -->
         <File Id="License" Source="$(var.SolutionDir)..\License.rtf" />
+        
+        <!-- Documentation -->
+        <File Id="UserDocs" Name="UserDoc.html" Source="$(var.SolutionDir)..\Documentation\nuts-user.html" />
         
         <!-- Logical Palettes -->
         <File Id="ExLogPaletteATWIFS"      Source="$(var.SolutionDir)..\Palettes\ATWIFS.LPL" />
@@ -70,6 +93,14 @@
                   WorkingDirectory="INSTALLFOLDER"
                     >
           <Icon Id="NUTSIcon" SourceFile="$(var.SolutionDir)..\icon1.ico"></Icon>
+        </Shortcut>
+        <Shortcut Id="NUTSUserDoc"
+                  Name="User Manual"
+                  Description="NUTS User Manual"
+                  Target="[INSTALLFOLDER]\UserDoc.html"
+                  WorkingDirectory="INSTALLFOLDER"
+                    >
+          <Icon Id="UserDocsIcon" SourceFile="$(var.SolutionDir)..\icon1.ico"></Icon>
         </Shortcut>
         <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
         <RegistryValue Root="HKCU" Key="Software\NUTS" Name="installed" Type="integer" Value="1" KeyPath="yes"/>

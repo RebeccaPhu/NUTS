@@ -76,10 +76,10 @@
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedManifest>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32;$(SolutionDir)\..\mikmod</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\Debug\;$(SolutionDir)$(Configuration);$(SolutionDir)\..\mikmod</LibraryPath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration)</LibraryPath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration)</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32;$(SolutionDir)\..\mikmod</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSdkDir)lib\x64;;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration);$(SolutionDir)\..\mikmod</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\libarchive-3.4.3\libarchive;$(SolutionDir)\..\libzip\lib;$(SolutionDir)\..\libzip\win32;$(SolutionDir)\..\mikmod</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(SolutionDir)\..\libarchive-3.4.3\libarchive\$(Configuration);$(SolutionDir)\$(Configuration)\;$(SolutionDir)$(Configuration);$(SolutionDir)\..\mikmod</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;$(SolutionDir)\..\mikmod</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(SolutionDir)\..\mikmod</LibraryPath>
   </PropertyGroup>
@@ -155,7 +155,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib;wbemuuid.lib;comsuppw.lib;libmikmod32.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>echo $(SolutionDir)</Command>
@@ -181,7 +181,7 @@
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib;wbemuuid.lib;comsuppw.lib;</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;%(AdditionalDependencies);archive_static.lib;zlib.lib;libzip-static.lib;TZXConfig.lib;dsound.lib;wbemuuid.lib;comsuppw.lib;libmikmod64.lib</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>echo $(SolutionDir)</Command>
