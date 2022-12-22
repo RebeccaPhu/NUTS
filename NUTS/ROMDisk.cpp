@@ -479,8 +479,12 @@ FileSystem *ROMDisk::FileFilesystem( DWORD FileID )
 			{
 				FileSystem *pNewFS = (FileSystem *) LoadFOPFS( pROMDiskDir->FileFOPData[ FileID ].ProposedFS, (void *) pSource );
 
+				DS_RELEASE( pSource );
+
 				return pNewFS;
 			}
+
+			DS_RELEASE( pSource );
 		}
 	}
 
