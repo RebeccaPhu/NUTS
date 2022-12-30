@@ -211,7 +211,7 @@ SectorIDSet DataSource::GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted )
 
 					for ( std::vector< WORD >::iterator is = i->SectorSizes.begin(); is != i->SectorSizes.end(); i++ )
 					{
-						set.push_back( (WORD) SectorID++ );
+						set.push_back( (BYTE) SectorID++ );
 					}
 				}
 
@@ -224,7 +224,7 @@ SectorIDSet DataSource::GetTrackSectorIDs( WORD Head, DWORD Track, bool Sorted )
 
 			for ( sid=0; sid<MediaShape.Sectors; sid++ )
 			{
-				set.push_back( sid );
+				set.push_back( (BYTE) sid );
 			}
 		}
 	}
