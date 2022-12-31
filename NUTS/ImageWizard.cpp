@@ -573,8 +573,15 @@ unsigned int __stdcall CreationThread(void *param)
 
 			return -1;
 		}
+
+		DWORD Flags = FTF_Initialise;
+
+		if ( FS->pSource->Flags & DS_AlwaysLLF )
+		{
+			Flags |= FTF_LLF;
+		}
 	
-		Result = FS->Format_Process( FTF_Initialise, hProgressWnd );
+		Result = FS->Format_Process( Flags, hProgressWnd );
 
 		delete FS;
 	}

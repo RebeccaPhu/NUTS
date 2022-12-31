@@ -36,7 +36,7 @@ const FTIdentifier       FT_ORIC       = L"OricFile";
 const PluginIdentifier   PLUGIN_ORIC   = L"TangerinePlugin";
 const ProviderIdentifier ORIC_PROVIDER = L"TangerineProvider";
 const WrapperIdentifier  MFM_DSK       = L"MFM_DSK_Wrapper";
-const WrapperIdentifier  ORIC_DSK      = L"ORIC_DKS_Wrapper";
+const WrapperIdentifier  ORIC_DSK      = L"ORIC_DSK_Wrapper";
 
 
 BYTE *pOricFont = nullptr;
@@ -223,7 +223,7 @@ ORICDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 				pWrap = new ORICDSKSource( pSource );
 			}
 
-			if ( ( WID == ORIC_DSK ) && ( pSource != nullptr ) )
+			if ( ( WID == MFM_DSK ) && ( pSource != nullptr ) )
 			{
 				pWrap = new MFMDISKWrapper( pSource );
 			}
