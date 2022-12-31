@@ -18,7 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="rt_rcdat.bin">
       <Filter>Resource Files</Filter>
     </None>

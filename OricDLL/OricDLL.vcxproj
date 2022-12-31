@@ -139,7 +139,6 @@
     <None Include="oric.bmp" />
     <None Include="OricFont.bin" />
     <None Include="rcdata1.bin" />
-    <None Include="ReadMe.txt" />
     <None Include="rt_rcdat.bin" />
   </ItemGroup>
   <ItemGroup>

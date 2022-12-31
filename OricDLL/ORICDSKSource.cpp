@@ -137,7 +137,7 @@ int ORICDSKSource::WriteTrack( TrackDefinition track )
 	{
 		DWORD WritePos = FormatTrackPosition;
 
-		if ( iSector->Side != 0 )
+		if ( FormatHead != 0 )
 		{
 			WritePos += ( MediaShape.Tracks * MediaShape.Sectors * 0x100 );
 		}
@@ -155,6 +155,11 @@ int ORICDSKSource::WriteTrack( TrackDefinition track )
 
 void ORICDSKSource::EndFormat( void )
 {
+	ValidDSK = true;
+
+	NumSides   = MediaShape.Heads;
+	NumTracks  = MediaShape.Tracks;
+	NumSectors = MediaShape.Sectors;
 }
 
 int ORICDSKSource::ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )

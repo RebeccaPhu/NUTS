@@ -48,6 +48,7 @@ public:
 	virtual int  PrepareFormat() { return 0; }
 	virtual void StartFormat( ) { };
 	virtual int  SeekTrack( WORD Track ) { return 0; }
+	virtual int  SetHead( BYTE Head ) { FormatHead = Head; return 0; }
 	virtual int  WriteTrack( TrackDefinition track ) { return 0; }
 	virtual void EndFormat( void ) { };
 	virtual int  CleanupFormat() { return 0; }
@@ -95,6 +96,8 @@ protected:
 
 	bool DiskShapeSet;
 	bool ComplexDiskShape;
+
+	BYTE FormatHead;
 
 private:
 	CRITICAL_SECTION RefLock;

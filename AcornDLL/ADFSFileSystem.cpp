@@ -980,7 +980,7 @@ void ADFSFileSystem::SetShape(void)
 	FloppyFormat = false;
 
 	/* Set the disk shape according to the format */
-	if ( ( FSID == FSID_ADFS_S ) || ( FSID == FSID_ADFS_M ) || ( FSID == FSID_ADFS_L ) || ( FSID == FSID_ADFS_D ) )
+	if ( ( FSID == FSID_ADFS_S ) || ( FSID == FSID_ADFS_M ) || ( FSID == FSID_ADFS_L ) || ( FSID == FSID_ADFS_L2 ) || ( FSID == FSID_ADFS_D ) )
 	{
 		DiskShape shape;
 
@@ -1293,6 +1293,7 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		{
 			for ( BYTE t=0; t<shape.Tracks; t++ )
 			{
+				pSource->SetHead( h );
 				pSource->SeekTrack( t );
 
 				TrackDefinition tr;
@@ -1457,6 +1458,7 @@ int ADFSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		pADFSDirectory->DirSector    = ( FSID == FSID_ADFS_D ) ? 0x4 : 0x02;
 		pADFSDirectory->ParentSector = pADFSDirectory->DirSector;
 		pADFSDirectory->MasterSeq    = 0;
+		pADFSDirectory->FloppyFormat = FloppyFormat;
 
 		time_t t = time(NULL);
 		struct tm *pT = localtime( &t );

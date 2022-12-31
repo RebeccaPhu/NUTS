@@ -126,6 +126,7 @@ int AMSDOSFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		/* Low-level format */
 		for ( BYTE t=0; t<40; t++ )
 		{
+			pSource->SetHead( 0 );
 			pSource->SeekTrack( t );
 
 			TrackDefinition tr;

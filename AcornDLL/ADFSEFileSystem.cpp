@@ -1607,6 +1607,7 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		{
 			for ( BYTE t=0; t<shape.Tracks; t++ )
 			{
+				pSource->SetHead( h );
 				pSource->SeekTrack( t );
 
 				// TODO: Strictly speaking this definition is bogus. It works for 800K E/E+, but not
