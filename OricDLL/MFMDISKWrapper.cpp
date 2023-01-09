@@ -35,10 +35,14 @@ MFMDISKWrapper::MFMDISKWrapper( DataSource *pRawSrc ) : DataSource()
 				if ( dwGeo == 0x0000001 )
 				{
 					Geometry = OricSequentialGeometry;
+
+					ReadDiskMetrics();
 				}
 				else if ( dwGeo == 0x00000002 )
 				{
 					Geometry = OricInterleavedGeometry;
+
+					ReadDiskMetrics();
 				}
 				else
 				{
@@ -83,135 +87,367 @@ int MFMDISKWrapper::WriteRaw( QWORD Offset, DWORD Length, BYTE *pBuffer )
 #define MFM_DATA_ERROR   return NUTSError( 0x0713, L"Data mark not found" )
 #define MFM_TRACK_ERROR  return NUTSError( 0x0713, L"Sector not found" )
 
-int MFMDISKWrapper::FindSectorStart( DWORD Head, DWORD Track, DWORD Sector, DWORD &SectorSize )
+void MFMDISKWrapper::ReadDiskMetrics( )
 {
-	if ( Head >= NumHeads )
+	BYTE TrackBuffer[ MFM_DSK_TRACK_SIZE ];
+
+	BYTE Track = 0;
+	BYTE Head  = 0;
+
+	DWORD SourceOffset = 0x100;
+
+	WORD SyncBytes = 0;
+
+	BYTE ReadHead   = 0xFF;
+	BYTE ReadSector = 0xFF;
+	BYTE ReadTrack  = 0xFF;
+	WORD ReadSize   = 0xFFFF;
+
+	DiskData.clear();
+
+	PhysicalDiskSize = 0U;
+
+	while ( true )
 	{
-		return NUTSError( 0x711, L"Invalid Head ID" );
-	}
-
-	if ( Track >= NumTracks )
-	{
-		return NUTSError( 0x712, L"Invalid Track" );
-	}
-
-	BYTE TrackData[ MFM_DSK_TRACK_SIZE ];
-
-	DWORD Offset = 0x100 + ( Track * MFM_DSK_TRACK_SIZE );
-
-	Offset += Head * ( NumTracks * MFM_DSK_TRACK_SIZE );
-
-	if ( pRawSource->ReadRaw( Offset, MFM_DSK_TRACK_SIZE, TrackData ) != DS_SUCCESS )
-	{
-		return -1;
-	}
-
-	DWORD TrackIndex = 0;
-
-	// Now scan the track. First, find the index mark
-	while ( ( ( TrackData[ TrackIndex ] == 0x4E ) || ( TrackData[ TrackIndex ] == 0xFF ) ) && ( TrackIndex < MFM_DSK_TRACK_SIZE ) )
-	{
-		TrackIndex++;
-	}
-
-	if ( TrackIndex > ( MFM_DSK_TRACK_SIZE - 7 ) ) { MFM_INDEX_ERROR; }
-
-	// Need PLL bytes
-	while ( ( TrackData[ TrackIndex ] == 0x00 ) && ( TrackIndex < MFM_DSK_TRACK_SIZE ) )
-	{
-		TrackIndex++;
-	}
-
-	// Need 3 SYNC bytes
-	if ( TrackData[ TrackIndex ] == 0xC2 ) { TrackIndex++; } else { MFM_INDEX_ERROR; }
-	if ( TrackData[ TrackIndex ] == 0xC2 ) { TrackIndex++; } else { MFM_INDEX_ERROR; }
-	if ( TrackData[ TrackIndex ] == 0xC2 ) { TrackIndex++; } else { MFM_INDEX_ERROR; }
-
-	// Index mark
-	if ( TrackData[ TrackIndex ] == 0xFC ) { TrackIndex++; } else { MFM_INDEX_ERROR; }
-
-	// Now the post-index gap
-	while ( ( ( TrackData[ TrackIndex ] == 0x4E ) || ( TrackData[ TrackIndex ] == 0xFF ) ) && ( TrackIndex < MFM_DSK_TRACK_SIZE ) )
-	{
-		TrackIndex++;
-	}
-
-	if ( TrackIndex > MFM_DSK_TRACK_SIZE ) { MFM_INDEX_ERROR; }
-
-	// Now look for sectors
-	while ( TrackIndex < MFM_DSK_TRACK_SIZE )
-	{
-		if ( TrackIndex > ( MFM_DSK_TRACK_SIZE - 21 ) ) { MFM_SECTOR_ERROR; }
-
-		// Sector gap PLL bytes
-		while ( ( TrackData[ TrackIndex ] == 0x00 ) && ( TrackIndex < MFM_DSK_TRACK_SIZE ) )
+		if ( ( Track >= NumTracks ) || ( Head >= NumHeads ) )
 		{
-			TrackIndex++;
+			break;
 		}
 
-		// Sector gap SYNC bytes
-		for ( BYTE i=0; i<3; i++ )
+		if ( pRawSource->ReadRaw( SourceOffset, MFM_DSK_TRACK_SIZE, TrackBuffer ) != DS_SUCCESS )
 		{
-			if ( TrackData[ TrackIndex ] == 0xA1 ) { TrackIndex++; } else { MFM_SECTOR_ERROR; }
-
-			if ( TrackIndex >= MFM_DSK_TRACK_SIZE ) { MFM_SECTOR_ERROR; }
+			break;
 		}
 
-		// ID address mark
-		if ( TrackData[ TrackIndex++ ] != 0xFE ) { MFM_SECTOR_ERROR; }
+		OricTrack track;
 
-		TrackIndex++; // skip track number
-		TrackIndex++; // skip head number
-	
-		BYTE SectorID = TrackData[ TrackIndex++ ];
-		BYTE SecSize  = TrackData[ TrackIndex++ ];
+		FDCState DiskState = SeekPreIndexGapMark;
 
-		WORD Sizes[] = { 128, 256, 512, 1024 };
-		WORD ThisSec = Sizes[ SecSize ];
+		WORD Offset = 0;
 
-		TrackIndex += 2; // Skip the CRC
-
-		// Now the post-iD gap
-		while ( ( ( TrackData[ TrackIndex ] == 0x4E ) || ( TrackData[ TrackIndex ] == 0xFF ) ) && ( TrackIndex < MFM_DSK_TRACK_SIZE ) )
+		while ( true )
 		{
-			TrackIndex++;
+			if ( Offset == MFM_DSK_TRACK_SIZE )
+			{
+				break;
+			}
+
+			BYTE FDCData = TrackBuffer[ Offset ];
+
+			switch ( DiskState )
+			{
+			case SeekPreIndexGapMark:
+				if ( ( FDCData == 0x4E ) || ( FDCData == 0xFF ) )
+				{
+					DiskState = ReadingPreIndexGap;
+				}
+				break;
+
+			case ReadingPreIndexGap:
+				if ( ( FDCData != 0x4E ) && ( FDCData != 0xFF ) )
+				{
+					if ( FDCData == 0 )
+					{
+						DiskState = PreIndexGapPLL;
+					}
+					else
+					{
+						DiskState = SeekPreIndexGapMark;
+					}
+				}
+				break;
+
+			case PreIndexGapPLL:
+				if ( FDCData != 0x00 )
+				{
+					if ( FDCData == 0xC2 )
+					{
+						DiskState = PostIndexGapSync;
+
+						SyncBytes = 0;
+					}
+					else
+					{
+						DiskState = SeekPreIndexGapMark;
+					}
+				}
+				break;
+
+			case PostIndexGapSync:
+				if ( FDCData == 0xC2 )
+				{
+					if ( SyncBytes == 2 )
+					{
+						DiskState = IndexMark;
+					}
+				}
+				else
+				{
+					DiskState = SeekPreIndexGapMark;
+				}
+				break;
+
+			case IndexMark:
+				if ( FDCData == 0xFC )
+				{
+					DiskState = SeekSectorGapMark;
+				}
+				else
+				{
+					DiskState = SeekPreIndexGapMark;
+				}
+				break;
+
+			case SeekSectorGapMark:
+				if ( ( FDCData == 0x4E ) || ( FDCData == 0xFF ) )
+				{
+					DiskState = ReadingSectorPreGap;
+				}
+				break;
+
+			case ReadingSectorPreGap:
+				if ( ( FDCData != 0x4E ) && ( FDCData != 0xFF ) )
+				{
+					if ( FDCData == 0 )
+					{
+						DiskState = SectorGapPLL;
+					}
+					else
+					{
+						DiskState = SeekSectorGapMark;
+					}
+				}
+				break;
+
+			case SectorGapPLL:
+				if ( FDCData != 0x00 )
+				{
+					if ( FDCData == 0xA1 )
+					{
+						DiskState = SectorGapSync;
+
+						SyncBytes = 0;
+					}
+					else
+					{
+						DiskState = SeekSectorGapMark;
+					}
+				}
+				break;
+
+			case SectorGapSync:
+				if ( FDCData == 0xA1 )
+				{
+					if ( SyncBytes == 2 )
+					{
+						DiskState = SectorMark;
+					}
+				}
+				else
+				{
+					DiskState = SeekSectorGapMark;
+				}
+				break;
+
+			case SectorMark:
+				if ( FDCData == 0xFE )
+				{
+					DiskState = SectorID;
+
+					SyncBytes = 0;
+				}
+				else
+				{
+					DiskState = SeekSectorGapMark;
+				}
+				break;
+
+			case SectorID:
+				{
+					switch ( SyncBytes )
+					{
+					case 1:
+						ReadTrack  = FDCData;
+						break;
+					case 2:
+						ReadHead   = FDCData;
+						break;
+					case 3:
+						ReadSector = FDCData;
+						break;
+					case 4:
+						{
+							if ( FDCData < 4 )
+							{
+								WORD Sizes[] = { 128, 256, 512, 1024 };
+
+								ReadSize = Sizes[ FDCData ];
+							}
+
+							DiskState = SectorCRC;
+
+							SyncBytes = 0;
+						}
+						break;
+
+					default:
+						DiskState = SeekDataGapMark;
+
+						break;
+					}
+				}
+				break;
+
+			case SectorCRC:
+				if ( SyncBytes == 2) 
+				{
+					DiskState = SeekDataGapMark;
+				}
+				break;
+
+			case SeekDataGapMark:
+				if ( ( FDCData == 0x4E ) || ( FDCData == 0xFF ) )
+				{
+					DiskState = ReadingDataGap;
+				}
+				else
+				{
+					DiskState = SeekSectorGapMark;
+				}
+				break;
+
+			case ReadingDataGap:
+				if ( ( FDCData != 0x4E ) && ( FDCData != 0xFF ) )
+				{
+					if ( FDCData == 0 )
+					{
+						DiskState = DataGapPLL;
+					}
+					else
+					{
+						DiskState = SeekSectorGapMark;
+					}
+				}
+				break;
+
+			case DataGapPLL:
+				if ( FDCData != 0x00 )
+				{
+					if ( FDCData == 0xA1 )
+					{
+						DiskState = DataGapSync;
+
+						SyncBytes = 0;
+					}
+					else
+					{
+						DiskState = SeekSectorGapMark;
+					}
+				}
+				break;
+
+			case DataGapSync:
+				if ( FDCData == 0xA1 )
+				{
+					if ( SyncBytes == 2 )
+					{
+						DiskState = DataMark;
+					}
+				}
+				else
+				{
+					DiskState = SeekSectorGapMark;
+				}
+				break;
+
+			case DataMark:
+				if ( FDCData == 0xFB )
+				{
+					DiskState = SectorData;
+
+					SyncBytes = 0;
+				}
+				else
+				{
+					DiskState = SeekSectorGapMark;
+				}
+				break;
+
+			case SectorData:
+				if ( SyncBytes == 1 )
+				{
+					OricSector sec;
+
+					sec.Head       = ReadHead;
+					sec.Sector     = ReadSector;
+					sec.Track      = ReadTrack;
+					sec.SectorSize = ReadSize;
+					sec.Offset     = SourceOffset + Offset;
+
+					track.Sectors.push_back( sec );
+
+					PhysicalDiskSize += ReadSize;
+				}
+				else if ( SyncBytes == ReadSize )
+				{
+					DiskState = DataCRC;
+
+					SyncBytes = 0;
+				}
+				break;
+				
+			case DataCRC:
+				if ( SyncBytes == 2 )
+				{
+					DiskState = SeekSectorGapMark;
+				}
+				break;
+
+			default:
+				break;
+			}
+
+			SyncBytes++;
+			Offset++;
 		}
 
-		// Data gap PLL bytes
-		while ( ( TrackData[ TrackIndex ] == 0x00 ) && ( TrackIndex < MFM_DSK_TRACK_SIZE ) )
+		track.Head  = Head;
+		track.Track = Track;
+
+		DiskData.push_back( track );
+
+		SourceOffset += MFM_DSK_TRACK_SIZE;
+
+		if ( Geometry == OricSequentialGeometry )
 		{
-			TrackIndex++;
+			Track++;
+
+			if ( Track == NumTracks ) { Track = 0; Head++; }
 		}
-
-		// Data gap SYNC bytes
-		for ( BYTE i=0; i<3; i++ )
+		else
 		{
-			if ( TrackData[ TrackIndex ] == 0xA1 ) { TrackIndex++; } else { MFM_SECTOR_ERROR; }
+			Head++;
 
-			if ( TrackIndex >= MFM_DSK_TRACK_SIZE ) { MFM_SECTOR_ERROR; }
+			if ( Head == NumHeads ) { Head = 0; Track++; }
 		}
+	}
+}
 
-		if ( TrackIndex > ( MFM_DSK_TRACK_SIZE - ( ThisSec + 0x03 ) ) ) { MFM_DATA_ERROR; }
-
-		if ( TrackData[ TrackIndex++ ] != 0xFB ) { MFM_DATA_ERROR; }
-
-		if ( SectorID == Sector )
+DWORD MFMDISKWrapper::FindStartOfSector( BYTE Head, BYTE Track, BYTE Sector, WORD &SectorSize )
+{
+	for ( OricDisk::iterator iTrack = DiskData.begin(); iTrack != DiskData.end(); iTrack++ )
+	{
+		if ( ( iTrack->Head == Head ) && ( iTrack->Track == Track ) )
 		{
-			int iOffset = (int) ( Offset + TrackIndex );
+			for ( std::vector<OricSector>::iterator iSector = iTrack->Sectors.begin(); iSector != iTrack->Sectors.end(); iSector++ )
+			{
+				if ( iSector->Sector == Sector )
+				{
+					SectorSize = iSector->SectorSize;
 
-			SectorSize = ThisSec;
-
-			return iOffset;
-		}
-
-		TrackIndex += ThisSec;
-
-		TrackIndex += 2; // Skip the CRC bytes
-
-		// Post data gap
-		while ( ( ( TrackData[ TrackIndex ] == 0x4E ) || ( TrackData[ TrackIndex ] == 0xFF ) ) && ( TrackIndex < MFM_DSK_TRACK_SIZE ) )
-		{
-			TrackIndex++;
+					return iSector->Offset;
+				}
+			}
 		}
 	}
 
@@ -220,20 +456,13 @@ int MFMDISKWrapper::FindSectorStart( DWORD Head, DWORD Track, DWORD Sector, DWOR
 
 int MFMDISKWrapper::ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )
 {
-	DWORD SectorSize = 0;
+	WORD SectorSize = 0;
 
-	int iOffset = FindSectorStart( Head, Track, Sector, SectorSize );
-
-	if ( iOffset < 0 )
-	{
-		return -1;
-	}
-
-	DWORD Offset = (DWORD) iOffset;
+	DWORD Offset = FindStartOfSector( Head, Track, Sector, SectorSize );
 
 	if ( SectorSize == 0 )
 	{
-		return NUTSError( 0x710, L"Wrong sector size" );
+		return NUTSError( 0x710, L"Sector not found" );
 	}
 
 	return pRawSource->ReadRaw( Offset, SectorSize, pSectorBuf );
@@ -241,20 +470,13 @@ int MFMDISKWrapper::ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *
 
 int MFMDISKWrapper::WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )
 {
-	DWORD SectorSize = 0;
-
-	int iOffset = FindSectorStart( Head, Track, Sector, SectorSize );
-
-	if ( iOffset < 0 )
-	{
-		return -1;
-	}
-
-	DWORD Offset = (DWORD) iOffset;
+	WORD SectorSize = 0;
+	
+	DWORD Offset = FindStartOfSector( Head, Track, Sector, SectorSize );
 
 	if ( SectorSize == 0 )
 	{
-		return NUTSError( 0x710, L"Wrong sector size" );
+		return NUTSError( 0x710, L"Sector not found" );
 	}
 
 	return pRawSource->WriteRaw( Offset, SectorSize, pSectorBuf );
@@ -449,4 +671,6 @@ void MFMDISKWrapper::EndFormat( void )
 
 	NumHeads   = MediaShape.Heads;
 	NumTracks  = MediaShape.Tracks;
+
+	ReadDiskMetrics();
 }

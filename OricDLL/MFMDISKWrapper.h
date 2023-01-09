@@ -8,6 +8,47 @@ typedef enum _OricGeometry
 	OricInterleavedGeometry = 2,
 } OricGeometry;
 
+typedef struct _OricSector
+{
+	BYTE  Head;
+	BYTE  Track;
+	BYTE  Sector;
+	WORD  SectorSize;
+	DWORD Offset;
+} OricSector;
+
+typedef struct _OricTrack
+{
+	BYTE Head;
+	BYTE Track;
+	std::vector<OricSector> Sectors;
+} OricTrack;
+
+typedef std::vector<OricTrack> OricDisk;
+
+typedef enum _FDCState
+{
+	SeekPreIndexGapMark,
+	ReadingPreIndexGap,
+	PreIndexGapPLL,
+	PostIndexGapSync,
+	IndexMark,
+	SeekSectorGapMark,
+	ReadingSectorPreGap,
+	SectorGapPLL,
+	SectorGapSync,
+	SectorMark,
+	SectorID,
+	SectorCRC,
+	SeekDataGapMark,
+	ReadingDataGap,
+	DataGapPLL,
+	DataGapSync,
+	DataMark,
+	SectorData,
+	DataCRC,
+} FDCState;
+
 // Number of "unformatted" bytes in a track
 #define MFM_DSK_TRACK_SIZE 6400
 
@@ -38,7 +79,9 @@ public:
 
 private:
 	void WriteGap( BYTE *buf, BYTE val, WORD repeats, DWORD &Index );
-	int  FindSectorStart( DWORD Head, DWORD Track, DWORD Sector, DWORD &SectorSize );
+	void ReadDiskMetrics( );
+
+	DWORD FindStartOfSector( BYTE Head, BYTE Track, BYTE Sector, WORD &SectorSize );
 
 private:
 	DataSource *pRawSource;
@@ -52,5 +95,7 @@ private:
 
 	DWORD FormatTrackPosition;
 	WORD  MaxTracks;
+
+	OricDisk DiskData;
 };
 
