@@ -40,7 +40,12 @@ public:
 
 		pFSMap = new NewFSMap( pSource );
 
-		pEDirectory->pMap = pFSMap;
+		pFSMap->FloppyFormat = FloppyFormat;
+		pFSMap->MediaShape   = MediaShape;
+
+		pEDirectory->pMap         = pFSMap;
+		pEDirectory->FloppyFormat = FloppyFormat;
+		pEDirectory->MediaShape   = MediaShape;
 
 		pDirectory = (Directory *) pEDirectory;
 

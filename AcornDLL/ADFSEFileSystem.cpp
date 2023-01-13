@@ -1275,6 +1275,8 @@ int	ADFSEFileSystem::CreateDirectory( NativeFile *pDir, DWORD CreateFlags ) {
 	pNewDirectory->ParentSector = pEDirectory->DirSector;
 	pNewDirectory->MasterSeq    = 0;
 	pNewDirectory->pMap         = pFSMap;
+	pNewDirectory->FloppyFormat = FloppyFormat;
+	pNewDirectory->MediaShape   = MediaShape;
 	
 	if ( pFSMap->FormatVersion == 0x00000001 )
 	{
@@ -1501,8 +1503,38 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 				/* Some sanity checks here. The BPMB and IDLen values must be able to reference the whole disk, and
 				   identify each fragment at it's smallest size uniquely. */
 
-				QWORD DiskSize  = pSystem->pSource->PhysicalDiskSize;
-				      DiskSize /= pSystem->pFSMap->BPMB;
+				QWORD DiskSize = INVALID_PHYSICAL_SIZE;
+				
+				/* This is per file system for floppy formats */
+				if ( (  pSystem->FSID == FSID_ADFS_E ) || (  pSystem->FSID == FSID_ADFS_EP ) )
+				{
+					DiskSize = 800 * 1024;
+				}
+				else if ( (  pSystem->FSID == FSID_ADFS_F ) || (  pSystem->FSID == FSID_ADFS_FP ) )
+				{
+					DiskSize = 1600 * 1024;
+				}
+				else if (  pSystem->FSID == FSID_ADFS_G )
+				{
+					DiskSize = 3200 * 1024;
+				}
+				else
+				{
+					DiskSize = pSystem->pSource->PhysicalDiskSize;
+				}
+
+				if ( DiskSize == INVALID_PHYSICAL_SIZE )
+				{
+					MessageBox( hwndDlg,
+							L"The physical source has an unknown size. Either enable Low-Level Formatting so the size becomes known, or use a source where the size can be determined.",
+							L"NUTS ADFS New Map FileSystem",
+							MB_ICONERROR | MB_OK
+							);
+
+					EndDialog( hwndDlg, 0 );
+				}
+
+				DiskSize /= pSystem->pFSMap->BPMB;
 
 				/* DiskSize now contains the number of map bits required to represnt the disk */
 				QWORD RequiredFrags = DiskSize / ( pSystem->pFSMap->IDLen + 1 );
@@ -1516,6 +1548,11 @@ INT_PTR CALLBACK FormatProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 				while ( ( Zones * ( IDsPerZone * ( pSystem->pFSMap->IDLen + 1 ) ) ) < DiskSize )
 				{
+					if ( Zones > 240 )
+					{
+						break;
+					}
+
 					Zones++;
 				}
 
@@ -1558,11 +1595,7 @@ int ADFSEFileSystem::Format_PreCheck( int FormatType, HWND hWnd )
 		}
 	}
 
-	pFSMap = new NewFSMap( pSource );
-
-	DialogBoxParam( hInstance, MAKEINTRESOURCE( IDD_ADFSFORMAT ), hWnd, FormatProc, (LPARAM) this );
-
-	return 0;
+	return NUTS_SUCCESS;
 }
 
 int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
@@ -1618,6 +1651,16 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 				tr.GAP1.Repeats = 80;
 				tr.GAP1.Value   = 0x4E;
 
+				if ( ( FSID == FSID_ADFS_F ) || ( FSID == FSID_ADFS_FP ) )
+				{
+					tr.Density = QuadDensity;
+				}
+
+				if ( FSID == FSID_ADFS_G )
+				{
+					tr.Density = OctalDensity;
+				}
+
 				for ( BYTE s=0; s<shape.Sectors; s++ )
 				{
 					if ( WaitForSingleObject( hCancelFormat, 0 ) == WAIT_OBJECT_0 )
@@ -1636,7 +1679,7 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 					sd.IAM      = 0xFE;
 					sd.Track    = t;
 					sd.Side     = h;
-					sd.SectorLength = 0x01; // 256 Bytes
+					sd.SectorLength = 0x03; // 1024 Bytes
 					sd.IDCRC    = 0xFF;
 					sd.SectorID = s;
 
@@ -1670,6 +1713,15 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		}
 
 		pSource->EndFormat();
+	}
+
+	pFSMap = new NewFSMap( pSource );
+
+	DialogBoxParam( hInstance, MAKEINTRESOURCE( IDD_ADFSFORMAT ), hWnd, FormatProc, (LPARAM) this );
+
+	if ( pSource->PhysicalDiskSize == INVALID_PHYSICAL_SIZE )
+	{
+		return -1;
 	}
 
 	DWORD SecSize = 512;
@@ -1751,6 +1803,7 @@ int ADFSEFileSystem::Format_Process( DWORD FT, HWND hWnd )
 		pEDirectory->ParentSector = pEDirectory->DirSector;
 		pEDirectory->MasterSeq    = 0;
 		pEDirectory->BigDirName   = rstrndup( (BYTE *) "$", 4 );
+		pEDirectory->FloppyFormat = FloppyFormat;
 
 		rstrncpy( (BYTE *) pEDirectory->DirName, (BYTE *) "$", 10 );
 
