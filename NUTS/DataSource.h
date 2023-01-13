@@ -17,6 +17,8 @@
 #define DS_RELEASE( x ) x->Release();
 #endif
 
+#define INVALID_PHYSICAL_SIZE 0xFFFFFFFFFFFFFFFF
+
 typedef struct _DSWriteHint
 {
 	std::wstring HintName;
@@ -55,7 +57,7 @@ public:
 
 	virtual bool Valid() { return true; }
 
-	__int64	PhysicalDiskSize;
+	QWORD PhysicalDiskSize;
 
 	int RefCount;
 

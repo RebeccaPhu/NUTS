@@ -45,7 +45,7 @@ typedef struct _SectorDefinition {
 typedef enum _DiskDensity {
 	SingleDensity  = 1,
 	DoubleDensity  = 2,
-	QuadDesnity    = 3,
+	QuadDensity    = 3,
 	OctalDensity   = 4,
 	CBM_GCR        = 5,
 	Apple_GCR      = 6,

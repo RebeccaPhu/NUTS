@@ -25,6 +25,8 @@ DataSource::DataSource(void)
 	SourceDesc = (BYTE *) "";
 
 	Feedback = L"";
+
+	PhysicalDiskSize = INVALID_PHYSICAL_SIZE;
 }
 
 DataSource::~DataSource(void)
