@@ -83,6 +83,8 @@ private:
 
 	DWORD FindStartOfSector( BYTE Head, BYTE Track, BYTE Sector, WORD &SectorSize );
 
+	DWORD SizeFromShape( BYTE Head, BYTE Track, BYTE Sector );
+
 private:
 	DataSource *pRawSource;
 

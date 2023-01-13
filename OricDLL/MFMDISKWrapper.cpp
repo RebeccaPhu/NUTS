@@ -454,18 +454,55 @@ DWORD MFMDISKWrapper::FindStartOfSector( BYTE Head, BYTE Track, BYTE Sector, WOR
 	return 0;
 }
 
+DWORD MFMDISKWrapper::SizeFromShape( BYTE Head, BYTE Track, BYTE Sector )
+{
+	if ( !DiskShapeSet )
+	{
+		return 0;
+	}
+
+	if ( !ComplexDiskShape )
+	{
+		return MediaShape.SectorSize;
+	}
+	else
+	{
+		for ( std::vector< DS_TrackDef >::iterator iTrack = ComplexMediaShape.TrackDefs.begin(); iTrack != ComplexMediaShape.TrackDefs.end(); iTrack++ )
+		{
+			if ( ( iTrack->TrackID == Track )  && ( iTrack->HeadID == Head ) )
+			{
+				BYTE SectorID = (BYTE) iTrack->Sector1;
+
+				for ( std::vector< WORD >::iterator iSector = iTrack->SectorSizes.begin(); iSector != iTrack->SectorSizes.end(); iSector++ )
+				{
+					if ( SectorID == Sector )
+					{
+						return *iSector;
+					}
+
+					SectorID++;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 int MFMDISKWrapper::ReadSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )
 {
 	WORD SectorSize = 0;
 
 	DWORD Offset = FindStartOfSector( Head, Track, Sector, SectorSize );
 
+	DWORD WantedSize = SizeFromShape( Head, Track, Sector );
+
 	if ( SectorSize == 0 )
 	{
 		return NUTSError( 0x710, L"Sector not found" );
 	}
 
-	return pRawSource->ReadRaw( Offset, SectorSize, pSectorBuf );
+	return pRawSource->ReadRaw( Offset, min( WantedSize, SectorSize ) , pSectorBuf );
 }
 
 int MFMDISKWrapper::WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE *pSectorBuf )
@@ -474,12 +511,14 @@ int MFMDISKWrapper::WriteSectorCHS( DWORD Head, DWORD Track, DWORD Sector, BYTE 
 	
 	DWORD Offset = FindStartOfSector( Head, Track, Sector, SectorSize );
 
+	DWORD WantedSize = SizeFromShape( Head, Track, Sector );
+
 	if ( SectorSize == 0 )
 	{
 		return NUTSError( 0x710, L"Sector not found" );
 	}
 
-	return pRawSource->WriteRaw( Offset, SectorSize, pSectorBuf );
+	return pRawSource->WriteRaw( Offset, min( WantedSize, SectorSize ), pSectorBuf );
 }
 
 int MFMDISKWrapper::Truncate( QWORD Length )
