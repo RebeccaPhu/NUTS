@@ -42,7 +42,7 @@ FSHint TAPFileSystem::Offer( BYTE *Extension )
 	if ( rstrncmp( Extension, (BYTE *) "TAP", 3 ) )
 	{
 		hint.FSID       = FSID_SPECTRUM_TAP;
-		hint.Confidence = 20;
+		hint.Confidence = 10;
 
 		WORD FirstHeaderLen;
 
@@ -463,7 +463,6 @@ int	TAPFileSystem::WriteAtStore(NativeFile *pFile, CTempFile &store, CTempFile *
 int TAPFileSystem::RewriteTAPFile( DWORD SpecialID, DWORD SwapID, BYTE *pName, int Reason )
 {
 	CTempFile Rewritten;
-	CTempFile OldFile;
 
 	NativeFileIterator iFile;
 
@@ -475,6 +474,8 @@ int TAPFileSystem::RewriteTAPFile( DWORD SpecialID, DWORD SwapID, BYTE *pName, i
 		{
 			continue;
 		}
+
+		CTempFile OldFile;
 
 		NativeFile file = *iFile;
 
