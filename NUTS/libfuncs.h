@@ -30,15 +30,19 @@ BYTE *rstrndup( BYTE *src, WORD limit );
 #define rstrcpy( target, src ) rstrncpy( target, src, 0xFFFF )
 
 DWORD BEDWORD( BYTE *p );
+DWORD BETWORD( BYTE *p );
 WORD BEWORD( BYTE *p );
 
 void WBEDWORD( BYTE *p, DWORD v );
+void WBETWORD( BYTE *p, DWORD v );
 void WBEWORD( BYTE *p, DWORD v );
 
 DWORD LEDWORD( BYTE *p );
+DWORD LETWORD( BYTE *p );
 WORD LEWORD( BYTE *p );
 
 void WLEDWORD( BYTE *p, DWORD v );
+void WLETWORD( BYTE *p, DWORD v );
 void WLEWORD( BYTE *p, DWORD v );
 
 DWORD dwDiff( DWORD a, DWORD b );

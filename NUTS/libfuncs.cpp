@@ -428,6 +428,11 @@ DWORD BEDWORD( BYTE *p )
 	return ( p[0] << 24 ) | ( p[1] << 16 ) | ( p[2] << 8 ) | p[3];
 }
 
+DWORD BETWORD( BYTE *p )
+{
+	return ( p[0] << 16 ) | ( p[1] << 8 ) | p[2];
+}
+
 WORD BEWORD( BYTE *p )
 {
 	return ( p[0] << 8 ) | p[1];
@@ -441,6 +446,13 @@ void WBEDWORD( BYTE *p, DWORD v )
 	p[ 3 ] = BYTE( v & 0xFF );
 }
 
+void WBETWORD( BYTE *p, DWORD v )
+{
+	p[ 0 ] = BYTE( ( ( v & 0xFF0000 ) >> 16 ) );
+	p[ 1 ] = BYTE( ( ( v & 0xFF00 ) >> 8 ) );
+	p[ 2 ] = BYTE( v & 0xFF );
+}
+
 void WBEWORD( BYTE *p, DWORD v )
 {
 	p[ 0 ] = BYTE( ( ( v & 0xFF00 ) >> 8 ) );
@@ -452,6 +464,11 @@ DWORD LEDWORD( BYTE *p )
 	return ( p[3] << 24 ) | ( p[2] << 16 ) | ( p[1] << 8 ) | p[0];
 }
 
+DWORD LETWORD( BYTE *p )
+{
+	return ( p[2] << 16 ) | ( p[1] << 8 ) | p[0];
+}
+
 WORD LEWORD( BYTE *p )
 {
 	return ( p[1] << 8 ) | p[0];
@@ -460,6 +477,13 @@ WORD LEWORD( BYTE *p )
 void WLEDWORD( BYTE *p, DWORD v )
 {
 	p[ 3 ] = BYTE( ( ( v & 0xFF000000 ) >> 24 ) );
+	p[ 2 ] = BYTE( ( ( v & 0xFF0000 ) >> 16 ) );
+	p[ 1 ] = BYTE( ( ( v & 0xFF00 ) >> 8 ) );
+	p[ 0 ] = BYTE( v & 0xFF );
+}
+
+void WLETWORD( BYTE *p, DWORD v )
+{
 	p[ 2 ] = BYTE( ( ( v & 0xFF0000 ) >> 16 ) );
 	p[ 1 ] = BYTE( ( ( v & 0xFF00 ) >> 8 ) );
 	p[ 0 ] = BYTE( v & 0xFF );
