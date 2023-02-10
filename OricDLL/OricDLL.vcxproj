@@ -146,6 +146,8 @@
     <ClInclude Include="OricDefs.h" />
     <ClInclude Include="OricDLL.h" />
     <ClInclude Include="ORICDSKSource.h" />
+    <ClInclude Include="OricTAPDirectory.h" />
+    <ClInclude Include="OricTAPFileSystem.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -177,6 +179,8 @@
     <ClCompile Include="MFMDISKWrapper.cpp" />
     <ClCompile Include="OricDLL.cpp" />
     <ClCompile Include="ORICDSKSource.cpp" />
+    <ClCompile Include="OricTAPDirectory.cpp" />
+    <ClCompile Include="OricTAPFileSystem.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

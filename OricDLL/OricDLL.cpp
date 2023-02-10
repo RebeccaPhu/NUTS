@@ -10,7 +10,8 @@
 
 #include "OricDLL.h"
 
-#include "../NUTS/NUTSTypes.h"
+#include "..\NUTS\NUTSTypes.h"
+#include "..\NUTS\NUTSFlags.h"
 
 #include <string>
 
@@ -23,6 +24,7 @@
 
 #include "MFMDISKWrapper.h"
 #include "ORICDSKSource.h"
+#include "OricTAPFileSystem.h"
 
 HMODULE hInstance;
 
@@ -37,7 +39,19 @@ const PluginIdentifier   PLUGIN_ORIC   = L"TangerinePlugin";
 const ProviderIdentifier ORIC_PROVIDER = L"TangerineProvider";
 const WrapperIdentifier  MFM_DSK       = L"MFM_DSK_Wrapper";
 const WrapperIdentifier  ORIC_DSK      = L"ORIC_DSK_Wrapper";
+const FSIdentifier       ORIC_TAP      = L"ORIC_TAP_Cassette";
 
+FSDescriptor OricFS[] = {
+	{
+		/* .FriendlyName = */ L"Oric TAP",
+		/* .PUID         = */ ORIC_TAP,
+		/* .Flags        = */ FSF_Formats_Raw | FSF_Creates_Image | FSF_Formats_Image | FSF_Supports_Spaces | FSF_ArbitrarySize | FSF_DynamicSize | FSF_Reorderable | FSF_Prohibit_Nesting,
+		0, 0,
+		(BYTE *) "TAP"
+	}
+};
+
+#define ORIC_FSCOUNT ( sizeof(OricFS) / sizeof( FSDescriptor) )
 
 BYTE *pOricFont = nullptr;
 
@@ -87,7 +101,19 @@ void LoadFonts()
 	}
 }
 
-WCHAR *pOricFontName = L"Oric-1/Oric Atmos";
+void *CreateFS( FSIdentifier FSID, DataSource *pSource )
+{
+	FileSystem *pFS = nullptr;
+
+	if ( FSID == ORIC_TAP )
+	{
+		pFS = new OricTAPFileSystem( pSource );
+	}
+
+	return (void *) pFS;
+}
+
+WCHAR *pOricFontName = L"Oric";
 
 NUTSProvider ProviderOric = { L"Tangerine", PLUGIN_ORIC, ORIC_PROVIDER };
 
@@ -124,6 +150,41 @@ ORICDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 
 		return NUTS_PLUGIN_ERROR;
 		
+	case PC_ReportFileSystems:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].Value = ORIC_FSCOUNT;
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_DescribeFileSystem:
+		if ( cmd->InParams[ 0 ].Value == 0 )
+		{
+			cmd->OutParams[ 0 ].pPtr = (void *) &OricFS[ cmd->InParams[ 1 ].Value ];
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
+		return NUTS_PLUGIN_ERROR;
+
+	case PC_CreateFileSystem:
+		{
+			DataSource *pSource = (DataSource *) cmd->InParams[ 2 ].pPtr;
+
+			void *pFS = (void *) CreateFS( FSIdentifier( (WCHAR *) cmd->InParams[ 0 ].pPtr ), pSource );
+
+			cmd->OutParams[ 0 ].pPtr = pFS;
+
+			if ( pFS == nullptr )
+			{
+				return NUTS_PLUGIN_ERROR;
+			}
+
+			return NUTS_PLUGIN_SUCCESS;
+		}
+
 	case PC_ReportEncodingCount:
 		cmd->OutParams[ 0 ].Value = 1;
 

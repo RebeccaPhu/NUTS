@@ -10,5 +10,6 @@ extern const PluginIdentifier   PLUGIN_ORIC;
 extern const ProviderIdentifier ORIC_PROVIDER;
 extern const WrapperIdentifier  MFM_DSK;
 extern const WrapperIdentifier  ORIC_DSK;
+extern const FSIdentifier       ORIC_TAP;
 
 #endif

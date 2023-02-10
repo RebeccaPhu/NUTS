@@ -56,6 +56,12 @@
     <ClInclude Include="ORICDSKSource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="OricTAPFileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OricTAPDirectory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -98,6 +104,12 @@
       <Filter>Imported Source</Filter>
     </ClCompile>
     <ClCompile Include="ORICDSKSource.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OricTAPFileSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OricTAPDirectory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
