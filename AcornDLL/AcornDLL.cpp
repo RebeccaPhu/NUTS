@@ -1216,7 +1216,7 @@ ACORNDLL_API int NUTSCommandHandler( PluginCommand *cmd )
 		{
 			std::wstring Provider = std::wstring( (WCHAR *) cmd->InParams[ 0 ].pPtr );
 
-			if ( Provider == L"BBCMicro" )
+			if ( Provider == RISCOS_PROVIDER )
 			{
 				static WCHAR *pGerald = L"Gerald Holdsworth: RiscOS Sprite and ADFS New Map/Big Directory descriptions. See http://www.geraldholdsworth.co.uk";
 
