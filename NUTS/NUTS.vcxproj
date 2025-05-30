@@ -236,6 +236,8 @@
     <ClCompile Include="NestedImageSource.cpp" />
     <ClCompile Include="NUTSError.cpp" />
     <ClCompile Include="OffsetDataSource.cpp" />
+    <ClCompile Include="P2000Directory.cpp" />
+    <ClCompile Include="P2000FileSystem.cpp" />
     <ClCompile Include="PaletteWindow.cpp" />
     <ClCompile Include="PiePercent.cpp" />
     <ClCompile Include="PortManager.cpp" />
@@ -346,6 +348,8 @@
     <ClInclude Include="NUTSTypes.h" />
     <ClInclude Include="NUTSUI.h" />
     <ClInclude Include="NUTSXLAT.h" />
+    <ClInclude Include="P2000Directory.h" />
+    <ClInclude Include="P2000FileSystem.h" />
     <ClInclude Include="PortManager.h" />
     <ClInclude Include="RawDevices.h" />
     <ClInclude Include="ResolvedIcons.h" />

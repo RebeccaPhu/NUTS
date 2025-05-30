@@ -144,7 +144,7 @@ int CPMDirectory::ReadDirectory(void)
 
 	DiskLabel[ 0 ] = 0;
 
-	pBlockMap->InitialiseMap( pSource->PhysicalDiskSize / 1024 );
+	pBlockMap->InitialiseMap( pSource->PhysicalDiskSize / dpb.ExtentSize );
 
 	AutoBuffer Buffer( dpb.DirSecs * dpb.SecSize );
 

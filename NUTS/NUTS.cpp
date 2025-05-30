@@ -459,6 +459,7 @@ void SetUpBaseMappings( void )
 	ExtReg.RegisterExtension( L"WAV", FT_Sound,     FT_Sound   );
 	ExtReg.RegisterExtension( L"MP3", FT_Sound,     FT_Sound   );
 	ExtReg.RegisterExtension( L"VOC", FT_Sound,     FT_Sound   );
+	ExtReg.RegisterExtension( L"MOD", FT_Sound,     FT_Sound   );
 	ExtReg.RegisterExtension( L"INI", FT_Pref,      FT_Pref    );
 	ExtReg.RegisterExtension( L"TXT", FT_Text,      FT_Text    );
 	ExtReg.RegisterExtension( L"ZIP", FT_Archive,   FT_Archive );

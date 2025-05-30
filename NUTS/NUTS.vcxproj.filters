@@ -339,6 +339,12 @@
     <ClCompile Include="ROMDisk.cpp">
       <Filter>Source Files\File Systems</Filter>
     </ClCompile>
+    <ClCompile Include="P2000FileSystem.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="P2000Directory.cpp">
+      <Filter>Source Files\File Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">
@@ -679,6 +685,12 @@
     </ClInclude>
     <ClInclude Include="ROMDiskDirectory.h">
       <Filter>Header Files\File Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="P2000FileSystem.h">
+      <Filter>Header Files\File Systems\Generics</Filter>
+    </ClInclude>
+    <ClInclude Include="P2000Directory.h">
+      <Filter>Header Files\File Systems\Generics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -9,6 +9,7 @@
 #include "ISO9660FileSystem.h"
 #include "ISORawSectorSource.h"
 #include "ZIPFile.h"
+#include "P2000FileSystem.h"
 #include "DSKDataSource.h"
 
 #include "NUTSFSTypes.h"
@@ -98,6 +99,14 @@ BuiltInProviderList BuiltIns::GetBuiltInProviders()
 
 	pvl.push_back( ISOProvider );
 
+	NUTSProvider P2000Provider;
+
+	ISOProvider.FriendlyName = L"Phillips";
+	ISOProvider.PluginID     = BUILTIN_PLUGIN;
+	ISOProvider.ProviderID   = L"PHILLIPS";
+
+	pvl.push_back( P2000Provider );
+
 	return pvl;
 }
 
@@ -158,6 +167,24 @@ FormatList BuiltIns::GetBuiltinFormatList( ProviderIdentifier PUID, bool Exclude
 		Format.Format = L"ISO 9660";
 
 		Format.PreferredExtension = (BYTE *) "ISO";
+
+		Formats.push_back( Format );
+
+		return Formats;
+	}
+
+	if ( PUID == L"PHILLIPS" )
+	{
+		FormatDesc Format;
+
+		Format.Flags  = FSF_Creates_Image | FSF_Formats_Image |
+		FSF_SupportBlocks | FSF_SupportFreeSpace | FSF_Capacity |
+		FSF_FixedSize | FSF_UseSectors | FSF_No_Quick_Format | FSF_Uses_Extensions;
+
+		Format.FSID   = L"P2000CPM";
+		Format.Format = L"P2000C CP/M";
+
+		Format.PreferredExtension = (BYTE *) "DSK";
 
 		Formats.push_back( Format );
 
@@ -264,6 +291,10 @@ FileSystem *BuiltIns::LoadFS( FSIdentifier FSID, DataSource *pSource )
 
 		pFS->FSID = FSID;
 	}
+	else if ( FSID == L"P2000CPM" )
+	{
+		pFS = new P2000FileSystem( pSource );
+	}
 
 	return pFS;
 }
@@ -285,6 +316,10 @@ std::wstring BuiltIns::ProviderName( ProviderIdentifier PRID )
 	else if ( PRID == ISO_PROVIDER )
 	{
 		return L"CD/DVD";
+	}
+	else if ( PRID == L"PHILLIPS" )
+	{
+		return L"Phillips";
 	}
 
 	return L"";
@@ -316,6 +351,10 @@ std::wstring BuiltIns::FSName( FSIdentifier FSID )
 	{
 		return L"ROM Disk Scratch Pad";
 	}
+	else if ( FSID == L"P2000CPM" )
+	{
+		return L"P2000C CP/M";
+	}
 
 	return L"";
 }
@@ -333,6 +372,10 @@ std::wstring BuiltIns::FSExt( FSIdentifier FSID )
 	else if ( FSID == FSID_ISOHS )
 	{
 		return L"ISO";
+	}
+	else if ( FSID == L"P2000CPM" )
+	{
+		return L"DSK";
 	}
 
 	return L"";
@@ -367,6 +410,17 @@ BuiltInMenuList BuiltIns::GetBuiltInMenuList()
 	format.ID = FSID_ISO9660;
 
 	menu.FS.push_back( format );
+
+	fsmenu.push_back( menu );
+
+	menu.FS.clear();
+
+	format.FS = L"P2000C CP/M";
+	format.ID = L"P2000CPM";
+
+	menu.FS.push_back( format );
+
+	menu.Provider = L"Phillips";
 
 	fsmenu.push_back( menu );
 

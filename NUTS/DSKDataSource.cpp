@@ -135,6 +135,12 @@ void DSKDataSource::ReadDiskData( void )
 
 			WORD DSKID = ( ti.TrackNum << 8 ) | ti.SideNum;
 
+			BYTE RealSectors[ 17 ] = {
+				0,
+				1, 9, 2, 10, 3, 11, 4, 12, 
+				5, 13, 6, 14, 7, 15, 8, 16
+			};
+
 			for ( BYTE st=0; st<ti.NumSectors; st++ )
 			{
 				BYTE *sti = &Buffer[ 0x18 + ( st * 8 ) ];
@@ -143,6 +149,7 @@ void DSKDataSource::ReadDiskData( void )
 				
 				si.TrackID = sti[ 0 ];
 				si.SideID = sti[ 1 ];
+//				si.SectorID = RealSectors[ sti[ 2 ] ];
 				si.SectorID = sti[ 2 ];
 				si.SectorSize = sti[ 3 ] * 0x100;
 				si.FDC1 = sti[ 4 ];
