@@ -52,9 +52,6 @@ int OricTAPDirectory::ReadDirectory( void )
 			return NUTSError( 0xC05, L"Sync marker not found" );
 		}
 
-		// More than 16 sync bytes means "fast" encoding.
-		if ( p >= 16 ) { file.Attributes[ 0 ] = 0xFFFFFFFF; } else { file.Attributes[ 0 ] = 0x00000000; }
-
 		p++;
 
 		file.Attributes[ 1 ] = BETWORD( &Buffer[ p ] ); // File type byte

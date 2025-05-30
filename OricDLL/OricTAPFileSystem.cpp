@@ -67,32 +67,6 @@ std::vector<AttrDesc> OricTAPFileSystem::GetAttributeDescriptions( NativeFile *p
 
 	AttrDesc Attr;
 
-	/* Encoding type - fast or slow */
-	Attr.Index = 0;
-	Attr.Type  = AttrVisible | AttrEnabled | AttrSelect | AttrFile;
-	Attr.Name  = L"Encoding";
-
-	static DWORD EncodingValues[ ] = {
-		0x00000000, 0xFFFFFFFF
-	};
-
-	static std::wstring EncodingNames[ ] = {
-		L"Slow", L"Fast"
-	};
-
-	for ( BYTE i=0; i<2; i++ )
-	{
-		AttrOption opt;
-
-		opt.Name            = EncodingNames[ i ];
-		opt.EquivalentValue = EncodingValues[ i ];
-		opt.Dangerous       = true;
-
-		Attr.Options.push_back( opt );
-	}
-
-	Attrs.push_back( Attr );
-
 	/* File type, BASIC or machine code */
 	Attr.Index = 1;
 	Attr.Type  = AttrVisible | AttrEnabled | AttrSelect | AttrFile | AttrWarning;
@@ -254,14 +228,9 @@ int	OricTAPFileSystem::WriteAtStore(NativeFile *pFile, CTempFile &store, CTempFi
 
 	if ( pFile->FSFileType == FT_ORIC )
 	{
-		BYTE Syncs = 3;
+		BYTE Syncs = 4;
 		DWORD hp   = 0;
 
-		if ( pFile->Attributes[ 0 ] != 0x00000000 )
-		{
-			Syncs = 16;
-		}
-		
 		memset( Header, 0x16, Syncs );
 		
 		hp += Syncs;
@@ -300,9 +269,9 @@ int	OricTAPFileSystem::WriteAtStore(NativeFile *pFile, CTempFile &store, CTempFi
 	else
 	{
 		// Fake a file loading at 0x0500 ?
-		DWORD hp = 3;
+		DWORD hp = 4;
 
-		memset( Header, 0x16, 3 );
+		memset( Header, 0x16, 4 );
 		
 		Header[ hp++ ] = 0x24;
 		
@@ -620,20 +589,14 @@ int OricTAPFileSystem::MakeAudio( std::vector<NativeFile> &Selection, TapeIndex 
 	for ( NativeFileIterator iFile = Selection.begin(); iFile != Selection.end(); iFile++ )
 	{
 		// First generate a header
-		BYTE Header[ 64 ];
+		BYTE Header[ 512 ];
 
-		ZeroMemory( Header, 64 );
+		ZeroMemory( Header, 512 );
 
-		BYTE Syncs = 8;
-		DWORD hp   = 0;
-		bool  FE   = false;
+		WORD  Syncs = 259;
+		DWORD hp    = 0;
+		bool  FE    = false;
 
-		if ( iFile->Attributes[ 0 ] != 0x00000000 )
-		{
-			Syncs = 16;
-			FE    = true;
-		}
-		
 		TapeCue Cue;
 
 		Cue.Flags     = 0;
