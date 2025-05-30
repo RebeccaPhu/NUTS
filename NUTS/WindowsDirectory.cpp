@@ -37,6 +37,8 @@ void WindowsDirectory::TranslateFileType(NativeFile *file) {
 	file->Icon = Desc.Icon;
 
 	if ( file->Type == FT_Text ) { file->XlatorID = TUID_TEXT; }
+
+	if ( ThisExt == L"MOD" ) { file->XlatorID = TUID_MOD_MUSIC; }
 }
 
 int	WindowsDirectory::ReadDirectory(void) {
