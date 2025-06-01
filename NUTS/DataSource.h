@@ -10,8 +10,8 @@
 #include <vector>
 
 #if 1
-#define DS_RETAIN( x ) BYTE err[256]; rsprintf( err, "DS %016X Retain  %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( (char *) err ); x->Retain()
-#define DS_RELEASE( x ) BYTE err[256]; rsprintf( err, "DS %016X Release %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( (char *) err ); x->Release()
+#define DS_RETAIN( x )  { BYTE err[256]; rsprintf( err, "DS %016X Retain  %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( (char *) err ); x->Retain();  }
+#define DS_RELEASE( x ) { BYTE err[256]; rsprintf( err, "DS %016X Release %s:%d\n", x, __FILE__, __LINE__ ); OutputDebugStringA( (char *) err ); x->Release(); }
 #else
 #define DS_RETAIN( x )  x->Retain();
 #define DS_RELEASE( x ) x->Release();

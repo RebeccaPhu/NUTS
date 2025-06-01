@@ -148,7 +148,7 @@ private:
 	bool  CheckClick();
 	void  CheckDragType(long dragX, long dragY);
 	void  DoScroll(WPARAM wParam, LPARAM lParam);
-	void  CFileViewer::PopulateFSMenus( HMENU hPopup );
+	void  CFileViewer::PopulateFSMenus( HMENU hPopup, bool Override );
 	void  CFileViewer::PopulateXlatorMenus( HMENU hPopup );
 	void  RecalculateDimensions( RECT &wndRect );
 	void  GetCliRect( RECT &client );

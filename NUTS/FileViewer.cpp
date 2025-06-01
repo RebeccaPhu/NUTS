@@ -1504,10 +1504,10 @@ void CFileViewer::EndDragging() {
 	dragY		= -1;
 }
 
-void CFileViewer::PopulateFSMenus( HMENU hPopup )
+void CFileViewer::PopulateFSMenus( HMENU hPopup, bool Override = false )
 {
 	/* If the FS doesn't support containing images, don't populate this */
-	if ( FS->Flags & FSF_Prohibit_Nesting )
+	if ( ( !Override ) && ( FS->Flags & FSF_Prohibit_Nesting ) )
 	{
 		return;
 	}
@@ -3128,18 +3128,45 @@ void CFileViewer::DoContextMenu( void )
 
 					DWORD InvokeNum = 0;
 
+					bool AddedEnterAs = false;
+
 					for ( RootHookInvocations::iterator iInvoke = iHook->Invocations.begin(); iInvoke != iHook->Invocations.end(); iInvoke++ )
 					{
-						if ( !HaveSep )
+						if ( iInvoke->Flags & RHF_EnterInvoked )
 						{
-							AppendMenu( hSubMenu, MF_SEPARATOR, 0, 0 );
-
-							HaveSep = true;
+							EnableMenuItem( hPopup, IDM_ENTER, MF_BYCOMMAND | MF_ENABLED );
 						}
 
-						AppendMenu( hSubMenu, MF_STRING, ROOT_HOOK_BASE + InvokeNum, iInvoke->FriendlyName.c_str() );
+						if ( iInvoke->Flags & RHF_EnterAsInvoked )
+						{
+							EnableMenuItem( hPopup, IDM_ENTER, MF_BYCOMMAND | MF_ENABLED );
+							
+							if ( !AddedEnterAs )
+							{
+								AddedEnterAs = true;
 
-						InvokeNum++;
+								PopulateFSMenus( hPopup, true );
+							}
+						}
+
+						if ( ( iInvoke->Flags & RHF_CreatesFileSystem ) || ( iInvoke->Flags & RHF_CreatesDataSource ) )
+						{
+							if ( !HaveSep )
+							{
+								AppendMenu( hSubMenu, MF_SEPARATOR, 0, 0 );
+
+								HaveSep = true;
+							}
+
+							AppendMenu( hSubMenu, MF_STRING, ROOT_HOOK_BASE + InvokeNum, iInvoke->FriendlyName.c_str() );
+
+							InvokeNum++;
+						}
+
+						if ( iInvoke->Flags & RHF_SupportsImaging )
+						{
+							EnableMenuItem( hSubMenu, IDM_IMAGING,  MF_BYCOMMAND | MF_ENABLED );
+						}
 					}
 				}
 
@@ -3200,7 +3227,7 @@ FileSystem *CFileViewer::DoRootHook()
 							{
 								DataSource *pDataSource = FSPlugins.LoadHookDataSource( iInvoke->HookFSID, pSource );
 
-								{ DS_RELEASE( pSource ); }
+								DS_RELEASE( pSource );
 
 								if ( pDataSource != nullptr )
 								{

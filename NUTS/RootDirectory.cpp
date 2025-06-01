@@ -311,6 +311,8 @@ void RootDirectory::TranslateIconToResolved( NativeFile *pFile, HBITMAP hBitmap 
 
 		bmi.bmiHeader = icon.bmi;
 
+		bmi.bmiHeader.biHeight = 0 - bmp.bmHeight;
+
 		GetDIBits( hDC, hBitmap, 0, bmp.bmHeight, icon.pImage, &bmi, DIB_RGB_COLORS );
 
 		ReleaseDC( 0, hDC );

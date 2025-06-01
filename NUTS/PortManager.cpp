@@ -152,7 +152,7 @@ INT_PTR CALLBACK InsertPortFunc( HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPar
 				PickedType  = IP_ports[ PortID ].Type;
 				PickedName  = IP_ports[ PortID ].Name;
 
-				int ProvID = ::SendMessage( GetDlgItem( hDlg, IDC_PORT_SELECT ), CB_GETCURSEL, 0, 0 );
+				int ProvID = ::SendMessage( GetDlgItem( hDlg, IDC_PLUGIN_SELECT ), CB_GETCURSEL, 0, 0 );
 
 				PickedID    = IP_reqs[ ProvID ].ProviderID;
 			}

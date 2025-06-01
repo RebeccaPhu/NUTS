@@ -100,7 +100,7 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 	BYTE DPath[64];
 
-	if ( pDirectory->Files[ FileID ].Attributes[ 1 ] == ROOT_OBJECT_HOOK )
+	if ( pDirectory->Files[ FileID ].Attributes[ 2 ] == ROOT_OBJECT_HOOK )
 	{
 		RootHook hook = pRootDirectory->HookPairs[ FileID ];
 
@@ -113,11 +113,11 @@ DataSource *RootFileSystem::FileDataSource( DWORD FileID )
 
 			DataSource *pSource = new MemorySource( iInvoke->HookData, 32 );
 
-			// TODO: Load data source from plugin
+			DataSource *pDataSource = FSPlugins.LoadHookDataSource( iInvoke->HookFSID, pSource );
 
 			DS_RELEASE( pSource );
 
-			return pSource;
+			return pDataSource;
 		}
 	}
 

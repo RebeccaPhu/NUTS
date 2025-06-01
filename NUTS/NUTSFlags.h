@@ -55,6 +55,9 @@ typedef enum _TXFlags {
 typedef enum _RootHookFlags {
 	RHF_CreatesFileSystem = 0x00000001,
 	RHF_CreatesDataSource = 0x00000002,
+	RHF_EnterInvoked      = 0x00000004,
+	RHF_EnterAsInvoked    = 0x00000008,
+	RHF_SupportsImaging   = 0x00000010,
 } RootHookFlags;
 
 typedef enum _PanelFlags {
